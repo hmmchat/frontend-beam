@@ -14,7 +14,7 @@ export default function Home() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-primary">
+    <div className="relative h-screen overflow-hidden bg-primary">
       {/* Header */}
       <header className="md:absolute static top-0 left-0 right-0 z-20 flex justify-between items-center px-6 md:px-12 py-4 md:py-6">
         <Button

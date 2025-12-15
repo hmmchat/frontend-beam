@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
+import Button from '@/components/ui/Button';
 
 export default function Onboarding() {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -86,12 +87,12 @@ export default function Onboarding() {
       <div className="container mx-auto py-12 px-6">
         <main className="grid grid-cols-1 lg:grid-cols-2 min-h-[70vh] gap-8 items-center">
           {/* Left */}
-          <div className=" bg-gradient-purple-dark flex items-center text-center px-6 lg:px-16">
+          <div className="bg-gradient-purple-dark flex items-center justify-center text-center px-6 lg:px-16">
             <div>
               {/* <h1 className="text-[96px] lg:text-[120px] font-extrabold tracking-tight text-yellow-300 leading-none">HMM..</h1> */}
-              <img src="/assets/Logo.svg" alt="" className="text-center items-center md:ml-24 ml-12" />
-              <p className="text-2xl mt-3 font-medium opacity-95">Okeeyy! Let's get you started,</p>
-              <p className="text-2xl font-medium opacity-95">Just get done with the itsy bitsy stuff first</p>
+              <img src="/assets/Logo.svg" alt="" className="w-44 mx-auto md:mb-2" />
+              <p className="md:text-2xl text-sm md:mt-3 md:font-medium opacity-95">Okeeyy! Let's get you started,</p>
+              <p className="md:text-2xl text-sm md:font-medium opacity-95">Just get done with the itsy bitsy stuff first</p>
             </div>
           </div>
 
@@ -144,6 +145,7 @@ export default function Onboarding() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Poseidon"
+                    variant="outline"
                     className="w-full bg-transparent border-2 border-white/20 rounded-2xl px-5 py-3 text-white placeholder-white/60 focus:outline-none focus:border-white/60"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-2">{errors.name}</div>}

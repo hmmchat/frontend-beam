@@ -19,7 +19,7 @@ export default function Inbox() {
   ];
 
   return (
-    <div className="min-h-screen w-full relative text-white font-sans overflow-hidden">
+    <div className="h-screen w-full relative text-white font-sans overflow-hidden">
 
       {/* Background */}
       <div
@@ -50,7 +50,7 @@ export default function Inbox() {
         </div> */}
 
         {/* Main Card */}
-        <div className="w-full md:h-[70vh] border border-white/20 rounded-2xl md:rounded-3xl backdrop-blur-sm overflow-hidden flex flex-col md:flex-row">
+        <div variant="outline" className="w-full md:h-[70vh] border border-white/20 rounded-2xl md:rounded-3xl backdrop-blur-sm overflow-hidden flex flex-col md:flex-row">
 
           {/* CHAT LIST */}
           <div

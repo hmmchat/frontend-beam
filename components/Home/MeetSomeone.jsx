@@ -24,11 +24,11 @@ export default function MeetSomeone() {
         setInvited((prev) => (prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name]));
 
     return (
-        <section className="min-h-screen w-full flex overflow-hidden font-sans text-white">
+        <section className="min-h-screen bg-primary w-full flex overflow-hidden font-sans text-white">
             <main className="grid grid-cols-1 lg:grid-cols-2 min-h-screen w-full">
                 {/* LEFT column: stays hero */}
                 <div
-                    className="relative flex items-center justify-center px-8 lg:px-24  bg-repeat"
+                    className="relative flex items-center justify-center px-8 lg:px-24 bg-repeat bg-gradient-purple-dark"
                     style={{
                         backgroundImage: "url('/assets/1.png')",
                         backgroundRepeat: "repeat",        // 🔁 repeat enabled
@@ -46,7 +46,7 @@ export default function MeetSomeone() {
                         >
                             <img src="/assets/Coin-token.svg" alt="" className="w-6 h-6" />
                             <div className="text-sm font-semibold">{coins.toLocaleString()}</div>
-                            <button className="ml-2 text-white/80">+</button>
+                            <span className="ml-2 text-white/80">+</span>
                         </Button>
                     </div>
 
@@ -64,10 +64,12 @@ export default function MeetSomeone() {
                 {/* RIGHT column: CHANGES based on `mode` */}
                 <div className="relative overflow-hidden">
                     {/* Right background */}
+
                     <div className="absolute inset-0 -z-10">
                         <Image src="/assets/5471985.jpg" alt="right-bg" fill style={{ objectFit: "cover" }} priority />
-                        <div className="absolute inset-0 bg-[#0D0048]/40 -z-10" />
+                        <div className="absolute inset-0 -z-10" />
                     </div>
+                    <div className="absolute inset-0 z-[1] bg-[#0D0048]/50" />
 
                     {/* Top centered controls: icons + Solo/Squad */}
                     <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4">
@@ -123,7 +125,7 @@ export default function MeetSomeone() {
                                     <img src="/assets/video-on.svg" alt="" className="w-8 h-8 opacity-50" />
                                     <span>140,567 meeting now</span>
                                 </div>
-                                <img src="" alt="" />
+                                {/* <img src="" alt="" /> */}
 
                                 <Button
                                     variant="primary"

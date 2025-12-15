@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #4E0093;
+    --foreground: #ffffff;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass-effect {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(30px);
+    border: 2px solid rgba(147, 51, 234, 0.4);
+  }
+
+  .text-gradient-gold {
+    background-image: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background-color: white;
+    border-radius: 9999px;
+    animation: twinkle linear infinite;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  }
+
+  .pattern-bg {
+    background-image: url('/assets/1.png');
+    background-size: 150px 150px;
+    background-repeat: repeat;
+    background-position: center;
+    opacity: 0.08;
+    animation: patternFloat 20s linear infinite;
+  }
 }

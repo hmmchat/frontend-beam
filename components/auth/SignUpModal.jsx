@@ -126,7 +126,7 @@ export default function SignUpModal({ isOpen, onClose }) {
                 variant="outline2"
                 fullWidth
                 icon={<span className=''>📱</span>}
-                // onClick={() => setStep('mobile')}
+                onClick={() => setStep('mobile')}
                 className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md opacity-75'
               >
                 Connect with Mobile

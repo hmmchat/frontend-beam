@@ -14,9 +14,9 @@ export default function Home() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   return (
-    <div className="relative h-screen overflow-hidden bg-primary">
+    <div className="relative h-screen bg-basecolor">
       {/* Header */}
-      <header className="md:absolute static top-0 left-0 right-0 z-20 flex justify-between items-center px-6 md:px-12 py-4 md:py-6">
+      <header className="md:absolute static top-0 left-0 right-0 z-20 flex justify-between items-center px-4 md:px-12 py-2 md:py-6">
         <Button
           variant="outline"
           width="hex"
@@ -26,103 +26,108 @@ export default function Home() {
           Sign Up
         </Button>
 
-        <button className="w-12 h-12 rounded-full glass-effect flex items-center justify-center text-white hover:bg-white/15 hover:border-white/30 hover:scale-105 transition-all duration-300">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+        <button className="hidden md:block w-16 h-16 rounded-full  flex items-center justify-center text-white hover:bg-white/15 hover:border-white/30 hover:scale-105 transition-all duration-300">
+          <img src="assets/profile-no-setup.svg" alt="" className='w-14 h-14' />
         </button>
       </header>
 
       {/* Main Layout */}
-      <main className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+      <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
         {/* LEFT SIDE */}
-        <div
-          className="relative flex items-center justify-center px-6 md:px-15 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark"
-          style={{
-            backgroundImage: 'url(/assets/1.png)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: 'auto',
-          }}
-        >
-          <div className="relative z-[2] text-center">
+        <div className="relative flex items-center justify-center px-6 md:px-15 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark">
+          {/* Background Image with Opacity */}
+          <div
+            className="absolute inset-0 z-0 "
+            style={{
+              backgroundImage: 'url(/assets/mb.jpg)',
+              backgroundRepeat: 'repeat',
+              backgroundSize: 'cover',
+            }}
+          />
+
+          <div className="relative z-10 text-center flex flex-col items-center my-auto">
             <img
               src="/assets/Logo.svg"
               alt="Logo"
-              className="mx-auto w-[160px] md:w-auto mb-6"
+              className="mx-auto w-[120px] md:w-auto md:mb-6 mb-2"
             />
-            <p className="text-xl md:text-[32px] text-white leading-relaxed font-medium opacity-95">
+            <p className="text-lg md:mb-0 mb-2 md:leading-[1.5] leading-tight md:text-[22px] text-white leading-relaxed font-medium opacity-95 font-[family-name:var(--font-otomanopee)]">
               Meet someone here,
               <br />
               Not sure who, but someone
             </p>
+            <div className="inline-flex gap-2 font-[family-name:var(--font-otomanopee)]">
+              <img src="/assets/video-on.svg" alt="" className="w-6 h-6" />
+              <span>140,567 meeting now</span>
+            </div>
           </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="relative flex items-center justify-center px-6 md:px-15 py-16 md:py-20 overflow-hidden">
+        <div className="relative flex items-center justify-center px-6 md:px-15 py-16 md:py-20 overflow-hidden ">
           {/* Background */}
           <div
             className="absolute inset-0 z-0 md:animate-zoom-slow"
             style={{
-              backgroundImage: 'url(/assets/5471985.jpg)',
+              backgroundImage: 'url(/assets/image50.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
+              backgroundRepeat: 'repeat',
+              zIndex: 1,
             }}
           />
-
-          {/* Overlay */}
-          <div className="absolute inset-0 z-[1] bg-[#0D0048]/50" />
-
           {/* Top Icons */}
-          <div className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 flex gap-3 z-[3]">
-            <button className="w-12 h-12 rounded-full glass-effect flex items-center justify-center text-white hover:bg-white/20 hover:scale-105 transition">
-              <IoPersonCircleOutline className="text-2xl" />
-            </button>
-            <button className="w-12 h-12 rounded-full glass-effect flex items-center justify-center text-white hover:bg-white/20 hover:scale-105 transition">
-              <IoTimeOutline className="text-2xl" />
-            </button>
-          </div>
 
           {/* Pattern */}
-          <div className="absolute inset-0 z-[1] pattern-bg" />
 
           {/* Action Card */}
-          <div className="relative z-[2] w-full max-w-[500px] flex flex-col gap-8 md:mt-60 mt-16">
+          <div className="relative z-[2] w-full max-w-[500px] flex flex-col gap-8 md:mt-130 mt-16 h-full justify-between pb-60">
             {/* Stats */}
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 text-white/90 text-sm font-medium">
-                <span className="w-3 h-3 rounded-full bg-green-500" />
-                <span>140,567 meeting now</span>
-              </div>
-            </div>
+
 
             {/* CTA */}
             <Button
-              variant="primary"
               fullWidth
-              className="border border-white"
+              className="w-full border-1 border-white md:py-6 md:px-32 py-10  font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4"
               onClick={() => setIsSignUpOpen(true)}
             >
+              <div className="w-8 h-8 md:opacity-70 opacity-100 bg-[#4E0093]/50  rounded-full border-1 border-white flex items-center justify-center">
+                <img src="/assets/video-on.svg" alt="" className="w-6 h-6" />
+              </div>
               Meet that someone
             </Button>
+            <div className='flex items-center justify-center gap-2 border-2 border-white/50 max-w-[250px]  w-full mx-auto rounded-[1.3rem] bg-black/30'>
+              <div className='flex gap-2 p-4  border-white'>
+                <img src="/assets/gender-intersex.svg" alt="" className='w-5 h-5 md:w-6 md:h-6 opacity-60 ' />
+                <span>Both</span>
+              </div>
+              <div className='flex gap-2 p-4 border-l border-white/40'>
+                <span>Location</span>
+                <img src="/assets/location-pin.svg" alt="" className='w-5 h-5 md:w-6 md:h-6 opacity-60' />
+              </div>
+
+            </div>
 
             {/* Filters */}
-            <div className="flex flex-row md:flex-row gap-0 pt-6 border-t border-white/10">
+            {/* <div className="font-[family-name:var(--font-otomanopee)] flex flex-row items-center justify-center gap-0 w-[95%] md:w-[80%] mx-auto border border-white/30 rounded-[20px] overflow-hidden mt-auto bg-black/30">
               <button
                 onClick={() => setIsGenderModalOpen(true)}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-primary border-2 border-purple-500/80 rounded-l-[10px] border-r-0 text-white font-semibold hover:shadow-lg transition"
+                className="flex-1 flex items-center justify-center w-full gap-1 md:gap-2 px-3 md:px-6 py-3 md:py-4 bg-transparent text-white/80 text-sm md:text-base font-medium hover:bg-white/10 transition"
               >
+                <img src="/assets/gender-intersex.svg" alt="" className='w-5 h-5 md:w-6 md:h-6 opacity-60' />
                 Both
               </button>
 
+              <div className="w-px h-10 md:h-12 bg-white/30"></div>
+
               <button
                 onClick={() => setIsLocationModalOpen(true)}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-white/8 border-2 border-purple-500/30 rounded-r-[10px] border-l-0 text-white/70 font-semibold hover:bg-white/12 hover:text-white transition"
+                className="flex-1 flex items-center justify-center w-full gap-1 md:gap-2 px-3 md:px-6 py-3 md:py-4 bg-transparent text-white/80 text-sm md:text-base font-medium hover:bg-white/10 transition"
               >
                 Location
+                <img src="/assets/location-pin.svg" alt="" className='w-5 h-5 md:w-6 md:h-6' />
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>

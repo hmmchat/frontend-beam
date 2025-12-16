@@ -1,4 +1,12 @@
 import "./globals.css";
+import localFont from 'next/font/local';
+
+const otomanopeeOne = localFont({
+  src: '../public/fonnts.com-OtomanopeeOne-Regular.ttf',
+  variable: '--font-otomanopee',
+  weight: '400',
+  display: 'swap',
+});
 
 export const metadata = {
   title: "Hmm..",
@@ -10,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className={otomanopeeOne.variable}>
       <body>
         {children}
       </body>

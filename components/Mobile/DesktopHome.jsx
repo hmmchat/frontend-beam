@@ -8,7 +8,7 @@ import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
 import { IoPersonCircleOutline, IoTimeOutline } from 'react-icons/io5';
 
-export default function Home() {
+export default function DesktopHome() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function Home() {
                     Sign Up
                 </Button>
 
-                <button className="hidden md:block w-16 h-16 rounded-full  flex items-center justify-center text-white hover:bg-white/15 hover:border-white/30 hover:scale-105 transition-all duration-300">
+                <button className="w-16 h-16 rounded-full  flex items-center justify-center text-white hover:bg-white/15 hover:border-white/30 hover:scale-105 transition-all duration-300">
                     <img src="assets/profile-no-setup.svg" alt="" className='w-14 h-14' />
                 </button>
             </header>
@@ -84,11 +84,12 @@ export default function Home() {
 
                     {/* Pattern */}
 
+
                     {/* Action Card */}
                     <div className="relative z-[2] w-full max-w-[500px] flex flex-col gap-8 md:mt-130 mt-16 h-full justify-between pb-60">
                         {/* Stats */}
-                        <div className=" text-center mt-auto flex items-center justify-between w-full ml-auto">
-                            <div className=" ml-40 flex items-center gap-2 text-white/90 text-xs font-[family-name:var(--font-otomanopee)]">
+                        <div className="text-center mt-auto flex items-center justify-between w-full ml-auto">
+                            <div className="ml-40 flex items-center gap-2 text-white/90 text-xs font-[family-name:var(--font-otomanopee)]">
                                 <img src="/assets/video-on.svg" alt="" className="w-6 h-6" />
                                 <span>140,567 meeting now</span>
                             </div>
@@ -97,6 +98,7 @@ export default function Home() {
 
                         {/* CTA */}
                         <Button
+
                             fullWidth
                             className="w-full border-1 border-white py-6 px-32 font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4"
                             onClick={() => setIsSignUpOpen(true)}

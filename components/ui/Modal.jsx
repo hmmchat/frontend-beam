@@ -7,7 +7,7 @@ export default function Modal({
   onClose,
   children,
   className = '',
-  maxWidth = '950px',
+  maxWidth = '125vh',
   maxHeight = '100vh',
 }) {
   useEffect(() => {
@@ -19,51 +19,50 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 md:bg-[#0D0048]/50 flex items-center justify-center z-[10] md:p-5 md:animate-fade-in"
+      className="fixed inset-0  flex items-center justify-center z-[10] md:p-5 md:animate-fade-in"
       onClick={onClose}
     >
       <div
         className={`
-          relative w-screen h-screen overflow-y-auto
-          border-2 border-[#35047D]
-          animate-slide-up
-          scrollbar-thin scrollbar-track-white/5
-          scrollbar-thumb-purple-500/50 hover:scrollbar-thumb-purple-500/70
+    relative w-screen h-screen overflow-y-auto animate-slide-up z-12
 
-          /* MOBILE */
-    
-          rounded-none p-10 bg-[#4E0093]
-          absolute inset-0
-         
-          bg-cover bg-center bg-no-repeat
-           bg-opacity-10
-      
+    /* MOBILE */
+    bg-[#4E0093]
+    p-10 rounded-none absolute inset-0
 
-          /* DESKTOP */
-          md:w-full md:h-auto
-          md:max-h-[85vh]
-          md:rounded-[32px]
-          md:p-12
-          md:bg-[#4E009399]
-          md:bg-none
+    /* DESKTOP – APPLE GLASS */
+    md:w-full md:h-auto
 
-          ${className}
-        `}
+    md:p-12
+    md:rounded-[32px]
+   
+
+    md:backdrop-blur-[2px]
+    md:backdrop-saturate-[120%]
+    md:bg-[#4E0093]/80 
+    md:border md:border-white/25
+    md:shadow-[0_30px_90px_rgba(0,0,0,0.45)]
+  `}
         style={{ maxWidth, maxHeight }}
         onClick={(e) => e.stopPropagation()}
       >
+
         <div
           className="
       absolute inset-0
-      bg-[url('/assets/1.png')]
+      bg-[url('/test.png')]
       bg-cover bg-center bg-repeat
-      opacity-20
+      opacity-50
       pointer-events-none
     "
         />
         {children}
       </div>
+      <div className='absolute inset-0 bg-[#02004A]/70 -z-50 pointer-events-none'></div>
+
+
     </div>
+
 
   );
 }

@@ -108,26 +108,7 @@ export default function Home() {
 
                         </div>
 
-                        {/* Filters */}
-                        {/* <div className="font-[family-name:var(--font-otomanopee)] flex flex-row items-center justify-center gap-0 w-[95%] md:w-[80%] mx-auto border border-white/30 rounded-[20px] overflow-hidden mt-auto bg-black/30">
-              <button
-                onClick={() => setIsGenderModalOpen(true)}
-                className="flex-1 flex items-center justify-center w-full gap-1 md:gap-2 px-3 md:px-6 py-3 md:py-4 bg-transparent text-white/80 text-sm md:text-base font-medium hover:bg-white/10 transition"
-              >
-                <img src="/assets/gender-intersex.svg" alt="" className='w-5 h-5 md:w-6 md:h-6 opacity-60' />
-                Both
-              </button>
 
-              <div className="w-px h-10 md:h-12 bg-white/30"></div>
-
-              <button
-                onClick={() => setIsLocationModalOpen(true)}
-                className="flex-1 flex items-center justify-center w-full gap-1 md:gap-2 px-3 md:px-6 py-3 md:py-4 bg-transparent text-white/80 text-sm md:text-base font-medium hover:bg-white/10 transition"
-              >
-                Location
-                <img src="/assets/location-pin.svg" alt="" className='w-5 h-5 md:w-6 md:h-6' />
-              </button>
-            </div> */}
                     </div>
                 </div>
             </main>

@@ -71,14 +71,11 @@ export default function SignUpModal({ isOpen, onClose }) {
     <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="min-h-full sm:rounded-2xl rounded-none ">
         <div
-          className="
-    flex flex-col justify-center items-center
-   h-full
-    text-center
-    md:overflow-y-auto
-
-    md:block md:min-h-0
-  "
+          className="flex flex-col justify-center items-center
+          h-full
+          text-center
+          md:overflow-y-auto
+          md:block md:min-h-0"
         >
 
 
@@ -191,7 +188,7 @@ export default function SignUpModal({ isOpen, onClose }) {
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
                     className="w-10 h-12 lg:w-14 lg:h-14
-                             border-2 border-purple-500/30 bg-[#1D024D]
+                             border-2 border-purple-500/30
                              rounded-xl lg:rounded-[14px]
                              text-white text-lg lg:text-2xl font-semibold text-center
                              focus:outline-none"
@@ -229,9 +226,9 @@ export default function SignUpModal({ isOpen, onClose }) {
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="peer sr-only"
+                  className="peer sr-only opacity-50"
                 />
-                <span className="min-w-[20px] h-5 bg-white/10 border-2 rounded-md relative peer-checked:bg-gradient-primary peer-checked:border-purple-500 after:content-['✓'] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:text-white after:text-sm after:font-bold after:opacity-0 peer-checked:after:opacity-100 flex-shrink-0"></span>
+                <span className="min-w-[16px] h-4 bg-white/10 border-2 border-white/35 rounded-sm relative peer-checked:bg-green-600 peer-checked:border-white peer-checked:shadow-[0_0_20px_8px_rgba(34,197,94,0.4),0_0_40px_15px_rgba(34,197,94,0.2),0_0_60px_25px_rgba(34,197,94,0.1)] after:content-['✓'] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:text-white after:text-sm after:font-bold after:opacity-0 peer-checked:after:opacity-100 flex-shrink-0 transition-all duration-300"></span>
 
                 <span className="text-white/70 md:text-md text-[12.2px] leading-relaxed ">
                   I certify I have read and agree to the{' '}

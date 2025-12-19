@@ -12,7 +12,6 @@ const MyComponent = () => {
       <div className='block md:hidden'>
         <MobileHome />
       </div>
-
     </div>
   )
 }

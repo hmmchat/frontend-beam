@@ -17,7 +17,7 @@ export default function Onboarding() {
   const fileRef = useRef(null); // <-- added
 
   // default avatar path (public)
-  const defaultAvatar = "/avatar.jpg";
+  const defaultAvatar = "/assets/avtar.png";
 
   // prevent body scroll when modal open
   useEffect(() => {
@@ -78,29 +78,29 @@ export default function Onboarding() {
   const numericOnly = (value, maxLen = 4) => value.replace(/\D/g, "").slice(0, maxLen);
 
   return (
-    <div className="min-h-screen w-full  relative overflow-hidden font-sans text-white">
+    <div className="min-h-screen w-full relative overflow-hidden font-sans text-white">
       {/* Background */}
       <div className="absolute inset-0 -z-10 opacity-95">
-        <Image src="/assets/1.png" alt="stars" fill style={{ objectFit: "cover" }} priority />
+        <Image src="/assets/mb.jpg" alt="stars" fill style={{ objectFit: "cover" }} priority />
       </div>
 
       <div className="container mx-auto py-12 px-6">
-        <main className="grid grid-cols-1 lg:grid-cols-2 min-h-[70vh] gap-8 items-center">
+        <main className="grid grid-cols-1 lg:grid-cols-2 min-h-[70vh] gap-8 ">
           {/* Left */}
-          <div className="bg-gradient-purple-dark flex items-center justify-center text-center px-6 lg:px-16">
-            <div>
-              {/* <h1 className="text-[96px] lg:text-[120px] font-extrabold tracking-tight text-yellow-300 leading-none">HMM..</h1> */}
-              <img src="/assets/Logo.svg" alt="" className="w-44 mx-auto md:mb-2" />
-              <p className="md:text-2xl text-sm md:mt-3 md:font-medium opacity-95">Okeeyy! Let's get you started,</p>
-              <p className="md:text-2xl text-sm md:font-medium opacity-95">Just get done with the itsy bitsy stuff first</p>
+          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto  ">
+            <div className="mx-auto ml-10">
+
+              <img src="/assets/Logo.svg" alt="" className="w-64 mx-auto md:mb-2" />
+              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95">Okeeyy! Let's get you started,</p>
+              <p className="md:text-xl text-sm md:font-medium opacity-95">Just get done with the itsy bitsy stuff first</p>
             </div>
           </div>
 
           {/* Right - Form */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-lg rounded-2xl p-6">
+          <div className="flex justify-center  ">
+            <div className="w-full max-w-lg rounded-2xl p-6 mx-auto ml-30">
               <div className="flex flex-col items-center mb-6">
-                <div className="relative w-28 h-28 rounded-full border-4 border-white/40 overflow-hidden shadow-lg">
+                <div className="relative w-30 h-30 rounded-full border-white overflow-hidden shadow-lg">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="avatar preview" className="w-full h-full object-cover" />
                   ) : (
@@ -108,10 +108,15 @@ export default function Onboarding() {
                     // but next/image with fill is also ok. keeping <img> for parity.
                     <img src={defaultAvatar} alt="avatar" className="w-full h-full object-cover" />
                   )}
+                  <img
+                    src="/assets/camera.svg"
+                    alt="overlay"
+                    className="justify-center text-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 object-contain"
+                  />
                 </div>
 
                 <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm cursor-pointer underline" onClick={() => fileRef.current?.click()}>
+                  <label className="text-sm cursor-pointer " onClick={() => fileRef.current?.click()}>
                     Upload profile picture
                   </label>
                   <input
@@ -146,7 +151,7 @@ export default function Onboarding() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Poseidon"
                     variant="outline"
-                    className="w-full bg-transparent border-2 border-white/20 rounded-2xl px-5 py-3 text-white placeholder-white/60 focus:outline-none focus:border-white/60"
+                    className="w-full bg-[#0A032D]/50 border-2 border-white/20 rounded-2xl px-5 py-3 text-white placeholder-white/60 focus:outline-none focus:border-white/60"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-2">{errors.name}</div>}
                 </div>
@@ -160,7 +165,7 @@ export default function Onboarding() {
                       onChange={(e) => setDob((d) => ({ ...d, day: numericOnly(e.target.value, 2) }))}
                       placeholder="Day"
                       inputMode="numeric"
-                      className="bg-transparent border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
+                      className="bg-[#0A032D]/50 border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
                     />
                     <input
                       name="month"
@@ -168,7 +173,7 @@ export default function Onboarding() {
                       onChange={(e) => setDob((d) => ({ ...d, month: numericOnly(e.target.value, 2) }))}
                       placeholder="Month"
                       inputMode="numeric"
-                      className="bg-transparent border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
+                      className="bg-[#0A032D]/50 border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
                     />
                     <input
                       name="year"
@@ -176,7 +181,7 @@ export default function Onboarding() {
                       onChange={(e) => setDob((d) => ({ ...d, year: numericOnly(e.target.value, 4) }))}
                       placeholder="Year"
                       inputMode="numeric"
-                      className="bg-transparent border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
+                      className="bg-[#0A032D]/50 border-2 border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:outline-none"
                     />
                   </div>
                   {(errors.day || errors.month || errors.year) && (
@@ -221,7 +226,7 @@ export default function Onboarding() {
                   <button
                     type="button"
                     onClick={openSignIn}
-                    className="bg-transparent border-2 border-white/30 rounded-full px-8 py-3 text-white text-lg hover:brightness-110"
+                    className="bg-[#0A032D]/50 border-2 border-white/30 rounded-full px-8 py-3 text-white text-lg hover:brightness-110"
                   >
                     Les gooo!
                   </button>
@@ -233,7 +238,7 @@ export default function Onboarding() {
       </div>
 
       {/* center divider */}
-      <div className="hidden lg:block absolute left-1/2 top-16 bottom-16 w-px bg-white/10 -translate-x-1/2" />
+      <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-white/40 -translate-x-1/2" />
 
       {/* Modal mounts only when showSignIn is true */}
       {showSignIn && <SignInModal isOpen={showSignIn} onClose={closeSignIn} />}

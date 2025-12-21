@@ -19,13 +19,13 @@ export default function Inbox() {
   ];
 
   return (
-    <div className="h-screen w-full relative text-white font-sans overflow-hidden">
+    <div className="max-h-screen w-full relative text-white font-sans overflow-hidden">
 
       {/* Background */}
       <div
         className="absolute inset-0 -z-10"
         style={{
-          backgroundImage: "url('/assets/1.png')",
+          backgroundImage: "url('/assets/mb.jpg')",
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
         }}
@@ -35,7 +35,7 @@ export default function Inbox() {
 
 
       {/* Page Container */}
-      <div className="pt-16 md:pt-24 px-4 md:px-12 lg:px-24 flex flex-col">
+      <div className="pt-16  px-4 md:px-12 lg:px-24 flex flex-col max-w-6xl mx-auto">
 
         {/* Title */}
         <div className="flex items-center justify-between gap-3 text-2xl md:text-3xl font-semibold mb-4">
@@ -43,14 +43,14 @@ export default function Inbox() {
             <IoChevronBack className="text-2xl md:text-3xl" />
             <span>Inbox</span>
           </div>
-          <img src="/assets/Logo.svg" alt="Logo" className="w-24 md:w-auto" />
+          <img src="/assets/Logo.svg" alt="Logo" className="w-24 md:w-32" />
         </div>
         {/* <div className="absolute top-4 right-4 md:top-6 md:right-10 z-10">
         
         </div> */}
 
         {/* Main Card */}
-        <div variant="outline" className="w-full md:h-[70vh] border border-white/20 rounded-2xl md:rounded-3xl backdrop-blur-sm overflow-hidden flex flex-col md:flex-row">
+        <div variant="outline" className="w-full md:h-[78vh] border-4 border-white/50 rounded-2xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row bg-transparent">
 
           {/* CHAT LIST */}
           <div
@@ -60,7 +60,7 @@ export default function Inbox() {
             <h2 className="text-lg md:text-xl font-semibold mb-4">Chats</h2>
 
             {/* Tabs */}
-            <div className="flex gap-6 text-sm mb-4">
+            <div className="flex gap-6 text-sm mb-4 border-b border-white/20 gap-20 justify-center">
               <button className="font-semibold border-b-2 border-white pb-1">
                 Friends
               </button>
@@ -73,7 +73,7 @@ export default function Inbox() {
             {/* Search */}
             <input
               placeholder="Search"
-              className="mb-4 w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm placeholder-white/50"
+              className="mb-4 w-full bg-black/30 border border-white/50 focus:border-white/50   rounded-xl px-4 py-3 text-sm placeholder-white/50"
             />
 
             {/* Chat List */}
@@ -82,7 +82,7 @@ export default function Inbox() {
                 <button
                   key={i}
                   onClick={() => setActiveChat(name)}
-                  className="flex items-center gap-4 border-b border-white/10 pb-3 text-left"
+                  className="flex items-center gap-4 border-b-2 border-white/20 pb-3 text-left"
                 >
                   <div className="relative w-12 h-12 rounded-full overflow-hidden">
                     <Image src="/avatar1.jpg" alt={name} fill />
@@ -100,6 +100,9 @@ export default function Inbox() {
             </div>
           </div>
 
+          {/* Vertical Divider */}
+          <div className="hidden md:block w-px bg-white/20"></div>
+
           {/* CHAT VIEW */}
           <div
             className={`md:w-[60%] w-full flex flex-col
@@ -116,12 +119,12 @@ export default function Inbox() {
                 </button>
 
                 <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                  <Image src="/avatar1.jpg" alt="User" fill />
+                  <Image src="/assets/avatar1.png" alt="User" fill />
                 </div>
                 <span className="font-semibold">{activeChat}</span>
               </div>
 
-              <IoVideocamOutline className="text-2xl" />
+              <IoVideocamOutline className="text-3xl" />
             </div>
 
             {/* Request Banner */}
@@ -147,16 +150,37 @@ export default function Inbox() {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-white/20 relative">
+            <div className="border-t h-28 border-white/40 relative flex items-center gap-4 px-7">
               <input
                 disabled
-                placeholder="Send a gift to start chatting 🎁"
-                className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-sm placeholder-white/40"
+                placeholder="Type Message"
+                className="flex-1  bg-black/30 border-2  border-white/30 rounded-xl px-6 py-4 text-sm placeholder-white/50 focus:outline-none focus:border-white/50"
               />
-              <button className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-pink-500 text-2xl">
-                🎁
+
+              {/* Vertical Divider */}
+              <div className="h-full w-px bg-white/30"></div>
+
+              <button className="relative w-16 h-16 flex items-center justify-center rounded-full bg-pink-700">
+                {/* Circle background */}
+                <Image 
+                  src="/circle.png" 
+                  alt="circle" 
+                  width={64} 
+                  height={64}
+                  className="absolute inset-0"
+                />
+                {/* Gift icon */}
+                <Image 
+                  src="/giftboc.png" 
+                  alt="gift" 
+                  width={32} 
+                  height={32}
+                  className="relative z-10"
+                />
               </button>
             </div>
+
+
           </div>
 
         </div>

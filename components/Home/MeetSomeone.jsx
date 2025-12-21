@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
-import GenderModal from '@/components/modals/GenderModal';
+import GenderModal from '@/components/modals/GenderModal'; 
 import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
+import FilterButtons from '@/components/ui/FilterButtons';
 import { IoTimeOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 
 export default function DesktopHome() {
@@ -126,25 +127,12 @@ export default function DesktopHome() {
                                 Meet that someone
                             </Button>
 
-                            <div className="flex w-[80%] mx-auto border border-white/30 rounded-[20px] overflow-hidden mt-20 bg-black/30 mb-20">
-                                <button
-                                    onClick={() => setIsGenderModalOpen(true)}
-                                    className="flex-1 flex gap-2 px-6 py-4 text-white/80 hover:bg-white/10"
-                                >
-                                    <img src="/assets/gender-intersex.svg" className="w-6 h-6 opacity-60" />
-                                    Both
-                                </button>
 
-                                <div className="w-px bg-white/30" />
-
-                                <button
-                                    onClick={() => setIsLocationModalOpen(true)}
-                                    className="flex-1 flex gap-2 px-6 py-4 text-white/80 hover:bg-white/10"
-                                >
-                                    Location
-                                    <img src="/assets/location-pin.svg" className="w-6 h-6" />
-                                </button>
-                            </div>
+                            <FilterButtons 
+                              onGenderClick={() => setIsGenderModalOpen(true)}
+                              onLocationClick={() => setIsLocationModalOpen(true)}
+                              className="mt-20 mb-20"
+                            />
                         </div>
                     ) : (
                         /* ===== SQUAD VIEW (ADDED) ===== */

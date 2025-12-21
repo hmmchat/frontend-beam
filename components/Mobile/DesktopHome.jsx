@@ -6,6 +6,7 @@ import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
+import FilterButtons from '@/components/ui/FilterButtons';
 import { IoPersonCircleOutline, IoTimeOutline } from 'react-icons/io5';
 
 export default function DesktopHome() {
@@ -107,26 +108,13 @@ export default function DesktopHome() {
                             Meet that someone
                         </Button>
 
+
                         {/* Filters */}
-                        <div className="font-[family-name:var(--font-otomanopee)] flex flex-row items-center justify-center gap-0 w-[80%] mx-auto border border-white/30 rounded-[20px] overflow-hidden mt-auto bg-black/30">
-                            <button
-                                onClick={() => setIsGenderModalOpen(true)}
-                                className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white/80 font-medium hover:bg-white/10 transition"
-                            >
-                                <img src="/assets/gender-intersex.svg" alt="" className='w-6 h-6 opacity-60' />
-                                Both
-                            </button>
-
-                            <div className="w-px h-12 bg-white/30"></div>
-
-                            <button
-                                onClick={() => setIsLocationModalOpen(true)}
-                                className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white/80 font-medium hover:bg-white/10 transition"
-                            >
-                                Location
-                                <img src="/assets/location-pin.svg" alt="" className='w-6 h-6 ' />
-                            </button>
-                        </div>
+                        <FilterButtons 
+                          onGenderClick={() => setIsGenderModalOpen(true)}
+                          onLocationClick={() => setIsLocationModalOpen(true)}
+                          className="mt-auto"
+                        />
                     </div>
                 </div>
             </main>

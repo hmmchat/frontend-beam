@@ -24,7 +24,7 @@ export default function Modal({
     >
       <div
         className={`
-    relative w-screen h-screen overflow-y-auto animate-slide-up z-12
+    relative h-screen overflow-y-auto overflow-x-hidden  animate-slide-up z-12
 
     /* MOBILE */
     bg-[#4E0093]

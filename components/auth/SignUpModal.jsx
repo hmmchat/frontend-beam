@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import ErrorAlert from '../ui/ErrorAlert';
 
 export default function SignUpModal({ isOpen, onClose }) {
   const [step, setStep] = useState('options');
@@ -20,7 +21,7 @@ export default function SignUpModal({ isOpen, onClose }) {
 
   const handleGetOTP = () => {
     if (!mobileNumber || mobileNumber.length < 10) {
-      setError('Invalid! Mind entering the correct number please.');
+      setError('teeeee');
       return;
     }
     setError('');
@@ -74,7 +75,7 @@ export default function SignUpModal({ isOpen, onClose }) {
           className="flex flex-col justify-center items-center
           h-full
           text-center
-          md:overflow-y-auto
+      
           md:block md:min-h-0"
         >
 
@@ -155,13 +156,19 @@ export default function SignUpModal({ isOpen, onClose }) {
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
                 label="Enter Mobile Number"
-                error={error}
               />
 
-              <div className="mt-6 flex justify-center lg:justify-start">
+              <ErrorAlert message={error ? "Hmmm! Mind entering the correct number please." : ""} />
+
+
+
+
+
+              <div className="mt-6 flex justify-center lg:justify-start ">
                 <Button
                   variant="outline2"
                   width="quarter"
+                  className='w-[120px] lg:w-auto text-xs lg:text-[15px]'
                   position="left"
                   onClick={handleGetOTP}
                 >
@@ -196,12 +203,13 @@ export default function SignUpModal({ isOpen, onClose }) {
                 ))}
               </div>
 
-              {error && (
-                <div className="flex items-center justify-center lg:justify-start gap-1.5 mt-3 text-red-500 text-xs lg:text-[13px] font-medium">
-                  <span>⚠</span>
-                  {error}
-                </div>
-              )}
+
+
+              <ErrorAlert message={error} />
+
+
+
+
 
               <div className="mt-6 flex justify-center lg:justify-start">
                 <Button

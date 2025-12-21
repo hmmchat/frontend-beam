@@ -51,14 +51,14 @@ export default function Home() {
                             alt="Logo"
                             className="mx-auto w-[120px] md:w-auto md:mb-6 mb-2"
                         />
-                        <p className="text-lg md:mb-0 mb-2 md:leading-[1.5] leading-tight md:text-[22px] text-white leading-relaxed font-medium opacity-95 font-[family-name:var(--font-otomanopee)]">
+                        <p className="text-sm md:mb-0 mb-2 md:leading-[1.5] leading-tight md:text-[22px] text-white leading-relaxed font-medium opacity-95 font-[family-name:var(--font-otomanopee)]">
                             Meet someone here,
                             <br />
                             Not sure who, but someone
                         </p>
                         <div className="inline-flex gap-2 font-[family-name:var(--font-otomanopee)]">
-                            <img src="/assets/video-on.svg" alt="" className="w-6 h-6" />
-                            <span>140,567 meeting now</span>
+                            <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
+                            <p className='text-xs'>140,567 meeting now</p>
                         </div>
                     </div>
                 </div>
@@ -88,7 +88,7 @@ export default function Home() {
                         {/* CTA */}
                         <Button
                             fullWidth
-                            className="w-full border-1 border-white md:py-6 md:px-32 py-10  font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4"
+                            className="w-full border-1 border-white md:py-6 md:px-32 py-8  font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4"
                             onClick={() => setIsSignUpOpen(true)}
                         >
                             <div className="w-8 h-8 md:opacity-70 opacity-100 bg-[#4E0093]/50  rounded-full border-1 border-white flex items-center justify-center">

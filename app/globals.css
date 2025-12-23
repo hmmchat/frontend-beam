@@ -56,12 +56,44 @@
   }
 
   @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-    20%, 40%, 60%, 80% { transform: translateX(4px); }
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+      transform: translateX(-4px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+      transform: translateX(4px);
+    }
   }
 
   .animate-shake {
     animation: shake 0.5s ease-in-out;
   }
+}
+
+
+
+.outfit-font {
+  font-family: var(--font-outfit), sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.outfit-font-light {
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 300;
+  font-style: light;
 }

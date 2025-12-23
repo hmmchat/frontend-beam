@@ -17,7 +17,7 @@ export default function Onboarding() {
   const fileRef = useRef(null); // <-- added
 
   // default avatar path (public)
-  const defaultAvatar = "/assets/avtar.png";
+  const defaultAvatar = "/assets/avatar1.png";
 
   // prevent body scroll when modal open
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function Onboarding() {
   const numericOnly = (value, maxLen = 4) => value.replace(/\D/g, "").slice(0, maxLen);
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden font-sans text-white">
+    <div className="min-h-screen w-full relative overflow-hidden outfit-font text-white">
       {/* Background */}
       <div className="absolute inset-0 -z-10 opacity-95">
         <Image src="/assets/mb.jpg" alt="stars" fill style={{ objectFit: "cover" }} priority />
@@ -91,14 +91,14 @@ export default function Onboarding() {
             <div className="mx-auto ml-10">
 
               <img src="/assets/Logo.svg" alt="" className="w-64 mx-auto md:mb-2" />
-              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95">Okeeyy! Let's get you started,</p>
-              <p className="md:text-xl text-sm md:font-medium opacity-95">Just get done with the itsy bitsy stuff first</p>
+              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95 outfit-font">Okeeyy! Let's get you started,</p>
+              <p className="md:text-xl text-sm md:font-medium opacity-95 outfit-font">Just get done with the itsy bitsy stuff first</p>
             </div>
           </div>
 
           {/* Right - Form */}
           <div className="flex justify-center  ">
-            <div className="w-full max-w-lg rounded-2xl p-6 mx-auto ml-30">
+            <div className="w-full max-w-lg rounded-2xl p-6 mx-auto md:ml-30">
               <div className="flex flex-col items-center mb-6">
                 <div className="relative w-30 h-30 rounded-full border-white overflow-hidden shadow-lg">
                   {avatarPreview ? (
@@ -116,7 +116,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm cursor-pointer " onClick={() => fileRef.current?.click()}>
+                  <label className="text-sm cursor-pointer outfit-font " onClick={() => fileRef.current?.click()}>
                     Upload profile picture
                   </label>
                   <input
@@ -144,7 +144,7 @@ export default function Onboarding() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="text-white text-sm mb-2 block">Enter Name</label>
+                  <label className="text-white text-sm mb-1 block">Enter Name</label>
                   <input
                     name="name"
                     value={name}
@@ -157,7 +157,7 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="text-white text-sm mb-2 block">Date of birth</label>
+                  <label className="text-white text-sm mb-1 block">Date of birth</label>
                   <div className="grid grid-cols-3 gap-3">
                     <input
                       name="day"
@@ -192,8 +192,8 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="text-white text-sm mb-3 block">Select gender</label>
-                  <div className="flex gap-3">
+                  <label className="text-white text-sm mb-1 block">Select gender</label>
+                  <div className="flex gap-1">
                     <button
                       type="button"
                       onClick={() => setGender("female")}

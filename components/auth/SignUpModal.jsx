@@ -70,7 +70,7 @@ export default function SignUpModal({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
-      <div className="min-h-full sm:rounded-2xl rounded-none ">
+      <div className="h-full sm:rounded-2xl rounded-none ">
         <div
           className="flex flex-col justify-center items-center
           h-full
@@ -82,7 +82,7 @@ export default function SignUpModal({ isOpen, onClose }) {
 
           {/* Header */}
           <div className="mb-10 px-4 lg:px-0 flex flex-col items-center justify-center text-center">
-            <img src="/assets/logo.svg" alt="" className='w-40 mx-auto md:mb-4' />
+            <img src="/assets/logo.svg" alt="" className='w-40 mx-auto ' />
             <p className="text-white text-lg lg:text-lg leading-relaxed font-medium">
               Meet that someone<br />
               immediately after Signing in
@@ -96,36 +96,29 @@ export default function SignUpModal({ isOpen, onClose }) {
               <Button variant="outline2"
                 fullWidth
                 icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" className='opacity-100'>
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#4285F4" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </svg>
+                  <img src="/assets/devicon_google.png" alt="" className='w-6 h-6' />
                 }
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md  opacity-80'
+                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md  py-6'
               >
                 Connect with Google
               </Button>
 
               <Button variant="outline2"
                 fullWidth icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
+                  <img src="/assets/logos_facebook.png" alt="" className='w-6 h-6 ' />
                 }
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md opacity-75 text-lg 
- '
-
+                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
               > Connect with Facebook
               </Button>
 
               <Button
                 variant="outline2"
                 fullWidth
-                icon={<span className=''>📱</span>}
+                icon={
+                  <img src="/assets/meteor-icons_mobile.png" alt="" className='w-6 h-6' />
+                }
                 onClick={() => setStep('mobile')}
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md opacity-75'
+                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
               >
                 Connect with Mobile
               </Button>
@@ -139,7 +132,7 @@ export default function SignUpModal({ isOpen, onClose }) {
 
               <button
                 type="button"
-                className="text-white/50 text-sm lg:text-[15px] p-3 hover:text-white transition-colors"
+                className="text-white text-sm pt-2 hover:text-white transition-colors outfit-font text-lg"
                 onClick={() => setShowMoreOptions(prev => !prev)}
               >
                 {showMoreOptions ? 'Less options' : 'More options'}
@@ -149,10 +142,10 @@ export default function SignUpModal({ isOpen, onClose }) {
 
           {/* MOBILE NUMBER */}
           {step === 'mobile' && (
-            <div className="mb-8 text-left px-4 lg:px-40">
+            <div className=" text-left px-4 lg:px-60 py-18 outfit-font">
               <Input
                 type="tel"
-                placeholder="+91 8797967858"
+                placeholder="+91 879-7967-858"
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
                 label="Enter Mobile Number"
@@ -160,15 +153,11 @@ export default function SignUpModal({ isOpen, onClose }) {
 
               <ErrorAlert message={error ? "Hmmm! Mind entering the correct number please." : ""} />
 
-
-
-
-
-              <div className="mt-6 flex justify-center lg:justify-start ">
+              <div className="mt-8 mb-8 flex justify-center lg:justify-start ">
                 <Button
                   variant="outline2"
                   width="quarter"
-                  className='w-[120px] lg:w-auto text-xs lg:text-[15px]'
+                  className='w-[120px] lg:w-[200px] text-xs lg:text-[15px]'
                   position="left"
                   onClick={handleGetOTP}
                 >
@@ -180,8 +169,8 @@ export default function SignUpModal({ isOpen, onClose }) {
 
           {/* OTP */}
           {step === 'otp' && (
-            <div className="mb-8 text-left px-4 lg:px-20">
-              <p className="text-white/90 text-sm font-medium mb-4">
+            <div className="mb-8 text-left px-4 lg:px-40 py-18 outfit-font">
+              <p className="text-white/90 text-sm font-medium max-w-[200px] mb-4">
                 Enter OTP
               </p>
 
@@ -194,27 +183,23 @@ export default function SignUpModal({ isOpen, onClose }) {
                     maxLength="1"
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
+
                     className="w-10 h-12 lg:w-14 lg:h-14
-                             border-2 border-purple-500/30
+                             border-2 border-white/60
                              rounded-xl lg:rounded-[14px]
                              text-white text-lg lg:text-2xl font-semibold text-center
-                             focus:outline-none"
+                             focus:outline-none bg-[#0A032D]/70 font-[family-name:var(--font-otomanopee)]"
                   />
                 ))}
               </div>
 
-
-
               <ErrorAlert message={error} />
-
-
-
-
 
               <div className="mt-6 flex justify-center lg:justify-start">
                 <Button
-                  variant="secondary"
+                  variant="outline2"
                   width="quarter"
+                  className='w-[120px] lg:w-[210px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80 '
                   position="left"
                   onClick={handleEnterOTP}
                 >
@@ -225,11 +210,11 @@ export default function SignUpModal({ isOpen, onClose }) {
           )}
 
           {/* TERMS */}
-          <div className="border-t border-white/50 -mx-10 self-stretch mt-20" />
+          <div className="border-t border-white/50 -mx-12 self-stretch " />
 
-          <div className='flex justify-center'>
-            <div className="md:mt-8 pt-6 lg:px-0">
-              <label className="flex items-center gap-3 cursor-pointer max-w-md">
+          <div className='flex justify-center items-center outfit-font'>
+            <div className=" pt-8 lg:px-0">
+              <label className="flex items-center gap-6 cursor-pointer max-w-[450px]">
                 <input
                   type="checkbox"
                   checked={agreedToTerms}

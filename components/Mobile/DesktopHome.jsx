@@ -15,7 +15,7 @@ export default function DesktopHome() {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     return (
-        <div className="relative h-screen overflow-hidden bg-basecolor">
+        <div className="relative h-screen overflow-hidden font-[family-name:var(--font-otomanopee)]">
             {/* Header */}
             <header className="md:absolute static top-0 left-0 right-0 z-10 flex justify-between items-center px-6 md:px-12 py-4 md:py-6">
                 <Button
@@ -90,9 +90,9 @@ export default function DesktopHome() {
                     <div className="relative z-[2] w-full max-w-[500px] flex flex-col gap-8 md:mt-130 mt-16 h-full justify-between pb-60">
                         {/* Stats */}
                         <div className="text-center mt-auto flex items-center justify-between w-full ml-auto">
-                            <div className="ml-40 flex items-center gap-2 text-white/90 text-xs font-[family-name:var(--font-otomanopee)]">
+                            <div className="ml-40 flex items-center gap-2 text-white/90 text-xs ">
                                 <img src="/assets/video-on.svg" alt="" className="w-6 h-6" />
-                                <span>140,567 meeting now</span>
+                                <span className='text-xs outfit-font'>140,567 meeting now</span>
                             </div>
                             <img src="/assets/Frame.png" alt="" className='w-9 h-9' />
                         </div>
@@ -110,10 +110,10 @@ export default function DesktopHome() {
 
 
                         {/* Filters */}
-                        <FilterButtons 
-                          onGenderClick={() => setIsGenderModalOpen(true)}
-                          onLocationClick={() => setIsLocationModalOpen(true)}
-                          className="mt-auto"
+                        <FilterButtons
+                            onGenderClick={() => setIsGenderModalOpen(true)}
+                            onLocationClick={() => setIsLocationModalOpen(true)}
+                            className="mt-auto"
                         />
                     </div>
                 </div>

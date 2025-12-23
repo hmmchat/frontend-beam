@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
-import GenderModal from '@/components/modals/GenderModal'; 
+import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
 import FilterButtons from '@/components/ui/FilterButtons';
 import { IoTimeOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 
-export default function DesktopHome() {
+export default function MeetSomeone() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -48,7 +48,7 @@ export default function DesktopHome() {
                     </div>
 
                     <div className="z-10 text-center max-w-lg">
-                        <img src="/assets/Logo.svg" className="w-64 mx-auto" />
+                        <img src="/assets/Logo.svg" className="md:w-64 mx-auto w-44" />
                         <p className="text-white text-2xl mt-4">Meet someone,</p>
                         <p className="text-white text-2xl">Only god knows who</p>
                     </div>
@@ -108,14 +108,14 @@ export default function DesktopHome() {
                     {/* ================= CONTENT SWITCH ================= */}
                     {mode === 'solo' ? (
                         /* ===== SOLO VIEW (100% UNCHANGED) ===== */
-                        <div className="relative z-[2] w-full max-w-[500px] flex flex-col gap-8 h-full justify-end">
+                        <div className="relative z-[2] w-full max-w-[520px] flex flex-col gap-8 h-full justify-end">
 
-                            <div className="text-center mt-auto flex items-center justify-between w-full ml-auto">
+                            <div className="text-center mt-auto flex items-center justify-between w-full ml-auto outfit-font ">
                                 <div className="ml-40 flex items-center gap-2 text-white/90 text-xs">
                                     <img src="/assets/video-on.svg" className="w-6 h-6" />
-                                    <span>140,567 meeting now</span>
+                                    <span className='text-md'>140,567 meeting now</span>
                                 </div>
-                                <img src="/assets/Frame.png" className="w-9 h-9" />
+                                <img src="/assets/Frame.png" className="w-9 h-9 mr-6" />
                             </div>
 
                             <Button
@@ -128,10 +128,10 @@ export default function DesktopHome() {
                             </Button>
 
 
-                            <FilterButtons 
-                              onGenderClick={() => setIsGenderModalOpen(true)}
-                              onLocationClick={() => setIsLocationModalOpen(true)}
-                              className="mt-20 mb-20"
+                            <FilterButtons
+                                onGenderClick={() => setIsGenderModalOpen(true)}
+                                onLocationClick={() => setIsLocationModalOpen(true)}
+                                className="mt-20 mb-20"
                             />
                         </div>
                     ) : (
@@ -167,7 +167,6 @@ export default function DesktopHome() {
                                 ))}
                             </div>
 
-                            {/* Share */}
                             {/* Share */}
                             <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-8 font-sans">
 

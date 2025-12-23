@@ -8,7 +8,7 @@ export default function Modal({
   children,
   className = '',
   maxWidth = '125vh',
-  maxHeight = '100vh',
+  maxHeight = '90vh',
 }) {
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset';
@@ -24,7 +24,7 @@ export default function Modal({
     >
       <div
         className={`
-    relative h-screen overflow-y-auto overflow-x-hidden  animate-slide-up z-12
+    relative h-screen md:h-auto overflow-y-auto  overflow-x-hidden  animate-slide-up z-12
 
     /* MOBILE */
     bg-[#4E0093]
@@ -39,7 +39,7 @@ export default function Modal({
 
     md:backdrop-blur-[2px]
     md:backdrop-saturate-[120%]
-    md:bg-[#4E0093]/80 
+    md:bg-[#4E0093]/70 
     md:border md:border-white/25
     md:shadow-[0_30px_90px_rgba(0,0,0,0.45)]
   `}
@@ -52,7 +52,7 @@ export default function Modal({
       absolute inset-0
       bg-[url('/test.png')]
       bg-cover bg-center bg-repeat
-      opacity-50
+      opacity-30
       pointer-events-none
     "
         />

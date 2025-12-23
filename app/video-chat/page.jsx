@@ -50,7 +50,7 @@ export default function VideoChat() {
     return (
       <div className="h-screen w-full grid grid-cols-1 md:grid-cols-2">
         {/* Left Side - Loading */}
-        <div 
+        <div
           className="relative flex flex-col items-center justify-center bg-purple-900"
           style={{
             backgroundImage: "url('/assets/mb.jpg')",
@@ -86,7 +86,7 @@ export default function VideoChat() {
         </div>
 
         {/* Right Side - User's Video */}
-        <div className="relative bg-gray-800">
+        <div className="hidden md:block relative bg-gray-800">
           <div className="absolute bottom-4 right-4">
             <label className="flex items-center gap-2 text-white text-sm cursor-pointer">
               <input type="checkbox" className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function VideoChat() {
   return (
     <div className="h-screen w-full grid grid-cols-1 md:grid-cols-2 relative">
       {/* Left Side - Other User's Video */}
-      <div 
+      <div
         className="relative bg-gray-200"
         style={{
           backgroundImage: "url('/assets/image50.png')",
@@ -123,10 +123,10 @@ export default function VideoChat() {
               </div>
             </div>
             <button className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70">
-              <AiOutlineUserAdd  className="h-8 w-8 " />
+              <AiOutlineUserAdd className="h-8 w-8 " />
             </button>
           </div>
-          
+
           {/* Certified Baddie Badge */}
           <div className="bg-black/50 rounded-full px-3 py-1 text-white text-xs w-fit">
             🎖️ Certified Baddie
@@ -201,7 +201,7 @@ export default function VideoChat() {
           <button className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600">
             GIVE
           </button>
-          <button 
+          <button
             onClick={() => setShowGiftModal(true)}
             className="w-12 h-12 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700"
           >
@@ -213,7 +213,7 @@ export default function VideoChat() {
       {/* Gift Modal */}
       {showGiftModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
+          <div
             className="relative w-full max-w-4xl rounded-3xl p-8"
             style={{
               backgroundImage: "url('/assets/mb.jpg')",
@@ -244,11 +244,10 @@ export default function VideoChat() {
                 <button
                   key={gift.id}
                   onClick={() => setSelectedGift(gift.id)}
-                  className={`relative aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition ${
-                    gift.highlighted || selectedGift === gift.id
-                      ? 'border-yellow-400 bg-purple-800/50'
-                      : 'border-purple-400/50 bg-purple-900/30 hover:bg-purple-800/40'
-                  }`}
+                  className={`relative aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition ${gift.highlighted || selectedGift === gift.id
+                    ? 'border-yellow-400 bg-purple-800/50'
+                    : 'border-purple-400/50 bg-purple-900/30 hover:bg-purple-800/40'
+                    }`}
                 >
                   <div className="text-5xl">{gift.emoji}</div>
                   <div className="flex items-center gap-1 text-white">

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
-import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline } from 'react-icons/io5';
+import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 
 export default function MeetSomeoneMobile() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -14,11 +14,17 @@ export default function MeetSomeoneMobile() {
 
     const [coins] = useState(25500);
     const [mode, setMode] = useState('solo'); // solo | squad
+    const [invited, setInvited] = useState(['Austin']);
+
+    const toggleInvite = (name) =>
+        setInvited((prev) =>
+            prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+        );
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden font-sans text-white flex flex-col font-[family-name:var(--font-otomanopee)]">
 
-            {/* --- Backgrounds --- */}
+
             {/* Layer 1: Stars Pattern (Top Half) */}
             <div
                 className="absolute top-0 left-0 w-full h-1/2 z-0 opacity-50"
@@ -59,12 +65,12 @@ export default function MeetSomeoneMobile() {
             </div>
 
             {/* --- Toggle Squad/Solo (Centered on split line) --- */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex bg-[#2a0060] rounded-full p-1 border border-white/20">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex  rounded-full p-1 border border-white">
                 <button
                     onClick={() => setMode('solo')}
                     className={`px-8 py-2 rounded-full text-sm font-semibold transition-all ${mode === 'solo'
-                        ? 'bg-[#1a003d] text-white shadow-sm border border-white/10'
-                        : 'text-white/60 hover:text-white'
+                        ? 'bg-[#1a003d] text-white shadow-sm border border-white'
+                        : 'text-white hover:text-white'
                         }`}
                 >
                     Solo
@@ -80,100 +86,167 @@ export default function MeetSomeoneMobile() {
                 </button>
             </div>
 
-            {/* --- Main Content --- */}
-            <div className="flex-1 flex flex-col items-center justify-start pt-10 text-center px-6 relative pointer-events-none">
-                <div
-                    className="relative flex items-center justify-center px-8 lg:px-24 bg-repeat"
-                    style={{
-                        backgroundImage: "url('/assets/mb.jpg')",
-                        backgroundRepeat: 'repeat',
-                        backgroundSize: 'auto',
-                        backgroundPosition: 'top left',
-                    }}
-                ></div>
+            {/* --- Content Area --- */}
+            <div className="flex-1 flex flex-col relative z-10">
 
-                {/* Logo */}
-                <div className="relative mb-4">
-                    {/* Using text fallback if image not perfect, but image is preferred if available. 
-                         The screenshot has a specific 'HMM..' yellow text. 
-                         I'll try to use the Logo.svg if it matches, otherwise styled text.
-                     */}
-                    <div className="text-5xl font-black tracking-widest text-yellow-400 drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]" style={{ fontFamily: 'var(--font-otomanopee), sans-serif', textShadow: '4px 4px 0px #000' }}>
-                        HMM..
+                {mode === 'solo' ? (
+                    /* ===== SOLO VIEW ===== */
+                    <div className="flex-1 flex flex-col">
+                        {/* --- Main Content (Solo) --- */}
+                        <div className="flex-1 flex flex-col items-center justify-start text-center px-6 relative pointer-events-none -mt-5">
+                            <div className="">
+                                <img src="/assets/Logo.svg" alt="" className='w-44 h-44' />
+                            </div>
+                            <div className='-mt-14 '>
+
+                                <p className="text-lg font-medium leading-none font-[family-name:var(--font-otomanopee)]">
+                                    Meet someone here,
+                                </p>
+                                <p className="text-lg font-medium leading-none font-[family-name:var(--font-otomanopee)]">
+                                    Not sure who, but someone
+                                </p>
+
+                                <p className="text-white/80 text-sm font-light mt-4">
+                                    140,567 meeting now
+                                </p>
+                            </div>
+
+                            {/* Free Coins Icon */}
+                            <div className="absolute right-4 bottom-26 -translate-y-1/2 flex flex-col items-center pointer-events-auto">
+                                <button className="relative">
+                                    <img src="/assets/watch add free coins.svg" alt="Free Coins" className="w-12 h-12" />
+                                </button>
+
+                            </div>
+                        </div>
+
+                        {/* --- Bottom Controls (Solo) --- */}
+                        <div className="relative z-10 w-full px-6 pb-24 flex flex-col gap-6">
+                            <button
+                                onClick={() => setIsSignUpOpen(true)}
+                                className="w-full bg-[#150030] border border-white/30 rounded-2xl py-5 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                            >
+                                <img src="/assets/video-off.svg" className="w-6 h-6 invert opacity-80" alt="Camera" />
+                                <span className="text-lg font-bold tracking-wide">Meet that someone</span>
+                            </button>
+
+                            <div className="w-full bg-[#150030]/80 border border-white/10 rounded-2xl flex items-center h-16 relative overflow-hidden">
+                                <button
+                                    onClick={() => setIsGenderModalOpen(true)}
+                                    className="flex-1 h-full flex items-center justify-center gap-2 hover:bg-white/5 transition px-2"
+                                >
+                                    <span className="text-xl">⚥</span>
+                                    <div className="text-left flex flex-col justify-center">
+                                        <span className="text-xs font-bold leading-tight">Girls only</span>
+                                        <span className="text-[10px] text-white/50 leading-tight">18/20 Remaining</span>
+                                    </div>
+                                </button>
+
+                                <div className="w-[1px] h-3/4 bg-white/10"></div>
+
+                                <button
+                                    onClick={() => setIsLocationModalOpen(true)}
+                                    className="flex-1 h-full flex items-center justify-center gap-2 hover:bg-white/5 transition px-2 text-right"
+                                >
+                                    <div className="text-right flex flex-col justify-center">
+                                        <span className="text-xs font-bold leading-tight">Location</span>
+                                        <span className="text-[10px] text-white/50 leading-tight">Bhuwaneshwar</span>
+                                    </div>
+                                    <span className="text-xl">📍</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                {/* Tagline */}
-                <p className="text-lg font-medium leading-relaxed mb-1 font-[family-name:var(--font-otomanopee)]">
-                    Meet someone here,
-                </p>
-                <p className="text-lg font-medium leading-relaxed mb-6 font-[family-name:var(--font-otomanopee)]">
-                    Not sure who, but someone
-                </p>
-
-                {/* Counter */}
-                <p className="text-white/80 text-sm font-light mb-12">
-                    140,567 meeting now
-                </p>
-
-                {/* --- Free Coins Icon (Floating Right) --- */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
-                    <button className="relative">
-                        <img src="/assets/watch add free coins.svg" alt="Free Coins" className="w-12 h-12" />
-                        {/* Fallback if file doesn't exist perfectly, but I found it in search */}
-                    </button>
-                    <span className="text-[10px] font-bold mt-1 bg-white text-[#3b0087] px-2 py-0.5 rounded-full">FREE</span>
-                </div>
-
-            </div>
-
-            {/* --- Bottom Controls --- */}
-            <div className="relative z-10 w-full px-6 pb-24 flex flex-col gap-6">
-
-                {/* Meet Button */}
-                <button
-                    onClick={() => setIsSignUpOpen(true)}
-                    className="w-full bg-[#150030] border border-white/30 rounded-2xl py-5 flex items-center justify-center gap-3 active:scale-95 transition-transform"
-                >
-                    <img src="/assets/video-off.svg" className="w-6 h-6 invert opacity-80" alt="Camera" />
-                    {/* Or usage of react icon: <span className="text-2xl"><IoVideocamOutline /></span> */}
-                    <span className="text-lg font-bold tracking-wide">Meet that someone</span>
-                </button>
-
-                {/* Filter Bar */}
-                <div className="w-full bg-[#150030]/80 border border-white/10 rounded-2xl flex items-center h-16 relative overflow-hidden">
-                    {/* Left: Girls Only */}
-                    <button
-                        onClick={() => setIsGenderModalOpen(true)}
-                        className="flex-1 h-full flex items-center justify-center gap-2 hover:bg-white/5 transition px-2"
-                    >
-                        <span className="text-xl">⚥</span> {/* Icon placeholder */}
-                        <div className="text-left flex flex-col justify-center">
-                            <span className="text-xs font-bold leading-tight">Girls only</span>
-                            <span className="text-[10px] text-white/50 leading-tight">18/20 Remaining</span>
+                ) : (
+                    /* ===== SQUAD VIEW ===== */
+                    <div className="relative w-full max-w-3xl text-center mt-auto mb-30 px-6">
+                        {/* Members */}
+                        <div className='flex justify-between items-center mb-6'>
+                            <img src="/assets/search-icon.svg" alt="" className="w-6 h-6" />
+                            <img src="/assets/Vector.svg" alt="" className="w-6 h-6" />
                         </div>
-                    </button>
+                        <div className="flex items-center justify-center gap-4 mb-10 font-sans">
+                            {['Me', 'Who', 'Who'].map((label, i, arr) => (
+                                <div key={i} className="flex items-center gap-4">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="relative w-20 h-20 rounded-full border border-white/30 flex items-center justify-center overflow-hidden bg-white/5">
+                                            {label === 'Me' ? (
+                                                <Image src="/assets/ico.png" alt="me" fill className="object-cover" />
+                                            ) : (
+                                                <span className="text-2xl text-white/50">?</span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs">{label}</span>
+                                    </div>
 
-                    {/* Divider */}
-                    <div className="w-[1px] h-3/4 bg-white/10"></div>
-
-                    {/* Right: Location */}
-                    <button
-                        onClick={() => setIsLocationModalOpen(true)}
-                        className="flex-1 h-full flex items-center justify-center gap-2 hover:bg-white/5 transition px-2 text-right"
-                    >
-                        <div className="text-right flex flex-col justify-center">
-                            <span className="text-xs font-bold leading-tight">Location</span>
-                            <span className="text-[10px] text-white/50 leading-tight">Bhuwaneshwar</span>
+                                    {/* Show plus icon if not the last item */}
+                                    {i < arr.length - 1 && (
+                                        <div className="mb-6">
+                                            <img src="/assets/plus.png" alt="+" className="w-4 h-4 opacity-70" />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                        <span className="text-xl">📍</span> {/* Icon placeholder */}
-                    </button>
-                </div>
 
+                        {/* Share */}
+                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-8 font-sans">
+                            <span className="text-white/80 text-sm font-medium mr-2">Share to</span>
+                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                                <IoLogoSnapchat className="text-2xl" />
+                            </button>
+                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                                <IoLogoInstagram className="text-2xl" />
+                            </button>
+                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                                <IoLogoWhatsapp className="text-2xl" />
+                            </button>
+                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                                <IoCopyOutline className="text-2xl" />
+                            </button>
+                        </div>
+
+                        {/* Invite */}
+                        <div className="flex justify-center gap-4">
+                            <span className="text-white/80 text-sm font-medium mr-2 border-r-2 border-white/60 pr-2 flex items-center gap-2">Invite</span>
+                            <div className="flex justify-center gap-6">
+                                {[
+                                    { name: 'Austin', img: '/assets/ico.png' },
+                                    { name: 'Rose', img: '/assets/img1.png' },
+                                    { name: 'Peter', img: '/assets/ico.png' }
+                                ].map((person) => (
+                                    <div key={person.name} className="flex flex-col items-center gap-2">
+                                        <button
+                                            onClick={() => toggleInvite(person.name)}
+                                            className={`relative w-12 h-12 rounded-full border-2 ${invited.includes(person.name)
+                                                ? 'border-yellow-400'
+                                                : 'border-white/20'
+                                                }`}
+                                        >
+                                            <Image src={person.img} alt={person.name} fill className='object-cover rounded-full' />
+                                            {invited.includes(person.name) ? (
+                                                <span className="absolute -top-2 -right-2 bg-yellow-400 text-black w-5 h-5 text-xs rounded-full flex items-center justify-center font-bold">
+                                                    ✓
+                                                </span>
+                                            ) : (
+                                                <span className="absolute -top-0 -right-0 bg-white text-black w-3 h-3 text-xs rounded-full flex items-center justify-center font-bold shadow-sm">
+                                                    +
+                                                </span>
+                                            )}    </button>
+                                        <span className="text-white/70 text-xs font-sans">{person.name}</span>
+                                    </div>
+                                ))}
+                                <button className="text-sm underline text-white/70 ml-2 self-center font-sans">
+                                    See all
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* --- Bottom Navigation Bar --- */}
-            <div className="absolute bottom-0 left-0 w-full bg-[#1a003d] border-t border-white/5 px-6 py-4 flex justify-between items-center z-20">
+            <div className="absolute bottom-0 left-0 w-full bg-[#1a003d] border-t border-white/5 px-6 py-4 flex justify-between items-center z-10">
                 <button className="flex flex-col items-center gap-1 text-white hover:text-purple-300 transition">
                     <IoHome className="text-2xl" />
                 </button>

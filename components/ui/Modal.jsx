@@ -9,6 +9,9 @@ export default function Modal({
   className = '',
   maxWidth = '125vh',
   maxHeight = '90vh',
+  bottom,
+  left,
+  right,
 }) {
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset';
@@ -17,21 +20,32 @@ export default function Modal({
 
   if (!isOpen) return null;
 
+  // Custom positioning logic
+  const customPositionStyles = (bottom !== undefined || left !== undefined || right !== undefined)
+    ? { bottom, left, right, top: 'auto', transform: 'none' }
+    : {};
+
+  const isBottomSheet = bottom === '0';
+
   return (
     <div
-      className="fixed inset-0  flex items-center justify-center z-[10] md:p-5 md:animate-fade-in"
+      className={`fixed inset-0 z-[50] md:p-5 md:animate-fade-in ${isBottomSheet ? 'flex items-end justify-center' : 'flex items-center justify-center'
+        }`}
       onClick={onClose}
     >
       <div
         className={`
-    relative h-screen md:h-auto overflow-y-auto  overflow-x-hidden  animate-slide-up z-12
-
+    relative overflow-y-auto overflow-x-hidden animate-slide-up z-12
+    
     /* MOBILE */
     bg-[#4E0093]
-    p-10 rounded-none absolute inset-0
+    p-3 rounded-none 
+    ${isBottomSheet ? 'w-full rounded-t-[32px]' : 'absolute inset-0 h-screen'}
+    ${isBottomSheet ? '' : 'md:h-auto'}
 
     /* DESKTOP – APPLE GLASS */
     md:w-full md:h-auto
+    md:inset-auto /* Reset absolute inset for desktop if not bottom sheet, or keep standard modal behavior */
 
     md:p-12
     md:rounded-[32px]
@@ -42,8 +56,13 @@ export default function Modal({
     md:bg-[#4E0093]/70 
     md:border md:border-white/25
     md:shadow-[0_30px_90px_rgba(0,0,0,0.45)]
+    ${className}
   `}
-        style={{ maxWidth, maxHeight }}
+        style={{
+          maxWidth: isBottomSheet ? '100%' : maxWidth,
+          maxHeight,
+          ...customPositionStyles
+        }}
         onClick={(e) => e.stopPropagation()}
       >
 
@@ -59,7 +78,6 @@ export default function Modal({
         {children}
       </div>
       <div className='absolute inset-0 bg-[#02004A]/70 -z-50 pointer-events-none'></div>
-
 
     </div>
 

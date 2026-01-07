@@ -2,11 +2,16 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import Button from '@/components/ui/Button';
 
 export default function Onboarding() {
+  const router = useRouter();
   const [showSignIn, setShowSignIn] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   // form state
   const [name, setName] = useState("");
@@ -18,6 +23,50 @@ export default function Onboarding() {
 
   // default avatar path (public)
   const defaultAvatar = "/assets/avatar1.png";
+
+  // Get userId from token on mount
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setApiError('No session found. Redirecting to login...');
+        setTimeout(() => router.push('/'), 2000);
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const uid = payload.sub || payload.uid;
+        setUserId(uid);
+
+        // Check if profile already exists
+        const response = await fetch(`http://localhost:3002/users/${uid}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          // Profile exists! Redirect to dashboard
+          console.log('Profile already exists, redirecting to dashboard...');
+          router.push('/dashboard');
+        } else {
+          // Profile doesn't exist - show onboarding form
+          setLoading(false);
+        }
+        // If 404, profile doesn't exist - continue with onboarding
+        
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        setApiError('Invalid session. Please login again.');
+        setTimeout(() => router.push('/'), 2000);
+        setLoading(false);
+      }
+    };
+
+    checkUserProfile();
+  }, [router]);
 
   // prevent body scroll when modal open
   useEffect(() => {
@@ -45,12 +94,37 @@ export default function Onboarding() {
 
   const validate = () => {
     const e = {};
-    if (!name.trim()) e.name = "Please enter your name.";
+    
+    // Username validation - must be 3-30 chars, alphanumeric + underscore only
+    const username = name.trim();
+    if (!username) {
+      e.name = "Please enter your name.";
+    } else if (username.length < 3) {
+      e.name = "Name must be at least 3 characters.";
+    } else if (username.length > 30) {
+      e.name = "Name must be less than 30 characters.";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      e.name = "Name can only contain letters, numbers, and underscores.";
+    }
+    
+    // Date validation
     const { day, month, year } = dob;
     if (!day || isNaN(Number(day)) || Number(day) < 1 || Number(day) > 31) e.day = "Invalid day";
     if (!month || isNaN(Number(month)) || Number(month) < 1 || Number(month) > 12) e.month = "Invalid month";
     if (!year || isNaN(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear()) e.year = "Invalid year";
+    
+    // Age validation (18+)
+    if (day && month && year && !e.day && !e.month && !e.year) {
+      const dobDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const age = Math.floor((new Date() - dobDate) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age < 18) {
+        e.year = "You must be at least 18 years old";
+      }
+    }
+    
+    // Gender validation
     if (!gender) e.gender = "Select gender";
+    
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -70,12 +144,104 @@ export default function Onboarding() {
   };
   const closeSignIn = () => setShowSignIn(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    openSignIn();
+    
+    if (!validate()) {
+      // focus first invalid field
+      const firstKey = Object.keys(errors)[0];
+      if (firstKey) {
+        const el = document.querySelector(`[name="${firstKey}"]`);
+        if (el) el.focus();
+      }
+      return;
+    }
+
+    if (!userId) {
+      setApiError('User session not found. Please login again.');
+      return;
+    }
+
+    setLoading(true);
+    setApiError('');
+
+    try {
+      // Format date of birth
+      const dobDate = new Date(
+        parseInt(dob.year),
+        parseInt(dob.month) - 1,
+        parseInt(dob.day)
+      );
+
+      // Map gender from form to backend enum
+      const genderMap = {
+        'male': 'MALE',
+        'female': 'FEMALE'
+      };
+      const backendGender = genderMap[gender] || 'PREFER_NOT_TO_SAY';
+
+      const profileData = {
+        username: name.trim(),
+        dateOfBirth: dobDate.toISOString(),
+        gender: backendGender,
+        displayPictureUrl: avatarPreview || 'https://via.placeholder.com/150'
+      };
+
+      console.log('Creating profile with data:', profileData);
+
+      // Create profile via backend API
+      const response = await fetch(`http://localhost:3002/users/${userId}/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Backend validation error:', errorData);
+        console.error('Sent data:', {
+          username: name.trim(),
+          dateOfBirth: dobDate.toISOString(),
+          gender: gender.toUpperCase(),
+          displayPictureUrl: avatarPreview || 'https://via.placeholder.com/150'
+        });
+        
+        // Special handling for "Profile already exists"
+        if (errorData.message?.includes('already exists')) {
+          setApiError('Profile already exists! Redirecting to dashboard...');
+          setTimeout(() => router.push('/dashboard'), 2000);
+          return;
+        }
+        
+        throw new Error(errorData.message || 'Profile creation failed');
+      }
+
+      const data = await response.json();
+      console.log('Profile created successfully:', data);
+
+      // Success! Redirect to dashboard or next step
+      router.push('/dashboard'); // Change this to your desired route
+
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      setApiError(error.message || 'Failed to create profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const numericOnly = (value, maxLen = 4) => value.replace(/\D/g, "").slice(0, maxLen);
+
+  // Show loading while checking profile
+  if (loading && !apiError) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
+        <div className="text-white text-2xl">Checking profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden outfit-font text-white">
@@ -100,7 +266,10 @@ export default function Onboarding() {
           <div className="flex justify-center  ">
             <div className="w-full max-w-lg rounded-2xl p-6 mx-auto md:ml-30">
               <div className="flex flex-col items-center mb-6">
-                <div className="relative w-30 h-30 rounded-full border-white overflow-hidden shadow-lg">
+                <div 
+                  className="relative w-30 h-30 rounded-full border-white overflow-hidden shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => fileRef.current?.click()}
+                >
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="avatar preview" className="w-full h-full object-cover" />
                   ) : (
@@ -111,7 +280,7 @@ export default function Onboarding() {
                   <img
                     src="/assets/camera.svg"
                     alt="overlay"
-                    className="justify-center text-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 object-contain"
+                    className="justify-center text-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 object-contain pointer-events-none"
                   />
                 </div>
 
@@ -140,6 +309,9 @@ export default function Onboarding() {
                     </button>
                   )}
                 </div>
+                <p className="text-white/60 text-xs mt-1 text-center">
+                  Note: Photo upload uses placeholder for now. Profile will be created!
+                </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -149,11 +321,12 @@ export default function Onboarding() {
                     name="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Poseidon"
+                    placeholder="john_doe"
                     variant="outline"
                     className="w-full bg-[#0A032D]/50 border-2 border-white/20 rounded-2xl px-5 py-3 text-white placeholder-white/60 focus:outline-none focus:border-white/60"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-2">{errors.name}</div>}
+                  <p className="text-white/60 text-xs mt-1">Letters, numbers, and underscores only (3-30 chars)</p>
                 </div>
 
                 <div>
@@ -222,13 +395,20 @@ export default function Onboarding() {
                   <p className="text-white text-xs opacity-80 mt-3">Don't get your DOB and gender wrong. You can't change it later.</p>
                 </div>
 
-                <div className="text-right mt-1">
+                {/* Error Message */}
+                {apiError && (
+                  <div className="text-red-400 text-sm mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+                    {apiError}
+                  </div>
+                )}
+
+                <div className="text-right mt-4">
                   <button
-                    type="button"
-                    onClick={openSignIn}
-                    className="bg-[#0A032D]/50 border-2 border-white/30 rounded-full px-8 py-3 text-white text-lg hover:brightness-110"
+                    type="submit"
+                    disabled={loading || !userId}
+                    className="bg-[#0A032D]/50 border-2 border-white/30 rounded-full px-8 py-3 text-white text-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    Les gooo!
+                    {loading ? 'Creating Profile...' : 'Les gooo!'}
                   </button>
                 </div>
               </form>

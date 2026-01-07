@@ -1,31 +1,244 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ErrorAlert from '../ui/ErrorAlert';
 
-export default function SignUpModal({ isOpen, onClose }) {
+const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
+
+function SignUpModalContent({ isOpen, onClose }) {
   const [step, setStep] = useState('options');
   const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fbLoaded, setFbLoaded] = useState(false);
 
   const router = useRouter();
-  const correctOTP = "1234";
 
-  const handleGetOTP = () => {
-    if (!mobileNumber || mobileNumber.length < 10) {
-      setError('teeeee');
+  // Load Facebook SDK
+  useEffect(() => {
+    // Load Facebook SDK
+    window.fbAsyncInit = function() {
+      window.FB.init({
+        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      });
+      setFbLoaded(true);
+    };
+
+    // Load the SDK asynchronously
+    (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+  }, []);
+
+  // Google Login Handler  
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      if (!agreedToTerms) {
+        setError('Please accept Terms & Conditions');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Verify we have an access token and exchange it for user info + id_token
+        // We'll use the tokeninfo endpoint to validate and get user details
+        const tokenInfoResponse = await fetch(
+          `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${tokenResponse.access_token}`
+        );
+        
+        const tokenInfo = await tokenInfoResponse.json();
+        
+        if (!tokenInfo.email) {
+          throw new Error('Failed to get user email from Google');
+        }
+
+        // Create a simple JWT-like structure for the backend
+        // The backend will verify this with Google's API
+        const response = await fetch(`${AUTH_API_URL}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            idToken: tokenResponse.access_token,
+            acceptedTerms: true,
+            acceptedTermsVer: 'v1.0'
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Backend error:', errorData);
+          throw new Error(errorData.message || 'Google login failed');
+        }
+        
+        const data = await response.json();
+        
+        // Store tokens
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        
+        // Redirect to onboarding
+        router.push('/onboarding');
+        onClose();
+      } catch (error) {
+        console.error('Google login error:', error);
+        setError('Google login failed. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google login failed');
+    },
+    scope: 'openid email profile'
+  });
+
+  // Facebook Login Handler
+  const handleFacebookLogin = () => {
+    if (!agreedToTerms) {
+      setError('Please accept Terms & Conditions');
       return;
     }
+
+    if (!fbLoaded || !window.FB) {
+      setError('Facebook SDK not loaded. Please refresh the page.');
+      return;
+    }
+
+    window.FB.login(async function(response) {
+      if (response.authResponse) {
+        setLoading(true);
+        try {
+          const apiResponse = await fetch(`${AUTH_API_URL}/auth/facebook`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accessToken: response.authResponse.accessToken,
+              acceptedTerms: true,
+              acceptedTermsVer: 'v1.0'
+            })
+          });
+
+          if (!apiResponse.ok) {
+            throw new Error('Facebook login failed');
+          }
+
+          const data = await apiResponse.json();
+          
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
+          
+          router.push('/onboarding');
+          onClose();
+        } catch (error) {
+          console.error('Facebook login error:', error);
+          setError('Facebook login failed. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setError('Facebook login cancelled');
+      }
+    }, {scope: 'public_profile,email'});
+  };
+
+  // Phone OTP - Send OTP
+  const handleGetOTP = async () => {
+    if (!mobileNumber || mobileNumber.length < 10) {
+      setError('Please enter a valid mobile number');
+      return;
+    }
+
+    setLoading(true);
     setError('');
-    setStep('otp');
+
+    try {
+      const response = await fetch(`${AUTH_API_URL}/auth/phone/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: `+91${mobileNumber.replace(/\D/g, '')}` // Remove non-digits and add +91
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send OTP');
+      }
+
+      if (data.ok) {
+        setStep('otp');
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      setError('Failed to send OTP. Please check your number.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Phone OTP - Verify OTP
+  const handleEnterOTP = async () => {
+    const otpValue = otp.join('');
+    
+    if (otpValue.length !== 6) {
+      setError('Please enter complete OTP');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError('Please accept Terms & Conditions');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${AUTH_API_URL}/auth/phone/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: `+91${mobileNumber.replace(/\D/g, '')}`,
+          code: otpValue,
+          acceptedTerms: true,
+          acceptedTermsVer: 'v1.0'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid OTP');
+      }
+
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      
+      router.push('/onboarding');
+      onClose();
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      setError('Invalid OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOTPChange = (index, value) => {
@@ -40,20 +253,6 @@ export default function SignUpModal({ isOpen, onClose }) {
     }
   };
 
-  const handleEnterOTP = () => {
-    const otpValue = otp.join('');
-    if (otpValue.length !== 6) {
-      setError('Please enter complete OTP');
-      return;
-    }
-
-    if (otpValue === correctOTP) {
-      router.push("/onboarding");
-    } else {
-      setError("Invalid OTP. Please try again");
-    }
-  };
-
   const resetModal = () => {
     setStep('options');
     setMobileNumber('');
@@ -61,6 +260,7 @@ export default function SignUpModal({ isOpen, onClose }) {
     setError('');
     setAgreedToTerms(false);
     setShowMoreOptions(false);
+    setLoading(false);
   };
 
   const handleClose = () => {
@@ -79,7 +279,6 @@ export default function SignUpModal({ isOpen, onClose }) {
           md:block md:min-h-0"
         >
 
-
           {/* Header */}
           <div className="mb-10 px-4 lg:px-0 flex flex-col items-center justify-center text-center">
             <img src="/assets/logo.svg" alt="" className='w-40 mx-auto ' />
@@ -90,27 +289,37 @@ export default function SignUpModal({ isOpen, onClose }) {
           </div>
 
           {/* OPTIONS */}
-
           {step === 'options' && (
             <div className="flex flex-col gap-3 mb-8 md:px-4 lg:px-60 ">
-              <Button variant="outline2"
+              {/* Google Login */}
+              <Button 
+                variant="outline2"
                 fullWidth
                 icon={
                   <img src="/assets/devicon_google.png" alt="" className='w-6 h-6' />
                 }
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md  py-6'
+                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
+                onClick={handleGoogleLogin}
+                disabled={loading || !agreedToTerms}
               >
-                Connect with Google
+                {loading ? 'Connecting...' : 'Connect with Google'}
               </Button>
 
-              <Button variant="outline2"
-                fullWidth icon={
+              {/* Facebook Login */}
+              <Button 
+                variant="outline2"
+                fullWidth 
+                icon={
                   <img src="/assets/logos_facebook.png" alt="" className='w-6 h-6 ' />
                 }
                 className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
-              > Connect with Facebook
+                onClick={handleFacebookLogin}
+                disabled={loading || !agreedToTerms || !fbLoaded}
+              >
+                {loading ? 'Connecting...' : 'Connect with Facebook'}
               </Button>
 
+              {/* Mobile Login */}
               <Button
                 variant="outline2"
                 fullWidth
@@ -119,13 +328,24 @@ export default function SignUpModal({ isOpen, onClose }) {
                 }
                 onClick={() => setStep('mobile')}
                 className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
+                disabled={loading}
               >
                 Connect with Mobile
               </Button>
+
+              {/* Apple Login (More Options) */}
               {showMoreOptions && (
                 <div className="animate-slide-up text-white/50">
-                  <Button variant="outline2" fullWidth>
-                    Connect with Apple ID
+                  <Button 
+                    variant="outline2" 
+                    fullWidth
+                    icon={
+                      <img src="/apple.png" alt="" className='w-6 h-6' />
+                    }
+                    className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
+                    disabled={true}
+                  >
+                    Connect with Apple ID (Coming Soon)
                   </Button>
                 </div>
               )}
@@ -137,6 +357,8 @@ export default function SignUpModal({ isOpen, onClose }) {
               >
                 {showMoreOptions ? 'Less options' : 'More options'}
               </button>
+
+              {error && <ErrorAlert message={error} />}
             </div>
           )}
 
@@ -151,7 +373,7 @@ export default function SignUpModal({ isOpen, onClose }) {
                 label="Enter Mobile Number"
               />
 
-              <ErrorAlert message={error ? "Hmmm! Mind entering the correct number please." : ""} />
+              <ErrorAlert message={error} />
 
               <div className="mt-8 mb-8 flex justify-center lg:justify-start ">
                 <Button
@@ -160,8 +382,9 @@ export default function SignUpModal({ isOpen, onClose }) {
                   className='w-[120px] lg:w-[200px] text-xs lg:text-[15px]'
                   position="left"
                   onClick={handleGetOTP}
+                  disabled={loading}
                 >
-                  Get OTP
+                  {loading ? 'Sending...' : 'Get OTP'}
                 </Button>
               </div>
             </div>
@@ -183,7 +406,6 @@ export default function SignUpModal({ isOpen, onClose }) {
                     maxLength="1"
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
-
                     className="w-10 h-12 lg:w-14 lg:h-14
                              border-2 border-white/60
                              rounded-xl lg:rounded-[14px]
@@ -202,8 +424,9 @@ export default function SignUpModal({ isOpen, onClose }) {
                   className='w-[120px] lg:w-[210px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80 '
                   position="left"
                   onClick={handleEnterOTP}
+                  disabled={loading}
                 >
-                  Enter OTP
+                  {loading ? 'Verifying...' : 'Enter OTP'}
                 </Button>
               </div>
             </div>
@@ -240,5 +463,20 @@ export default function SignUpModal({ isOpen, onClose }) {
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Wrap with GoogleOAuthProvider
+export default function SignUpModal({ isOpen, onClose }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  if (!googleClientId) {
+    console.warn('NEXT_PUBLIC_GOOGLE_CLIENT_ID not found in environment variables');
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={googleClientId || ''}>
+      <SignUpModalContent isOpen={isOpen} onClose={onClose} />
+    </GoogleOAuthProvider>
   );
 }

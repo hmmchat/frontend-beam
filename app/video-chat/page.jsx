@@ -176,7 +176,7 @@ export default function VideoChat() {
       {/* Right Side - User's Video */}
       <div className="relative bg-gray-800">
         {/* Chat Messages */}
-        <div className="absolute bottom-32 right-6 flex flex-col gap-2 max-w-sm">
+        <div className="absolute bottom-32 left-6 flex flex-col gap-2 max-w-sm">
           {chatMessages.map((msg, i) => (
             <div key={i} className="flex items-start gap-2">
               <div className="w-8 h-8 rounded-full bg-orange-500 flex-shrink-0 flex items-center justify-center text-white text-xs">
@@ -196,16 +196,46 @@ export default function VideoChat() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type message"
-            className="flex-1 bg-gray-700/50 border border-white/20 rounded-full px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+            className="flex-1 bg-gray-700/50 border border-white/20 rounded-md px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
           />
-          <button className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600">
-            GIVE
+          <button className="relative w-14 h-14 flex items-center justify-center hover:scale-105 transition-transform bg-red-700 rounded-full">
+            {/* Circle frame border */}
+            <Image
+              src="/circleframe.png"
+              alt="frame"
+              width={68}
+              height={68}
+              className="absolute inset-0"
+            />
+            {/* Gift button with GIVE DARE text */}
+            <Image
+              src="/gift.png"
+              alt="give dare"
+              width={42}
+              height={42}
+              className="relative z-10"
+            />
           </button>
-          <button
+          <button 
             onClick={() => setShowGiftModal(true)}
-            className="w-12 h-12 bg-pink-600 rounded-full flex items-center justify-center text-white hover:bg-pink-700"
+            className="relative w-14 h-14 flex items-center justify-center rounded-full bg-[#DE008D] hover:bg-[#C00078] transition-colors"
           >
-            <IoGiftSharp className="text-2xl" />
+            {/* Circle background */}
+            <Image
+              src="/circle.png"
+              alt="circle"
+              width={64}
+              height={64}
+              className="absolute inset-0"
+            />
+            {/* Gift icon */}
+            <Image
+              src="/giftboc.png"
+              alt="gift"
+              width={28}
+              height={28}
+              className="relative z-10"
+            />
           </button>
         </div>
       </div>
@@ -283,13 +313,8 @@ export default function VideoChat() {
               ))}
             </div>
 
-            {/* Close Button */}
-            <button
-              onClick={() => setShowGiftModal(false)}
-              className="absolute top-4 right-4 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20"
-            >
-              <IoClose className="text-2xl" />
-            </button>
+
+            
           </div>
         </div>
       )}

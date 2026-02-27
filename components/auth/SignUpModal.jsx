@@ -8,8 +8,8 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ErrorAlert from '../ui/ErrorAlert';
+import { API } from '@/lib/api';
 
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
 
 function SignUpModalContent({ isOpen, onClose }) {
   const [step, setStep] = useState('options');
@@ -70,7 +70,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
         // Create a simple JWT-like structure for the backend
         // The backend will verify this with Google's API
-        const response = await fetch(`${AUTH_API_URL}/auth/google`, {
+        const response = await fetch(API.AUTH.GOOGLE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -92,8 +92,32 @@ function SignUpModalContent({ isOpen, onClose }) {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         
-        // Redirect to onboarding
-        router.push('/onboarding');
+        // Check if user has a profile
+        try {
+          const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+          const userId = payload.sub || payload.uid;
+          
+          const profileResponse = await fetch(API.USERS.GET_USER(userId), {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (profileResponse.ok) {
+            // Profile exists - go to dashboard
+            console.log('Profile exists, redirecting to dashboard');
+            router.push('/facecard');
+          } else {
+            // No profile - go to onboarding
+            console.log('No profile, redirecting to onboarding');
+            router.push('/onboarding');
+          }
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          // Default to onboarding if check fails
+          router.push('/onboarding');
+        }
+        
         onClose();
       } catch (error) {
         console.error('Google login error:', error);
@@ -124,7 +148,7 @@ function SignUpModalContent({ isOpen, onClose }) {
       if (response.authResponse) {
         setLoading(true);
         try {
-          const apiResponse = await fetch(`${AUTH_API_URL}/auth/facebook`, {
+          const apiResponse = await fetch(API.AUTH.FACEBOOK, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -143,7 +167,29 @@ function SignUpModalContent({ isOpen, onClose }) {
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken);
           
-          router.push('/onboarding');
+          // Check if user has a profile
+          try {
+            const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+            const userId = payload.sub || payload.uid;
+            
+            const profileResponse = await fetch(API.USERS.GET_USER(userId), {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (profileResponse.ok) {
+              // Profile exists - go to dashboard
+              router.push('/facecard');
+            } else {
+              // No profile - go to onboarding
+              router.push('/onboarding');
+            }
+          } catch (error) {
+            console.error('Error checking profile:', error);
+            router.push('/onboarding');
+          }
+          
           onClose();
         } catch (error) {
           console.error('Facebook login error:', error);
@@ -168,18 +214,31 @@ function SignUpModalContent({ isOpen, onClose }) {
     setError('');
 
     try {
-      const response = await fetch(`${AUTH_API_URL}/auth/phone/send-otp`, {
+      // Clean the number - remove all non-digits
+      const cleanNumber = mobileNumber.replace(/\D/g, '');
+      
+      // Format: If starts with 91, use as is, otherwise add 91
+      const formattedNumber = cleanNumber.startsWith('91') 
+        ? `+${cleanNumber}` 
+        : `+91${cleanNumber}`;
+      
+      console.log('Sending OTP to:', formattedNumber);
+
+      const response = await fetch(API.AUTH.PHONE_SEND_OTP, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: `+91${mobileNumber.replace(/\D/g, '')}` // Remove non-digits and add +91
+          phone: formattedNumber
         })
       });
 
       const data = await response.json();
+      console.log('OTP Response:', data);
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP');
+        // Show the actual error message from backend
+        const errorMsg = data.message || data.error || 'Failed to send OTP';
+        throw new Error(errorMsg);
       }
 
       if (data.ok) {
@@ -187,7 +246,8 @@ function SignUpModalContent({ isOpen, onClose }) {
       }
     } catch (error) {
       console.error('Send OTP error:', error);
-      setError('Failed to send OTP. Please check your number.');
+      // Show the actual error message
+      setError(error.message || 'Failed to send OTP. Please check your number.');
     } finally {
       setLoading(false);
     }
@@ -211,11 +271,21 @@ function SignUpModalContent({ isOpen, onClose }) {
     setError('');
 
     try {
-      const response = await fetch(`${AUTH_API_URL}/auth/phone/verify`, {
+      // Clean the number - remove all non-digits
+      const cleanNumber = mobileNumber.replace(/\D/g, '');
+      
+      // Format: If starts with 91, use as is, otherwise add 91
+      const formattedNumber = cleanNumber.startsWith('91') 
+        ? `+${cleanNumber}` 
+        : `+91${cleanNumber}`;
+      
+      console.log('Verifying OTP for:', formattedNumber);
+
+      const response = await fetch(API.AUTH.PHONE_VERIFY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: `+91${mobileNumber.replace(/\D/g, '')}`,
+          phone: formattedNumber,
           code: otpValue,
           acceptedTerms: true,
           acceptedTermsVer: 'v1.0'
@@ -223,9 +293,12 @@ function SignUpModalContent({ isOpen, onClose }) {
       });
 
       const data = await response.json();
+      console.log('Verify Response:', data);
 
       if (!response.ok) {
-        throw new Error(data.message || 'Invalid OTP');
+        // Show the actual error message from backend
+        const errorMsg = data.message || data.error || 'Invalid OTP';
+        throw new Error(errorMsg);
       }
 
       localStorage.setItem('accessToken', data.accessToken);
@@ -235,7 +308,8 @@ function SignUpModalContent({ isOpen, onClose }) {
       onClose();
     } catch (error) {
       console.error('Verify OTP error:', error);
-      setError('Invalid OTP. Please try again.');
+      // Show the actual error message
+      setError(error.message || 'Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -433,7 +507,7 @@ function SignUpModalContent({ isOpen, onClose }) {
           )}
 
           {/* TERMS */}
-          <div className="border-t border-white/50 -mx-12 self-stretch " />
+
 
           <div className='flex justify-center items-center outfit-font'>
             <div className=" pt-8 lg:px-0">

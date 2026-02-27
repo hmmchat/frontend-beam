@@ -1,19 +1,7 @@
-import React from 'react';
-import MeetSomeone from '../../components/Home/MeetSomeone';
-import MeetSomeoneMobile from '../../components/Mobile/MeetSomeoneMobile';
+'use client';
 
-const Page = () => {
-    return (
-        <>
-            <div className='hidden md:block'>
-                <MeetSomeone />
-            </div>
-            <div className='block md:hidden'>
-                <MeetSomeoneMobile />
+import MeetSomeoneDynamic from '../../components/Home/MeetSomeoneDynamic';
 
-            </div>
-        </>
-    );
-};
-
-export default Page;
+export default function MeetSomeonePage() {
+  return <MeetSomeoneDynamic />;
+}

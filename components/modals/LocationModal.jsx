@@ -1,30 +1,103 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { IoSearchOutline, IoLocationOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
+import { API, apiRequest } from '@/lib/api';
 
 export default function LocationModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const cities = [
-    { name: 'Pune', online: '26,772 online' },
-    { name: 'Delhi', online: '24,472 Chatting' },
-    { name: 'Bangalore', online: '26,772 online' },
-    { name: 'Mumbai', online: '24,472 Chatting' },
-    { name: 'Kolkata', online: '19,772 online' },
-    { name: 'Bhubaneshwar', online: '19,772 online' },
-    { name: 'Assam', online: '26,772 online' },
-    { name: 'Ahmedabad', online: '24,472 Chatting' },
+  useEffect(() => {
+    if (isOpen) {
+      fetchCities();
+      fetchPreference();
+    }
+  }, [isOpen]);
 
-  ];
+  const fetchCities = async (q = '') => {
+    try {
+      const url = q ? API.DISCOVERY.SEARCH_CITIES(q) : API.DISCOVERY.GET_CITIES;
+      const data = await apiRequest(url);
+      setCities(data.cities || []);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+    }
+  };
 
-  const filteredCities = cities.filter(city =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const fetchPreference = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.sub || payload.uid || payload.id;
+      
+      const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE(userId));
+      setSelectedCity(data.city || '');
+    } catch (error) {
+      console.error('Error fetching preference:', error);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery) fetchCities(searchQuery);
+      else fetchCities();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleLocateMe = async () => {
+    if (!navigator.geolocation) return;
+    
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const data = await apiRequest(`${API.DISCOVERY.GET_CITIES.replace('/cities', '/locate-me')}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+        });
+        if (data.city) {
+          setSelectedCity(data.city);
+        }
+      } catch (error) {
+        console.error('Error locating:', error);
+      } finally {
+        setLoading(false);
+      }
+    });
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.sub || payload.uid || payload.id;
+
+      await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          userId,
+          city: selectedCity || null
+        })
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error saving preference:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
@@ -65,9 +138,15 @@ export default function LocationModal({ isOpen, onClose }) {
           </div>
 
           {/* Locate Me */}
-          <button className="flex items-center gap-2 text-white/80 hover:text-white transition text-sm mb-6 ml-1 w-fit">
+          <button 
+            onClick={handleLocateMe}
+            disabled={loading}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition text-sm mb-6 ml-1 w-fit disabled:opacity-50"
+          >
             <IoLocationOutline className="text-lg" />
-            <span className="underline decoration-white/50 underline-offset-4">Locate me</span>
+            <span className="underline decoration-white/50 underline-offset-4">
+              {loading ? 'Locating...' : 'Locate me'}
+            </span>
           </button>
 
 
@@ -77,8 +156,8 @@ export default function LocationModal({ isOpen, onClose }) {
           </p>
 
           {/* City List */}
-          <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto pr-1 flex-1 content-start">
-            {filteredCities.map((city) => (
+          <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto pr-1 flex-1 content-start min-h-[200px]">
+            {cities.map((city) => (
               <button
                 key={city.name}
                 onClick={() => setSelectedCity(city.name)}
@@ -87,15 +166,17 @@ export default function LocationModal({ isOpen, onClose }) {
                   : 'border-white/20 bg-[#ffffff1a] hover:bg-white/10'
                   }`}
               >
-                {/* Selection Indicator (optional, or just border) */}
-                <div className="text-white  text-sm mb-0.5">
+                <div className="text-white text-sm mb-0.5">
                   {city.name}
                 </div>
                 <div className="text-white/60 text-xs outfit-font">
-                  {city.online}
+                  {city.availableCount ? `${city.availableCount} online` : 'Active city'}
                 </div>
               </button>
             ))}
+            {cities.length === 0 && !loading && (
+              <div className="col-span-2 text-white/40 text-center py-8">No cities found</div>
+            )}
           </div>
 
           {/* Divider */}
@@ -106,11 +187,12 @@ export default function LocationModal({ isOpen, onClose }) {
             <Button
               variant="outline2"
               width="auto"
-              onClick={onClose}
+              onClick={handleSave}
+              disabled={loading}
               position='none'
               className="px-8 py-3 rounded-xl text-sm bg-[#2a0060] border border-white/20"
             >
-              Start Matching
+              {loading ? 'Saving...' : 'Start Matching'}
             </Button>
           </div>
         </div>

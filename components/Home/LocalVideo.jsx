@@ -1,0 +1,90 @@
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
+
+const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
+  const videoRef = useRef(null);
+  const [stream, setStream] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function startCamera() {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }, 
+          audio: false 
+        });
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+        setError("Camera access denied. Please enable camera permissions.");
+      }
+    }
+
+    startCamera();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative w-full h-full bg-gray-900 overflow-hidden flex items-center justify-center">
+      {error ? (
+        <div className="text-white text-center p-4">
+          <p className="text-4xl mb-4">📷🚫</p>
+          <p className="text-sm opacity-70">{error}</p>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover scale-x-[-1]"
+        />
+      )}
+
+      {/* Solo Toggle Overlay */}
+      {showSoloCheckbox && (
+        <div className="absolute bottom-12 right-12 z-20">
+          <label className="flex items-center gap-2 text-white/90 text-sm cursor-pointer hover:text-white transition-all group">
+            <div className="relative w-5 h-5 flex items-center justify-center">
+              <input 
+                type="checkbox" 
+                className="peer shrink-0 appearance-none w-5 h-5 border-2 border-white/30 rounded bg-black/20 checked:bg-white checked:border-white transition-all cursor-pointer" 
+                onChange={(e) => onSoloChange?.(e.target.checked)}
+              />
+              <svg 
+                className="absolute w-3 h-3 pointer-events-none hidden peer-checked:block text-purple-900 stroke-[4]" 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="font-medium">Only Solo matches</span>
+          </label>
+        </div>
+      )}
+      
+      {/* Decorative Border for Video */}
+      <div className="absolute inset-4 border-2 border-white/20 rounded-[2.5rem] pointer-events-none" />
+    </div>
+  );
+};
+
+export default LocalVideo;

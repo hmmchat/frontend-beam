@@ -55,7 +55,7 @@ export default function Modal({
     md:backdrop-saturate-[120%]
     md:bg-[#4E0093]/70 
     md:border md:border-white/25
-    md:shadow-[0_30px_90px_rgba(0,0,0,0.45)]
+
     ${className}
   `}
         style={{
@@ -77,7 +77,12 @@ export default function Modal({
         />
         {children}
       </div>
-      <div className='absolute inset-0 bg-[#02004A]/70 -z-50 pointer-events-none'></div>
+      <div className='absolute inset-0 bg-[#02004A] -z-50 pointer-events-none'
+      style={{
+                            backgroundImage: 'url(/assets/mb.jpg)',
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: 'cover',
+                        }}></div>
 
     </div>
 

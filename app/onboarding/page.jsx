@@ -9,12 +9,14 @@ import Onboarding from '../../components/Home/Onboarding';
 const OnboardingPage = () => {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   return (
-    <>
-      <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <Onboarding />
-      </main>
 
-    </>
+          <Onboarding />
+
+
+
+
+
+   
   );
 };
 

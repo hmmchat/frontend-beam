@@ -23,7 +23,7 @@ const FaceCard = ({ user, onRaincheck, onMeetPerson }) => {
   const age = user.age || calculateAge(user.dateOfBirth);
 
   return (
-    <div className="relative w-full h-[96vh] rounded-2xl overflow-hidden border-2 border-white/40 bg-purple-900 shadow-2xl">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden bg-purple-900">
       {/* User Photo Background */}
       <div className="absolute inset-0">
         <img 
@@ -120,7 +120,7 @@ const FaceCard = ({ user, onRaincheck, onMeetPerson }) => {
             onClick={onMeetPerson}
             className="flex-[2] py-4 bg-white text-purple-900 text-sm font-black border-2 border-white rounded-2xl hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all uppercase tracking-widest flex items-center justify-center gap-2"
           >
-            Meet this person rn 👉
+            Meet this person rn
           </button>
         </div>
 

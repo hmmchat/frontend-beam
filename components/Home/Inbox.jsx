@@ -12,6 +12,7 @@ import { FaArrowLeftLong, FaEnvelope, FaEye, FaGift, FaHeart, FaSearchengin  } f
 import { TiUserAdd } from "react-icons/ti";
 import Button from "../ui/Button";
 import { API } from "../../lib/api";
+import GiftModal from "./GiftModal";
 
 export default function Inbox() {
   const router = useRouter();
@@ -22,12 +23,14 @@ export default function Inbox() {
   // Dynamic data from backend
   const [inboxConversations, setInboxConversations] = useState([]);
   const [requestConversations, setRequestConversations] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [friendsWall, setFriendsWall] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   
   const scrollRef = useRef(null);
 
@@ -63,63 +66,56 @@ export default function Inbox() {
 
       console.log('🔑 Token found, fetching conversations...');
       
-      const endpoint = activeTab === "inbox" 
+      const convEndpoint = activeTab === "inbox" 
         ? API.FRIENDS.GET_INBOX_CONVERSATIONS
         : API.FRIENDS.GET_RECEIVED_REQUESTS;
 
-      console.log('📡 Fetching from:', endpoint);
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-      const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('📥 Response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Conversations loaded:', data);
-        
-        // Extract userId from token if not set
-        if (!currentUserId && token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const userId = payload.sub || payload.uid || payload.id;
-            setCurrentUserId(userId);
-            if (userId) localStorage.setItem('userId', userId);
-          } catch (e) {
-            console.error('Failed to parse token payload:', e);
-            // Fallback to localStorage if parsing fails
-            setCurrentUserId(localStorage.getItem('userId'));
-          }
-        }
-        
+      // Fetch conversations
+      const convResponse = await fetch(convEndpoint, { headers });
+      if (convResponse.ok) {
+        const convData = await convResponse.json();
         if (activeTab === "inbox") {
-          setInboxConversations(data.conversations || []);
+          setInboxConversations(convData.conversations || []);
         } else {
-          setRequestConversations(data.conversations || []);
+          setRequestConversations(convData.conversations || []);
         }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Failed to fetch conversations:', response.status);
-        console.error('❌ Error details:', errorData);
-        
-        // Handle 401 Unauthorized (Expired Session)
-        if (response.status === 401) {
-          console.warn('⚠️ Session expired. Redirecting to login...');
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          router.push('/');
-          return;
-        }
+      }
 
-        // Set empty arrays on other errors to show "No conversations" message
-        if (activeTab === "inbox") {
-          setInboxConversations([]);
-        } else {
-          setRequestConversations([]);
+      // If in requests tab, also fetch pending friend requests (without conversations yet)
+      if (activeTab === "requests") {
+        const pendingResponse = await fetch(API.FRIENDS.GET_PENDING_REQUESTS, { headers });
+        if (pendingResponse.ok) {
+          const pendingData = await pendingResponse.json();
+          
+          // Enrich pending requests with user profile info
+          const enrichedPending = await Promise.all((pendingData || []).map(async (req) => {
+            try {
+              const profile = await fetch(API.USERS.GET_USER(req.fromUserId), { headers }).then(res => res.json());
+              return { ...req, user: profile };
+            } catch (err) {
+              return { ...req, user: { username: 'Unknown User' } };
+            }
+          }));
+          
+          setPendingRequests(enrichedPending);
+        }
+      }
+
+      // Extract userId from token if not set
+      if (!currentUserId && token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload.sub || payload.uid || payload.id;
+          setCurrentUserId(userId);
+          if (userId) localStorage.setItem('userId', userId);
+        } catch (e) {
+          console.error('Failed to parse token payload:', e);
+          setCurrentUserId(localStorage.getItem('userId'));
         }
       }
     } catch (error) {
@@ -185,13 +181,69 @@ export default function Inbox() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!activeChat || !newMessage.trim() || sending) return;
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(API.FRIENDS.ACCEPT_FRIEND_REQUEST(requestId), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log('✅ Friend request accepted');
+        fetchConversations();
+      } else {
+        console.error('❌ Failed to accept friend request');
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(API.FRIENDS.REJECT_FRIEND_REQUEST(requestId), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log('✅ Friend request rejected');
+        fetchConversations();
+      } else {
+        console.error('❌ Failed to reject friend request');
+      }
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+    }
+  };
+
+  const sendMessage = async (giftData = null) => {
+    if (!activeChat || sending) return;
+    
+    // Message is only required if giftData is not provided
+    if (!newMessage.trim() && !giftData) return;
 
     try {
       setSending(true);
       const token = localStorage.getItem('accessToken');
       const conversationId = activeChat.conversationId;
+
+      const body = {
+        message: newMessage.trim() || null
+      };
+
+      if (giftData) {
+        body.giftId = giftData.id;
+        body.giftAmount = giftData.price;
+      }
 
       const response = await fetch(API.FRIENDS.SEND_MESSAGE(conversationId), {
         method: 'POST',
@@ -199,18 +251,16 @@ export default function Inbox() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          message: newMessage.trim()
-        })
+        body: JSON.stringify(body)
       });
 
       if (response.ok) {
-        const data = await response.json();
         setNewMessage("");
-        // Optimistically add message or re-fetch
+        setIsGiftModalOpen(false);
         fetchMessages(conversationId);
       } else {
-        console.error('❌ Failed to send message:', response.status);
+        const err = await response.json();
+        alert(err.message || 'Failed to send');
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -298,7 +348,7 @@ export default function Inbox() {
                       : "border border-transparent "
                   }`}
                 >
-                  Requests <span className="text-xs font-thin">({requestConversations.length})</span>
+                  Requests <span className="text-xs font-thin">({requestConversations.length + pendingRequests.length})</span>
                 </button>
               </div>
 
@@ -341,7 +391,47 @@ export default function Inbox() {
                 <>
                   {/* Chat List */}
                   <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-4 md:px-0">
-                    {currentConversations.length === 0 ? (
+                    {activeTab === "requests" && pendingRequests.length > 0 && (
+                      <div className="flex flex-col gap-3 mb-2">
+                        <h3 className="text-[10px] uppercase font-bold text-white/40 tracking-widest px-1">Friend Requests</h3>
+                        {pendingRequests.map((req) => (
+                          <div
+                            key={req.id}
+                            className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/10"
+                          >
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                              <Image 
+                                src={req.user?.displayPictureUrl || "/assets/ico.png"} 
+                                alt={req.user?.username || "User"} 
+                                fill 
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-sm truncate">{req.user?.username || "Unknown"}</div>
+                              <div className="text-[10px] text-white/50">{req.message || "Wants to be your friend"}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleAcceptRequest(req.id)}
+                                className="bg-[#d91e82] text-white text-[10px] font-bold px-3 py-1.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg"
+                              >
+                                Accept
+                              </button>
+                              <button 
+                                onClick={() => handleRejectRequest(req.id)}
+                                className="bg-white/10 text-white text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-white/20 active:scale-95 transition-all"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="h-px bg-white/10 my-2" />
+                      </div>
+                    )}
+
+                    {currentConversations.length === 0 && (activeTab !== "requests" || pendingRequests.length === 0) ? (
                       <div className="flex-1 flex items-center justify-center">
                         <p className="text-white/60">No conversations yet</p>
                       </div>
@@ -350,20 +440,27 @@ export default function Inbox() {
                         <button
                           key={conversation.conversationId || i}
                           onClick={() => setActiveChat(conversation)}
-                          className="flex items-center gap-4 border-b border-white/20 pb-3 text-left"
+                          className="flex items-center gap-4 border-b border-white/20 pb-4 text-left hover:bg-white/5 px-2 rounded-xl transition-colors group"
                         >
-                          <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                             <Image 
                               src={conversation.otherUser?.displayPictureUrl || "/assets/ico.png"} 
                               alt={conversation.otherUser?.username || "User"} 
                               fill 
-                              className="object-cover"
+                              className="object-cover transition-transform group-hover:scale-110"
                             />
                           </div>
 
-                          <div className="flex-1">
-                            <div className="font-medium text-base">{conversation.otherUser?.username || "Unknown User"}</div>
-                            <div className="text-sm text-white/70 truncate font-light">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-base flex items-center justify-between">
+                              <span className="truncate">{conversation.otherUser?.username || "Unknown User"}</span>
+                              {conversation.unreadCount > 0 && (
+                                <span className="bg-[#d91e82] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                  {conversation.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-white/50 truncate font-light mt-0.5">
                               {conversation.lastMessage?.text || "No messages yet"}
                             </div>
                           </div>
@@ -379,17 +476,19 @@ export default function Inbox() {
           </div>
 
           {/* Vertical Divider */}
-          <div className="hidden md:block w-px bg-white/20"></div>
+
 
           {/* CHAT VIEW */}
           <div
-            className={`md:w-[60%] w-full h-full flex flex-col
+            className={`md:w-[60%] w-full h-full flex flex-col p-2
             ${activeChat ? "flex" : "hidden md:flex"}`}
           >
             {activeChat ? (
               <>
+
+  <div className="border border-white/50 rounded-[50px] p-6 flex-1 flex flex-col overflow-hidden ">
                 {/* Header */}
-                <div className="flex items-center justify-between md:px-6  md:p-2 md:mt-6 border-b border-white/20 bg-black/20 md:bg-transparent">
+                <div className="flex items-center justify-between md:px-6  md:p-2 md:mt-6  bg-black/20 md:bg-transparent ">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setActiveChat(null)}
@@ -409,7 +508,7 @@ export default function Inbox() {
                     <span className="font-semibold text-lg">{activeChat.otherUser?.username || "User"}</span>
                   </div>
 
-                  <img src="/assets/Video-on.svg" alt="Video" className="w-10 h-10 opacity-70 m-2" />
+                  {/* <img src="/assets/Video-on.svg" alt="Video" className="w-10 h-10 opacity-70 m-2" /> */}
                 </div>
 
                 {/* Messages */}
@@ -424,23 +523,38 @@ export default function Inbox() {
                         const isMe = message.fromUserId === currentUserId;
                         return (
                           <div key={i} className={`flex items-start gap-2 ${isMe ? 'justify-end' : ''}`}>
-                            {!isMe && (
-                              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/20">
-                                <Image 
-                                  src={activeChat.otherUser?.displayPictureUrl || "/assets/ico.png"} 
-                                  alt="User" 
-                                  width={32} 
-                                  height={32} 
-                                  className="object-cover"
-                                />
-                              </div>
-                            )}
-                            <div className={`px-4 py-2.5 rounded-2xl text-[15px] max-w-[75%] shadow-md whitespace-pre-wrap break-words ${
+                         
+                            <div className={`p-1 rounded-2xl max-w-[75%] shadow-md overflow-hidden ${
                               isMe 
-                                ? 'bg-gradient-to-br from-[#d91e82] to-[#8a1352] text-white rounded-tr-none border border-white/10' 
+                                ? 'bg-black/20 text-white rounded-tr-none border border-white/10' 
                                 : 'bg-white/10 text-white rounded-tl-none border border-white/5'
                             }`}>
-                              {message.message}
+                              {/* Gift Rendering */}
+                              {(message.giftId || message.messageType === 'GIFT' || message.messageType === 'GIFT_WITH_MESSAGE') && (
+                                <div className="bg-black/20 rounded-xl p-3 mb-1 flex flex-col items-center gap-2 border border-white/10">
+                                  <div className="relative w-16 h-16">
+                                    <Image 
+                                      src={`/gift/${message.giftId || 'gift1'}.png`} 
+                                      alt="Gift" 
+                                      fill 
+                                      className="object-contain" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                                    <div className="relative w-3 h-3">
+                                      <Image src="/gift/dimond.png" alt="coin" fill className="object-contain" />
+                                    </div>
+                                    <span className="text-xs font-bold">{message.giftAmount || 0}</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Text Message Rendering */}
+                              {message.message && (
+                                <div className="px-4 py-2 whitespace-pre-wrap break-words text-[15px]">
+                                  {message.message}
+                                </div>
+                              )}
                             </div>
                             {isMe && (
                               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/30">
@@ -460,6 +574,7 @@ export default function Inbox() {
                     <div ref={(el) => (scrollRef.current = el)} />
                   </div>
                 </div>
+                </div>
 
                 {/* Input Area */}
                 <div className="p-4 md:p-6 flex items-center gap-3">
@@ -473,7 +588,7 @@ export default function Inbox() {
                         if (e.key === 'Enter') sendMessage();
                       }}
                       disabled={sending}
-                      className="w-full bg-white/5 backdrop-blur-md border border-white/20 rounded-[32px] md:rounded-full py-3 md:py-4 px-6 pr-14 text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-all shadow-inner"
+                      className="w-full bg-white/5 backdrop-blur-md border border-white/60 rounded-[12px]  py-3 md:py-4 px-6 pr-14 text-white placeholder-white/40 focus:outline-none focus:border-white/90 transition-all shadow-inner"
                     />
                     <button 
                       onClick={sendMessage}
@@ -485,10 +600,30 @@ export default function Inbox() {
                   </div>
 
                   {/* Gift Button */}
-                  <button className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-gradient-to-br from-[#d91e82] to-[#8a1352] border-4 border-[#ff3db2]/30 shadow-lg shadow-pink-900/40 active:scale-95 transition-transform">
-                    <FaGift className="text-xl md:text-2xl text-white" />
+                  <button 
+                    onClick={() => setIsGiftModalOpen(true)}
+                    className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center active:scale-95 transition-transform relative group "
+                  >
+                    <img 
+                      src="/circle.png" 
+                      alt="button-bg" 
+                      className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100" 
+                    />
+                    <img 
+                      src="/giftboc.png" 
+                      alt="gift-icon" 
+                      className="relative w-6 h-6 md:w-8 md:h-8 object-contain group-hover:rotate-12 transition-transform" 
+                    />
                   </button>
                 </div>
+
+                <GiftModal 
+                  isOpen={isGiftModalOpen}
+                  onClose={() => setIsGiftModalOpen(false)}
+                  onSelectGift={(gift) => {
+                    sendMessage(gift);
+                  }}
+                />
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">

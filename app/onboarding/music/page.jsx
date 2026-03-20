@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function MusicOnboarding() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function MusicOnboarding() {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:3002/music/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
+      const response = await fetch(API.USERS.SEARCH_MUSIC(searchQuery, 10));
       
       if (!response.ok) {
         throw new Error('Search failed');
@@ -48,7 +49,7 @@ export default function MusicOnboarding() {
 
       if (selectedSong) {
         // Step 1: Create/get music preference
-        const createResponse = await fetch('http://localhost:3002/music/preferences', {
+        const createResponse = await fetch(API.USERS.CREATE_MUSIC_PREFERENCE, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -65,17 +66,18 @@ export default function MusicOnboarding() {
           throw new Error('Failed to create music preference');
         }
 
-        const { song } = await createResponse.json();
+        const data = await createResponse.json();
+        const musicPref = data.song;
 
         // Step 2: Update user's music preference
-        const updateResponse = await fetch('http://localhost:3002/me/music-preference', {
+        const updateResponse = await fetch(API.USERS.UPDATE_MUSIC_PREFERENCE, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            musicPreferenceId: song.id
+            musicPreferenceId: musicPref.id
           })
         });
 

@@ -15,6 +15,7 @@ import clsx from 'clsx';
 import LocationCard from './LocationCard';
 import RequestSentPopup from './RequestSentPopup';
 import SearchingPopup from './SearchingPopup';
+import CoinModal from '@/components/modals/CoinModal';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function MeetSomeoneDynamic() {
   const [invited, setInvited] = useState(['Austin']);
   const [myProfile, setMyProfile] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
   const [waitingMatchedUser, setWaitingMatchedUser] = useState(null);
   const [matchedRoom, setMatchedRoom] = useState(null);
@@ -122,8 +124,18 @@ export default function MeetSomeoneDynamic() {
   };
 
   useEffect(() => {
-    if (isSearching) {
-      fetchCard(sessionId);
+    if (mode === 'squad') {
+      // Squad mode auto-starts card browsing
+      setIsSearching(true);
+      fetchCard(null);
+    } else {
+      // Switching back to solo resets to the landing state
+      setIsSearching(false);
+      setCurrentCard(null);
+      setWaitingForMatch(false);
+      setWaitingMatchedUser(null);
+      clearInterval(pollRef.current);
+      clearTimeout(rescueTimeoutRef.current);
     }
   }, [mode]);
 
@@ -403,15 +415,17 @@ export default function MeetSomeoneDynamic() {
       <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
 
         {/* LEFT SIDE */}
-        <div
-          className={clsx('relative', 'flex', 'items-center', 'justify-center', 'px-8', 'bg-repeat', 'overflow-hidden')}
-          style={{
-            backgroundImage: "url('/assets/mb.jpg')",
-            backgroundRepeat: 'repeat',
-            backgroundSize: 'auto',
-            backgroundPosition: 'top left',
-          }}
-        >
+<div className="relative flex items-center justify-center px-6 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark">
+
+  <div
+    className="absolute inset-0 z-0"
+    style={{
+      backgroundImage: 'url(/assets/mb.jpg)',
+      backgroundRepeat: 'repeat',
+      backgroundSize: 'cover',
+    }}
+  />
+        
           {isSearching && currentCard ? (
             <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'p-2', 'relative')}>
               {currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
@@ -423,12 +437,60 @@ export default function MeetSomeoneDynamic() {
                 />
               ) : (
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-                  <FaceCard 
-                    user={currentCard} 
-                    onRaincheck={waitingForMatch ? null : handleRaincheck}
-                    onMeetPerson={waitingForMatch ? null : handleProceed}
-                  />
-                  {/* Request Sent (Waiting) Popup */}
+
+
+
+
+<div className="relative flex flex-col items-center">
+
+  {/* 🔥 NAME OUTSIDE CARD */}
+<div className="absolute left-22 top-1/2 -translate-y-1/2 z-[20] pointer-events-none">
+  <div className="absolute left-[-55px] top-60 -translate-y-1/2 z-[20] -rotate-90 origin-left pointer-events-none">
+  <h1
+    className="text-[#FFB800] text-[60px]  uppercase tracking-tight leading-none whitespace-nowrap"
+    style={{
+      textShadow: '8px 4px 30px rgba(0,0,0,0.4)',
+      WebkitTextStroke: '2px rgba(0,0,0,0.6)'
+    }}
+  >
+    {currentCard?.username?.split(' ')[0] || currentCard?.firstName || 'Rituparna'}{' '}
+    <span className="text-white">{currentCard?.age || '24'}</span>
+  </h1>
+</div>
+</div>
+
+  {/* CARD FRAME (CLEAN BORDER) */}
+  <div className="relative w-[360px] h-[640px] p-3 ">
+
+    {/* INNER BORDER (LIKE SCREENSHOT) */}
+    <div className="absolute inset-3 rounded-[30px] border border-red/20 pointer-events-none" />
+
+    {/* CARD */}
+    <div className="relative w-full h-full rounded-[30px] overflow-hidden">
+      <FaceCard user={currentCard} />
+    </div>
+  </div>
+
+  {/* BUTTONS */}
+  <div className="mt-6 flex items-center justify-between w-[460px]">
+    <button
+      onClick={handleRaincheck}
+      className="px-6 py-3 text-white rounded-xl hover:bg-white/10"
+    >
+      Raincheck!
+    </button>
+
+    <button
+      onClick={handleProceed}
+      className="px-10 py-4 text-white border border-white/30 rounded-xl hover:bg-black/10 bg-black/20"
+    >
+      Meet this person rn 👉
+    </button>
+  </div>
+
+
+
+</div>          {/* Request Sent (Waiting) Popup */}
                   <RequestSentPopup 
                     isVisible={waitingForMatch}
                     user={waitingMatchedUser}
@@ -459,20 +521,20 @@ export default function MeetSomeoneDynamic() {
           )}
         </div>
 
-        {/* RIGHT SIDE */}
-        <div className={clsx('relative', 'flex', 'items-center', 'justify-center', 'px-6', 'md:px-16', 'overflow-hidden', 'h-full')}>
 
-                           <div
-  className={clsx('absolute', 'inset-0', 'z-[1]', 'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
+
+        {/* RIGHT SIDE */}
+<div className="relative w-full h-full overflow-hidden">
+
+<div
+  className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
   style={{
     backgroundImage: 'url(/bg.jpg)',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'repeat',
   }}
-/>
-
-          
+/>    
 
       
 
@@ -480,8 +542,8 @@ export default function MeetSomeoneDynamic() {
 
 
 
-               <div className={clsx('absolute', 'top-8', 'left-8', 'z-10')}>
-            <Button variant="outline" width="hex" onClick={() => router.push('/facecard')}>
+                <div className={clsx('absolute', 'top-8', 'left-8', 'z-50')}>
+            <Button variant="outline" width="hex" onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
               <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} />
@@ -490,7 +552,7 @@ export default function MeetSomeoneDynamic() {
 
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-4', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-5', 'z-[3]', 'bg-black/40', 'rounded-full', 'px-12', 'py-1')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-5', 'z-50', 'bg-black/40', 'rounded-full', 'px-12', 'py-1')}>
             <button 
               onClick={() => router.push('/inbox')}
               className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
@@ -531,7 +593,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-[3]', 'flex', 'gap-2')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-50', 'flex', 'gap-2')}>
   <img src="/icones1.png" alt="" className={clsx('w-12', 'h-12')} />
 
   <img src="/icones2.png" alt="" className={clsx('w-12', 'h-12')} />
@@ -575,20 +637,26 @@ export default function MeetSomeoneDynamic() {
 
           {mode === 'solo' ? (
             /* SOLO VIEW */
-            <div className={clsx('relative', 'z-10', 'w-full', 'max-w-[520px]', 'flex', 'flex-col', 'gap-8', 'h-full', 'justify-center', 'mt-32')} style={{ isolation: 'isolate' }}>
+<div
+  className={clsx(
+    'relative z-10 w-full',
+    'flex flex-col items-center justify-center',
+    'gap-6 h-full mx-auto text-center', 
+  )}
+>
               {!isSearching ? (
                 <>
-                  <button
-                    onClick={() => setIsSearching(true)}
-                    className={clsx('relative', 'z-20', 'w-full', 'py-6', 'px-12', 'text-white', 'font-bold', 'bg-black/30', 'flex', 'items-center', 'justify-center', 'gap-3', 'border', 'border-white', 'border-b-4', 'rounded-2xl', 'hover:bg-black/40', 'transition-all', 'uppercase', 'tracking-widest')}
-                  >
-                    <img
-                      src="/assets/video-off.svg"
-                      className={clsx('w-8', 'h-8', 'filter', 'invert', 'brightness-0')}
-                      alt="Video icon"
-                    />
-                    Meet Someone now
-                  </button>
+             <button
+  onClick={() => { setIsSearching(true); fetchCard(null); }}
+  className={clsx(
+    'relative z-20 mt-60 w-4/6 py-6 px-12 font-bold flex items-center justify-center gap-3 border rounded-2xl transition-all uppercase tracking-widest',
+    isSearching
+      ? 'bg-yellow-500 text-black animate-pulse'
+      : 'bg-black/30 text-white border-white hover:bg-black/40'
+  )}
+>
+  {isSearching ? 'Searching...' : 'Meet Someone Now'}
+</button>
 
                   <FilterButtons
                     onGenderClick={() => setIsGenderModalOpen(true)}
@@ -598,16 +666,44 @@ export default function MeetSomeoneDynamic() {
                 </>
               ) : (
                 <div className={clsx('absolute', 'inset-0', 'z-[-1]', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20')}>
-                  <LocalVideo 
-                    showSoloCheckbox={true} 
-                    onSoloChange={(checked) => setMode(checked ? 'solo' : 'both')} 
-                  />
-                </div>
+
+<div className="absolute inset-0 z-[1]">
+
+  {/* 🎥 FULL VIDEO */}
+  <LocalVideo 
+    showSoloCheckbox={true} 
+    onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
+  />
+
+  {/* 🌫 LIGHT OVERLAY */}
+  <div className="absolute inset-0 bg-black/10" />
+
+  {/* 🔲 BORDER FRAME */}
+  <div className="absolute inset-4 border border-white/30 rounded-[40px] pointer-events-none" />
+
+</div>
+
+
+
+</div>
+     
               )}
             </div>
           ) : (
             /* SQUAD VIEW */
-            <div className={clsx('relative', 'z-10', 'w-full', 'max-w-3xl', 'text-center', 'mt-auto', 'mb-40')}>
+            <div className={clsx('relative', 'z-10', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}>
+
+              {/* Video background for squad mode */}
+              <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl border-2 border-white/20">
+                <LocalVideo 
+                  showSoloCheckbox={false}
+                />
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="absolute inset-4 border border-white/20 rounded-[40px] pointer-events-none" />
+              </div>
+
+              {/* Squad UI overlay */}
+              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-3xl', 'text-center', 'justify-center', 'mt-20')}>
              
               <div className={clsx('flex', 'items-center', 'justify-center', 'gap-4', 'mb-10', 'font-sans')}>
                 {['Me', 'Who', 'Who'].map((label, i, arr) => (
@@ -615,7 +711,7 @@ export default function MeetSomeoneDynamic() {
                     <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
                       <div className={clsx('relative', 'w-20', 'h-20', 'rounded-full', 'border', 'border-white/30', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-white/5')}>
                         {label === 'Me' ? (
-                          <Image src="/assets/ico.png" alt="me" fill className="object-cover" />
+                          <img src={myProfile?.displayPictureUrl || "/assets/ico.png"} alt="me" className="w-full h-full object-cover" />
                         ) : (
                           <span className={clsx('text-2xl', 'text-white/50')}>?</span>
                         )}
@@ -668,7 +764,7 @@ export default function MeetSomeoneDynamic() {
                             : 'border-white/20'
                         }`}
                       >
-                        <Image src={person.img} alt={person.name} fill className={clsx('object-cover', 'rounded-full')} />
+                        <img src={person.img} alt={person.name} className={clsx('w-full', 'h-full', 'object-cover', 'rounded-full')} />
                         {invited.includes(person.name) ? (
                           <span className={clsx('absolute', '-top-2', '-right-2', 'bg-yellow-400', 'text-black', 'w-5', 'h-5', 'text-xs', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-bold')}>
                             ✓
@@ -687,6 +783,7 @@ export default function MeetSomeoneDynamic() {
                   </button>
                 </div>
               </div>
+              </div> {/* end squad UI overlay */}
             </div>
           )}
 
@@ -732,11 +829,14 @@ export default function MeetSomeoneDynamic() {
 
           
         </div>
+
+
       </main>
 
       {/* Modals */}
       <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
       <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+      <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
     </div>
   );
 }

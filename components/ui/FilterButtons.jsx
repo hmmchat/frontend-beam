@@ -8,7 +8,7 @@ export default function FilterButtons({
   className = ""
 }) {
   return (
-    <div className={`font-[family-name:var(--font-otomanopee)] border border-white/90 flex flex-row items-center justify-center gap-0 w-[80%] mx-auto border border-white/30 rounded-[20px] overflow-hidden ${className}`}>
+    <div className={`font-[family-name:var(--font-otomanopee)] border border-white/90 flex flex-row items-center justify-center gap-0 w-[50%] mx-auto border border-white/30 rounded-[20px] overflow-hidden ${className}`}>
       <button
         onClick={onGenderClick}
         className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white/80 font-medium hover:bg-white/10 transition"

@@ -6,7 +6,8 @@ import Image from "next/image";
 import {
   IoChevronBack,
   IoVideocamOutline,
-  IoSendSharp
+  IoSendSharp,
+  IoLocationOutline
 } from "react-icons/io5";
 import { FaArrowLeftLong, FaEnvelope, FaEye, FaGift, FaHeart, FaSearchengin  } from "react-icons/fa6";
 import { TiUserAdd } from "react-icons/ti";
@@ -440,25 +441,22 @@ export default function Inbox() {
                         <button
                           key={conversation.conversationId || i}
                           onClick={() => setActiveChat(conversation)}
-                          className="flex items-center gap-4 border-b border-white/20 pb-4 text-left hover:bg-white/5 px-2 rounded-xl transition-colors group"
+                          className={`flex items-center gap-4 border-b border-white/20 pb-4 text-left hover:bg-white/5 px-2 rounded-xl transition-colors group ${
+                            activeChat?.conversationId === conversation.conversationId ? '' : ''
+                          }`}
                         >
                           <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                             <Image 
                               src={conversation.otherUser?.displayPictureUrl || "/assets/ico.png"} 
                               alt={conversation.otherUser?.username || "User"} 
                               fill 
-                              className="object-cover transition-transform group-hover:scale-110"
+                              className="object-cover "
                             />
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="font-bold text-base flex items-center justify-between">
-                              <span className="truncate">{conversation.otherUser?.username || "Unknown User"}</span>
-                              {conversation.unreadCount > 0 && (
-                                <span className="bg-[#d91e82] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                                  {conversation.unreadCount}
-                                </span>
-                              )}
+                             
                             </div>
                             <div className="text-sm text-white/50 truncate font-light mt-0.5">
                               {conversation.lastMessage?.text || "No messages yet"}
@@ -486,27 +484,42 @@ export default function Inbox() {
             {activeChat ? (
               <>
 
-  <div className="border border-white/50 rounded-[50px] p-6 flex-1 flex flex-col overflow-hidden ">
+  <div className="border border-white/50 rounded-[50px]  flex-1 flex flex-col overflow-hidden ">
                 {/* Header */}
                 <div className="flex items-center justify-between md:px-6  md:p-2 md:mt-6  bg-black/20 md:bg-transparent ">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setActiveChat(null)}
-                      className="md:hidden text-2xl"
-                    >
-                      <IoChevronBack />
-                    </button>
+                    <div className="flex items-center gap-3 bg-purple-600/20 border border-white p-1.5 pr-6 rounded-full">
+                      <button
+                        onClick={() => setActiveChat(null)}
+                        className="md:hidden text-2xl pl-2"
+                      >
+                        <IoChevronBack />
+                      </button>
 
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                      <Image 
-                        src={activeChat.otherUser?.displayPictureUrl || "/assets/ico.png"} 
-                        alt="User" 
-                        fill 
-                        className="object-cover"
-                      />
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+                          <Image 
+                            src={activeChat.otherUser?.displayPictureUrl || "/assets/ico.png"} 
+                            alt="User" 
+                            fill 
+                            className="object-cover rounded-full"
+                          />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 text-lg">
+                          🐵
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-bold text-lg text-white leading-tight">
+                          {activeChat.otherUser?.username || "User"}
+                          {activeChat.otherUser?.age ? `, ${activeChat.otherUser.age}` : ', 23'}
+                        </span>
+                        <div className="flex items-center gap-1 text-white/80 text-xs">
+                          <IoLocationOutline className="text-white" />
+                          <span>{activeChat.otherUser?.city || "Banglore"}</span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="font-semibold text-lg">{activeChat.otherUser?.username || "User"}</span>
-                  </div>
 
                   {/* <img src="/assets/Video-on.svg" alt="Video" className="w-10 h-10 opacity-70 m-2" /> */}
                 </div>

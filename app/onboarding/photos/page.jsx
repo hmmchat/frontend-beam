@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { API } from '@/lib/api';
 
 export default function PhotosOnboarding() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function PhotosOnboarding() {
     }
 
     try {
-      const response = await fetch('http://localhost:3002/me/photos', {
+      const response = await fetch(API.USERS.GET_PHOTOS, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -60,7 +61,7 @@ export default function PhotosOnboarding() {
       const photoUrl = 'https://via.placeholder.com/300';
       const order = photos.length; // 0, 1, 2, or 3
 
-      const response = await fetch('http://localhost:3002/me/photos', {
+      const response = await fetch(API.USERS.ADD_PHOTO, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,7 +91,7 @@ export default function PhotosOnboarding() {
   const handleDeletePhoto = async (photoId) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:3002/me/photos/${photoId}`, {
+      const response = await fetch(API.USERS.DELETE_PHOTO(photoId), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

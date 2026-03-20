@@ -169,7 +169,7 @@ export default function FacecardPage() {
     if (!query || query.length < 2) return;
     setSearchingMusic(true);
     try {
-      const response = await fetch(`${API.USERS.SEARCH_MUSIC}?q=${encodeURIComponent(query)}`);
+      const response = await fetch(API.USERS.SEARCH_MUSIC(query));
       if (response.ok) {
         const data = await response.json();
         setMusicResults(data.songs || []);
@@ -231,13 +231,17 @@ export default function FacecardPage() {
       formData.append('folder', 'profile-photos');
 
       const token = localStorage.getItem('accessToken');
-      const uploadRes = await fetch(API.FILES.UPLOAD, {
+      const uploadRes = await fetch(`${API.FILES.UPLOAD}?folder=profile-photos`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
 
-      if (!uploadRes.ok) throw new Error('Upload failed');
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}));
+        console.error('❌ Upload Response Error:', uploadRes.status, errData);
+        throw new Error(`Upload failed: ${errData.message || uploadRes.statusText}`);
+      }
       const uploadData = await uploadRes.json();
       const uploadedUrl = uploadData.file.url;
       

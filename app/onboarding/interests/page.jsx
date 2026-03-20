@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function InterestsOnboarding() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function InterestsOnboarding() {
 
   const fetchInterests = async () => {
     try {
-      const response = await fetch('http://localhost:3002/interests');
+      const response = await fetch(API.USERS.GET_INTERESTS);
       
       if (!response.ok) {
         throw new Error('Failed to fetch interests');
@@ -56,7 +57,7 @@ export default function InterestsOnboarding() {
       const token = localStorage.getItem('accessToken');
       
       if (selectedInterests.length > 0) {
-        const response = await fetch('http://localhost:3002/me/interests', {
+        const response = await fetch(API.USERS.UPDATE_INTERESTS, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,

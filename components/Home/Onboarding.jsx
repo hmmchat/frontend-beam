@@ -63,9 +63,50 @@ export default function Onboarding() {
         });
 
         if (response.ok) {
-          // Profile exists! Redirect to dashboard
-          console.log('Profile already exists, redirecting to facecard...');
-          router.push('/facecard');
+          // Profile exists! Populate data so user can edit it
+          const data = await response.json();
+          const u = data.user;
+          if (u) {
+            setName(u.username || "");
+            if (u.dateOfBirth) {
+              const d = new Date(u.dateOfBirth);
+              setDob({
+                day: d.getDate().toString(),
+                month: (d.getMonth() + 1).toString(),
+                year: d.getFullYear().toString()
+              });
+            }
+            if (u.gender) {
+              const genderMap = {
+                'MALE': 'male',
+                'FEMALE': 'female',
+                'NON_BINARY': 'nonbinary',
+                'PREFER_NOT_TO_SAY': null
+              };
+              setGender(genderMap[u.gender] || null);
+              if (u.gender === 'PREFER_NOT_TO_SAY') setPreferNotToSay(true);
+            }
+            if (u.displayPictureUrl) {
+              setPhotos(prev => {
+                const next = [...prev];
+                next[0] = u.displayPictureUrl;
+                return next;
+              });
+            }
+            if (u.photos && u.photos.length > 0) {
+              setPhotos(prev => {
+                const next = [...prev];
+                u.photos.slice(0, 2).forEach((p, idx) => {
+                  next[idx + 1] = p.url;
+                });
+                return next;
+              });
+            }
+            if (u.intent) {
+              setPrompt(u.intent);
+            }
+          }
+          setLoading(false);
         } else {
           // Profile doesn't exist - show onboarding form
           setLoading(false);
@@ -235,7 +276,8 @@ export default function Onboarding() {
         username: name.trim(),
         dateOfBirth: dobDate.toISOString(),
         gender: backendGender,
-        displayPictureUrl
+        displayPictureUrl,
+        intent: prompt.trim() || undefined
       };
 
       // 2. Create Profile
@@ -250,11 +292,11 @@ export default function Onboarding() {
       if (!response.ok) {
         const errorData = await response.json();
         if (errorData.message?.includes('already exists')) {
-          setApiError('Profile already exists! Redirecting to facecard...');
-          setTimeout(() => router.push('/facecard'), 2000);
-          return;
+          console.warn('Profile already exists, proceeding with photos and intent update...');
+          // Don't return here, continue with photos and intent
+        } else {
+          throw new Error(errorData.message || 'Profile creation failed');
         }
-        throw new Error(errorData.message || 'Profile creation failed');
       }
 
       // 3. Add extra photos if any
@@ -267,7 +309,7 @@ export default function Onboarding() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${accessToken}`
             },
-            body: JSON.stringify({ url: uploadedUrls[i], order: i + 1 })
+            body: JSON.stringify({ url: uploadedUrls[i], order: i - 1 })
           });
         }
       }
@@ -396,7 +438,7 @@ export default function Onboarding() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
-                    placeholder="Rituparna"
+                    placeholder="Your name"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
                 </div>
@@ -570,15 +612,9 @@ export default function Onboarding() {
                     type="button"
                     onClick={() => {
                       setSelectedPrompts(prev => {
-                        let newSelection;
-                        if (prev.includes(text)) {
-                          newSelection = prev.filter(p => p !== text);
-                        } else if (prev.length < 3) {
-                          newSelection = [...prev, text];
-                        } else {
-                          return prev;
-                        }
-                        setPrompt(newSelection.join(". "));
+                        const isSelected = prev.includes(text);
+                        const newSelection = isSelected ? [] : [text];
+                        setPrompt(newSelection[0] || "");
                         return newSelection;
                       });
                     }}
@@ -607,11 +643,17 @@ export default function Onboarding() {
           </div>
 
           {/* Bottom actions */}
-          <div className="pt-4">
+          <div className="pt-4 flex gap-4">
+            <button
+               onClick={() => setStep(1)}
+               className="flex-1 border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition"
+            >
+               ← Back
+            </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
+              className="flex-2 w-full border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
             >
               {loading ? 'Processing...' : 'Create Facecard'}
             </button>

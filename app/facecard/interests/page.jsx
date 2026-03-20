@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function InterestsView() {
   const router = useRouter();
@@ -21,7 +22,10 @@ export default function InterestsView() {
     }
 
     try {
-      const response = await fetch('http://localhost:3002/me?fields=interests', {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const uid = payload.sub || payload.uid;
+
+      const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=interests`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

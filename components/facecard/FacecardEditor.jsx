@@ -179,7 +179,7 @@ export default function FacecardEditor({
                   >
                     <span className="text-sm opacity-60 tracking-wide">Interests:</span>
                     <span className="text-sm opacity-90 truncate max-w-[150px]">
-                      {user?.interests?.map(i => i.interest?.name).join(', ') || 'Basketball, Music...'}
+                      {user?.interests?.map(i => i.interest?.name || i.name).filter(Boolean).join(', ') || 'Basketball, Music...'}
                     </span>
                   </div>
 
@@ -200,7 +200,7 @@ export default function FacecardEditor({
                   >
                     <span className="text-sm opacity-60 tracking-wide">Causes:</span>
                     <span className="text-sm opacity-90 italic truncate max-w-[150px]">
-                      {user?.values?.map(v => v.value?.name).join(', ') || 'Environment, Equality...'}
+                      {user?.values?.map(v => v.value?.name || v.name).filter(Boolean).join(', ') || 'Environment, Equality...'}
                     </span>
                   </div>
 
@@ -303,8 +303,8 @@ export default function FacecardEditor({
                     <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60" />
                     <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60" />
 
-                    <p className="text-sm font-medium">{user?.musicPreference?.songName || 'Select Song'}</p>
-                    <p className="text-xs opacity-60">{user?.musicPreference?.artistName || 'Spotify'}</p>
+                    <p className="text-sm font-medium">{user?.musicPreference?.name || user?.musicPreference?.songName || 'Select Song'}</p>
+                    <p className="text-xs opacity-60">{user?.musicPreference?.artist || user?.musicPreference?.artistName || 'Spotify'}</p>
                   </div>
                 </div>
 

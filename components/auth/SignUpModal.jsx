@@ -17,33 +17,12 @@ function SignUpModalContent({ isOpen, onClose }) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fbLoaded, setFbLoaded] = useState(false);
 
   const router = useRouter();
 
-  // Load Facebook SDK
   useEffect(() => {
-    // Load Facebook SDK
-    window.fbAsyncInit = function() {
-      window.FB.init({
-        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
-        cookie: true,
-        xfbml: true,
-        version: 'v18.0'
-      });
-      setFbLoaded(true);
-    };
-
-    // Load the SDK asynchronously
-    (function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
+    // Facebook SDK removed
   }, []);
 
   // Google Login Handler  
@@ -132,75 +111,9 @@ function SignUpModalContent({ isOpen, onClose }) {
     scope: 'openid email profile'
   });
 
-  // Facebook Login Handler
+  // Facebook Login Handler Removed
   const handleFacebookLogin = () => {
-    if (!agreedToTerms) {
-      setError('Please accept Terms & Conditions');
-      return;
-    }
-
-    if (!fbLoaded || !window.FB) {
-      setError('Facebook SDK not loaded. Please refresh the page.');
-      return;
-    }
-
-    window.FB.login(async function(response) {
-      if (response.authResponse) {
-        setLoading(true);
-        try {
-          const apiResponse = await fetch(API.AUTH.FACEBOOK, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              accessToken: response.authResponse.accessToken,
-              acceptedTerms: true,
-              acceptedTermsVer: 'v1.0'
-            })
-          });
-
-          if (!apiResponse.ok) {
-            throw new Error('Facebook login failed');
-          }
-
-          const data = await apiResponse.json();
-          
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          
-          // Check if user has a profile
-          try {
-            const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-            const userId = payload.sub || payload.uid;
-            
-            const profileResponse = await fetch(API.USERS.GET_USER(userId), {
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (profileResponse.ok) {
-              // Profile exists - go to dashboard
-              router.push('/facecard');
-            } else {
-              // No profile - go to onboarding
-              router.push('/onboarding');
-            }
-          } catch (error) {
-            console.error('Error checking profile:', error);
-            router.push('/onboarding');
-          }
-          
-          onClose();
-        } catch (error) {
-          console.error('Facebook login error:', error);
-          setError('Facebook login failed. Please try again.');
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setError('Facebook login cancelled');
-      }
-    }, {scope: 'public_profile,email'});
+    setError('Facebook login is currently unavailable.');
   };
 
   // Phone OTP - Send OTP
@@ -333,7 +246,6 @@ function SignUpModalContent({ isOpen, onClose }) {
     setOtp(['', '', '', '', '', '']);
     setError('');
     setAgreedToTerms(false);
-    setShowMoreOptions(false);
     setLoading(false);
   };
 
@@ -379,20 +291,6 @@ function SignUpModalContent({ isOpen, onClose }) {
                 {loading ? 'Connecting...' : 'Connect with Google'}
               </Button>
 
-              {/* Facebook Login */}
-              <Button 
-                variant="outline2"
-                fullWidth 
-                icon={
-                  <img src="/assets/logos_facebook.png" alt="" className='w-6 h-6 ' />
-                }
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
-                onClick={handleFacebookLogin}
-                disabled={loading || !agreedToTerms || !fbLoaded}
-              >
-                {loading ? 'Connecting...' : 'Connect with Facebook'}
-              </Button>
-
               {/* Mobile Login */}
               <Button
                 variant="outline2"
@@ -402,36 +300,10 @@ function SignUpModalContent({ isOpen, onClose }) {
                 }
                 onClick={() => setStep('mobile')}
                 className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
-                disabled={loading}
+                disabled={loading || !agreedToTerms}
               >
                 Connect with Mobile
               </Button>
-
-              {/* Apple Login (More Options) */}
-              {showMoreOptions && (
-                <div className="animate-slide-up text-white/50">
-                  <Button 
-                    variant="outline2" 
-                    fullWidth
-                    icon={
-                      <img src="/apple.png" alt="" className='w-6 h-6' />
-                    }
-                    className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
-                    disabled={true}
-                  >
-                    Connect with Apple ID (Coming Soon)
-                  </Button>
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="text-white text-sm pt-2 hover:text-white transition-colors outfit-font text-lg"
-                onClick={() => setShowMoreOptions(prev => !prev)}
-              >
-                {showMoreOptions ? 'Less options' : 'More options'}
-              </button>
-
               {error && <ErrorAlert message={error} />}
             </div>
           )}

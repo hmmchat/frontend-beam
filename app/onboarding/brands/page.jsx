@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function BrandsOnboarding() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function BrandsOnboarding() {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch('http://localhost:3002/brands');
+      const response = await fetch(API.USERS.GET_BRANDS);
       
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
@@ -58,7 +59,7 @@ export default function BrandsOnboarding() {
       
       // Only call API if brands are selected
       if (selectedBrands.length > 0) {
-        const response = await fetch('http://localhost:3002/me/brand-preferences', {
+        const response = await fetch(API.USERS.UPDATE_BRANDS, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,

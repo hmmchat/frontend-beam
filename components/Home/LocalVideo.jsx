@@ -38,7 +38,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
   }, []);
 
   return (
-    <div className="relative w-full h-full bg-gray-900 overflow-hidden flex items-center justify-center">
+    <div className="absolute inset-0 w-full h-full bg-gray-900 overflow-hidden">
       {error ? (
         <div className="text-white text-center p-4">
           <p className="text-4xl mb-4">📷🚫</p>
@@ -50,7 +50,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover scale-x-[-1]"
+          className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
         />
       )}
 
@@ -82,7 +82,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
       )}
       
       {/* Decorative Border for Video */}
-      <div className="absolute inset-4 border-2 border-white/20 rounded-[2.5rem] pointer-events-none" />
+  
     </div>
   );
 };

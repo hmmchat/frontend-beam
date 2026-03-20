@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function ValuesOnboarding() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function ValuesOnboarding() {
 
   const fetchValues = async () => {
     try {
-      const response = await fetch('http://localhost:3002/values');
+      const response = await fetch(API.USERS.GET_VALUES);
       
       if (!response.ok) {
         throw new Error('Failed to fetch values');
@@ -56,7 +57,7 @@ export default function ValuesOnboarding() {
       const token = localStorage.getItem('accessToken');
       
       if (selectedValues.length > 0) {
-        const response = await fetch('http://localhost:3002/me/values', {
+        const response = await fetch(API.USERS.UPDATE_VALUES, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,

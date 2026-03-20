@@ -96,38 +96,27 @@ export default function SelectorOverlay({
 
         {/* Content List */}
         <div className="space-y-12 pb-20">
-          {/* Grouping for Interests */}
+          {/* Flat List of Interests */}
           {showSelector === 'interests' && (
-            <>
-              {[
-                { name: "Sports", items: allInterests.filter(i => ["Sports", "Fitness", "Yoga", "Cycling"].includes(i.name)) },
-                { name: "Lifestyle", items: allInterests.filter(i => ["Travel", "Photography", "Reading", "Cooking", "Food"].includes(i.name)) },
-                { name: "Creative & Tech", items: allInterests.filter(i => ["Art", "Dancing", "Writing", "Technology", "Gaming", "Music", "Singing"].includes(i.name)) },
-              ].map(group => (
-                <div key={group.name} className="space-y-5">
-                  <h2 className="text-xl font-bold opacity-90">{group.name}</h2>
-                  <div className="flex flex-wrap gap-3">
-                    {group.items.map(item => {
-                      const isSelected = user?.interests?.some(i => i.interestId === item.id);
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => toggleInterest(item.id, item.name)}
-                          className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
-                            isSelected 
-                              ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]' 
-                              : 'bg-white/5 text-white border-white/20 hover:border-white/40'
-                          }`}
-                        >
-                          <span className="text-sm uppercase tracking-wide">{item.name}</span>
-                          <span className="text-lg leading-none">{isSelected ? '✕' : '+'}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </>
+            <div className="flex flex-wrap gap-3 pb-8">
+              {allInterests.map(item => {
+                const isSelected = user?.interests?.some(i => i.interestId === item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleInterest(item.id, item.name)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
+                      isSelected 
+                        ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]' 
+                        : 'bg-white/5 text-white border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    <span className="text-sm uppercase tracking-wide">{item.name}</span>
+                    <span className="text-lg leading-none">{isSelected ? '✕' : '+'}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {(showSelector === 'values' || showSelector === 'brands') && (

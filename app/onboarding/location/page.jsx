@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API } from '@/lib/api';
 
 export default function LocationOnboarding() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function LocationOnboarding() {
       const token = localStorage.getItem('accessToken');
       
       if (location) {
-        const response = await fetch('http://localhost:3002/me/location', {
+        const response = await fetch(API.USERS.UPDATE_LOCATION, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,

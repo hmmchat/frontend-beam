@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import clsx from 'clsx';
 
 // WS URL — always use the explicit env var (must be wss:// in production)
@@ -28,6 +29,7 @@ const WS_URL = null; // computed at runtime inside component
 
 export default function VideoChat() {
   const router = useRouter();
+  const flowLog = (...args) => console.log('[RaincheckFlow][video-chat]', ...args);
   // Compute WS URL at runtime so we can check window.location.protocol
   const WS_URL = getWsUrl();
   const [roomInfo, setRoomInfo] = useState(null);
@@ -46,6 +48,7 @@ export default function VideoChat() {
   });
   const [isFriendRequestSent, setIsFriendRequestSent] = useState(false);
   const [isAlreadyFriend, setIsAlreadyFriend] = useState(false);
+  const [isRainchecking, setIsRainchecking] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
@@ -58,6 +61,12 @@ export default function VideoChat() {
   const consumersRef = useRef({});
   const roomInfoRef = useRef(null);
   const userIdRef = useRef(null);
+  const allowUnmountCleanupRef = useRef(false);
+  const cleanupArmTimerRef = useRef(null);
+  const intentionalExitRef = useRef(false);
+  const autoTransitioningRef = useRef(false);
+  const hadRemoteMediaRef = useRef(false);
+  const remoteMediaMissingSinceRef = useRef(null);
   // Queue producers that arrive before recv transport is ready
   const pendingProducersRef = useRef([]);
 
@@ -70,6 +79,24 @@ export default function VideoChat() {
       remoteVideoRef.current.srcObject = stream;
     }
   }, [remoteStreams]);
+
+  function cleanup() {
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    // Stop local media tracks
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current = null;
+    // Clear pending producer queue
+    pendingProducersRef.current = [];
+    // Nullify mediasoup refs (don't call .close() — it throws AwaitQueueStoppedError async)
+    producersRef.current = {};
+    consumersRef.current = {};
+    sendTransportRef.current = null;
+    recvTransportRef.current = null;
+  }
 
   // --- Initialize ---
   useEffect(() => {
@@ -97,12 +124,26 @@ export default function VideoChat() {
           // If info is incomplete, fetch full profile (robust)
           if (info.partner.id && (!info.partner.username || !info.partner.city)) {
             try {
-              const profile = await apiRequest(API.USERS.GET_USER(info.partner.id));
+              const profileResp = await apiRequest(API.USERS.GET_USER(info.partner.id));
+              const profile = profileResp?.user || {};
+              let age = '';
+              if (profile.dateOfBirth) {
+                const dob = new Date(profile.dateOfBirth);
+                if (!Number.isNaN(dob.getTime())) {
+                  const now = new Date();
+                  let years = now.getFullYear() - dob.getFullYear();
+                  const monthDiff = now.getMonth() - dob.getMonth();
+                  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+                    years--;
+                  }
+                  age = years >= 0 ? String(years) : '';
+                }
+              }
               setPartnerInfo({
                 id: profile.id || info.partner.id,
                 name: profile.username || 'Matched!',
-                age: profile.age || '',
-                city: profile.city || '',
+                age,
+                city: profile.preferredCity || '',
                 displayPictureUrl: profile.displayPictureUrl || '/avatar-placeholder.png'
               });
             } catch (err) {
@@ -135,24 +176,39 @@ export default function VideoChat() {
         console.error('[Init] No room ID found!');
         setStatus('error');
         setError('No active match found.');
-        setTimeout(() => router.push('/'), 2000);
+        setTimeout(() => resumeDiscoveryFromCall(), 200);
         return;
       }
 
-      // Verify the room still exists before connecting
+      // Verify active room with retries (handles eventual consistency after room creation).
       try {
         const token = localStorage.getItem('accessToken');
         if (token && uid) {
-          const roomCheck = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
-          if (!roomCheck?.exists || roomCheck?.roomId !== info.roomId) {
-            console.warn('[Init] Room mismatch or no longer exists, redirecting home...');
-            localStorage.removeItem('currentRoom');
-            router.push('/');
-            return;
+          let verified = false;
+          let checkedRoom = info.roomId;
+          for (let attempt = 0; attempt < 8; attempt++) {
+            const roomCheck = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+            if (roomCheck?.exists && roomCheck?.roomId) {
+              checkedRoom = roomCheck.roomId;
+              verified = true;
+              break;
+            }
+            await new Promise((r) => setTimeout(r, 500));
+          }
+
+          if (verified && checkedRoom !== info.roomId) {
+            // Prefer server truth to avoid false "mismatch" redirects.
+            info = {
+              ...info,
+              roomId: checkedRoom,
+              sessionId: info.sessionId || checkedRoom
+            };
+            localStorage.setItem('currentRoom', JSON.stringify(info));
+            console.warn('[Init] Using server roomId after delayed consistency:', checkedRoom);
           }
         }
       } catch (_) {
-        // If check fails, proceed anyway — WS will handle stale room
+        // If room check fails, proceed anyway — WS/join response will be source of truth.
       }
 
       // Yield to event loop so React Strict Mode cleanup can set aborted=true
@@ -170,55 +226,264 @@ export default function VideoChat() {
       startMediaAndSignaling(info, uid);
     };
 
-    // Helper: fire-and-forget status reset (works sync for beforeunload)
-    const setOnline = () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return;
-        // Use keepalive so the request survives tab/browser close
-        fetch(API.USERS.UPDATE_STATUS, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: 'AVAILABLE' }),
-          keepalive: true,
-        }).catch(() => {});
-      } catch (_) {}
-    };
-
     // Case 1: browser tab/window close
-    const handleBeforeUnload = () => setOnline();
+    const handleBeforeUnload = () => leaveRoomAndSetOnline();
     window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // React Strict Mode in dev mounts -> unmounts -> remounts once.
+    // Arm unmount cleanup after the effect stabilizes so the synthetic unmount
+    // does not call leaveRoom and tear down a just-created room.
+    cleanupArmTimerRef.current = setTimeout(() => {
+      allowUnmountCleanupRef.current = true;
+    }, 0);
 
     init();
     return () => {
       aborted = true;
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (cleanupArmTimerRef.current) {
+        clearTimeout(cleanupArmTimerRef.current);
+        cleanupArmTimerRef.current = null;
+      }
       // Case 2 & 3: go back / signout (component unmount)
-      setOnline();
+      if (allowUnmountCleanupRef.current && !intentionalExitRef.current) {
+        leaveRoomAndSetOnline();
+      }
       cleanup();
     };
   }, [router]);
 
-  const cleanup = useCallback(() => {
-    // Close WebSocket
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    // Stop local media tracks
-    localStreamRef.current?.getTracks().forEach(t => t.stop());
-    localStreamRef.current = null;
-    // Clear pending producer queue
-    pendingProducersRef.current = [];
-    // Nullify mediasoup refs (don't call .close() — it throws AwaitQueueStoppedError async)
-    producersRef.current = {};
-    consumersRef.current = {};
-    sendTransportRef.current = null;
-    recvTransportRef.current = null;
+  // Safety watcher: if peer-leave websocket signal is missed, auto-resume discovery from stuck 1:1 call.
+  useEffect(() => {
+    const tick = async () => {
+      if (intentionalExitRef.current || autoTransitioningRef.current) return;
+      const roomId = roomInfoRef.current?.roomId;
+      const userId = userIdRef.current;
+      if (!roomId || !userId) return;
+      try {
+        const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+        // If user is no longer in an active room OR room dropped to solo participant, leave stuck call UI.
+        const participantCount = Number(roomState?.participantCount || 0);
+        if (!roomState?.exists || participantCount <= 1) {
+          flowLog('room_health_auto_resume', {
+            exists: Boolean(roomState?.exists),
+            participantCount
+          });
+          await handlePeerLeftAutoResume();
+        }
+      } catch (_) {}
+    };
+    const id = setInterval(tick, 2500);
+    return () => clearInterval(id);
   }, []);
+
+  // Media-level safety watcher:
+  // If peer media vanishes after having been present, auto-resume discovery even if room rows lag.
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      if (intentionalExitRef.current || autoTransitioningRef.current) return;
+      if (status !== 'connected') return;
+
+      const remoteStream = remoteStreams[0]?.stream || null;
+      if (remoteStream) {
+        hadRemoteMediaRef.current = true;
+        const tracks = remoteStream.getTracks();
+        const allEnded = tracks.length > 0 && tracks.every((t) => t.readyState === 'ended');
+        if (allEnded) {
+          if (!remoteMediaMissingSinceRef.current) {
+            remoteMediaMissingSinceRef.current = Date.now();
+          }
+        } else {
+          remoteMediaMissingSinceRef.current = null;
+        }
+      } else if (hadRemoteMediaRef.current) {
+        if (!remoteMediaMissingSinceRef.current) {
+          remoteMediaMissingSinceRef.current = Date.now();
+        }
+      } else {
+        // Initial connect phase before peer joins: do not auto-exit.
+        remoteMediaMissingSinceRef.current = null;
+      }
+
+      if (remoteMediaMissingSinceRef.current) {
+        const missingForMs = Date.now() - remoteMediaMissingSinceRef.current;
+        if (missingForMs >= 4000) {
+          flowLog('media_health_auto_resume', { missingForMs });
+          await handlePeerLeftAutoResume();
+        }
+      }
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [status, remoteStreams]);
+
+  function leaveRoomAndSetOnline(nextStatus = 'ONLINE') {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      let userId = userIdRef.current;
+      if (!userId) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub || payload.uid || payload.id;
+          userIdRef.current = userId;
+        } catch (_) {}
+      }
+
+      const roomId = roomInfoRef.current?.roomId;
+      if (roomId && userId) {
+        fetch(API.STREAMING.LEAVE_ROOM(roomId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+
+      // Homepage baseline is ONLINE; discovery pool is entered explicitly from home CTA.
+      setPresenceStatusKeepalive(nextStatus);
+    } catch (_) {}
+  }
+
+  async function leaveRoomAndSetStatusReliable(nextStatus = 'ONLINE') {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      let userId = userIdRef.current;
+      if (!userId) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub || payload.uid || payload.id;
+          userIdRef.current = userId;
+        } catch (_) {}
+      }
+
+      const roomId = roomInfoRef.current?.roomId;
+      if (roomId && userId) {
+        try {
+          await apiRequest(API.STREAMING.LEAVE_ROOM(roomId), {
+            method: 'POST',
+            body: JSON.stringify({ userId }),
+          });
+        } catch (err) {
+          console.warn('[Leave] Reliable leave failed, falling back to keepalive:', err);
+          fetch(API.STREAMING.LEAVE_ROOM(roomId), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userId }),
+            keepalive: true,
+          }).catch(() => {});
+        }
+      }
+
+      try {
+        await setPresenceStatus(nextStatus);
+      } catch (err) {
+        console.warn('[Leave] Reliable status update failed, falling back to keepalive:', err);
+        setPresenceStatusKeepalive(nextStatus);
+      }
+    } catch (_) {}
+  }
+
+  const resumeDiscoveryFromCall = (sessionIdOverride = null) => {
+    const sid =
+      sessionIdOverride ||
+      roomInfoRef.current?.sessionId ||
+      roomInfo?.sessionId ||
+      Date.now().toString();
+    localStorage.setItem('resumeDiscoveryOnHome', JSON.stringify({ sessionId: sid }));
+    localStorage.setItem('forceDiscoveryResume', JSON.stringify({ sessionId: sid }));
+    localStorage.setItem('pendingRaincheckResume', JSON.stringify({
+      sessionId: sid,
+      nextCard: null
+    }));
+    flowLog('resumeDiscoveryFromCall -> push', {
+      sid,
+      pathname: typeof window !== 'undefined' ? window.location.pathname : '',
+      search: typeof window !== 'undefined' ? window.location.search : ''
+    });
+    router.push(`/?resumeDiscovery=1&sessionId=${encodeURIComponent(sid)}`);
+  };
+
+  const handleRaincheckNext = async () => {
+    if (isRainchecking) return;
+    setIsRainchecking(true);
+    intentionalExitRef.current = true;
+    try {
+      const token = localStorage.getItem('accessToken');
+      const partnerId = roomInfoRef.current?.partner?.id || partnerInfo.id;
+      const sid = roomInfoRef.current?.sessionId || roomInfo?.sessionId || Date.now().toString();
+      flowLog('click_next_in_call', {
+        sid,
+        roomId: roomInfoRef.current?.roomId || roomInfo?.roomId || null,
+        partnerId: partnerId || null
+      });
+      // Hard guarantee: if user clicked in-call raincheck, next screen must resume discovery mode.
+      localStorage.setItem('resumeDiscoveryOnHome', JSON.stringify({ sessionId: sid }));
+      localStorage.setItem('forceDiscoveryResume', JSON.stringify({ sessionId: sid }));
+      if (token && partnerId) {
+        try {
+          const data = await apiRequest(API.DISCOVERY.RAINCHECK, {
+            method: 'POST',
+            body: JSON.stringify({
+              sessionId: sid,
+              raincheckedUserId: partnerId
+            })
+          });
+          localStorage.setItem('pendingRaincheckResume', JSON.stringify({
+            sessionId: sid,
+            // Always fetch a fresh card on resume to avoid stale split-second flashes.
+            nextCard: null
+          }));
+          flowLog('raincheck_api_success', { hasNextCard: Boolean(data?.nextCard), useFreshFetch: true });
+        } catch (error) {
+          console.warn('[Raincheck] Failed to record raincheck from call:', error);
+          localStorage.setItem('pendingRaincheckResume', JSON.stringify({
+            sessionId: sid,
+            nextCard: null
+          }));
+          flowLog('raincheck_api_failed');
+        }
+      }
+
+      if (wsRef.current?.readyState === WebSocket.OPEN && roomInfo?.roomId) {
+        wsRef.current.send(JSON.stringify({ type: 'leave-room', data: { roomId: roomInfo.roomId } }));
+      }
+
+      await leaveRoomAndSetStatusReliable('AVAILABLE');
+      flowLog('leave_room_status_done', { targetStatus: 'AVAILABLE' });
+      cleanup();
+      localStorage.removeItem('currentRoom');
+      resumeDiscoveryFromCall(sid);
+    } finally {
+      setIsRainchecking(false);
+    }
+  };
+
+  const handlePeerLeftAutoResume = async () => {
+    if (autoTransitioningRef.current) return;
+    autoTransitioningRef.current = true;
+    intentionalExitRef.current = true;
+    const sid = roomInfoRef.current?.sessionId || roomInfo?.sessionId || Date.now().toString();
+    flowLog('peer_left_auto_resume_start', {
+      sid,
+      roomId: roomInfoRef.current?.roomId || roomInfo?.roomId || null
+    });
+    try {
+      await leaveRoomAndSetStatusReliable('AVAILABLE');
+      flowLog('peer_left_auto_resume_leave_done');
+    } catch (_) {}
+    cleanup();
+    localStorage.removeItem('currentRoom');
+    resumeDiscoveryFromCall(sid);
+  };
 
   const send = (msg) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -267,8 +532,12 @@ export default function VideoChat() {
   };
 
   const handleStaleRoom = () => {
+    if (intentionalExitRef.current) return;
+    flowLog('handleStaleRoom_triggered', {
+      roomId: roomInfoRef.current?.roomId || null
+    });
     localStorage.removeItem('currentRoom');
-    router.push('/');
+    resumeDiscoveryFromCall();
   };
 
   const handleSignal = async (msg, info, userId) => {
@@ -430,6 +699,9 @@ export default function VideoChat() {
         });
         // Reset remote video srcObject so the spinner shows cleanly
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+        remoteMediaMissingSinceRef.current = Date.now();
+        // In 1:1 matched calls, if the peer leaves/rainchecks, auto-return this user to discovery.
+        handlePeerLeftAutoResume();
         break;
       }
 
@@ -484,46 +756,17 @@ export default function VideoChat() {
     if (track) { track.enabled = isCamOff; setIsCamOff(!isCamOff); }
   };
 
-  const handleLeave = () => {
+  const handleLeave = async () => {
+    intentionalExitRef.current = true;
+    flowLog('handleLeave_clicked', { roomId: roomInfo?.roomId || null });
     // Signal server we're leaving (WebSocket)
     if (wsRef.current?.readyState === WebSocket.OPEN && roomInfo?.roomId) {
       wsRef.current.send(JSON.stringify({ type: 'leave-room', data: { roomId: roomInfo.roomId } }));
     }
-    // End room via REST as well (marks session ended in backend)
-    if (roomInfo?.roomId) {
-      const token = localStorage.getItem('accessToken');
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userId = payload.sub || payload.uid || payload.id;
-        fetch(API.STREAMING.LEAVE_ROOM(roomInfo.roomId), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userId }),
-          keepalive: true,
-        }).catch(() => {});
-      } catch (_) {}
-    }
+    // End room via REST and return homepage status to ONLINE.
+    await leaveRoomAndSetStatusReliable('ONLINE');
     cleanup();
     localStorage.removeItem('currentRoom');
-    // Set status back to AVAILABLE after leaving video chat (backend also does this,
-    // but explicit PATCH ensures the discovery pool is re-entered immediately)
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        fetch(API.USERS.UPDATE_STATUS, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: 'AVAILABLE' }),
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch (_) {}
     router.push('/');
   };
 
@@ -611,10 +854,12 @@ export default function VideoChat() {
               {[
                 { img: '/gravecurrent.png', alt: 'Report' },
                 { img: '/smile.png', alt: 'Emoji' },
-                { img: '/arrowright.png', alt: 'Skip' }
+                { img: '/arrowright.png', alt: 'Skip', onClick: handleRaincheckNext }
               ].map((item, idx) => (
                 <button 
                   key={idx} 
+                  onClick={item.onClick}
+                  disabled={Boolean(item.onClick) && isRainchecking}
                   className={clsx('w-10', 'h-10', 'rounded-full', 'bg-purple-900', 'flex', 'items-center', 'justify-center', 'shadow-2xl', 'hover:scale-110', 'active:scale-95', 'transition-all', 'border', 'border-white/20')}
                 >
                   <img src={item.img} className={clsx('w-5', 'h-5', 'object-contain')} alt={item.alt} />

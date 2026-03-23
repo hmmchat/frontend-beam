@@ -9,6 +9,7 @@ import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
+import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import FaceCard from './FaceCard';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
@@ -19,6 +20,7 @@ import CoinModal from '@/components/modals/CoinModal';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
+  const flowLog = (...args) => console.log('[RaincheckFlow][home]', ...args);
   const [currentCard, setCurrentCard] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,13 +33,19 @@ export default function MeetSomeoneDynamic() {
   const [invited, setInvited] = useState(['Austin']);
   const [myProfile, setMyProfile] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isResumeLoading, setIsResumeLoading] = useState(false);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
   const [waitingMatchedUser, setWaitingMatchedUser] = useState(null);
   const [matchedRoom, setMatchedRoom] = useState(null);
   const pollRef = useRef(null);
+  const discoveryPollRef = useRef(null);
   const rescueTimeoutRef = useRef(null);
   const initDoneRef = useRef(false);
+  const isEnteringCallRef = useRef(false);
+  const modeInitRef = useRef(false);
+  const isSearchingRef = useRef(false);
+  const latestSilentFetchIdRef = useRef(0);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -48,6 +56,32 @@ export default function MeetSomeoneDynamic() {
   };
 
   useEffect(() => {
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const resumeDiscoveryFromUrl = params?.get('resumeDiscovery') === '1';
+    const resumeSessionFromUrl = params?.get('sessionId');
+    const pendingRaincheckRaw =
+      localStorage.getItem('pendingRaincheckResume') ||
+      localStorage.getItem('pendingRaincheckNextCard');
+    const forcedResumeRaw = localStorage.getItem('forceDiscoveryResume');
+    const resumeOnHomeRaw = localStorage.getItem('resumeDiscoveryOnHome');
+    const stickyResumeRaw = localStorage.getItem('stickyDiscoveryResume');
+    const safeParse = (raw) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+    flowLog('mount', {
+      path: typeof window !== 'undefined' ? window.location.pathname : '',
+      search: typeof window !== 'undefined' ? window.location.search : '',
+      hasResumeDiscoveryFromUrl: resumeDiscoveryFromUrl,
+      hasPendingRaincheckRaw: Boolean(pendingRaincheckRaw),
+      hasForcedResumeRaw: Boolean(forcedResumeRaw),
+      hasResumeOnHomeRaw: Boolean(resumeOnHomeRaw)
+    });
+
     fetchMyProfile();
     fetchWalletBalance();
 
@@ -69,7 +103,10 @@ export default function MeetSomeoneDynamic() {
         if (stuckRoom?.exists && stuckRoom?.roomId) {
           fetch(API.STREAMING.LEAVE_ROOM(stuckRoom.roomId), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ userId })
           }).catch(() => {}); // fire-and-forget; 404 = room already cleaned up, safe to ignore
         }
@@ -77,25 +114,128 @@ export default function MeetSomeoneDynamic() {
     };
     clearGhostRoom();
 
+    // If user rainchecked from in-call "next", resume directly with next discovery card.
+    if (resumeDiscoveryFromUrl || pendingRaincheckRaw || forcedResumeRaw || resumeOnHomeRaw) {
+      try {
+        const pendingParsed = safeParse(pendingRaincheckRaw);
+        const forcedParsed = safeParse(forcedResumeRaw);
+        const resumeOnHomeParsed = safeParse(resumeOnHomeRaw);
+        const parsed = pendingParsed || forcedParsed || resumeOnHomeParsed || {};
+        const resumedSessionId = resumeSessionFromUrl || parsed?.sessionId || Date.now().toString();
+        localStorage.setItem('stickyDiscoveryResume', JSON.stringify({
+          sessionId: resumedSessionId,
+          ts: Date.now()
+        }));
+        flowLog('resume_branch_entered', {
+          resumedSessionId,
+          hasParsedNextCard: Boolean(parsed?.nextCard)
+        });
+        setSessionId(resumedSessionId);
+        setIsSearching(true);
+        // After in-call raincheck, user should stay in discovery pool.
+        handleUpdateStatus('AVAILABLE');
+
+        // Always fetch a fresh card on resume to prevent stale-card flashes.
+        flowLog('resume_branch_fetch_card_silently');
+        setIsResumeLoading(true);
+        setCurrentCard(null);
+        fetchCardSilently(resumedSessionId, true);
+      } catch (_) {
+        flowLog('resume_branch_error_parsing_payload');
+      } finally {
+        if (resumeDiscoveryFromUrl && typeof window !== 'undefined') {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+        localStorage.removeItem('forceDiscoveryResume');
+        localStorage.removeItem('pendingRaincheckResume');
+        localStorage.removeItem('pendingRaincheckNextCard');
+        localStorage.removeItem('resumeDiscoveryOnHome');
+        flowLog('resume_branch_cleanup_flags_done');
+      }
+    } else {
+      const stickyParsed = safeParse(stickyResumeRaw);
+      const stickyAgeMs = stickyParsed?.ts ? Date.now() - stickyParsed.ts : Number.POSITIVE_INFINITY;
+      const stickyStillFresh = Number.isFinite(stickyAgeMs) && stickyAgeMs >= 0 && stickyAgeMs < 15000;
+      if (stickyStillFresh) {
+        const stickySessionId = stickyParsed?.sessionId || Date.now().toString();
+        flowLog('sticky_resume_recover', { stickySessionId, stickyAgeMs });
+        setSessionId(stickySessionId);
+        setIsSearching(true);
+        setIsResumeLoading(true);
+        fetchCardSilently(stickySessionId, true);
+        return;
+      }
+
+      // Recovery guard: if backend still says user is AVAILABLE, auto-resume discovery.
+      // This prevents deadlocks when navigation flags are lost during room teardown races.
+      (async () => {
+        try {
+          const me = await apiRequest(API.USERS.GET_ME);
+          const currentStatus = String(me?.status || me?.user?.status || '');
+          flowLog('recovery_guard_me_status', { currentStatus });
+          if (currentStatus === 'AVAILABLE') {
+            const recoveredSessionId = Date.now().toString();
+            setSessionId(recoveredSessionId);
+            setIsSearching(true);
+            flowLog('recovery_guard_auto_resume', { recoveredSessionId });
+            setIsResumeLoading(true);
+            fetchCardSilently(recoveredSessionId, true);
+            return;
+          }
+        } catch (_) {
+          flowLog('recovery_guard_me_status_error');
+          // Non-blocking: fall back to homepage baseline status
+        }
+        // Homepage default state is ONLINE unless user explicitly enters discovery pool.
+        flowLog('recovery_guard_set_online');
+        handleUpdateStatus('ONLINE');
+      })();
+    }
+
+    const setOnlineKeepalive = () => {
+      setPresenceStatusKeepalive('ONLINE');
+    };
+    window.addEventListener('beforeunload', setOnlineKeepalive);
+
     // CLEANUP: Stop polling if the component unmounts
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (discoveryPollRef.current) clearInterval(discoveryPollRef.current);
       if (rescueTimeoutRef.current) clearTimeout(rescueTimeoutRef.current);
-      handleUpdateStatus('ONLINE');
+      window.removeEventListener('beforeunload', setOnlineKeepalive);
+      // Do not override status when transitioning into active video chat.
+      if (!isEnteringCallRef.current) {
+        const hasResumeFlags =
+          Boolean(localStorage.getItem('stickyDiscoveryResume')) ||
+          Boolean(localStorage.getItem('resumeDiscoveryOnHome')) ||
+          Boolean(localStorage.getItem('forceDiscoveryResume')) ||
+          Boolean(localStorage.getItem('pendingRaincheckResume'));
+        // Avoid ONLINE flip during strict-mode remount and active discovery resume.
+        if (!hasResumeFlags && !isSearchingRef.current) {
+          handleUpdateStatus('ONLINE');
+        }
+      }
     };
   }, []);
 
   const handleUpdateStatus = async (status) => {
     try {
-      // Use the authenticated PATCH /me/status endpoint
-      await apiRequest(API.USERS.UPDATE_STATUS, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      });
+      await setPresenceStatus(status);
     } catch (err) {
       // Status update is non-critical — don't surface to user
     }
   };
+
+  useEffect(() => {
+    isSearchingRef.current = isSearching;
+  }, [isSearching]);
+
+  // Keep discovery users visible in matchmaking pool even when current card is LOCATION.
+  useEffect(() => {
+    if (!isSearching || waitingForMatch || mode !== 'solo') return;
+    handleUpdateStatus('AVAILABLE');
+  }, [isSearching, waitingForMatch, mode]);
 
   const fetchMyProfile = async () => {
     try {
@@ -168,11 +308,57 @@ export default function MeetSomeoneDynamic() {
     }
   };
 
+  const fetchCardSilently = async (sid = null, isSolo = null) => {
+    const reqId = ++latestSilentFetchIdRef.current;
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const currentSid = sid || Date.now().toString();
+      const soloMode = isSolo !== null ? isSolo : mode === 'solo';
+      flowLog('fetchCardSilently_start', { currentSid, soloMode });
+      const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
+      // Ignore stale/out-of-order responses to prevent split-second wrong-card flashes.
+      if (reqId !== latestSilentFetchIdRef.current) return;
+      // Force discovery UI whenever backend returns a card during resume/polling.
+      // Prevents fallback homepage CTA from showing after StrictMode remounts.
+      if (data?.card) {
+        setIsSearching(true);
+      }
+      setCurrentCard(data?.card || null);
+      setSessionId(data?.sessionId || currentSid || Date.now().toString());
+      flowLog('fetchCardSilently_done', {
+        hasCard: Boolean(data?.card),
+        cardType: data?.card?.type || 'USER'
+      });
+    } catch (_) {
+      flowLog('fetchCardSilently_error');
+      // Silent refresh path; ignore transient network errors.
+    } finally {
+      // Prevent split-second wrong-card flashes by enforcing a brief stable loading gate.
+      setTimeout(() => setIsResumeLoading(false), 500);
+    }
+  };
+
   useEffect(() => {
+    // Do not reset discovery state on first render.
+    // This prevents raincheck-resume flow from being overwritten by initial mode effect.
+    if (!modeInitRef.current) {
+      modeInitRef.current = true;
+      return;
+    }
+
     if (mode === 'squad') {
-      // Squad mode auto-starts card browsing
-      setIsSearching(true);
-      fetchCard(null, false); // explicitly not solo
+      // Keep homepage baseline ONLINE until user explicitly enters discovery pool via CTA.
+      setIsSearching(false);
+      setCurrentCard(null);
+      setWaitingForMatch(false);
+      setWaitingMatchedUser(null);
+      clearInterval(pollRef.current);
+      clearInterval(discoveryPollRef.current);
+      clearTimeout(rescueTimeoutRef.current);
+      localStorage.removeItem('stickyDiscoveryResume');
+      handleUpdateStatus('ONLINE');
     } else {
       // Switching back to solo resets to the landing state
       setIsSearching(false);
@@ -181,6 +367,8 @@ export default function MeetSomeoneDynamic() {
       setWaitingMatchedUser(null);
       clearInterval(pollRef.current);
       clearTimeout(rescueTimeoutRef.current);
+      localStorage.removeItem('stickyDiscoveryResume');
+      handleUpdateStatus('ONLINE');
     }
   }, [mode]);
 
@@ -200,25 +388,24 @@ export default function MeetSomeoneDynamic() {
     }
 
     setSwiping(true);
+    setIsResumeLoading(true);
+    setCurrentCard(null);
     try {
-      const data = await apiRequest(API.DISCOVERY.RAINCHECK, {
+      await apiRequest(API.DISCOVERY.RAINCHECK, {
         method: 'POST',
         body: JSON.stringify({
           sessionId: sessionId,
           raincheckedUserId: currentCard.userId
         })
       });
-
-      if (data.nextCard) {
-        setCurrentCard(data.nextCard);
-      } else {
-        await fetchCard(sessionId);
-      }
+      // Always fetch fresh after raincheck; avoid optimistic card payload flashes.
+      await fetchCardSilently(sessionId, mode === 'solo');
     } catch (error) {
       console.error('Error rainchecking:', error);
       setError('Failed to skip. Please try again.');
     } finally {
       setSwiping(false);
+      setTimeout(() => setIsResumeLoading(false), 500);
     }
   };
 
@@ -263,6 +450,7 @@ export default function MeetSomeoneDynamic() {
             displayPictureUrl: currentCard.displayPictureUrl
           }
         }));
+        isEnteringCallRef.current = true;
         router.push('/video-chat');
       } else if (data.success && !data.waiting && !data.roomId) {
         // Backend says both accepted, but failed to create the streaming room!
@@ -289,6 +477,7 @@ export default function MeetSomeoneDynamic() {
                 displayPictureUrl: currentCard.displayPictureUrl
               }
             }));
+            isEnteringCallRef.current = true;
             router.push('/video-chat');
             return;
           }
@@ -312,6 +501,7 @@ export default function MeetSomeoneDynamic() {
                     displayPictureUrl: currentCard.displayPictureUrl
                   }
                 }));
+                isEnteringCallRef.current = true;
                 router.push('/video-chat');
                 return;
               }
@@ -358,6 +548,7 @@ export default function MeetSomeoneDynamic() {
                     displayPictureUrl: currentCard.displayPictureUrl
                   }
                 }));
+                isEnteringCallRef.current = true;
                 router.push('/video-chat');
                 return;
               }
@@ -427,6 +618,32 @@ export default function MeetSomeoneDynamic() {
 
   const user = currentCard;
 
+  useEffect(() => {
+    // Production heartbeat: while user is in discovery pool, always poll.
+    // This keeps cards fresh and makes transitions (location -> facecard,
+    // acceptance hints, rematches) reliable without manual refresh.
+    const shouldPollDiscovery = isSearching && !waitingForMatch && !swiping;
+
+    if (!shouldPollDiscovery) {
+      if (discoveryPollRef.current) {
+        clearInterval(discoveryPollRef.current);
+        discoveryPollRef.current = null;
+      }
+      return;
+    }
+
+    discoveryPollRef.current = setInterval(() => {
+      fetchCardSilently(sessionId || null, mode === 'solo');
+    }, 2000);
+
+    return () => {
+      if (discoveryPollRef.current) {
+        clearInterval(discoveryPollRef.current);
+        discoveryPollRef.current = null;
+      }
+    };
+  }, [isSearching, waitingForMatch, swiping, sessionId, mode]);
+
   return (
     <div className={clsx('relative', 'min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
       <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
@@ -443,9 +660,28 @@ export default function MeetSomeoneDynamic() {
     }}
   />
         
-          {isSearching && currentCard ? (
+          {isSearching ? (
             <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'p-2', 'relative')}>
-              {currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
+              {!currentCard || isResumeLoading ? (
+                <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
+                  <div className={clsx('border-2', 'border-white/30', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
+                    <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
+                      <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
+                      <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Finding face cards...</p>
+                      <p className={clsx('text-white/80', 'text-sm', 'mt-2')}>You are still in discovery pool.</p>
+                    </div>
+                    <SearchingPopup
+                      isVisible={true}
+                      onCancel={() => {
+                        setIsSearching(false);
+                        setCurrentCard(null);
+                        localStorage.removeItem('stickyDiscoveryResume');
+                        handleUpdateStatus('ONLINE');
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
                 <LocationCard 
                   city={currentCard.city} 
                   count={currentCard.availableCount}
@@ -487,6 +723,12 @@ export default function MeetSomeoneDynamic() {
       <FaceCard user={currentCard} />
     </div>
   </div>
+
+  {currentCard?.otherUserAccepted && !waitingForMatch && (
+    <div className="mt-3 w-[460px] px-4 py-2 rounded-xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-100 text-xs text-center font-semibold">
+      {currentCard?.username || "Your match"} has accepted your match. Tap “Meet this person rn” to join now.
+    </div>
+  )}
 
   {/* BUTTONS */}
   <div className="mt-6 flex items-center justify-between w-[460px]">
@@ -627,10 +869,11 @@ export default function MeetSomeoneDynamic() {
               {!isSearching ? (
                 <>
              <button
-  onClick={() => { 
-    setIsSearching(true); 
-    fetchCard(null, true); 
-    handleUpdateStatus('AVAILABLE');
+  onClick={async () => { 
+    setIsSearching(true);
+    // Enter discovery pool first, then fetch card to avoid first-fetch mismatch.
+    await handleUpdateStatus('AVAILABLE');
+    await fetchCard(null, true);
   }}
   className={clsx(
     'relative z-20 mt-60 w-4/6 py-6 px-12 font-bold flex items-center justify-center gap-3 border rounded-2xl transition-all uppercase tracking-widest',

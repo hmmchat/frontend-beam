@@ -32,7 +32,7 @@ export default function LocationModal({ isOpen, onClose }) {
 
   const fetchPreference = async () => {
     try {
-      // GET /discovery/location-preference — authenticated via JWT
+      // GET /location/preference — authenticated via JWT
       const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE);
       setSelectedCity(data.city || '');
     } catch (error) {
@@ -54,7 +54,7 @@ export default function LocationModal({ isOpen, onClose }) {
     setLoading(true);
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
-        const data = await apiRequest(`${API.DISCOVERY.GET_CITIES.replace('/cities', '/locate-me')}`, {
+        const data = await apiRequest(API.DISCOVERY.LOCATE_ME, {
           method: 'POST',
           body: JSON.stringify({
             latitude: position.coords.latitude,
@@ -75,9 +75,9 @@ export default function LocationModal({ isOpen, onClose }) {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // POST /discovery/location-preference — authenticated via JWT
+      // PATCH /location/preference — authenticated via JWT
       await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
-        method: 'POST',
+        method: 'PATCH',
         body: JSON.stringify({
           city: selectedCity || null
         })

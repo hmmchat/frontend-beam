@@ -37,6 +37,7 @@ export default function MeetSomeoneDynamic() {
   const [matchedRoom, setMatchedRoom] = useState(null);
   const pollRef = useRef(null);
   const rescueTimeoutRef = useRef(null);
+  const initDoneRef = useRef(false);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -48,9 +49,53 @@ export default function MeetSomeoneDynamic() {
 
   useEffect(() => {
     fetchMyProfile();
-    fetchCard();
     fetchWalletBalance();
+
+    // Clear stale room from previous session when landing on home page
+    localStorage.removeItem('currentRoom');
+
+    // On mount: silently clear any ghost room — fire and forget, don't await
+    const clearGhostRoom = async () => {
+      if (initDoneRef.current) return;
+      initDoneRef.current = true;
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.sub || payload.uid || payload.id;
+        const stuckRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+        // Only attempt leave if this user is still marked in an active room
+        // Use LEAVE_ROOM (removes just this user) rather than END_ROOM (kills whole room)
+        if (stuckRoom?.exists && stuckRoom?.roomId) {
+          fetch(API.STREAMING.LEAVE_ROOM(stuckRoom.roomId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+          }).catch(() => {}); // fire-and-forget; 404 = room already cleaned up, safe to ignore
+        }
+      } catch (_) {}
+    };
+    clearGhostRoom();
+
+    // CLEANUP: Stop polling if the component unmounts
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (rescueTimeoutRef.current) clearTimeout(rescueTimeoutRef.current);
+      handleUpdateStatus('ONLINE');
+    };
   }, []);
+
+  const handleUpdateStatus = async (status) => {
+    try {
+      // Use the authenticated PATCH /me/status endpoint
+      await apiRequest(API.USERS.UPDATE_STATUS, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+    } catch (err) {
+      // Status update is non-critical — don't surface to user
+    }
+  };
 
   const fetchMyProfile = async () => {
     try {
@@ -95,7 +140,7 @@ export default function MeetSomeoneDynamic() {
     }
   };
 
-  const fetchCard = async (sid = null) => {
+  const fetchCard = async (sid = null, isSolo = null) => {
     setLoading(true);
     setError('');
 
@@ -106,15 +151,15 @@ export default function MeetSomeoneDynamic() {
         return;
       }
 
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
       const currentSid = sid || Date.now().toString();
-      // Use the helper for consistent auth and error handling
-      const data = await apiRequest(API.DISCOVERY.GET_CARD(userId, currentSid, mode === 'solo'));
+      // isSolo param takes priority over mode state (avoids stale closure)
+      const soloMode = isSolo !== null ? isSolo : mode === 'solo';
+      // GET /discovery/card uses Bearer JWT — no userId in query params
+      const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       console.log('Got Card:', data);
       setCurrentCard(data.card);
       setSessionId(data.sessionId || currentSid || Date.now().toString());
+
     } catch (error) {
       console.error('Error fetching card:', error);
       setError('Failed to load card. Please check your connection.');
@@ -127,7 +172,7 @@ export default function MeetSomeoneDynamic() {
     if (mode === 'squad') {
       // Squad mode auto-starts card browsing
       setIsSearching(true);
-      fetchCard(null);
+      fetchCard(null, false); // explicitly not solo
     } else {
       // Switching back to solo resets to the landing state
       setIsSearching(false);
@@ -156,16 +201,9 @@ export default function MeetSomeoneDynamic() {
 
     setSwiping(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token found');
-      
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
       const data = await apiRequest(API.DISCOVERY.RAINCHECK, {
         method: 'POST',
         body: JSON.stringify({
-          userId: userId,
           sessionId: sessionId,
           raincheckedUserId: currentCard.userId
         })
@@ -201,18 +239,16 @@ export default function MeetSomeoneDynamic() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.sub || payload.uid || payload.id;
 
+      // POST /discovery/proceed — backend identifies caller from JWT
       const data = await apiRequest(API.DISCOVERY.PROCEED, {
         method: 'POST',
         body: JSON.stringify({
-          userId: userId,
           matchedUserId: currentCard.userId,
-          timeoutSeconds: 30  // ✅ Add timeout parameter
         })
       });
       
       console.log('Proceed Result:', data);
       
-      // Check if it's a mutual match (both users proceeded)
       if (data.roomId) {
         // Perfect case: both accepted AND room created in one shot
         clearInterval(pollRef.current);
@@ -228,11 +264,65 @@ export default function MeetSomeoneDynamic() {
           }
         }));
         router.push('/video-chat');
-      } else if (data.waiting || data.success) {
-        // Either:
-        // - data.waiting: we liked them, waiting for them to accept
-        // - data.success (no roomId): both accepted but room creation had an issue
-        // In BOTH cases: show the waiting overlay and poll MY_ROOM instead of proceed.
+      } else if (data.success && !data.waiting && !data.roomId) {
+        // Backend says both accepted, but failed to create the streaming room!
+        // The backend specifically expects the frontend to create the room manually if this happens.
+        console.log("Both accepted, but backend room creation failed. Creating room via frontend...");
+        try {
+          const roomData = await apiRequest(API.STREAMING.CREATE_ROOM, {
+            method: 'POST',
+            body: JSON.stringify({
+              userIds: [userId, currentCard.userId],
+              callType: 'matched'
+            })
+          });
+          if (roomData && roomData.roomId) {
+            clearInterval(pollRef.current);
+            localStorage.setItem('currentRoom', JSON.stringify({
+              roomId: roomData.roomId,
+              sessionId: roomData.sessionId || sessionId,
+              partner: {
+                id: currentCard.userId,
+                username: currentCard.username,
+                age: currentCard.age,
+                city: currentCard.city,
+                displayPictureUrl: currentCard.displayPictureUrl
+              }
+            }));
+            router.push('/video-chat');
+            return;
+          }
+        } catch (roomErr) {
+          console.error("Frontend fallback room creation failed:", roomErr);
+          
+          // If user is already in an active room, that IS the room — just use it
+          if (roomErr.message && roomErr.message.includes("already in an active room")) {
+            try {
+              const existingRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+              if (existingRoom?.exists && existingRoom?.roomId) {
+                clearInterval(pollRef.current);
+                localStorage.setItem('currentRoom', JSON.stringify({
+                  roomId: existingRoom.roomId,
+                  sessionId: existingRoom.sessionId || sessionId,
+                  partner: {
+                    id: currentCard.userId,
+                    username: currentCard.username,
+                    age: currentCard.age,
+                    city: currentCard.city,
+                    displayPictureUrl: currentCard.displayPictureUrl
+                  }
+                }));
+                router.push('/video-chat');
+                return;
+              }
+            } catch (_) {}
+          }
+
+          setError("Match found, but video servers are currently unreachable. Please try again.");
+        }
+      } else if (data.waiting) {
+        // We liked them, waiting for them to accept
+        // Show the waiting overlay and poll MY_ROOM instead of proceed.
         // Polling proceed again would re-consume the already-deleted match record = infinite loop!
         setWaitingForMatch(true);
         setWaitingMatchedUser(currentCard);
@@ -244,17 +334,22 @@ export default function MeetSomeoneDynamic() {
         //
         // Race condition rescue: after 4 empty ticks (~12s), retry /proceed once.
         let emptyPollCount = 0;
+        // Max ~90s wait (30 ticks × 3s) then auto-cancel to avoid infinite spinner
+        const MAX_POLL_TICKS = 30;
+
         const startPollingRoom = () => {
           pollRef.current = setInterval(async () => {
             try {
-              // Step 1: Check discovery Redis cache
-              const roomData = await apiRequest(API.DISCOVERY.MY_ROOM(userId));
-              if (roomData.hasRoom && roomData.roomId) {
+              // Single source of truth: GET /streaming/users/:userId/room
+              // The /discovery/my-room endpoint is test-only and not exposed by gateway.
+              // The streaming endpoint is the real authenticated ground truth.
+              const streamData = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+              if (streamData.exists && streamData.roomId) {
                 clearInterval(pollRef.current);
                 clearTimeout(rescueTimeoutRef.current);
                 localStorage.setItem('currentRoom', JSON.stringify({
-                  roomId: roomData.roomId,
-                  sessionId: roomData.sessionId,
+                  roomId: streamData.roomId,
+                  sessionId: streamData.sessionId || streamData.roomId,
                   partner: {
                     id: currentCard.userId,
                     username: currentCard.username,
@@ -267,59 +362,15 @@ export default function MeetSomeoneDynamic() {
                 return;
               }
 
-              // Step 2: Fallback — ask streaming service directly (handles "already in room" case)
-              try {
-                const streamData = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
-                if (streamData.exists && streamData.roomId) {
-                  clearInterval(pollRef.current);
-                  clearTimeout(rescueTimeoutRef.current);
-                  localStorage.setItem('currentRoom', JSON.stringify({
-                    roomId: streamData.roomId,
-                    sessionId: streamData.sessionId || streamData.roomId,
-                    partner: {
-                      id: currentCard.userId,
-                      username: currentCard.username,
-                      age: currentCard.age,
-                      city: currentCard.city,
-                      displayPictureUrl: currentCard.displayPictureUrl
-                    }
-                  }));
-                  router.push('/video-chat');
-                  return;
-                }
-              } catch {}
-
-              // Every 5 empty ticks (~15s): fire a rescue /proceed call to keep acceptance alive
+              // Auto-cancel after MAX_POLL_TICKS if other user never accepted
               emptyPollCount++;
-              if (emptyPollCount % 5 === 0) {
-                rescueTimeoutRef.current = setTimeout(async () => {
-                  try {
-                    const retryData = await apiRequest(API.DISCOVERY.PROCEED, {
-                      method: 'POST',
-                      body: JSON.stringify({ 
-                        userId, 
-                        matchedUserId: currentCard.userId,
-                        timeoutSeconds: 30  // ✅ Add timeout here too
-                      })
-                    });
-                    if (retryData.roomId) {
-                      clearInterval(pollRef.current);
-                      localStorage.setItem('currentRoom', JSON.stringify({
-                        roomId: retryData.roomId,
-                        sessionId: retryData.sessionId,
-                        partner: {
-                          id: currentCard.userId,
-                          username: currentCard.username,
-                          age: currentCard.age,
-                          city: currentCard.city,
-                          displayPictureUrl: currentCard.displayPictureUrl
-                        }
-                      }));
-                      router.push('/video-chat');
-                    }
-                    // Room will appear in /my-room or streaming on next poll
-                  } catch {}
-                }, 500);
+              if (emptyPollCount >= MAX_POLL_TICKS) {
+                clearInterval(pollRef.current);
+                setWaitingForMatch(false);
+                setWaitingMatchedUser(null);
+                setError('The other person did not respond in time. Fetching next card...');
+                setTimeout(() => setError(''), 3000);
+                fetchCard(sessionId);
               }
             } catch {}
           }, 3000);
@@ -352,17 +403,9 @@ export default function MeetSomeoneDynamic() {
   const handleSelectLocation = async (city) => {
     setSwiping(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
-      // Use the test select-location endpoint defined in lib/api.js (or implied)
-      const url = `${API.DISCOVERY.RAINCHECK.replace('/raincheck', '/select-location')}`;
-      
-      const data = await apiRequest(url, {
+      const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
         method: 'POST',
         body: JSON.stringify({
-          userId: userId,
           sessionId: sessionId,
           city: city
         })
@@ -381,32 +424,6 @@ export default function MeetSomeoneDynamic() {
     }
   };
 
-
-  if (loading && !currentCard) {
-    return (
-      <div className={clsx('relative', 'min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
-        <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
-          <div
-            className={clsx('relative', 'flex', 'items-center', 'justify-center', 'px-8', 'lg:px-24', 'bg-repeat')}
-            style={{
-              backgroundImage: "url('/assets/mb.jpg')",
-              backgroundRepeat: 'repeat',
-              backgroundSize: 'auto',
-              backgroundPosition: 'top left',
-            }}
-          >
-            <div className={clsx('z-10', 'text-center', 'max-w-lg')}>
-              <img src="/assets/Logo.svg" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
-              <p className={clsx('text-white', 'text-2xl', 'mt-4')}>Loading profiles...</p>
-            </div>
-          </div>
-          <div className={clsx('relative', 'flex', 'items-center', 'justify-center', 'bg-purple-900')}>
-            <div className={clsx('text-white', 'text-xl')}>Finding someone for you...</div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   const user = currentCard;
 
@@ -511,11 +528,7 @@ export default function MeetSomeoneDynamic() {
                   </div>
                 </div>
 
-                {/* Searching Popup */}
-                <SearchingPopup 
-                  isVisible={isSearching && !currentCard} 
-                  onCancel={() => setIsSearching(false)} 
-                />
+                {/* Searching Popup removed - no loading overlay on left side */}
               </div>
             </div>
           )}
@@ -601,40 +614,7 @@ export default function MeetSomeoneDynamic() {
 
           
 
-          {/* SOLO / SQUAD TOGGLE */}
-       
-       
-          {/* User Info Card - Floating */}
-          {user && mode === 'solo' && (
-            <div className={clsx('absolute', 'top-32', 'left-6', 'z-[3]', 'bg-black/50', 'backdrop-blur-sm', 'rounded-2xl', 'p-4', 'max-w-xs')}>
-              <h2 className={clsx('text-white', 'text-2xl', 'font-bold')}>
-                {user.username}, {user.age || '?'}
-              </h2>
-              {user.city && (
-                <p className={clsx('text-white/80', 'text-sm')}>📍 {user.city}</p>
-              )}
-              {user.intent && (
-                <p className={clsx('text-white/70', 'text-sm', 'mt-2')}>{user.intent}</p>
-              )}
-              {user.interests && user.interests.length > 0 && (
-                <div className={clsx('flex', 'flex-wrap', 'gap-2', 'mt-3')}>
-                  {user.interests.slice(0, 3).map((interest, index) => (
-                    <span key={index} className={clsx('px-2', 'py-1', 'bg-white/20', 'rounded-full', 'text-xs', 'text-white')}>
-                      {interest.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className={clsx('absolute', 'top-40', 'left-1/2', '-translate-x-1/2', 'z-[4]', 'bg-red-500/90', 'text-white', 'px-6', 'py-3', 'rounded-lg', 'max-w-md', 'text-center')}>
-              {error}
-            </div>
-          )}
-
+    
           {mode === 'solo' ? (
             /* SOLO VIEW */
 <div
@@ -647,7 +627,11 @@ export default function MeetSomeoneDynamic() {
               {!isSearching ? (
                 <>
              <button
-  onClick={() => { setIsSearching(true); fetchCard(null); }}
+  onClick={() => { 
+    setIsSearching(true); 
+    fetchCard(null, true); 
+    handleUpdateStatus('AVAILABLE');
+  }}
   className={clsx(
     'relative z-20 mt-60 w-4/6 py-6 px-12 font-bold flex items-center justify-center gap-3 border rounded-2xl transition-all uppercase tracking-widest',
     isSearching

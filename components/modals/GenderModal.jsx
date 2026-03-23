@@ -18,12 +18,8 @@ export default function GenderModal({ isOpen, onClose }) {
 
   const fetchFilters = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
-      const data = await apiRequest(API.DISCOVERY.GENDER_FILTERS(userId));
+      // GET /gender-filters — authenticated via JWT, no userId param
+      const data = await apiRequest(API.DISCOVERY.GENDER_FILTERS);
       setFilters(data.availableFilters || []);
       
       if (data.currentPreference) {
@@ -39,16 +35,11 @@ export default function GenderModal({ isOpen, onClose }) {
   const handleApply = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
+      // POST /gender-filters/apply — authenticated via JWT
       await apiRequest(API.DISCOVERY.APPLY_GENDER_FILTER, {
         method: 'POST',
         body: JSON.stringify({
-          userId,
-          genders: [selectedGender]
+          genders: selectedGender === 'ALL' ? null : [selectedGender]
         })
       });
       onClose();

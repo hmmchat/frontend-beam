@@ -16,7 +16,11 @@ const MyComponent = () => {
     
     const isValidToken = (t) => {
       try {
-        return t && t !== 'null' && t !== 'undefined' && t.split('.').length === 3;
+        if (!t || t === 'null' || t === 'undefined' || t.split('.').length !== 3) return false;
+        // Check expiry
+        const payload = JSON.parse(atob(t.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) return false;
+        return true;
       } catch (e) {
         return false;
       }
@@ -26,11 +30,11 @@ const MyComponent = () => {
       setIsLoggedIn(true);
     } else {
       setIsLoggedIn(false);
-      if (token) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userId');
-      }
+      // Clear any stale tokens
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('currentRoom');
     }
     setLoading(false);
   }, []);

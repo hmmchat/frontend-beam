@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 export default function SelectorOverlay({
   showSelector,
@@ -15,8 +16,18 @@ export default function SelectorOverlay({
   musicResults,
   searchingMusic,
   searchMusic,
-  selectMusic
+  selectMusic,
+  searchQuery,
+  setSearchQuery,
+  searchItems,
+  isSearchingItems
 }) {
+  const [localResults, setLocalResults] = React.useState([]);
+
+  React.useEffect(() => {
+    setSearchQuery("");
+  }, [showSelector, setSearchQuery]);
+
   if (!showSelector) return null;
 
   return (
@@ -94,46 +105,43 @@ export default function SelectorOverlay({
           </div>
         )}
 
-        {/* Content List */}
-        <div className="space-y-12 pb-20">
-          {/* Flat List of Interests */}
-          {showSelector === 'interests' && (
-            <div className="flex flex-wrap gap-3 pb-8">
-              {allInterests.map(item => {
-                const isSelected = user?.interests?.some(i => i.interestId === item.id);
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleInterest(item.id, item.name)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
-                      isSelected 
-                        ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]' 
-                        : 'bg-white/5 text-white border-white/20 hover:border-white/40'
-                    }`}
-                  >
-                    <span className="text-sm uppercase tracking-wide">{item.name}</span>
-                    <span className="text-lg leading-none">{isSelected ? '✕' : '+'}</span>
-                  </button>
-                );
-              })}
+        {(showSelector === 'interests' || showSelector === 'values' || showSelector === 'brands') && (
+          <div className="space-y-6">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  searchItems(showSelector, e.target.value);
+                }}
+                placeholder={`Search for your favorite ${showSelector === 'brands' ? 'brands' : showSelector === 'interests' ? 'interests' : 'causes'}...`}
+                className="w-full bg-white/5 border border-white/20 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-yellow-400 transition"
+              />
+              {isSearchingItems && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
             </div>
-          )}
 
-          {(showSelector === 'values' || showSelector === 'brands') && (
             <div className="flex flex-wrap gap-3">
-              {(showSelector === 'values' ? allValues : allBrands).map(item => {
-                const isSelected = showSelector === 'values' 
-                  ? user?.values?.some(v => v.valueId === item.id)
-                  : user?.brandPreferences?.some(b => b.brandId === item.id);
+              {(showSelector === 'interests' ? allInterests : showSelector === 'values' ? allValues : allBrands).map(item => {
+                const isSelected = showSelector === 'interests' 
+                  ? user?.interests?.some(i => i.interestId === item.id)
+                  : showSelector === 'values'
+                    ? user?.values?.some(v => v.valueId === item.id)
+                    : user?.brandPreferences?.some(b => b.brandId === item.id);
                 
                 return (
                   <button
                     key={item.id}
                     onClick={() => {
-                      if (showSelector === 'values') toggleValue(item.id, item.name);
+                      if (showSelector === 'interests') toggleInterest(item.id, item.name);
+                      else if (showSelector === 'values') toggleValue(item.id, item.name);
                       else toggleBrand(item.id, item.name, item.logoUrl);
                     }}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
                       isSelected 
                         ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]' 
                         : 'bg-white/5 text-white border-white/20 hover:border-white/40'
@@ -146,8 +154,8 @@ export default function SelectorOverlay({
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Floating Bottom Bar */}
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-sm px-6">

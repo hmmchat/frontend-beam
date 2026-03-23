@@ -7,15 +7,7 @@ import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API } from "@/lib/api";
 
 
-const suggestions = [
-  "Do you know what happened today in our boy’s GC",
-  "Long day, need to rant.",
-  "How many stars are there in galaxy?",
-  "I want to see someone Dance on Drake",
-  "My pizza fell today",
-  "Mom scolded today. Need moral support.",
-  "My mom cooked epic food today, Soo daymnn fooking good!"
-];
+
 
 
 export default function Onboarding() {
@@ -37,6 +29,9 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [prompt, setPrompt] = useState("");
   const [selectedPrompts, setSelectedPrompts] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isShuffleLoading, setIsShuffleLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Get userId from token on mount
   useEffect(() => {
@@ -105,10 +100,12 @@ export default function Onboarding() {
             if (u.intent) {
               setPrompt(u.intent);
             }
+            setIsEditing(true);
           }
           setLoading(false);
         } else {
           // Profile doesn't exist - show onboarding form
+          setIsEditing(false);
           setLoading(false);
         }
         
@@ -117,10 +114,26 @@ export default function Onboarding() {
         setApiError('Invalid session. Please login again.');
         setTimeout(() => router.push('/'), 2000);
         setLoading(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchSuggestions = async () => {
+      try {
+        const response = await fetch(API.USERS.GET_INTENT_PROMPTS(6));
+        if (response.ok) {
+          const data = await response.json();
+          // Data is { prompts: [{ id, text }, ...] }
+          setSuggestions(data.prompts?.map(p => p.text) || []);
+        }
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
       }
     };
 
     checkUserProfile();
+    fetchSuggestions();
   }, [router]);
 
   // prevent body scroll when modal open
@@ -280,22 +293,28 @@ export default function Onboarding() {
         intent: prompt.trim() || undefined
       };
 
-      // 2. Create Profile
-      const response = await fetch(API.USERS.CREATE_PROFILE(userId), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData)
-      });
+      // If editing, skip the create profile step entirely and only update intent/photos
+      if (isEditing) {
+        console.warn('Editing existing profile, skipping create call...');
+      } else {
+        // 2. Create Profile
+        const response = await fetch(API.USERS.CREATE_PROFILE(userId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(profileData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message?.includes('already exists')) {
-          console.warn('Profile already exists, proceeding with photos and intent update...');
-          // Don't return here, continue with photos and intent
-        } else {
-          throw new Error(errorData.message || 'Profile creation failed');
+        if (!response.ok) {
+          const errorData = await response.json();
+          const errorMessage = errorData.message || errorData.error || "";
+          
+          if (errorMessage.toLowerCase().includes('already exists')) {
+            console.warn('Profile already exists, proceeding with updates...');
+          } else {
+            throw new Error(errorMessage || 'Profile creation failed');
+          }
         }
       }
 
@@ -315,16 +334,25 @@ export default function Onboarding() {
       }
 
       // 4. Update Intent/Prompt if present
-      if (prompt.trim() && accessToken) {
-        await fetch(API.USERS.UPDATE_INTENT, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({ intent: prompt.trim() })
-        });
-      }
+if (prompt.trim() && accessToken) {
+  const res = await fetch(API.USERS.UPDATE_INTENT, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({ intent: prompt.trim() })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("Intent update failed:", err);
+    throw new Error("Intent update failed");
+  } else {
+    const data = await res.json();
+    console.log("Intent updated:", data);
+  }
+}
 
       router.push('/facecard');
 
@@ -582,6 +610,9 @@ export default function Onboarding() {
     rows={3}
     className="w-full bg-transparent resize-none outline-none text-center placeholder-white/60"
   />
+  <div className="text-[10px] text-right opacity-40 mt-1">
+    {prompt.length}/255
+  </div>
 </div>
 
 
@@ -591,10 +622,22 @@ export default function Onboarding() {
               <span className="opacity-70">Suggestions</span>
               <button 
                 type="button" 
-                onClick={() => {
-                  // shuffle suggestions logic could go here
+                onClick={async () => {
+                  setIsShuffleLoading(true);
+                  try {
+                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(6));
+                    if (response.ok) {
+                      const data = await response.json();
+                      setSuggestions(data.prompts?.map(p => p.text) || []);
+                    }
+                  } catch (err) {
+                    console.error('Error shuffling suggestions:', err);
+                  } finally {
+                    setIsShuffleLoading(false);
+                  }
                 }}
-                className="opacity-70 hover:opacity-100 transition"
+                disabled={isShuffleLoading}
+                className={`opacity-70 hover:opacity-100 transition ${isShuffleLoading ? 'animate-spin' : ''}`}
               >
                 ⟳
               </button>
@@ -655,7 +698,7 @@ export default function Onboarding() {
               disabled={loading}
               className="flex-2 w-full border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
             >
-              {loading ? 'Processing...' : 'Create Facecard'}
+              {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>
           </div>
         </div>

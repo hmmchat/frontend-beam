@@ -32,12 +32,8 @@ export default function LocationModal({ isOpen, onClose }) {
 
   const fetchPreference = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-      
-      const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE(userId));
+      // GET /discovery/location-preference — authenticated via JWT
+      const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE);
       setSelectedCity(data.city || '');
     } catch (error) {
       console.error('Error fetching preference:', error);
@@ -79,15 +75,10 @@ export default function LocationModal({ isOpen, onClose }) {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub || payload.uid || payload.id;
-
+      // POST /discovery/location-preference — authenticated via JWT
       await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
-        method: 'PATCH',
+        method: 'POST',
         body: JSON.stringify({
-          userId,
           city: selectedCity || null
         })
       });

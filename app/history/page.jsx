@@ -16,13 +16,8 @@ export default function History() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const userId = localStorage.getItem("userId");
-        if (!userId) {
-          setLoading(false);
-          return;
-        }
-
-        const data = await apiRequest(API.STREAMING.GET_HISTORY(userId, 50));
+        // GET /streaming/history is authenticated via JWT \u2014 no userId param needed
+        const data = await apiRequest(API.STREAMING.GET_HISTORY(50));
         setCalls(data.calls || []);
       } catch (err) {
         console.error("Failed to fetch history:", err);

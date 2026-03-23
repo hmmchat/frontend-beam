@@ -19,13 +19,18 @@ export default function FacecardPage() {
   const [activeSlot, setActiveSlot] = useState(null);
 
   // Dynamic Data State
+  const [masterInterests, setMasterInterests] = useState([]);
+  const [masterValues, setMasterValues] = useState([]);
+  const [masterBrands, setMasterBrands] = useState([]);
   const [allInterests, setAllInterests] = useState([]);
   const [allValues, setAllValues] = useState([]);
   const [allBrands, setAllBrands] = useState([]);
   const [showSelector, setShowSelector] = useState(null); // 'interests' | 'values' | 'brands' | 'music'
-  const [musicQuery, setMusicQuery] = useState('');
-  const [musicResults, setMusicResults] = useState([]);
   const [searchingMusic, setSearchingMusic] = useState(false);
+  const [musicQuery, setMusicQuery] = useState("");
+  const [musicResults, setMusicResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchingItems, setIsSearchingItems] = useState(false);
 
   const progress = calculateProgress(user);
 
@@ -68,9 +73,21 @@ export default function FacecardPage() {
           fetch(API.DISCOVERY.GET_VALUES),
           fetch(API.DISCOVERY.GET_BRANDS)
         ]);
-        if (intRes.ok) setAllInterests((await intRes.json()).interests);
-        if (valRes.ok) setAllValues((await valRes.json()).values);
-        if (brRes.ok) setAllBrands((await brRes.json()).brands);
+        if (intRes.ok) {
+          const data = (await intRes.json()).interests;
+          setMasterInterests(data);
+          setAllInterests(data);
+        }
+        if (valRes.ok) {
+          const data = (await valRes.json()).values;
+          setMasterValues(data);
+          setAllValues(data);
+        }
+        if (brRes.ok) {
+          const data = (await brRes.json()).brands;
+          setMasterBrands(data);
+          setAllBrands(data);
+        }
       } catch (error) {
         console.error('Error fetching choices:', error);
       }
@@ -79,6 +96,14 @@ export default function FacecardPage() {
     fetchProfile();
     fetchChoices();
   }, [router]);
+
+  useEffect(() => {
+    if (!showSelector) {
+      if (masterInterests.length > 0) setAllInterests(masterInterests);
+      if (masterValues.length > 0) setAllValues(masterValues);
+      if (masterBrands.length > 0) setAllBrands(masterBrands);
+    }
+  }, [showSelector, masterInterests, masterValues, masterBrands]);
 
   const toggleInterest = async (interestId, name) => {
     const token = localStorage.getItem('accessToken');
@@ -162,6 +187,101 @@ export default function FacecardPage() {
       });
     } catch (err) {
       console.error('Error saving brands:', err);
+    }
+  };
+
+  const levenshtein = (a, b) => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return matrix[a.length][b.length];
+  };
+
+  const fuzzySearch = (query, items) => {
+    if (!query) return items;
+    const lowerQuery = query.toLowerCase();
+    
+    return items.map(item => {
+      const text = item.name.toLowerCase();
+      let score = 0;
+      
+      if (text === lowerQuery) score = 100;
+      else if (text.startsWith(lowerQuery)) score = 80;
+      else if (text.includes(lowerQuery)) score = 50;
+      
+      let i = 0, j = 0;
+      while (i < lowerQuery.length && j < text.length) {
+        if (lowerQuery[i] === text[j]) i++;
+        j++;
+      }
+      if (i === lowerQuery.length && score < 30) score = 30;
+      
+      const prefixMatch = text.substring(0, lowerQuery.length + 2);
+      const dist = levenshtein(lowerQuery, prefixMatch);
+      if (dist <= 2 && score < 40 - (dist * 10)) score = 40 - (dist * 10);
+      
+      return { item, score };
+    })
+    .filter(match => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(match => match.item);
+  };
+
+  const searchItems = async (category, query) => {
+    if (!query) {
+      if (category === 'brands') setAllBrands(masterBrands);
+      else if (category === 'interests') setAllInterests(masterInterests);
+      else if (category === 'values') setAllValues(masterValues);
+      return;
+    }
+
+    if (category === 'interests' || category === 'values') {
+      setIsSearchingItems(true);
+      setTimeout(() => {
+        if (category === 'interests') {
+          setAllInterests(fuzzySearch(query, masterInterests));
+        } else {
+          setAllValues(fuzzySearch(query, masterValues));
+        }
+        setIsSearchingItems(false);
+      }, 50);
+      return;
+    }
+
+    if (query.length < 1) return;
+    setIsSearchingItems(true);
+    try {
+      let endpoint;
+      if (category === 'brands') endpoint = API.DISCOVERY.SEARCH_BRANDS;
+      else if (category === 'interests') endpoint = API.DISCOVERY.SEARCH_INTERESTS;
+      else if (category === 'values') endpoint = API.DISCOVERY.SEARCH_VALUES;
+      
+      if (!endpoint) return;
+
+      const fullUrl = typeof endpoint === 'function' ? endpoint(query) : `${endpoint}?q=${encodeURIComponent(query)}`;
+      const response = await fetch(fullUrl);
+      if (response.ok) {
+        const data = await response.json();
+        if (category === 'brands') setAllBrands(data.brands || []);
+        else if (category === 'interests') setAllInterests(data.interests || []);
+        else if (category === 'values') setAllValues(data.values || []);
+      }
+    } catch (err) {
+      console.error(`Error searching ${category}:`, err);
+    } finally {
+      setIsSearchingItems(false);
     }
   };
 
@@ -343,6 +463,10 @@ export default function FacecardPage() {
         searchingMusic={searchingMusic}
         searchMusic={searchMusic}
         selectMusic={selectMusic}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchItems={searchItems}
+        isSearchingItems={isSearchingItems}
       />
     </>
   );

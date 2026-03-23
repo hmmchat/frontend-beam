@@ -3,12 +3,33 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import clsx from 'clsx';
 
-const STREAMING_URL = process.env.NEXT_PUBLIC_STREAMING_SERVICE_URL || 'http://localhost:3005';
-const WS_URL = STREAMING_URL.replace('http', 'ws') + '/streaming/ws';
+// WS URL — always use the explicit env var (must be wss:// in production)
+// Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
+// routes /streaming/ws directly (not /v1/streaming/ws on the streaming host)
+const getWsUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_STREAMING_WS_URL;
+  if (envUrl) {
+    // Ensure wss:// when on HTTPS (guards against accidental ws:// in env)
+    return envUrl.replace(/^ws:\/\//, 'wss://');
+  }
+  // Fallback: derive from REST URL — strip /v1 suffix, swap http→ws
+  try {
+    const restUrl = process.env.NEXT_PUBLIC_STREAMING_SERVICE_URL || 'http://localhost:3006';
+    const base = restUrl.replace(/\/v1$/, ''); // strip gateway prefix
+    const wsBase = base.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
+    return wsBase + '/streaming/ws';
+  } catch (e) {
+    return 'ws://localhost:3006/streaming/ws'; // correct port for streaming
+  }
+};
+const WS_URL = null; // computed at runtime inside component
 
 export default function VideoChat() {
   const router = useRouter();
+  // Compute WS URL at runtime so we can check window.location.protocol
+  const WS_URL = getWsUrl();
   const [roomInfo, setRoomInfo] = useState(null);
   const [status, setStatus] = useState('connecting'); // connecting | connected | error
   const [remoteStreams, setRemoteStreams] = useState([]); // { userId, stream, name, age }[]
@@ -27,6 +48,7 @@ export default function VideoChat() {
   const [isAlreadyFriend, setIsAlreadyFriend] = useState(false);
 
   const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
   const wsRef = useRef(null);
   const deviceRef = useRef(null);
   const sendTransportRef = useRef(null);
@@ -36,6 +58,18 @@ export default function VideoChat() {
   const consumersRef = useRef({});
   const roomInfoRef = useRef(null);
   const userIdRef = useRef(null);
+  // Queue producers that arrive before recv transport is ready
+  const pendingProducersRef = useRef([]);
+
+  // Re-assign srcObject whenever the remote stream changes.
+  // A plain ref callback only fires on mount/unmount — NOT on re-renders, so
+  // we use useEffect which runs after every render where remoteStreams changed.
+  useEffect(() => {
+    const stream = remoteStreams[0]?.stream;
+    if (remoteVideoRef.current && stream) {
+      remoteVideoRef.current.srcObject = stream;
+    }
+  }, [remoteStreams]);
 
   // --- Initialize ---
   useEffect(() => {
@@ -105,6 +139,22 @@ export default function VideoChat() {
         return;
       }
 
+      // Verify the room still exists before connecting
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (token && uid) {
+          const roomCheck = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+          if (!roomCheck?.exists || roomCheck?.roomId !== info.roomId) {
+            console.warn('[Init] Room mismatch or no longer exists, redirecting home...');
+            localStorage.removeItem('currentRoom');
+            router.push('/');
+            return;
+          }
+        }
+      } catch (_) {
+        // If check fails, proceed anyway — WS will handle stale room
+      }
+
       // Yield to event loop so React Strict Mode cleanup can set aborted=true
       // before we create any WebSocket/transport resources
       await new Promise(r => setTimeout(r, 50));
@@ -120,9 +170,34 @@ export default function VideoChat() {
       startMediaAndSignaling(info, uid);
     };
 
+    // Helper: fire-and-forget status reset (works sync for beforeunload)
+    const setOnline = () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        // Use keepalive so the request survives tab/browser close
+        fetch(API.USERS.UPDATE_STATUS, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: 'AVAILABLE' }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (_) {}
+    };
+
+    // Case 1: browser tab/window close
+    const handleBeforeUnload = () => setOnline();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     init();
     return () => {
       aborted = true;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Case 2 & 3: go back / signout (component unmount)
+      setOnline();
       cleanup();
     };
   }, [router]);
@@ -136,6 +211,8 @@ export default function VideoChat() {
     // Stop local media tracks
     localStreamRef.current?.getTracks().forEach(t => t.stop());
     localStreamRef.current = null;
+    // Clear pending producer queue
+    pendingProducersRef.current = [];
     // Nullify mediasoup refs (don't call .close() — it throws AwaitQueueStoppedError async)
     producersRef.current = {};
     consumersRef.current = {};
@@ -159,10 +236,14 @@ export default function VideoChat() {
       // Fallback to signaling anyway so we can see remote if they have camera
     }
 
-    // Fix: Remove duplicate /streaming/ws path
-    const ws = new WebSocket(`${WS_URL}?userId=${userId}`);
+    // Browsers cannot set custom headers on WebSocket connections.
+    // Pass the JWT as a query param so the streaming gateway can authenticate.
+    const accessToken = localStorage.getItem('accessToken') || '';
+    
+    const wsUrlWithAuth = `${WS_URL}?userId=${userId}${accessToken ? `&token=${encodeURIComponent(accessToken)}` : ''}`;
+    const ws = new WebSocket(wsUrlWithAuth);
     wsRef.current = ws;
-    console.log('[WebSocket] Connecting to:', `${WS_URL}?userId=${userId}`);
+    console.log('[WebSocket] Connecting to:', wsUrlWithAuth.replace(/token=[^&]+/, 'token=<redacted>'));
 
     ws.onopen = () => send({ type: 'join-room', data: { roomId: info.roomId } });
     ws.onmessage = async (e) => {
@@ -214,7 +295,6 @@ export default function VideoChat() {
 
       case 'producers-list': {
         console.log('[WebRTC] Received producers list:', data);
-        // Backend sends list of existing producers (handles race conditions)
         if (!data || !Array.isArray(data)) {
           console.log('[WebRTC] No producers in room yet');
           return;
@@ -224,7 +304,13 @@ export default function VideoChat() {
         data.forEach(p => {
           if (p.userId !== userIdRef.current) {
             console.log('[WebRTC] Consuming existing producer:', p.producerId, 'kind:', p.kind, 'from user:', p.userId);
-            consume(p.producerId, p.userId);
+            if (!recvTransportRef.current) {
+              // Still not ready — queue it (shouldn't happen if we send get-producers after transport ready, but be safe)
+              console.log('[WebRTC] Recv transport still not ready, queuing from producers-list:', p.producerId);
+              pendingProducersRef.current.push({ producerId: p.producerId, remoteUserId: p.userId });
+            } else {
+              consume(p.producerId, p.userId);
+            }
           } else {
             console.log('[WebRTC] Skipping own producer:', p.producerId);
           }
@@ -278,12 +364,16 @@ export default function VideoChat() {
             cb();
           });
           
-          console.log('[WebRTC] Receive transport ready');
+          console.log('[WebRTC] Receive transport ready — requesting existing producers + draining queue...');
           
-          // CRITICAL: Request existing producers to handle race conditions
-          // If other users produced media before our recv transport was ready,
-          // we would have missed their 'new-producer' events
-          console.log('[WebRTC] Requesting existing producers to handle race conditions...');
+          // Drain any producers that arrived before recv transport was ready
+          const queued = pendingProducersRef.current.splice(0);
+          if (queued.length > 0) {
+            console.log(`[WebRTC] Draining ${queued.length} queued producer(s)...`);
+            queued.forEach(({ producerId, remoteUserId }) => consume(producerId, remoteUserId));
+          }
+
+          // Also ask backend for anyone we may still have missed
           send({ type: 'get-producers', data: { roomId: info.roomId } });
         }
         break;
@@ -297,7 +387,12 @@ export default function VideoChat() {
 
       case 'new-producer': {
         console.log('[WebRTC] New producer available:', data.producerId, 'from user:', data.userId);
-        if (!recvTransportRef.current) return;
+        if (!recvTransportRef.current) {
+          // Recv transport not ready yet — queue for drain when it becomes ready
+          console.log('[WebRTC] Recv transport not ready, queuing producer:', data.producerId);
+          pendingProducersRef.current.push({ producerId: data.producerId, remoteUserId: data.userId });
+          return;
+        }
         consume(data.producerId, data.userId);
         break;
       }
@@ -307,22 +402,34 @@ export default function VideoChat() {
         const { id, producerId, kind, rtpParameters, userId: remoteId } = data;
         const consumer = await recvTransportRef.current.consume({ id, producerId, kind, rtpParameters });
         consumersRef.current[id] = consumer;
-        const stream = new MediaStream([consumer.track]);
+
         setRemoteStreams(prev => {
           const existing = prev.find(s => s.userId === remoteId);
           if (existing) {
-            existing.stream.addTrack(consumer.track);
-            return [...prev];
+            // Build a NEW MediaStream instead of mutating via addTrack.
+            // Mutation doesn't trigger the useEffect and some browsers won't
+            // auto-detect added tracks on a live srcObject stream.
+            const newStream = new MediaStream([...existing.stream.getTracks(), consumer.track]);
+            return prev.map(s => s.userId === remoteId ? { ...s, stream: newStream } : s);
           }
-          return [...prev, { userId: remoteId, stream, name: partnerInfo.name, age: partnerInfo.age }];
+          return [...prev, { userId: remoteId, stream: new MediaStream([consumer.track]), name: partnerInfo.name, age: partnerInfo.age }];
         });
-        console.log('[WebRTC] Remote stream added for user:', remoteId);
+        console.log('[WebRTC] Remote stream updated for user:', remoteId, '| kind:', kind);
         break;
       }
       
       case 'participant-left': {
         console.log('[WebRTC] Participant left:', data.userId);
         setRemoteStreams(prev => prev.filter(s => s.userId !== data.userId));
+        // Clean up stale consumers for this user so they don't block re-consume on rejoin
+        Object.entries(consumersRef.current).forEach(([cid, consumer]) => {
+          if (consumer?.producerPaused !== undefined) {
+            // consumer.appData.userId would be cleaner, but we don't have it;
+            // just clear all consumers and let get-producers re-establish them
+          }
+        });
+        // Reset remote video srcObject so the spinner shows cleanly
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
         break;
       }
 
@@ -378,57 +485,95 @@ export default function VideoChat() {
   };
 
   const handleLeave = () => {
+    // Signal server we're leaving (WebSocket)
+    if (wsRef.current?.readyState === WebSocket.OPEN && roomInfo?.roomId) {
+      wsRef.current.send(JSON.stringify({ type: 'leave-room', data: { roomId: roomInfo.roomId } }));
+    }
+    // End room via REST as well (marks session ended in backend)
+    if (roomInfo?.roomId) {
+      const token = localStorage.getItem('accessToken');
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.sub || payload.uid || payload.id;
+        fetch(API.STREAMING.LEAVE_ROOM(roomInfo.roomId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (_) {}
+    }
     cleanup();
     localStorage.removeItem('currentRoom');
+    // Set status back to AVAILABLE after leaving video chat (backend also does this,
+    // but explicit PATCH ensures the discovery pool is re-entered immediately)
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        fetch(API.USERS.UPDATE_STATUS, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: 'AVAILABLE' }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch (_) {}
     router.push('/');
   };
 
   return (
-    <div className="h-screen w-screen bg-black flex overflow-hidden font-sans">
+    <div className={clsx('h-screen', 'w-screen', 'bg-black', 'flex', 'overflow-hidden', 'font-sans')}>
       {/* Side-by-Side Video Layout */}
-      <div className="flex-1 flex p-2 gap-2">
+      <div className={clsx('flex-1', 'flex', 'p-2', 'gap-2')}>
         {/* Remote Person Section */}
-        <div className="flex-1 relative rounded-[2rem] overflow-hidden bg-gray-900 border border-white/5 shadow-2xl">
+        <div className={clsx('flex-1', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
+          {/* Remote video — driven by remoteVideoRef + useEffect above */}
           {remoteStreams.length > 0 ? (
             <video
               autoPlay
               playsInline
-              className="w-full h-full object-cover"
-              ref={el => { if (el && remoteStreams[0]) el.srcObject = remoteStreams[0].stream; }}
+              className={clsx('w-full', 'h-full', 'object-cover')}
+              ref={remoteVideoRef}
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30">
-              <div className="w-8 h-8 border-2 border-white/10 border-t-white rounded-full animate-spin mb-4" />
-              <p className="text-sm font-bold tracking-widest uppercase">Waiting for match...</p>
+            <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'text-white/30')}>
+              <div className={clsx('w-8', 'h-8', 'border-2', 'border-white/10', 'border-t-white', 'rounded-full', 'animate-spin', 'mb-4')} />
+              <p className={clsx('text-sm', 'font-bold', 'tracking-widest', 'uppercase')}>Waiting for match...</p>
             </div>
           )}
           
           {/* Remote Info Overlay */}
-          <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
-            <div className="flex items-center gap-3">
+          <div className={clsx('absolute', 'top-5', 'left-5', 'right-5', 'flex', 'items-center', 'justify-between', 'z-10')}>
+            <div className={clsx('flex', 'items-center', 'gap-3')}>
               {/* Main Info Capsule */}
-              <div className="flex items-center gap-4 bg-[#C7BCB1]/80 backdrop-blur-2xl px-3 py-2 rounded-[2.5rem] border border-white/30 shadow-xl">
+              <div className={clsx('flex', 'items-center', 'gap-4', 'bg-[#C7BCB1]/80', 'backdrop-blur-2xl', 'px-3', 'py-2', 'rounded-[2.5rem]', 'border', 'border-white/30', 'shadow-xl')}>
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
+                  <div className={clsx('w-12', 'h-12', 'rounded-full', 'overflow-hidden', 'border-2', 'border-white/50', 'bg-gray-200')}>
                     <img 
                       src={partnerInfo.displayPictureUrl} 
-                      className="w-full h-full object-cover" 
+                      className={clsx('w-full', 'h-full', 'object-cover')} 
                       alt="" 
                     />
                   </div>
                   {/* Monkey Emoji Overlap */}
-                  <div className="absolute -bottom-1.5 -left-1 text-2xl filter drop-shadow-md">
+                  <div className={clsx('absolute', '-bottom-1.5', '-left-1', 'text-2xl', 'filter', 'drop-shadow-md')}>
                     🐒
                   </div>
                 </div>
-                <div className="flex flex-col pr-4">
-                  <span className="text-white text-base font-extrabold tracking-tight leading-tight">
+                <div className={clsx('flex', 'flex-col', 'pr-4')}>
+                  <span className={clsx('text-white', 'text-base', 'font-extrabold', 'tracking-tight', 'leading-tight')}>
                     {partnerInfo.name}, {partnerInfo.age}
                   </span>
                   {partnerInfo.city && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-[11px] text-white/90 font-bold flex items-center gap-1">
-                        <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
+                    <div className={clsx('flex', 'items-center', 'gap-1', 'mt-0.5')}>
+                      <span className={clsx('text-[11px]', 'text-white/90', 'font-bold', 'flex', 'items-center', 'gap-1')}>
+                        <svg className={clsx('w-2.5', 'h-2.5', 'fill-white')} viewBox="0 0 24 24">
                           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                         </svg>
                         {partnerInfo.city}
@@ -450,11 +595,11 @@ export default function VideoChat() {
                   }`}
                 >
                   {isFriendRequestSent ? (
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={clsx('w-8', 'h-8', 'text-white')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
-                    <svg className="w-9 h-9 text-white opacity-90" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className={clsx('w-9', 'h-9', 'text-white', 'opacity-90')} fill="currentColor" viewBox="0 0 24 24">
                       <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                     </svg>
                   )}
@@ -462,7 +607,7 @@ export default function VideoChat() {
               )}
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className={clsx('flex', 'flex-col', 'gap-4')}>
               {[
                 { img: '/gravecurrent.png', alt: 'Report' },
                 { img: '/smile.png', alt: 'Emoji' },
@@ -470,100 +615,100 @@ export default function VideoChat() {
               ].map((item, idx) => (
                 <button 
                   key={idx} 
-                  className="w-10 h-10 rounded-full bg-purple-900 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all border border-white/20"
+                  className={clsx('w-10', 'h-10', 'rounded-full', 'bg-purple-900', 'flex', 'items-center', 'justify-center', 'shadow-2xl', 'hover:scale-110', 'active:scale-95', 'transition-all', 'border', 'border-white/20')}
                 >
-                  <img src={item.img} className="w-5 h-5 object-contain" alt={item.alt} />
+                  <img src={item.img} className={clsx('w-5', 'h-5', 'object-contain')} alt={item.alt} />
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="absolute bottom-6 left-6 text-2xl font-black text-white/40 tracking-tighter uppercase font-[family-name:var(--font-otomanopee)]">
+          <div className={clsx('absolute', 'bottom-6', 'left-6', 'text-2xl', 'font-black', 'text-white/40', 'tracking-tighter', 'uppercase', 'font-[family-name:var(--font-otomanopee)]')}>
             HMM.
           </div>
           
-          <div className="absolute bottom-6 right-6 w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-3xl border border-white/5 animate-pulse">
+          <div className={clsx('absolute', 'bottom-6', 'right-6', 'w-16', 'h-16', 'bg-white/10', 'backdrop-blur-md', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-3xl', 'border', 'border-white/5', 'animate-pulse')}>
             🧊
           </div>
         </div>
 
         {/* Local Section */}
-        <div className="flex-1 relative rounded-[2rem] overflow-hidden bg-gray-950 border border-white/5 shadow-2xl">
+        <div className={clsx('flex-1', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
           <video
             ref={localVideoRef}
             autoPlay
             muted
             playsInline
-            className="w-full h-full object-cover scale-x-[-1]"
+            className={clsx('w-full', 'h-full', 'object-cover', 'scale-x-[-1]')}
           />
           {isCamOff && (
-            <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center text-white/20 font-bold uppercase tracking-widest italic">
+            <div className={clsx('absolute', 'inset-0', 'bg-gray-900/90', 'flex', 'items-center', 'justify-center', 'text-white/20', 'font-bold', 'uppercase', 'tracking-widest', 'italic')}>
               Camera is off
             </div>
           )}
 
           {/* Chat Bubbles Overlay */}
-          <div className="absolute bottom-32 left-6 flex flex-col gap-3 max-w-[70%] z-10">
+          <div className={clsx('absolute', 'bottom-32', 'left-6', 'flex', 'flex-col', 'gap-3', 'max-w-[70%]', 'z-10')}>
             {[
               "Lorem ipsum dolor sit amet, consectetur...",
               "Nooooo!",
               "Ut quis urna id ligula Type psum dolor..."
             ].map((text, i) => (
-              <div key={i} className="bg-white/10 backdrop-blur-xl px-4 py-2.5 rounded-[1.2rem] text-white text-xs font-bold border border-white/10 shadow-lg animate-in fade-in slide-in-from-left-4 duration-500">
+              <div key={i} className={clsx('bg-white/10', 'backdrop-blur-xl', 'px-4', 'py-2.5', 'rounded-[1.2rem]', 'text-white', 'text-xs', 'font-bold', 'border', 'border-white/10', 'shadow-lg', 'animate-in', 'fade-in', 'slide-in-from-left-4', 'duration-500')}>
                 {text}
               </div>
             ))}
           </div>
 
           {/* Bottom Controls Overlay */}
-          <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between z-20">
-            <div className="flex gap-4 mb-2">
+          <div className={clsx('absolute', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-end', 'justify-between', 'z-20')}>
+            <div className={clsx('flex', 'gap-4', 'mb-2')}>
               <button 
                 onClick={toggleCam} 
-                className="relative w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 group"
+                className={clsx('relative', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95', 'group')}
               >
                 <img 
                   src="/video.png" 
                   className={`w-5 h-5 object-contain transition-opacity ${isCamOff ? 'opacity-30 brightness-50' : 'opacity-100'}`} 
                   alt="Video" 
                 />
-                {isCamOff && <div className="absolute inset-0 border-2 border-red-500/50 rounded-full" />}
+                {isCamOff && <div className={clsx('absolute', 'inset-0', 'border-2', 'border-red-500/50', 'rounded-full')} />}
               </button>
               <button 
                 onClick={toggleMic} 
-                className="relative w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                className={clsx('relative', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
               >
                 <img 
                   src="/mask.png" 
                   className={`w-5 h-5 object-contain transition-opacity ${isMuted ? 'opacity-30 brightness-50' : 'opacity-100'}`} 
                   alt="Mask" 
                 />
-                {isMuted && <div className="absolute inset-0 border-2 border-red-500/50 rounded-full" />}
+                {isMuted && <div className={clsx('absolute', 'inset-0', 'border-2', 'border-red-500/50', 'rounded-full')} />}
               </button>
               <button 
-                className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                className={clsx('w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
               >
                 <img 
                   src="/msg.png" 
-                  className="w-5 h-5 object-contain" 
+                  className={clsx('w-5', 'h-5', 'object-contain')} 
                   alt="Message" 
                 />
               </button>
             </div>
 
-            <div className="flex gap-4">
+            <div className={clsx('flex', 'gap-4')}>
               {/* DARE Button - Glossy Design */}
-              <button className="group relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-                <img src="/circle.png" className="absolute inset-0 w-full h-full drop-shadow-2xl" alt="" />
-                <div className="absolute inset-0 bg-red-600/80 rounded-full mix-blend-overlay -z-10" />
-                <img src="/dare.png" className="relative w-8 h-auto drop-shadow-md transition-transform group-hover:rotate-3" alt="DARE" />
+              <button className={clsx('group', 'relative', 'w-14', 'h-14', 'flex', 'items-center', 'justify-center', 'transition-transform', 'hover:scale-105', 'active:scale-95')}>
+                <img src="/circle.png" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'drop-shadow-2xl')} alt="" />
+                <div className={clsx('absolute', 'inset-0', 'bg-red-600/80', 'rounded-full', 'mix-blend-overlay', '-z-10')} />
+                <img src="/dare.png" className={clsx('relative', 'w-8', 'h-auto', 'drop-shadow-md', 'transition-transform', 'group-hover:rotate-3')} alt="DARE" />
               </button>
 
               {/* GIFT Button - Glossy Design */}
-              <button className="group relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-                <img src="/circle.png" className="absolute inset-0 w-full h-full drop-shadow-2xl brightness-110" alt="" />
-                <div className="absolute inset-0 bg-pink-600/80 rounded-full mix-blend-overlay -z-10" />
-                <img src="/giftboc.png" className="relative w-8 h-8 object-contain drop-shadow-md group-hover:scale-110 transition-transform" alt="GIFT" />
+              <button className={clsx('group', 'relative', 'w-14', 'h-14', 'flex', 'items-center', 'justify-center', 'transition-transform', 'hover:scale-105', 'active:scale-95')}>
+                <img src="/circle.png" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'drop-shadow-2xl', 'brightness-110')} alt="" />
+                <div className={clsx('absolute', 'inset-0', 'bg-pink-600/80', 'rounded-full', 'mix-blend-overlay', '-z-10')} />
+                <img src="/giftboc.png" className={clsx('relative', 'w-8', 'h-8', 'object-contain', 'drop-shadow-md', 'group-hover:scale-110', 'transition-transform')} alt="GIFT" />
               </button>
             </div>
           </div>

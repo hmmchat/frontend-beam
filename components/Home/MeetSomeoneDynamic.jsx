@@ -426,43 +426,60 @@ export default function MeetSomeoneDynamic() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.sub || payload.uid || payload.id;
 
-      // Check if the matched user is currently in a room looking for strangers (Pull Stranger Mode)
-      if (currentCard.status === 'IN_SQUAD_AVAILABLE') {
-        try {
-          // 1. Get the roomId for the user in the squad
-          const roomInfo = await apiRequest(API.STREAMING.GET_USER_ROOM(currentCard.userId));
-          if (roomInfo?.exists && roomInfo?.roomId) {
-            console.log('[PullStranger] Target user is in room:', roomInfo.roomId);
-            // 2. Join that room directly via streaming service
-            const joinData = await apiRequest(API.STREAMING.JOIN_VIA_PULL_STRANGER(roomInfo.roomId), {
-              method: 'POST',
-              body: JSON.stringify({
-                joiningUserId: userId,
-                targetUserId: currentCard.userId
-              })
-            });
-            
-            console.log('[PullStranger] Joined room successfully:', joinData);
-            
-            // 3. Sync and navigate to video chat
-            localStorage.setItem('currentRoom', JSON.stringify({
-              roomId: joinData.roomId || roomInfo.roomId,
-              sessionId: joinData.sessionId,
-              partner: {
-                id: currentCard.userId,
-                username: currentCard.username,
-                age: currentCard.age,
-                city: currentCard.city,
-                displayPictureUrl: currentCard.displayPictureUrl
-              }
-            }));
-            isEnteringCallRef.current = true;
-            router.push('/video-chat');
-            return;
-          }
-        } catch (err) {
-          console.warn('[PullStranger] Direct join failed, falling back to normal proceed:', err);
+      // Pull-stranger is one-way acceptance. Prefer direct room join when available.
+      // Do not rely only on card.status because card payloads can be slightly stale.
+      let pullStrangerHandled = false;
+      try {
+        // 1) Prefer strict pull-stranger room lookup
+        let roomInfo = await apiRequest(API.STREAMING.GET_PULL_STRANGER_ROOM(currentCard.userId));
+        // 2) Fallback to generic active room lookup if card itself signals pull mode
+        if ((!roomInfo?.exists || !roomInfo?.roomId) && currentCard.status === 'IN_SQUAD_AVAILABLE') {
+          roomInfo = await apiRequest(API.STREAMING.GET_USER_ROOM(currentCard.userId));
         }
+
+        if (roomInfo?.exists && roomInfo?.roomId) {
+          console.log('[PullStranger] Target user room:', roomInfo.roomId);
+
+          // 3) Join directly (no mutual-accept waiting state)
+          const joinData = await apiRequest(API.STREAMING.JOIN_VIA_PULL_STRANGER(roomInfo.roomId), {
+            method: 'POST',
+            body: JSON.stringify({
+              joiningUserId: userId,
+              targetUserId: currentCard.userId
+            })
+          });
+
+          console.log('[PullStranger] Joined room successfully:', joinData);
+
+          // 4) Sync and navigate to video chat
+          localStorage.setItem('currentRoom', JSON.stringify({
+            roomId: joinData.roomId || roomInfo.roomId,
+            sessionId: joinData.sessionId,
+            partner: {
+              id: currentCard.userId,
+              username: currentCard.username,
+              age: currentCard.age,
+              city: currentCard.city,
+              displayPictureUrl: currentCard.displayPictureUrl
+            }
+          }));
+          isEnteringCallRef.current = true;
+          router.push('/video-chat');
+          return;
+        }
+      } catch (err) {
+        // If this was explicitly a pull-stranger card, surface failure and stop.
+        if (currentCard.status === 'IN_SQUAD_AVAILABLE') {
+          pullStrangerHandled = true;
+          console.warn('[PullStranger] Direct join failed:', err);
+          setError('Could not join this squad right now. Please fetch next card.');
+          return;
+        }
+      }
+
+      // For explicit pull-stranger cards we should never enter normal waiting flow.
+      if (currentCard.status === 'IN_SQUAD_AVAILABLE' || pullStrangerHandled) {
+        return;
       }
 
       // POST /discovery/proceed — backend identifies caller from JWT

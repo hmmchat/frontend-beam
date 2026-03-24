@@ -426,6 +426,45 @@ export default function MeetSomeoneDynamic() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.sub || payload.uid || payload.id;
 
+      // Check if the matched user is currently in a room looking for strangers (Pull Stranger Mode)
+      if (currentCard.status === 'IN_SQUAD_AVAILABLE') {
+        try {
+          // 1. Get the roomId for the user in the squad
+          const roomInfo = await apiRequest(API.STREAMING.GET_USER_ROOM(currentCard.userId));
+          if (roomInfo?.exists && roomInfo?.roomId) {
+            console.log('[PullStranger] Target user is in room:', roomInfo.roomId);
+            // 2. Join that room directly via streaming service
+            const joinData = await apiRequest(API.STREAMING.JOIN_VIA_PULL_STRANGER(roomInfo.roomId), {
+              method: 'POST',
+              body: JSON.stringify({
+                joiningUserId: userId,
+                targetUserId: currentCard.userId
+              })
+            });
+            
+            console.log('[PullStranger] Joined room successfully:', joinData);
+            
+            // 3. Sync and navigate to video chat
+            localStorage.setItem('currentRoom', JSON.stringify({
+              roomId: joinData.roomId || roomInfo.roomId,
+              sessionId: joinData.sessionId,
+              partner: {
+                id: currentCard.userId,
+                username: currentCard.username,
+                age: currentCard.age,
+                city: currentCard.city,
+                displayPictureUrl: currentCard.displayPictureUrl
+              }
+            }));
+            isEnteringCallRef.current = true;
+            router.push('/video-chat');
+            return;
+          }
+        } catch (err) {
+          console.warn('[PullStranger] Direct join failed, falling back to normal proceed:', err);
+        }
+      }
+
       // POST /discovery/proceed — backend identifies caller from JWT
       const data = await apiRequest(API.DISCOVERY.PROCEED, {
         method: 'POST',
@@ -821,16 +860,20 @@ export default function MeetSomeoneDynamic() {
               <img src="/assets/history.svg" className={clsx('w-8', 'h-8')} />
             </button>
                {/* Profile */}
-    <button 
-      onClick={() => router.push('/facecard')}
-      className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full', 'overflow-hidden')}
-    >
-      <img 
-        src={myProfile?.displayPictureUrl || "/assets/ico.png"} 
-        className={clsx('w-full', 'h-full', 'object-cover')} 
-        alt="My Profile"
-      />
-    </button>
+<button 
+  onClick={() => router.push('/facecard')}
+  className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden"
+>
+  {myProfile ? (
+    <img 
+      src={myProfile.displayPictureUrl || "/assets/ico.png"} 
+      onError={(e) => e.currentTarget.src = "/assets/ico.png"}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full bg-white/20 animate-pulse rounded-full" />
+  )}
+</button>
     
     <button 
       onClick={handleLogout}
@@ -892,13 +935,13 @@ export default function MeetSomeoneDynamic() {
                   />
                 </>
               ) : (
-                <div className={clsx('absolute', 'inset-0', 'z-[-1]', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20')}>
+                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20')}>
 
 <div className="absolute inset-0 z-[1]">
 
   {/* 🎥 FULL VIDEO */}
   <LocalVideo 
-    showSoloCheckbox={true} 
+    showSoloCheckbox={false} 
     onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
   />
 
@@ -1015,7 +1058,7 @@ export default function MeetSomeoneDynamic() {
           )}
 
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
-          <div className={clsx('absolute', 'px-5', 'bottom-6', 'left-6', 'right-16', 'flex', 'items-center', 'justify-between', 'z-[10]')}>
+          <div className={clsx('absolute', 'px-5', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
             {mode === 'solo' ? (
               <div>
                 <img src="/assets/Frame.png" className={clsx('w-9', 'h-9')} />

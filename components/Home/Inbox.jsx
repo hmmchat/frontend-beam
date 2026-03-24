@@ -67,9 +67,14 @@ export default function Inbox() {
 
       console.log('🔑 Token found, fetching conversations...');
       
-      const convEndpoint = activeTab === "inbox" 
-        ? API.FRIENDS.GET_INBOX_CONVERSATIONS
-        : API.FRIENDS.GET_RECEIVED_REQUESTS;
+      let convEndpoint;
+      if (activeTab === "inbox") {
+        convEndpoint = API.FRIENDS.GET_INBOX_CONVERSATIONS;
+      } else if (activeTab === "requests") {
+        convEndpoint = API.FRIENDS.GET_RECEIVED_REQUESTS;
+      } else if (activeTab === "sent") {
+        convEndpoint = API.FRIENDS.GET_SENT_REQUESTS;
+      }
 
       const headers = {
         'Authorization': `Bearer ${token}`,
@@ -82,8 +87,10 @@ export default function Inbox() {
         const convData = await convResponse.json();
         if (activeTab === "inbox") {
           setInboxConversations(convData.conversations || []);
-        } else {
+        } else if (activeTab === "requests") {
           setRequestConversations(convData.conversations || []);
+        } else if (activeTab === "sent") {
+          setRequestConversations(convData.conversations || []); // Use requestConversations state for sent too
         }
       }
 
@@ -96,14 +103,20 @@ export default function Inbox() {
           // Enrich pending requests with user profile info
           const enrichedPending = await Promise.all((pendingData || []).map(async (req) => {
             try {
-              const profile = await fetch(API.USERS.GET_USER(req.fromUserId), { headers }).then(res => res.json());
-              return { ...req, user: profile };
+              const profileResp = await fetch(API.USERS.GET_USER(req.fromUserId), { headers }).then(res => res.json());
+              return { ...req, user: profileResp.user || { username: 'Unknown User' } };
             } catch (err) {
               return { ...req, user: { username: 'Unknown User' } };
             }
           }));
           
           setPendingRequests(enrichedPending);
+
+          // Enrich requestConversations with friendRequestId from the same pending data
+          setRequestConversations(prev => (prev || []).map(conv => {
+            const matchingRequest = (pendingData || []).find(req => req.fromUserId === conv.otherUserId);
+            return matchingRequest ? { ...conv, friendRequestId: matchingRequest.id } : conv;
+          }));
         }
       }
 
@@ -183,21 +196,35 @@ export default function Inbox() {
   };
 
   const handleAcceptRequest = async (requestId) => {
+    if (!requestId) {
+      console.error('❌ Cannot accept: requestId is missing');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(API.FRIENDS.ACCEPT_FRIEND_REQUEST(requestId), {
+      // Strip 'follow_' prefix if present
+      const cleanRequestId = typeof requestId === 'string' && requestId.startsWith('follow_') 
+        ? requestId.replace('follow_', '') 
+        : requestId;
+      
+      console.log(`[Inbox] Accepting request: ${cleanRequestId} (orig: ${requestId})`);
+      
+      const response = await fetch(API.FRIENDS.ACCEPT_FRIEND_REQUEST(cleanRequestId), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({}) // Some backend environments require a body for POST
       });
 
       if (response.ok) {
         console.log('✅ Friend request accepted');
         fetchConversations();
       } else {
-        console.error('❌ Failed to accept friend request');
+        const errData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to accept friend request:', response.status, errData);
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -205,21 +232,35 @@ export default function Inbox() {
   };
 
   const handleRejectRequest = async (requestId) => {
+    if (!requestId) {
+      console.error('❌ Cannot reject: requestId is missing');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(API.FRIENDS.REJECT_FRIEND_REQUEST(requestId), {
+      // Strip 'follow_' prefix if present
+       const cleanRequestId = typeof requestId === 'string' && requestId.startsWith('follow_') 
+        ? requestId.replace('follow_', '') 
+        : requestId;
+
+      console.log(`[Inbox] Rejecting request: ${cleanRequestId} (orig: ${requestId})`);
+
+      const response = await fetch(API.FRIENDS.REJECT_FRIEND_REQUEST(cleanRequestId), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({})
       });
 
       if (response.ok) {
         console.log('✅ Friend request rejected');
         fetchConversations();
       } else {
-        console.error('❌ Failed to reject friend request');
+        const errData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to reject friend request:', response.status, errData);
       }
     } catch (error) {
       console.error('Error rejecting friend request:', error);
@@ -354,7 +395,12 @@ export default function Inbox() {
               </div>
 
               <div className="flex items-center justify-between ">
-                <button className="flex items-center  border border-white/90 rounded-full p-3 gap-2">
+                <button 
+                  onClick={() => setActiveTab("sent")}
+                  className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${
+                    activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
+                  }`}
+                >
                   <FaEye className="text-lg" />
                   <p className="text-[10px] font-thin text-white">Sent Requests</p>
                 </button>
@@ -456,10 +502,26 @@ export default function Inbox() {
 
                           <div className="flex-1 min-w-0">
                             <div className="font-bold text-base flex items-center justify-between">
-                             
+                              <span>{conversation.otherUser?.username || "User"}</span>
+                              {activeTab === "requests" && (conversation.friendRequestId || conversation.followRequestId) && (
+                                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <button 
+                                    onClick={() => handleAcceptRequest(conversation.friendRequestId || conversation.followRequestId)}
+                                    className="bg-[#d91e82] text-white text-[10px] font-bold px-3 py-1 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectRequest(conversation.friendRequestId || conversation.followRequestId)}
+                                    className="bg-white/10 text-white text-[10px] font-bold px-3 py-1 rounded-full hover:bg-white/20 active:scale-95 transition-all"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             <div className="text-sm text-white/50 truncate font-light mt-0.5">
-                              {conversation.lastMessage?.text || "No messages yet"}
+                              {conversation.lastMessage?.message || conversation.lastMessage?.text || (conversation.isFollowRequest ? "Requested to be friends" : "No messages yet")}
                             </div>
                           </div>
                         </button>

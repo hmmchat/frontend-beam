@@ -941,9 +941,9 @@ export default function VideoChat() {
               </div>
               <div className="flex flex-col pr-4">
                 <span className="text-white text-base font-extrabold tracking-tight leading-tight">
-                  {name || 'Matched!'}{age && age !== '?' ? `, ${age}` : ''}
+                  {name || 'Matched!'}, {age}
                 </span>
-                {(city && city !== 'Unknown') && (
+                {city && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="text-[11px] text-white/90 font-bold flex items-center gap-1">
                       <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
@@ -1039,16 +1039,16 @@ export default function VideoChat() {
                <LocalVideoSection />
             </div>
           </>
-        ) : remoteStreams.length === 2 ? (
-          /* Multi-User Layout (3 participants): Peer 1 (LEFT) | Peer 2 + Local (RIGHT) */
+        ) : (
+          /* Multi-User Layout (Stranger pulled in): Peer 1 (LEFT) | Peer 2 + Local (RIGHT) */
           <>
             <RemoteVideoTile 
               stream={remoteStreams[0].stream} 
               isMatchedPartner={remoteStreams[0].userId === partnerInfo.id}
-              name={remoteStreams[0].name || partnerInfo.name}
-              age={remoteStreams[0].age || partnerInfo.age}
-              city={remoteStreams[0].city || partnerInfo.city}
-              displayPictureUrl={remoteStreams[0].displayPictureUrl || partnerInfo.displayPictureUrl}
+              name={remoteStreams[0].name}
+              age={remoteStreams[0].age}
+              city={remoteStreams[0].city}
+              displayPictureUrl={remoteStreams[0].displayPictureUrl}
               showActions={true}
             />
             <div className="flex-1 flex flex-col gap-2">
@@ -1059,7 +1059,7 @@ export default function VideoChat() {
                 age={remoteStreams[1].age}
                 city={remoteStreams[1].city}
                 displayPictureUrl={remoteStreams[1].displayPictureUrl}
-                showActions={false}
+                showActions={true}
                 showExit={true}
               />
               <div className={clsx('flex-1', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
@@ -1067,42 +1067,6 @@ export default function VideoChat() {
               </div>
             </div>
           </>
-        ) : (
-          /* Grid Layout (4 participants): 2x2 Grid */
-          <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2">
-            <RemoteVideoTile 
-              stream={remoteStreams[0].stream} 
-              isMatchedPartner={remoteStreams[0].userId === partnerInfo.id}
-              name={remoteStreams[0].name || partnerInfo.name}
-              age={remoteStreams[0].age || partnerInfo.age}
-              city={remoteStreams[0].city || partnerInfo.city}
-              displayPictureUrl={remoteStreams[0].displayPictureUrl || partnerInfo.displayPictureUrl}
-              showActions={true}
-            />
-            <RemoteVideoTile 
-              stream={remoteStreams[1].stream} 
-              isMatchedPartner={remoteStreams[1].userId === partnerInfo.id}
-              name={remoteStreams[1].name}
-              age={remoteStreams[1].age}
-              city={remoteStreams[1].city}
-              displayPictureUrl={remoteStreams[1].displayPictureUrl}
-              showActions={false}
-              showExit={true}
-            />
-            <RemoteVideoTile 
-              stream={remoteStreams[2].stream} 
-              isMatchedPartner={remoteStreams[2].userId === partnerInfo.id}
-              name={remoteStreams[2].name}
-              age={remoteStreams[2].age}
-              city={remoteStreams[2].city}
-              displayPictureUrl={remoteStreams[2].displayPictureUrl}
-              showActions={false}
-              showExit={true}
-            />
-            <div className={clsx('relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
-              <LocalVideoSection />
-            </div>
-          </div>
         )}
 
         {/* Floating Common UI Buttons (Dice/Ice cream) */}
@@ -1166,10 +1130,7 @@ export default function VideoChat() {
     return (
       <>
         <video
-          ref={(el) => {
-            localVideoRef.current = el;
-            if (el && localStreamRef.current) el.srcObject = localStreamRef.current;
-          }}
+          ref={localVideoRef}
           autoPlay
           muted
           playsInline
@@ -1230,5 +1191,8 @@ export default function VideoChat() {
   }
 }
 
+const styles = {}; 
 
-const styles = {};
+}
+
+const styles = {}; 

@@ -189,6 +189,7 @@ export default function Inbox() {
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [threadActionBusy, setThreadActionBusy] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
+  const [myAvatarUrl, setMyAvatarUrl] = useState(null);
 
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
@@ -265,6 +266,27 @@ export default function Inbox() {
     refreshWallet();
     loadGiftCatalog();
   }, [refreshWallet, loadGiftCatalog]);
+
+  // Keep "my" avatar stable + up to date in the thread UI.
+  useEffect(() => {
+    let cancelled = false;
+    apiRequest(API.USERS.GET_ME)
+      .then((data) => {
+        if (cancelled) return;
+        const u = data?.user || data || {};
+        const url = u.displayPictureUrl || null;
+        setMyAvatarUrl(url);
+        if (url) localStorage.setItem("displayPictureUrl", url);
+      })
+      .catch(() => {
+        // fall back to localStorage (best-effort)
+        const url = localStorage.getItem("displayPictureUrl");
+        setMyAvatarUrl(url || null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadNotificationBadge = useCallback(async () => {
     try {
@@ -1780,7 +1802,7 @@ export default function Inbox() {
                               {isMe && (
                                 <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/30 relative">
                                   <Image
-                                    src={localStorage.getItem("displayPictureUrl") || "/assets/avatar1.png"}
+                                    src={myAvatarUrl || localStorage.getItem("displayPictureUrl") || "/assets/avatar1.png"}
                                     alt="me"
                                     fill
                                     className="object-cover"

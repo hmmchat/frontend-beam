@@ -1,17 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
 import { IoPersonCircleOutline, IoTimeOutline } from 'react-icons/io5';
+import { API, apiRequest } from '@/lib/api';
 
 export default function Home() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [activeMeetingCount, setActiveMeetingCount] = useState(0);
+
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                const res = await apiRequest(API.USERS.GET_ACTIVE_MEETINGS).catch(() => null);
+                if (res && typeof res.count === 'number') {
+                    setActiveMeetingCount(res.count);
+                }
+            } catch (e) {
+                // silent failure
+            }
+        };
+        fetchMetrics();
+        const interval = setInterval(fetchMetrics, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className="relative h-screen bg-basecolor">
@@ -58,7 +76,9 @@ export default function Home() {
                         </p>
                         <div className="inline-flex gap-2 font-[family-name:var(--font-otomanopee)]">
                             <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
-                            <p className='text-xs'>140,567 meeting now</p>
+                            <p className='text-xs'>
+                                {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+                            </p>
                         </div>
                     </div>
                 </div>

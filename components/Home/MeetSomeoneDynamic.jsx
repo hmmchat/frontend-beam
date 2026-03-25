@@ -38,6 +38,24 @@ export default function MeetSomeoneDynamic() {
   const [waitingForMatch, setWaitingForMatch] = useState(false);
   const [waitingMatchedUser, setWaitingMatchedUser] = useState(null);
   const [matchedRoom, setMatchedRoom] = useState(null);
+  const [activeMeetingCount, setActiveMeetingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await apiRequest(API.USERS.GET_ACTIVE_MEETINGS).catch(() => null);
+        if (res && typeof res.count === 'number') {
+          setActiveMeetingCount(res.count);
+        }
+      } catch (e) {
+        // fail silently
+      }
+    };
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   const pollRef = useRef(null);
   const discoveryPollRef = useRef(null);
   const rescueTimeoutRef = useRef(null);
@@ -754,30 +772,21 @@ export default function MeetSomeoneDynamic() {
 
   {/* 🔥 NAME OUTSIDE CARD */}
 <div className="absolute left-22 top-1/2 -translate-y-1/2 z-[20] pointer-events-none">
-  <div className="absolute left-[-55px] top-60 -translate-y-1/2 z-[20] -rotate-90 origin-left pointer-events-none">
-  <h1
-    className="text-[#FFB800] text-[60px]  uppercase tracking-tight leading-none whitespace-nowrap"
-    style={{
-      textShadow: '8px 4px 30px rgba(0,0,0,0.4)',
-      WebkitTextStroke: '2px rgba(0,0,0,0.6)'
-    }}
-  >
-    {currentCard?.username?.split(' ')[0] || currentCard?.firstName || 'Rituparna'}{' '}
-    <span className="text-white">{currentCard?.age || '24'}</span>
-  </h1>
-</div>
+  
+
+
 </div>
 
   {/* CARD FRAME (CLEAN BORDER) */}
   <div className="relative w-[360px] h-[640px] p-3 ">
 
     {/* INNER BORDER (LIKE SCREENSHOT) */}
-    <div className="absolute inset-3 rounded-[30px] border border-red/20 pointer-events-none" />
+
 
     {/* CARD */}
-    <div className="relative w-full h-full rounded-[30px] overflow-hidden">
+
       <FaceCard user={currentCard} />
-    </div>
+
   </div>
 
   {currentCard?.otherUserAccepted && !waitingForMatch && (
@@ -787,25 +796,48 @@ export default function MeetSomeoneDynamic() {
   )}
 
   {/* BUTTONS */}
-  <div className="mt-6 flex items-center justify-between w-[460px]">
-    <button
-      onClick={handleRaincheck}
-      className="px-6 py-3 text-white rounded-xl hover:bg-white/10"
-    >
-      Raincheck!
-    </button>
+<div className="mt-10 flex items-center justify-between w-[360px]">
 
-    <button
-      onClick={handleProceed}
-      className="px-10 py-4 text-white border border-white/30 rounded-xl hover:bg-black/10 bg-black/20"
-    >
-      Meet this person rn 👉
-    </button>
-  </div>
+  {/* LEFT ARROW */}
+  <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
+    ←
+  </button>
+
+  {/* RAINCHECK */}
+  <button
+    onClick={handleRaincheck}
+    className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
+  >
+    Raincheck!
+  </button>
+
+  {/* MEET */}
+  <button
+    onClick={handleProceed}
+    className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
+  >
+    Meet rn
+  </button>
+
+  {/* RIGHT ARROW */}
+  <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
+    →
+  </button>
+
+</div>
+
+</div>
 
 
 
-</div>          {/* Request Sent (Waiting) Popup */}
+
+
+
+
+
+
+
+          {/* Request Sent (Waiting) Popup */}
                   <RequestSentPopup 
                     isVisible={waitingForMatch}
                     user={waitingMatchedUser}
@@ -822,7 +854,9 @@ export default function MeetSomeoneDynamic() {
                   <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>
                   <div className={clsx('inline-flex', 'gap-2', 'mt-3', 'font-[family-name:var(--font-otomanopee)]')}>
                     <img src="/assets/video-on.svg" alt="" className={clsx('w-4', 'h-4')} />
-                    <p className='text-xs'>140,567 meeting now</p>
+                    <p className='text-xs'>
+                      {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+                    </p>
                   </div>
                 </div>
 

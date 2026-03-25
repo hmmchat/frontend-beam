@@ -1506,9 +1506,13 @@ export default function VideoChat() {
     }
   };
 
-  const handleBeamcast = () => {
+  const handleBeamcast = async () => {
     if (!roomInfo?.roomId || !userIdRef.current) return;
     send({ type: 'start-broadcast', data: { roomId: roomInfo.roomId } });
+    // Fast-path: update user status to IN_BROADCAST_AVAILABLE so they appear in discovery/beam-tv
+    try {
+      await setPresenceStatus('IN_BROADCAST_AVAILABLE');
+    } catch (_) {}
     setShowRandomness(false);
   };
 
@@ -1707,7 +1711,7 @@ export default function VideoChat() {
                 <img src="/dice.png" alt="Dice" className="w-8 h-8 object-contain" />
               </button>
             )}
-            <button type="button" onClick={handleIcebreaker} className={`absolute bottom-8 bg-black/60 right-8 w-16 h-16 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
+            <button type="button" onClick={handleIcebreaker} className={`absolute bottom-8 bg-black/60 left-[670px] w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
               <img src="/icecream.png" alt="Ice" className="w-8 h-8 object-contain" />
             </button>
           </>

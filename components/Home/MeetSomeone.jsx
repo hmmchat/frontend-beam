@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
@@ -8,17 +8,36 @@ import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
 import FilterButtons from '@/components/ui/FilterButtons';
 import { IoTimeOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
+import { API, apiRequest } from '@/lib/api';
 
 export default function MeetSomeone() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [activeMeetingCount, setActiveMeetingCount] = useState(0);
 
     const [coins] = useState(25500);
     const [mode, setMode] = useState('solo'); // solo | squad
     const [filter, setFilter] = useState('both');
 
     const [invited, setInvited] = useState(['Austin']);
+
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                // Fire and forget anonymous allowed endpoint
+                const res = await apiRequest(API.USERS.GET_ACTIVE_MEETINGS).catch(() => null);
+                if (res && typeof res.count === 'number') {
+                    setActiveMeetingCount(res.count);
+                }
+            } catch (e) {
+                // silent failure
+            }
+        };
+        fetchMetrics();
+        const interval = setInterval(fetchMetrics, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     const toggleInvite = (name) =>
         setInvited((prev) =>
@@ -113,7 +132,9 @@ export default function MeetSomeone() {
                             <div className="text-center mt-auto flex items-center justify-between w-full ml-auto outfit-font ">
                                 <div className="ml-40 flex items-center gap-2 text-white/90 text-xs">
                                     <img src="/assets/video-on.svg" className="w-6 h-6" />
-                                    <span className='text-md'>140,567 meeting now</span>
+                                    <span className='text-md'>
+                                        {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+                                    </span>
                                 </div>
                                 <img src="/assets/Frame.png" className="w-9 h-9 mr-6" />
                             </div>

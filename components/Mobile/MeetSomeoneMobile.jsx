@@ -1,20 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
+import { API, apiRequest } from '@/lib/api';
 
 export default function MeetSomeoneMobile() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [activeMeetingCount, setActiveMeetingCount] = useState(0);
 
     const [coins] = useState(25500);
     const [mode, setMode] = useState('solo'); // solo | squad
     const [invited, setInvited] = useState(['Austin']);
+
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                const res = await apiRequest(API.USERS.GET_ACTIVE_MEETINGS).catch(() => null);
+                if (res && typeof res.count === 'number') {
+                    setActiveMeetingCount(res.count);
+                }
+            } catch (e) {
+                // silent failure
+            }
+        };
+        fetchMetrics();
+        const interval = setInterval(fetchMetrics, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     const toggleInvite = (name) =>
         setInvited((prev) =>
@@ -107,7 +125,7 @@ export default function MeetSomeoneMobile() {
                                 </p>
 
                                 <p className="text-white/80 text-sm font-light mt-4">
-                                    140,567 meeting now
+                                    {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
                                 </p>
                             </div>
 

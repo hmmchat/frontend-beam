@@ -122,11 +122,23 @@ function sortByLatest(list) {
   });
 }
 
+function fetchNetworkMessage(err) {
+  if (err instanceof TypeError && (err.message === "Failed to fetch" || err.message === "Load failed")) {
+    return "Network error — check your connection, VPN, and that NEXT_PUBLIC_API_BASE_URL points to a reachable API.";
+  }
+  return err instanceof Error ? err.message : "Network request failed";
+}
+
 async function fetchJson(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    headers: { ...getAuthHeaders(), ...options.headers },
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: { ...getAuthHeaders(), ...options.headers },
+    });
+  } catch (e) {
+    throw new Error(fetchNetworkMessage(e));
+  }
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
@@ -186,11 +198,17 @@ export default function Inbox() {
   const [giftModalItems, setGiftModalItems] = useState(null);
   const [giftsCatalogLoading, setGiftsCatalogLoading] = useState(false);
   const [conversationSearch, setConversationSearch] = useState("");
+  /** Set when inbox/requests/sent list fetch fails (network / unreachable API). */
+  const [listLoadError, setListLoadError] = useState(null);
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [threadActionBusy, setThreadActionBusy] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
-
+  /** After the user opens a conversation, we switch to client-side unread:
+   *  badge = number of incoming messages received after last open while the conversation is closed.
+   */
+  const [clientUnreadByConv, setClientUnreadByConv] = useState({});
+  const clientLastSeenAtByConvRef = useRef({});
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
   const threadPollRef = useRef(null);
@@ -199,6 +217,15 @@ export default function Inbox() {
   const wsReconnectTimerRef = useRef(null);
   const wsReconnectAttemptRef = useRef(0);
   const wsHeartbeatRef = useRef(null);
+  const seenWsMessageKeysRef = useRef(new Set());
+  /** Refs for WS handler so one connection stays open; avoids stale closures + duplicate reconnects per chat switch. */
+  const activeChatRef = useRef(null);
+  const currentUserIdRef = useRef(null);
+  const loadListsRef = useRef(null);
+  const loadNotificationBadgeRef = useRef(null);
+  const markReadForPeerRef = useRef(null);
+  /** Debounced list sync when WS payload has no unreadCountForConversation (older friend-service). */
+  const wsListSyncTimerRef = useRef(null);
   const typingTimerRef = useRef(null);
   const lastTypingSentAtRef = useRef(0);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
@@ -289,18 +316,58 @@ export default function Inbox() {
     };
   }, []);
 
-  const loadNotificationBadge = useCallback(async () => {
-    try {
-      const data = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT);
-      setNotif(data);
-    } catch {
-      setNotif(null);
+  /** GET /me/notifications/count is rate-limited (e.g. 60/min). Coalesce + backoff on 429. */
+  const notifNextAllowedAtRef = useRef(0);
+  const notifBadgeTimerRef = useRef(null);
+
+  const scheduleNotificationBadge = useCallback(() => {
+    const minGapMs = 5000;
+    const backoff429Ms = 60000;
+
+    const fire = async () => {
+      notifBadgeTimerRef.current = null;
+      const now = Date.now();
+      if (now < notifNextAllowedAtRef.current) {
+        const wait = notifNextAllowedAtRef.current - now + 50;
+        notifBadgeTimerRef.current = window.setTimeout(fire, wait);
+        return;
+      }
+      notifNextAllowedAtRef.current = now + minGapMs;
+      try {
+        const data = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT);
+        setNotif(data);
+      } catch (e) {
+        setNotif(null);
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.includes("429") || msg.includes("Rate limit") || msg.includes("Too Many")) {
+          notifNextAllowedAtRef.current = Date.now() + backoff429Ms;
+        }
+      }
+    };
+
+    const now = Date.now();
+    if (now >= notifNextAllowedAtRef.current) {
+      void fire();
+      return;
     }
+    if (notifBadgeTimerRef.current) return;
+    notifBadgeTimerRef.current = window.setTimeout(fire, notifNextAllowedAtRef.current - now + 50);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (notifBadgeTimerRef.current) {
+        clearTimeout(notifBadgeTimerRef.current);
+        notifBadgeTimerRef.current = null;
+      }
+    },
+    []
+  );
 
   const loadLists = useCallback(
     async (opts = {}) => {
       const quiet = opts.quiet === true;
+      const skipNotificationBadge = opts.skipNotificationBadge === true;
       const token = localStorage.getItem("accessToken");
       if (!token) {
         router.push("/");
@@ -318,6 +385,7 @@ export default function Inbox() {
 
       if (!quiet) setLoading(true);
       try {
+        setListLoadError(null);
         if (activeTab === "inbox") {
           const data = await fetchJson(
             API.FRIENDS.getInboxConversationsUrl({ limit: LIST_LIMIT, filter: filterParam })
@@ -414,9 +482,11 @@ export default function Inbox() {
           setSentList(sortByLatest(conversations));
         }
 
-        await loadNotificationBadge();
+        if (!skipNotificationBadge) scheduleNotificationBadge();
       } catch (e) {
-        console.error("[Inbox] loadLists", e);
+        const msg = e instanceof Error ? e.message : "Could not load conversations.";
+        setListLoadError(msg);
+        console.warn("[Inbox] loadLists", msg);
         if (activeTab === "inbox") {
           setInboxList([]);
           setInboxHasMore(false);
@@ -433,7 +503,7 @@ export default function Inbox() {
         if (!quiet) setLoading(false);
       }
     },
-    [activeTab, msgFilter, router, resolveUserIdFromToken, loadNotificationBadge, enrichUser]
+    [activeTab, msgFilter, router, resolveUserIdFromToken, scheduleNotificationBadge, enrichUser]
   );
 
   useEffect(() => {
@@ -486,13 +556,13 @@ export default function Inbox() {
             body: JSON.stringify({ section: "SENT_REQUESTS" }),
           });
         }
-        await loadNotificationBadge();
+        scheduleNotificationBadge();
       } catch {
         /* optional endpoint — lists may already mark seen */
       }
     };
     run();
-  }, [activeTab, loadNotificationBadge]);
+  }, [activeTab, scheduleNotificationBadge]);
 
   const loadMore = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
@@ -584,13 +654,14 @@ export default function Inbox() {
           headers: getAuthHeaders(),
         });
         if (res.ok) {
-          await loadLists({ quiet: true });
+          // Avoid full loadLists here — it fights the open thread every poll and causes badge flicker.
+          scheduleNotificationBadge();
         }
       } catch (e) {
         console.warn("[Inbox] markRead", e);
       }
     },
-    [loadLists]
+    [scheduleNotificationBadge]
   );
 
   const loadThreadMessages = useCallback(
@@ -620,15 +691,30 @@ export default function Inbox() {
           const data = await apiRequest(
             API.FRIENDS.GET_CONVERSATION_MESSAGES(cid, { limit: THREAD_MSG_LIMIT })
           );
-          setMessages(data?.messages || []);
+          const msgs = data?.messages || [];
+          setMessages(msgs);
           setThreadNextCursor(data?.nextCursor);
           setThreadHasMore(Boolean(data?.hasMore));
+          // Switch this conversation to client-side unread tracking.
+          // Set last-seen to the newest message we just loaded, then reset unread to 0.
+          if (msgs?.length) {
+            let maxMs = 0;
+            for (const m of msgs) {
+              const t = new Date(m.createdAt || 0).getTime();
+              if (!Number.isNaN(t) && t > maxMs) maxMs = t;
+            }
+            clientLastSeenAtByConvRef.current[String(cid)] = maxMs;
+          } else {
+            clientLastSeenAtByConvRef.current[String(cid)] = Date.now();
+          }
+          setClientUnreadByConv((prev) => ({ ...prev, [String(cid)]: 0 }));
           await markReadForPeer(chat.otherUser?.id || chat.otherUserId);
           return;
         }
         if (reqId && (chat.isFollowRequest || chat.isOutgoingFriendRequest)) {
           const list = await apiRequest(API.FRIENDS.GET_REQUEST_MESSAGES(reqId));
-          setMessages(Array.isArray(list) ? list : []);
+          const arr = Array.isArray(list) ? list : [];
+          setMessages(arr);
           if (!chat.isOutgoingFriendRequest) {
             await markReadForPeer(chat.otherUser?.id || chat.otherUserId);
           }
@@ -689,6 +775,12 @@ export default function Inbox() {
     if (activeChat) loadThreadMessages(activeChat);
   }, [activeChat, loadThreadMessages]);
 
+  activeChatRef.current = activeChat;
+  currentUserIdRef.current = currentUserId;
+  loadListsRef.current = loadLists;
+  loadNotificationBadgeRef.current = scheduleNotificationBadge;
+  markReadForPeerRef.current = markReadForPeer;
+
   const connectFriendsWs = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "";
     if (!token) return;
@@ -725,12 +817,43 @@ export default function Inbox() {
 
       if (msg.type === "friend:message" && msg.data) {
         const m = msg.data;
-        const isIncoming = String(m.toUserId) === String(currentUserId);
-        // Update thread instantly if it's open.
+        const uid = currentUserIdRef.current;
+        const isIncoming = String(m.toUserId) === String(uid);
+        const activeNow = activeChatRef.current;
+        const activeCidNow = activeNow?.conversationId || activeNow?.rowKey;
+        const isActiveIncoming =
+          isIncoming && activeCidNow && String(activeCidNow) === String(m.conversationId);
+
+        const msgKey =
+          m.id != null
+            ? `id:${String(m.id)}`
+            : `k:${m.fromUserId}:${m.toUserId}:${m.conversationId}:${m.createdAt}:${m.messageType}:${m.message || ""}:${m.giftId || ""}:${m.giftAmount || ""}`;
+        if (seenWsMessageKeysRef.current.has(msgKey)) return;
+        seenWsMessageKeysRef.current.add(msgKey);
+
+        // Client-side unread: once we've opened a conversation, badge is driven by
+        // incoming messages received after the last time we opened it.
+        const convKey = String(m.conversationId);
+        const lastSeenAtMs = clientLastSeenAtByConvRef.current[convKey];
+        if (
+          isIncoming &&
+          lastSeenAtMs != null &&
+          !isActiveIncoming &&
+          convKey &&
+          !isSyntheticConversationId(convKey)
+        ) {
+          const t = new Date(m.createdAt || 0).getTime();
+          if (!Number.isNaN(t) && t > lastSeenAtMs) {
+            setClientUnreadByConv((prev) => ({
+              ...prev,
+              [convKey]: (prev[convKey] ?? 0) + 1,
+            }));
+          }
+        }
+
         setMessages((prev) => {
           const seen = new Set(prev.map((x) => x.id));
           if (m.id && seen.has(m.id)) return prev;
-          // If server payload doesn't include id, fall back to timestamp dedupe.
           if (!m.id) {
             const key = `${m.fromUserId}:${m.toUserId}:${m.createdAt}:${m.messageType}:${m.message || ""}`;
             const has = prev.some(
@@ -739,13 +862,17 @@ export default function Inbox() {
             );
             if (has) return prev;
           }
-          // Only append if this matches the active conversation.
-          const activeCid = activeChat?.conversationId || activeChat?.rowKey;
+          const ac = activeChatRef.current;
+          const activeCid = ac?.conversationId || ac?.rowKey;
           if (!activeCid || String(activeCid) !== String(m.conversationId)) return prev;
-          return [...prev, { ...m, isRead: m.toUserId === currentUserId ? false : true }];
+          return [...prev, { ...m, isRead: m.toUserId === uid ? false : true }];
         });
 
-        // Update lists: bump lastMessage + unreadCount.
+        const rawUnread = m.unreadCountForConversation;
+        const hasServerUnread =
+          rawUnread !== undefined && rawUnread !== null && !Number.isNaN(Number(rawUnread));
+        const nextUnread = hasServerUnread ? Math.max(0, Math.floor(Number(rawUnread))) : null;
+
         const bumpList = (setter) => {
           let found = false;
           setter((prev) => {
@@ -753,7 +880,11 @@ export default function Inbox() {
               const cid = c.conversationId || c.id;
               if (String(cid) !== String(m.conversationId)) return c;
               found = true;
-              const isOpen = String(activeChat?.rowKey || "") === String(cid);
+              const mergedUnread = isActiveIncoming
+                ? 0
+                : nextUnread != null
+                  ? nextUnread
+                  : Number(c.unreadCount || 0);
               return {
                 ...c,
                 lastMessage: {
@@ -766,7 +897,7 @@ export default function Inbox() {
                   createdAt: m.createdAt,
                 },
                 lastMessageAt: m.createdAt,
-                unreadCount: isIncoming && !isOpen ? Number(c.unreadCount || 0) + 1 : Number(c.unreadCount || 0),
+                unreadCount: mergedUnread,
               };
             });
             return sortByLatest(next);
@@ -778,39 +909,56 @@ export default function Inbox() {
         const inReq = bumpList(setRequestsList);
         const inSent = bumpList(setSentList);
 
-        // If the conversation isn't present in any list yet (new thread / section transition),
-        // refresh lists to insert it in the correct section.
+        const loadListsFn = loadListsRef.current;
+        const scheduleNotifFn = loadNotificationBadgeRef.current;
+        const markReadFn = markReadForPeerRef.current;
+
+        if (!hasServerUnread && (inInbox || inReq || inSent)) {
+          if (wsListSyncTimerRef.current) clearTimeout(wsListSyncTimerRef.current);
+          wsListSyncTimerRef.current = setTimeout(() => {
+            wsListSyncTimerRef.current = null;
+            loadListsFn?.({ quiet: true });
+          }, 350);
+        }
+
         if (!inInbox && !inReq && !inSent) {
-          loadLists({ quiet: true });
+          loadListsFn?.({ quiet: true });
         }
 
-        // Refresh notification counts for incoming messages (server invalidates cache on send).
         if (isIncoming) {
-          loadNotificationBadge();
+          scheduleNotifFn?.();
         }
 
-        // If chat is open and message is incoming, mark read quickly.
-        const activeCid = activeChat?.conversationId || activeChat?.rowKey;
-        if (
-          activeCid &&
-          String(activeCid) === String(m.conversationId) &&
-          isIncoming
-        ) {
-          markReadForPeer(activeChat?.otherUserId || activeChat?.otherUser?.id);
+        const ac2 = activeChatRef.current;
+        const activeCid2 = ac2?.conversationId || ac2?.rowKey;
+        if (activeCid2 && String(activeCid2) === String(m.conversationId) && isIncoming) {
+          const clearForConv = (setter) =>
+            setter((prev) =>
+              prev.map((c) =>
+                String(c.conversationId || c.id) === String(m.conversationId)
+                  ? { ...c, unreadCount: 0 }
+                  : c
+              )
+            );
+          clearForConv(setInboxList);
+          clearForConv(setRequestsList);
+          clearForConv(setSentList);
+          void markReadFn?.(ac2?.otherUserId || ac2?.otherUser?.id);
         }
+
       }
 
       if (msg.type === "friend:refresh") {
-        // Strong consistency: on friendship/request transitions, refresh lists + badges.
-        loadLists({ quiet: true });
-        loadNotificationBadge();
+        loadListsRef.current?.({ quiet: true, skipNotificationBadge: true });
+        loadNotificationBadgeRef.current?.();
       }
 
       if (msg.type === "friend:typing" && msg.data) {
         const t = msg.data;
-        const activeCid = activeChat?.conversationId || activeChat?.rowKey;
+        const ac = activeChatRef.current;
+        const activeCid = ac?.conversationId || ac?.rowKey;
         if (!activeCid || String(activeCid) !== String(t.conversationId)) return;
-        if (String(t.fromUserId) !== String(activeChat?.otherUserId || activeChat?.otherUser?.id)) return;
+        if (String(t.fromUserId) !== String(ac?.otherUserId || ac?.otherUser?.id)) return;
         setPeerTyping(Boolean(t.isTyping));
         // auto-clear if we stop receiving typing pings
         if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
@@ -847,7 +995,7 @@ export default function Inbox() {
     ws.onerror = () => {
       // leave polling fallback in place
     };
-  }, [activeChat?.rowKey, currentUserId, loadLists, loadNotificationBadge, markReadForPeer]);
+  }, []);
 
   // Avoid self-referential hook dependencies (used by reconnect timer).
   useEffect(() => {
@@ -862,6 +1010,10 @@ export default function Inbox() {
       if (wsReconnectTimerRef.current) {
         clearTimeout(wsReconnectTimerRef.current);
         wsReconnectTimerRef.current = null;
+      }
+      if (wsListSyncTimerRef.current) {
+        clearTimeout(wsListSyncTimerRef.current);
+        wsListSyncTimerRef.current = null;
       }
       if (wsHeartbeatRef.current) {
         clearInterval(wsHeartbeatRef.current);
@@ -932,7 +1084,8 @@ export default function Inbox() {
     const tick = async () => {
       try {
         await loadThreadMessages(activeChat);
-        await loadLists({ quiet: true });
+        // Do not hit /notifications/count every poll — friend-service limits ~60/min.
+        await loadLists({ quiet: true, skipNotificationBadge: true });
       } catch {
         // ignore polling errors; UI should remain usable
       }
@@ -940,7 +1093,7 @@ export default function Inbox() {
 
     // Kick once immediately, then poll.
     tick();
-    threadPollRef.current = setInterval(tick, 2500);
+    threadPollRef.current = setInterval(tick, 5000);
 
     return () => {
       if (threadPollRef.current) {
@@ -954,8 +1107,9 @@ export default function Inbox() {
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
-      if (activeChat) loadThreadMessages(activeChat);
-      loadLists({ quiet: true });
+      if (activeChat) void loadThreadMessages(activeChat).catch(() => {});
+      void loadLists({ quiet: true, skipNotificationBadge: true }).catch(() => {});
+      scheduleNotificationBadge();
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
@@ -963,7 +1117,7 @@ export default function Inbox() {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onVis);
     };
-  }, [activeChat, loadThreadMessages, loadLists]);
+  }, [activeChat, loadThreadMessages, loadLists, scheduleNotificationBadge]);
 
   useEffect(() => {
     if (!activeChat?.rowKey) return;
@@ -1185,7 +1339,7 @@ export default function Inbox() {
 
     setActiveChat({
       rowKey: cid,
-      conversationId: row.conversationId,
+      conversationId: cid,
       otherUser: row.otherUser,
       otherUserId: row.otherUserId,
       isFriend: Boolean(row.isFriend),
@@ -1198,6 +1352,12 @@ export default function Inbox() {
       isBroadcasting: row.isBroadcasting,
       broadcastUrl: row.broadcastUrl,
     });
+    // Mark-as-read immediately on open as a safety net.
+    if (!isSyntheticConversationId(cid)) {
+      void markReadForPeer(row.otherUser?.id || row.otherUserId);
+    }
+    // Do not set viewport unread here — only after loadThreadMessages + markRead succeeds.
+    // Otherwise a click without a loaded thread forces 0 and hides real server unread.
   };
 
   const showRecipientFollowActions =
@@ -1284,8 +1444,8 @@ export default function Inbox() {
       await apiRequest(API.FRIENDS.UNFRIEND(peerId), { method: "POST", body: "{}" });
       setThreadMenuOpen(false);
       setActiveChat((prev) => (prev ? { ...prev, isFriend: false } : prev));
-      await loadLists({ quiet: true });
-      await loadNotificationBadge();
+      await loadLists({ quiet: true, skipNotificationBadge: true });
+      scheduleNotificationBadge();
     } catch (e) {
       alert(e.message || "Could not unfriend");
     } finally {
@@ -1308,7 +1468,7 @@ export default function Inbox() {
       setThreadMenuOpen(false);
       setActiveChat(null);
       await loadLists();
-      await loadNotificationBadge();
+      scheduleNotificationBadge();
     } catch (e) {
       alert(e.message || "Could not block user");
     } finally {
@@ -1327,7 +1487,7 @@ export default function Inbox() {
         }}
       />
 
-      <div className="h-full flex flex-col md:py-12 md:px-12 lg:px-24 md:max-w-6xl md:mx-auto relative z-10 font-[family-name:var(--font-otomanopee)]">
+      <div className="flex h-full min-h-0 flex-col md:py-12 md:px-12 lg:px-24 md:max-w-6xl md:mx-auto relative z-10 font-[family-name:var(--font-otomanopee)]">
         <div
           className={`flex items-center justify-between gap-3 text-xl md:text-3xl font-semibold p-4 md:p-0 md:mb-4 ${
             activeChat ? "md:flex hidden" : "flex"
@@ -1360,10 +1520,10 @@ export default function Inbox() {
           </div>
         </div>
 
-        <div className="flex-1 w-full md:h-[78vh] rounded-[48px] ring-2 ring-white/50 ring-offset-2 ring-offset-purple-900/90 overflow-hidden flex flex-col md:flex-row bg-transparent">
+        <div className="flex min-h-0 flex-1 w-full flex-col rounded-[48px] ring-2 ring-white/50 ring-offset-2 ring-offset-purple-900/90 overflow-hidden bg-transparent md:h-[78vh] md:flex-row">
           <div
-            className={` md:w-[40%] w-full  md:p-6 p-4
-            ${activeChat ? "hidden md:flex" : "flex"} flex-col`}
+            className={`min-h-0 md:w-[40%] w-full md:p-6 p-4
+            ${activeChat ? "hidden md:flex" : "flex"} flex flex-col`}
           >
             <div className="w-full py-6 text-white space-y-4">
               <div className="flex flex-col gap-3 w-full">
@@ -1446,13 +1606,25 @@ export default function Inbox() {
               </div>
             </div>
 
-            <div className="border border-white/50 rounded-3xl p-6 flex-1 flex flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/50 p-6">
               {loading ? (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex flex-1 items-center justify-center">
                   <p className="text-white/60">Loading conversations...</p>
                 </div>
+              ) : listLoadError ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2 text-center">
+                  <p className="text-base font-semibold text-amber-200/95">Couldn&apos;t load conversations</p>
+                  <p className="max-w-sm text-sm text-white/65">{listLoadError}</p>
+                  <button
+                    type="button"
+                    onClick={() => loadLists()}
+                    className="mt-1 rounded-full border border-white/40 bg-white/10 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                  >
+                    Try again
+                  </button>
+                </div>
               ) : (
-                <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-4 md:px-0">
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-0">
                   {currentList.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center">
                       <p className="text-white/60">No conversations yet</p>
@@ -1464,33 +1636,52 @@ export default function Inbox() {
                   ) : (
                     filteredConversationList.map((conversation, i) => {
                       const cid = conversation.conversationId || conversation.id || i;
-                      const unread = Number(conversation.unreadCount || 0) > 0;
                       const selected = activeChat?.rowKey === (conversation.conversationId || conversation.id);
+                      const convKey = String(conversation.conversationId || conversation.id || i);
+                      const lastSeenAtMs = clientLastSeenAtByConvRef.current[convKey];
+                      const unreadCountDisplay =
+                        selected
+                          ? 0
+                          : lastSeenAtMs != null
+                            ? Math.max(0, Math.floor(Number(clientUnreadByConv[convKey] ?? 0)))
+                            : Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+                      const unread = unreadCountDisplay > 0;
                       const st = conversation.userStatus;
                       const live = Boolean(
                         conversation.broadcastUrl &&
                           (conversation.isBroadcasting || st === "broadcasting")
                       );
                       return (
-                        <button
+                        <div
                           key={cid}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => openRow(conversation)}
-                          className={`flex items-center gap-4 border-b border-white/20 pb-4 text-left px-2 rounded-xl transition-colors ${
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openRow(conversation);
+                            }
+                          }}
+                          className={`flex cursor-pointer items-center gap-4 border-b border-white/20 pb-4 text-left px-2 rounded-xl transition-colors ${
                             unread ? "bg-purple-500/25 ring-1 ring-yellow-400/50" : "hover:bg-white/5"
                           } ${selected ? "bg-white/10" : ""}`}
                         >
-                          <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
-                            <Image
-                              src={conversation.otherUser?.displayPictureUrl || "/assets/ico.png"}
-                              alt={conversation.otherUser?.username || "User"}
-                              fill
-                              className="object-cover "
-                            />
+                          <div className="relative h-12 w-12 shrink-0">
+                            <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10">
+                              <Image
+                                src={conversation.otherUser?.displayPictureUrl || "/assets/ico.png"}
+                                alt={conversation.otherUser?.username || "User"}
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
+                            </div>
                             {st === "online" && (
                               <span
-                                className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-black/80"
+                                className="pointer-events-none absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm translate-x-[1px] translate-y-[1px]"
                                 title="Online"
+                                aria-hidden
                               />
                             )}
                             {live && (
@@ -1498,19 +1689,19 @@ export default function Inbox() {
                                 type="button"
                                 title="Watch live"
                                 onClick={(e) => openBroadcast(e, conversation.broadcastUrl)}
-                                className="absolute -top-1 -right-1 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
+                                className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
                               >
                                 LIVE
                               </button>
                             )}
                           </div>
 
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="font-bold text-base flex items-center gap-2 justify-between">
                               <span className="truncate">{conversation.otherUser?.username || "User"}</span>
                               {unread && (
                                 <span className="flex-shrink-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-yellow-400 text-black text-[10px] font-black flex items-center justify-center">
-                                  {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+                                  {unreadCountDisplay > 9 ? "9+" : unreadCountDisplay}
                                 </span>
                               )}
                             </div>
@@ -1518,7 +1709,7 @@ export default function Inbox() {
                               {lastMessagePreview(conversation)}
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })
                   )}
@@ -1538,13 +1729,13 @@ export default function Inbox() {
           </div>
 
           <div
-            className={`md:w-[60%] w-full h-full flex flex-col p-2
+            className={`min-h-0 md:w-[60%] w-full h-full flex flex-col p-2
             ${activeChat ? "flex" : "hidden md:flex"}`}
           >
             {activeChat ? (
               <>
-                <div className="border border-white/50 rounded-[50px]  flex-1 flex flex-col overflow-hidden ">
-                  <div className="flex items-center justify-between md:px-6  md:p-2 md:mt-6  bg-black/20 md:bg-transparent ">
+                <div className="border border-white/50 rounded-[50px] flex-1 flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between md:px-6 md:p-2 md:mt-6 bg-black/20 md:bg-transparent overflow-visible">
                     <div className="flex items-center gap-3 bg-purple-600/20 border border-white p-1.5 pr-6 rounded-full min-w-0 flex-1">
                       <button
                         type="button"
@@ -1554,19 +1745,21 @@ export default function Inbox() {
                         <IoChevronBack />
                       </button>
 
-                      <div className="relative flex-shrink-0">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white relative">
+                      <div className="relative h-12 w-12 shrink-0 overflow-visible">
+                        <div className="relative h-full w-full overflow-hidden rounded-full border-2 border-white">
                           <Image
                             src={otherProfile?.displayPictureUrl || "/assets/ico.png"}
                             alt="User"
                             fill
+                            sizes="48px"
                             className="object-cover rounded-full"
                           />
                         </div>
                         {headerUserStatus === "online" && (
                           <span
-                            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-black/80"
+                            className="pointer-events-none absolute bottom-0 right-0 z-10 h-3 w-3 translate-x-[1px] translate-y-[1px] rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm"
                             title="Online"
+                            aria-hidden
                           />
                         )}
                         {headerLive && (
@@ -1574,7 +1767,7 @@ export default function Inbox() {
                             type="button"
                             title="Watch live"
                             onClick={(e) => openBroadcast(e, activeChat.broadcastUrl)}
-                            className="absolute -top-1 -right-1 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow z-10"
+                            className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
                           >
                             LIVE
                           </button>
@@ -1909,8 +2102,10 @@ export default function Inbox() {
                 />
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-white/60">Select a conversation to start messaging</p>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/50 md:rounded-[50px]">
+                <div className="flex flex-1 items-center justify-center px-4 py-12">
+                  <p className="text-center text-white/60">Select a conversation to start messaging</p>
+                </div>
               </div>
             )}
           </div>

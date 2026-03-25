@@ -1523,8 +1523,23 @@ export default function Inbox() {
                           </span>
                         </div>
                         {peerTyping && (
-                          <div className="text-[11px] text-white/80 font-semibold tracking-wide">
-                            Typing…
+                          <div
+                            className="flex items-center gap-1.5 h-4"
+                            aria-label="Typing indicator"
+                            title="Typing"
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                              style={{ animationDelay: "0ms" }}
+                            />
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                              style={{ animationDelay: "150ms" }}
+                            />
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                              style={{ animationDelay: "300ms" }}
+                            />
                           </div>
                         )}
                       </div>

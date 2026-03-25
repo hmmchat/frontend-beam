@@ -72,9 +72,9 @@ export default function Home() {
                         <p className="text-sm md:mb-0 mb-2 md:leading-[1.5] leading-tight md:text-[22px] text-white leading-relaxed font-medium opacity-95 font-[family-name:var(--font-otomanopee)]">
                             Meet someone here,
                             <br />
-                            Not sure who, but someone
+               
                         </p>
-                        <div className="inline-flex gap-2 font-[family-name:var(--font-otomanopee)]">
+                        <div className="inline-flex mt-6 gap-2 font-[family-name:var(--font-otomanopee)]">
                             <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
                             <p className='text-xs'>
                                 {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
@@ -135,8 +135,7 @@ export default function Home() {
 
             {/* Modals */}
             <SignUpModal isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} />
-            <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
-            <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+
         </div>
     );
 }

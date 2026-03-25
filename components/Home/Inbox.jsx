@@ -724,6 +724,7 @@ export default function Inbox() {
 
       if (msg.type === "friend:message" && msg.data) {
         const m = msg.data;
+        const isIncoming = String(m.toUserId) === String(currentUserId);
         // Update thread instantly if it's open.
         setMessages((prev) => {
           const seen = new Set(prev.map((x) => x.id));
@@ -744,12 +745,13 @@ export default function Inbox() {
         });
 
         // Update lists: bump lastMessage + unreadCount.
-        const bumpList = (setter) =>
+        const bumpList = (setter) => {
+          let found = false;
           setter((prev) => {
             const next = prev.map((c) => {
               const cid = c.conversationId || c.id;
               if (String(cid) !== String(m.conversationId)) return c;
-              const isIncoming = String(m.toUserId) === String(currentUserId);
+              found = true;
               const isOpen = String(activeChat?.rowKey || "") === String(cid);
               return {
                 ...c,
@@ -768,17 +770,30 @@ export default function Inbox() {
             });
             return sortByLatest(next);
           });
+          return found;
+        };
 
-        bumpList(setInboxList);
-        bumpList(setRequestsList);
-        bumpList(setSentList);
+        const inInbox = bumpList(setInboxList);
+        const inReq = bumpList(setRequestsList);
+        const inSent = bumpList(setSentList);
+
+        // If the conversation isn't present in any list yet (new thread / section transition),
+        // refresh lists to insert it in the correct section.
+        if (!inInbox && !inReq && !inSent) {
+          loadLists({ quiet: true });
+        }
+
+        // Refresh notification counts for incoming messages (server invalidates cache on send).
+        if (isIncoming) {
+          loadNotificationBadge();
+        }
 
         // If chat is open and message is incoming, mark read quickly.
         const activeCid = activeChat?.conversationId || activeChat?.rowKey;
         if (
           activeCid &&
           String(activeCid) === String(m.conversationId) &&
-          String(m.toUserId) === String(currentUserId)
+          isIncoming
         ) {
           markReadForPeer(activeChat?.otherUserId || activeChat?.otherUser?.id);
         }

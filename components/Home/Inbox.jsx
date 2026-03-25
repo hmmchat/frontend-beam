@@ -191,6 +191,7 @@ export default function Inbox() {
 
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
+  const threadPollRef = useRef(null);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
   const pendingThreadScrollRestoreRef = useRef(null);
   /** Skip scroll-to-bottom when older page was just merged */
@@ -658,6 +659,54 @@ export default function Inbox() {
     if (activeChat) loadThreadMessages(activeChat);
   }, [activeChat, loadThreadMessages]);
 
+  // Near-real-time messaging: poll thread + list while a chat is open.
+  // This keeps the open conversation updated without requiring refresh,
+  // and keeps unread counts in sync.
+  useEffect(() => {
+    if (!activeChat) return;
+
+    // Always clear any previous poll.
+    if (threadPollRef.current) {
+      clearInterval(threadPollRef.current);
+      threadPollRef.current = null;
+    }
+
+    const tick = async () => {
+      try {
+        await loadThreadMessages(activeChat);
+        await loadLists({ quiet: true });
+      } catch {
+        // ignore polling errors; UI should remain usable
+      }
+    };
+
+    // Kick once immediately, then poll.
+    tick();
+    threadPollRef.current = setInterval(tick, 2500);
+
+    return () => {
+      if (threadPollRef.current) {
+        clearInterval(threadPollRef.current);
+        threadPollRef.current = null;
+      }
+    };
+  }, [activeChat?.rowKey, loadThreadMessages, loadLists]);
+
+  // When returning to the tab, refresh messages/unreads.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      if (activeChat) loadThreadMessages(activeChat);
+      loadLists({ quiet: true });
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+  }, [activeChat, loadThreadMessages, loadLists]);
+
   useEffect(() => {
     if (!activeChat?.rowKey) return;
     const oid = activeChat.otherUserId || activeChat.otherUser?.id;
@@ -862,6 +911,20 @@ export default function Inbox() {
       (typeof row.id === "string" && row.id.startsWith("outgoing_fr_")
         ? row.id.replace("outgoing_fr_", "")
         : null);
+
+    // Optimistic unread reset: as soon as user opens the conversation, clear the bubble count locally.
+    // Backend mark-read runs inside loadThreadMessages → markReadForPeer → loadLists.
+    const clearUnread = (setter) =>
+      setter((prev) =>
+        prev.map((c) => {
+          const k = String(c.conversationId || c.id);
+          return String(k) === String(cid) ? { ...c, unreadCount: 0 } : c;
+        })
+      );
+    if (activeTab === "inbox") clearUnread(setInboxList);
+    else if (activeTab === "requests") clearUnread(setRequestsList);
+    else clearUnread(setSentList);
+
     setActiveChat({
       rowKey: cid,
       conversationId: row.conversationId,
@@ -872,7 +935,7 @@ export default function Inbox() {
       isOutgoingFriendRequest: Boolean(row.isOutgoingFriendRequest),
       followRequestId: followId || null,
       outgoingFriendRequestId: outgoingId || null,
-      unreadCount: row.unreadCount || 0,
+      unreadCount: 0,
       userStatus: row.userStatus,
       isBroadcasting: row.isBroadcasting,
       broadcastUrl: row.broadcastUrl,

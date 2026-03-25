@@ -188,11 +188,14 @@ export default function Inbox() {
   const [conversationSearch, setConversationSearch] = useState("");
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [threadActionBusy, setThreadActionBusy] = useState(false);
+  const [peerTyping, setPeerTyping] = useState(false);
 
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
   const threadPollRef = useRef(null);
   const wsRef = useRef(null);
+  const typingTimerRef = useRef(null);
+  const lastTypingSentAtRef = useRef(0);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
   const pendingThreadScrollRestoreRef = useRef(null);
   /** Skip scroll-to-bottom when older page was just merged */
@@ -746,6 +749,17 @@ export default function Inbox() {
         }
       }
 
+      if (msg.type === "friend:typing" && msg.data) {
+        const t = msg.data;
+        const activeCid = activeChat?.conversationId || activeChat?.rowKey;
+        if (!activeCid || String(activeCid) !== String(t.conversationId)) return;
+        if (String(t.fromUserId) !== String(activeChat?.otherUserId || activeChat?.otherUser?.id)) return;
+        setPeerTyping(Boolean(t.isTyping));
+        // auto-clear if we stop receiving typing pings
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = setTimeout(() => setPeerTyping(false), 2500);
+      }
+
       if (msg.type === "friend:read" && msg.data) {
         // Clear counts on read-receipt hint; server remains source of truth via periodic loadLists.
         const other = msg.data?.fromUserId;
@@ -774,9 +788,49 @@ export default function Inbox() {
         // ignore
       }
       wsRef.current = null;
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
     };
     // Intentionally do not depend on activeChat; single socket for screen lifetime.
   }, [currentUserId, activeChat?.rowKey, markReadForPeer]);
+
+  // Reset typing indicator when switching chats.
+  useEffect(() => {
+    setPeerTyping(false);
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+  }, [activeChat?.rowKey]);
+
+  const emitTyping = useCallback(
+    (isTyping) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== 1) return;
+      if (!activeChat?.conversationId || !activeChat?.otherUserId) return;
+      const now = Date.now();
+      // throttle
+      if (now - lastTypingSentAtRef.current < 300 && isTyping) return;
+      lastTypingSentAtRef.current = now;
+      try {
+        ws.send(
+          JSON.stringify({
+            type: "friend:typing",
+            data: {
+              conversationId: activeChat.conversationId,
+              otherUserId: activeChat.otherUserId,
+              isTyping: Boolean(isTyping),
+            },
+          })
+        );
+      } catch {
+        // ignore
+      }
+    },
+    [activeChat?.conversationId, activeChat?.otherUserId]
+  );
 
   // Near-real-time messaging: poll thread + list while a chat is open.
   // This keeps the open conversation updated without requiring refresh,
@@ -1468,6 +1522,11 @@ export default function Inbox() {
                               : ""}
                           </span>
                         </div>
+                        {peerTyping && (
+                          <div className="text-[11px] text-white/80 font-semibold tracking-wide">
+                            Typing…
+                          </div>
+                        )}
                       </div>
 
                       {peerId && (
@@ -1697,7 +1756,14 @@ export default function Inbox() {
                           textInputLocked ? "Send a gift to continue…" : "Type message"
                         }
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setNewMessage(v);
+                          emitTyping(Boolean(v.trim()));
+                          if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                          // send "stop typing" shortly after user stops input
+                          typingTimerRef.current = setTimeout(() => emitTyping(false), 900);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !textInputLocked) sendMessage();
                         }}

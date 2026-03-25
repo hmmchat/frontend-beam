@@ -195,6 +195,7 @@ export default function Inbox() {
   const threadMenuRef = useRef(null);
   const threadPollRef = useRef(null);
   const wsRef = useRef(null);
+  const connectFriendsWsRef = useRef(null);
   const wsReconnectTimerRef = useRef(null);
   const wsReconnectAttemptRef = useRef(0);
   const wsHeartbeatRef = useRef(null);
@@ -841,12 +842,17 @@ export default function Inbox() {
       wsReconnectAttemptRef.current = n;
       const delay = Math.min(15000, 500 * 2 ** n);
       if (wsReconnectTimerRef.current) clearTimeout(wsReconnectTimerRef.current);
-      wsReconnectTimerRef.current = setTimeout(() => connectFriendsWs(), delay);
+      wsReconnectTimerRef.current = setTimeout(() => connectFriendsWsRef.current?.(), delay);
     };
     ws.onerror = () => {
       // leave polling fallback in place
     };
-  }, [connectFriendsWs, loadLists, loadNotificationBadge]);
+  }, [activeChat?.rowKey, currentUserId, loadLists, loadNotificationBadge, markReadForPeer]);
+
+  // Avoid self-referential hook dependencies (used by reconnect timer).
+  useEffect(() => {
+    connectFriendsWsRef.current = connectFriendsWs;
+  }, [connectFriendsWs]);
 
   // Instant messaging over WebSocket (same style as streaming-service: JWT as query param).
   useEffect(() => {

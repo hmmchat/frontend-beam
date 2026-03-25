@@ -192,6 +192,7 @@ export default function Inbox() {
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
   const threadPollRef = useRef(null);
+  const wsRef = useRef(null);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
   const pendingThreadScrollRestoreRef = useRef(null);
   /** Skip scroll-to-bottom when older page was just merged */
@@ -658,6 +659,124 @@ export default function Inbox() {
   useEffect(() => {
     if (activeChat) loadThreadMessages(activeChat);
   }, [activeChat, loadThreadMessages]);
+
+  // Instant messaging over WebSocket (same style as streaming-service: JWT as query param).
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "";
+    if (!token) return;
+
+    // Avoid multiple sockets.
+    if (wsRef.current) return;
+
+    const base = API?.FRIENDS_WS?.WS_URL;
+    if (!base) return;
+
+    const wsUrlWithAuth = `${base}?token=${encodeURIComponent(token)}`;
+    const ws = new WebSocket(wsUrlWithAuth);
+    wsRef.current = ws;
+
+    ws.onmessage = (e) => {
+      let msg;
+      try {
+        msg = JSON.parse(e.data);
+      } catch {
+        return;
+      }
+      if (!msg?.type) return;
+
+      if (msg.type === "friend:message" && msg.data) {
+        const m = msg.data;
+        // Update thread instantly if it's open.
+        setMessages((prev) => {
+          const seen = new Set(prev.map((x) => x.id));
+          if (m.id && seen.has(m.id)) return prev;
+          // If server payload doesn't include id, fall back to timestamp dedupe.
+          if (!m.id) {
+            const key = `${m.fromUserId}:${m.toUserId}:${m.createdAt}:${m.messageType}:${m.message || ""}`;
+            const has = prev.some(
+              (x) =>
+                `${x.fromUserId}:${x.toUserId}:${x.createdAt}:${x.messageType}:${x.message || ""}` === key
+            );
+            if (has) return prev;
+          }
+          // Only append if this matches the active conversation.
+          const activeCid = activeChat?.conversationId || activeChat?.rowKey;
+          if (!activeCid || String(activeCid) !== String(m.conversationId)) return prev;
+          return [...prev, { ...m, isRead: m.toUserId === currentUserId ? false : true }];
+        });
+
+        // Update lists: bump lastMessage + unreadCount.
+        const bumpList = (setter) =>
+          setter((prev) => {
+            const next = prev.map((c) => {
+              const cid = c.conversationId || c.id;
+              if (String(cid) !== String(m.conversationId)) return c;
+              const isIncoming = String(m.toUserId) === String(currentUserId);
+              const isOpen = String(activeChat?.rowKey || "") === String(cid);
+              return {
+                ...c,
+                lastMessage: {
+                  id: m.id,
+                  fromUserId: m.fromUserId,
+                  message: m.message,
+                  messageType: m.messageType,
+                  giftId: m.giftId,
+                  giftAmount: m.giftAmount,
+                  createdAt: m.createdAt,
+                },
+                lastMessageAt: m.createdAt,
+                unreadCount: isIncoming && !isOpen ? Number(c.unreadCount || 0) + 1 : Number(c.unreadCount || 0),
+              };
+            });
+            return sortByLatest(next);
+          });
+
+        bumpList(setInboxList);
+        bumpList(setRequestsList);
+        bumpList(setSentList);
+
+        // If chat is open and message is incoming, mark read quickly.
+        const activeCid = activeChat?.conversationId || activeChat?.rowKey;
+        if (
+          activeCid &&
+          String(activeCid) === String(m.conversationId) &&
+          String(m.toUserId) === String(currentUserId)
+        ) {
+          markReadForPeer(activeChat?.otherUserId || activeChat?.otherUser?.id);
+        }
+      }
+
+      if (msg.type === "friend:read" && msg.data) {
+        // Clear counts on read-receipt hint; server remains source of truth via periodic loadLists.
+        const other = msg.data?.fromUserId;
+        if (!other) return;
+        const clearForOther = (setter) =>
+          setter((prev) =>
+            prev.map((c) => (String(c.otherUserId) === String(other) ? { ...c, unreadCount: 0 } : c))
+          );
+        clearForOther(setInboxList);
+        clearForOther(setRequestsList);
+        clearForOther(setSentList);
+      }
+    };
+
+    ws.onclose = () => {
+      wsRef.current = null;
+    };
+    ws.onerror = () => {
+      // leave polling fallback in place
+    };
+
+    return () => {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+      wsRef.current = null;
+    };
+    // Intentionally do not depend on activeChat; single socket for screen lifetime.
+  }, [currentUserId, activeChat?.rowKey, markReadForPeer]);
 
   // Near-real-time messaging: poll thread + list while a chat is open.
   // This keeps the open conversation updated without requiring refresh,

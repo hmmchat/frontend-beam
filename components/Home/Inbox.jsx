@@ -194,6 +194,9 @@ export default function Inbox() {
   const threadMenuRef = useRef(null);
   const threadPollRef = useRef(null);
   const wsRef = useRef(null);
+  const wsReconnectTimerRef = useRef(null);
+  const wsReconnectAttemptRef = useRef(0);
+  const wsHeartbeatRef = useRef(null);
   const typingTimerRef = useRef(null);
   const lastTypingSentAtRef = useRef(0);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
@@ -663,20 +666,25 @@ export default function Inbox() {
     if (activeChat) loadThreadMessages(activeChat);
   }, [activeChat, loadThreadMessages]);
 
-  // Instant messaging over WebSocket (same style as streaming-service: JWT as query param).
-  useEffect(() => {
+  const connectFriendsWs = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "";
     if (!token) return;
-
-    // Avoid multiple sockets.
-    if (wsRef.current) return;
-
     const base = API?.FRIENDS_WS?.WS_URL;
     if (!base) return;
+    if (wsRef.current && (wsRef.current.readyState === 0 || wsRef.current.readyState === 1)) return;
 
     const wsUrlWithAuth = `${base}?token=${encodeURIComponent(token)}`;
     const ws = new WebSocket(wsUrlWithAuth);
     wsRef.current = ws;
+
+    if (wsHeartbeatRef.current) clearInterval(wsHeartbeatRef.current);
+    wsHeartbeatRef.current = setInterval(() => {
+      try {
+        if (ws.readyState === 1) ws.send(JSON.stringify({ type: "ping", data: { at: Date.now() } }));
+      } catch {
+        // ignore
+      }
+    }, 20000);
 
     ws.onmessage = (e) => {
       let msg;
@@ -686,6 +694,11 @@ export default function Inbox() {
         return;
       }
       if (!msg?.type) return;
+
+      if (msg.type === "ws:ready") {
+        if (msg.data?.ok) wsReconnectAttemptRef.current = 0;
+        return;
+      }
 
       if (msg.type === "friend:message" && msg.data) {
         const m = msg.data;
@@ -749,6 +762,12 @@ export default function Inbox() {
         }
       }
 
+      if (msg.type === "friend:refresh") {
+        // Strong consistency: on friendship/request transitions, refresh lists + badges.
+        loadLists({ quiet: true });
+        loadNotificationBadge();
+      }
+
       if (msg.type === "friend:typing" && msg.data) {
         const t = msg.data;
         const activeCid = activeChat?.conversationId || activeChat?.rowKey;
@@ -776,14 +795,37 @@ export default function Inbox() {
 
     ws.onclose = () => {
       wsRef.current = null;
+      if (wsHeartbeatRef.current) {
+        clearInterval(wsHeartbeatRef.current);
+        wsHeartbeatRef.current = null;
+      }
+      // Reconnect with backoff
+      const n = Math.min(8, wsReconnectAttemptRef.current + 1);
+      wsReconnectAttemptRef.current = n;
+      const delay = Math.min(15000, 500 * 2 ** n);
+      if (wsReconnectTimerRef.current) clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = setTimeout(() => connectFriendsWs(), delay);
     };
     ws.onerror = () => {
       // leave polling fallback in place
     };
+  }, [connectFriendsWs, loadLists, loadNotificationBadge]);
+
+  // Instant messaging over WebSocket (same style as streaming-service: JWT as query param).
+  useEffect(() => {
+    connectFriendsWs();
 
     return () => {
+      if (wsReconnectTimerRef.current) {
+        clearTimeout(wsReconnectTimerRef.current);
+        wsReconnectTimerRef.current = null;
+      }
+      if (wsHeartbeatRef.current) {
+        clearInterval(wsHeartbeatRef.current);
+        wsHeartbeatRef.current = null;
+      }
       try {
-        ws.close();
+        wsRef.current?.close();
       } catch {
         // ignore
       }
@@ -794,7 +836,7 @@ export default function Inbox() {
       }
     };
     // Intentionally do not depend on activeChat; single socket for screen lifetime.
-  }, [currentUserId, activeChat?.rowKey, markReadForPeer]);
+  }, [connectFriendsWs]);
 
   // Reset typing indicator when switching chats.
   useEffect(() => {

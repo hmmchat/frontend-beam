@@ -723,7 +723,7 @@ export default function MeetSomeoneDynamic() {
       <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
 
         {/* LEFT SIDE */}
-<div className="relative flex items-center justify-center px-6 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark">
+<div className="relative flex h-full min-h-0 flex-col items-center justify-center overflow-hidden bg-gradient-purple-dark px-6 py-10 md:py-16 lg:py-8">
 
   <div
     className="absolute inset-0 z-0"
@@ -735,7 +735,20 @@ export default function MeetSomeoneDynamic() {
   />
         
           {isSearching ? (
-            <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'p-2', 'relative')}>
+            <div
+              className={clsx(
+                'relative',
+                'flex',
+                'h-full',
+                'min-h-0',
+                'w-full',
+                'flex-1',
+                'flex-col',
+                'items-center',
+                'justify-center',
+                'p-2'
+              )}
+            >
               {!currentCard || isResumeLoading ? (
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
                   <div className={clsx('border-2', 'border-white/30', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
@@ -763,31 +776,23 @@ export default function MeetSomeoneDynamic() {
                   onSkip={handleRaincheck}
                 />
               ) : (
-                <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-
-
-
-
-<div className="relative flex flex-col items-center">
-
-  {/* 🔥 NAME OUTSIDE CARD */}
-<div className="absolute left-22 top-1/2 -translate-y-1/2 z-[20] pointer-events-none">
-  
-
-
-</div>
-
-  {/* CARD FRAME (CLEAN BORDER) */}
-  <div className="relative w-[360px] h-[640px] p-3 ">
-
-    {/* INNER BORDER (LIKE SCREENSHOT) */}
-
-
-    {/* CARD */}
-
-      <FaceCard user={currentCard} />
-
-  </div>
+                <div
+                  className={clsx(
+                    'relative',
+                    'flex',
+                    'h-full',
+                    'min-h-0',
+                    'w-full',
+                    'flex-1',
+                    'flex-col',
+                    'items-center',
+                    'justify-center',
+                    'overflow-y-auto',
+                    'py-6'
+                  )}
+                >
+                  <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center gap-6 px-2">
+                    <FaceCard user={currentCard} />
 
   {currentCard?.otherUserAccepted && !waitingForMatch && (
     <div className="mt-3 w-[460px] px-4 py-2 rounded-xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-100 text-xs text-center font-semibold">
@@ -796,7 +801,7 @@ export default function MeetSomeoneDynamic() {
   )}
 
   {/* BUTTONS */}
-<div className="mt-10 flex items-center justify-between w-[360px]">
+<div className="flex w-full max-w-[360px] shrink-0 items-center justify-between gap-2 px-1">
 
   {/* LEFT ARROW */}
   <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
@@ -826,16 +831,9 @@ export default function MeetSomeoneDynamic() {
 
 </div>
 
-</div>
-
-
-
-
-
-
-
-
-
+                  </div>
+                </div>
+              )}
 
           {/* Request Sent (Waiting) Popup */}
                   <RequestSentPopup 
@@ -844,8 +842,6 @@ export default function MeetSomeoneDynamic() {
                     onCancel={handleCancelWaiting}
                   />
                 </div>
-              )}
-            </div>
           ) : (
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
               <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>

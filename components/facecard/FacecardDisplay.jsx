@@ -1,88 +1,81 @@
 'use client';
 
-export default function FacecardDisplay({ user, firstName, zodiac, age, setView, router }) {
+import FaceCard from '@/components/Home/FaceCard';
+
+export default function FacecardDisplay({ user, age, setView, router }) {
   return (
-    <div className="max-h-screen gap-4 w-full relative bg-purple-950 text-white outfit-font overflow-hidden flex items-center justify-center p-6" 
-         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      
-      <section className="flex flex-col items-center justify-center w-full text-center animate-fade-in border-2 border-white/40 h-[100vh] rounded-[3.5rem]">
-        <div className="w-full max-w-[1000px] grid gap-12 h-[75vh] mx-auto justify-center items-center ">
-          
-          {/* Left Pane - Facecard Preview */}
-          <div className="relative border-2 border-white/40 w-[500px] py-2 flex items-center justify-center pl-22 rounded-[3.5rem]">
-            
-            {/* Vertical Name + Age - Outer left */}
-            <div className="absolute left-10 -bottom-20 -translate-y-1/2">
-              <span
-                className="text-6xl font-black text-yellow-400 tracking-tighter uppercase"
-                style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-              >
-                {firstName} , 
-                <span
-                  className="text-transparent"
-                  style={{
-                    WebkitTextStroke: "3px #facc15"
+    <div
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-purple-950 text-white outfit-font"
+      style={{
+        backgroundImage: "url('/assets/mb.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="mx-auto flex min-h-0 flex-1 flex-col gap-2 px-2 py-2 md:flex-row md:gap-3 md:px-4 md:py-3 max-w-[1200px] w-full">
+        {/* Left: facecard */}
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] border-2 border-white/40 md:rounded-[3.5rem] px-2 py-2 md:px-4">
+          <div className="flex min-h-0 w-full max-w-[400px] flex-1 flex-col items-center justify-center gap-1 overflow-hidden md:gap-3">
+            <p className="shrink-0 text-center text-[10px] uppercase tracking-[0.2em] text-white/50 md:text-xs">
+              Your facecard (what others see)
+            </p>
+            <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden py-1">
+              <div className="origin-center scale-[0.58] sm:scale-[0.72] md:scale-[0.88] lg:scale-100">
+                <FaceCard
+                  user={{
+                    ...user,
+                    age,
+                    city: user?.preferredCity || user?.city,
                   }}
-                > {age}</span>
-              </span>
-            </div>
-
-            {/* Phone Frame */}
-            <div className="relative w-full max-w-sm aspect-[9/16] rounded-[3.5rem] border-[3px] border-yellow-400/80 overflow-hidden shadow-2xl ">
-              <img src={user?.displayPictureUrl || "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1974&auto=format&fit=crop"} className="w-full h-full object-cover" alt="Profile" />
-              
-              <div className="absolute inset-0 flex flex-col justify-end p-6 ">
-                {/* Zodiac Symbol */}
-                <div className="absolute right-10 bottom-32 -translate-y-1/2 flex flex-col items-center gap-1">
-                  <span className="text-4xl filter drop-shadow-lg">{zodiac.symbol}</span>
-                  <span className="text-[10px] uppercase font-bold tracking-[0.3em] opacity-80">{zodiac.name}</span>
-                </div>
-
-                {/* Quote Box */}
-                <div className="mx-auto mb-6 w-[90%] px-5 py-6 text-center relative border border-2 border-white/40 rounded-[1rem]">
-                  <span className="absolute top-1 left-1/2 -translate-x-1/2 text-white/40 text-5xl font-serif">“</span>
-                  <p className="text-xs font-medium leading-relaxed tracking-wide italic">
-                    {user?.intent || "Here to meet strangers and here to meet strangers and overthink later."}
-                  </p>
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-white/40 text-5xl font-serif rotate-180">“</span>
-                </div>
+                />
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      <section className="flex flex-col items-center justify-center w-full text-center animate-fade-in border-2 border-white/40 h-[100vh] rounded-[3.5rem]">
-        <div className="flex flex-col items-center justify-center p-12 text-center ">
-           <h1 className="text-5xl font-extrabold mb-6 tracking-tight">Meet your Facecard</h1>
-           <p className="max-w-md text-white/90 leading-relaxed mb-16 text-base font-medium">
-             This is what people see before meeting you.<br/>
-             Adding more details makes it cooler and gets you<br/>
-             better matches & conversations.
-           </p>
+        {/* Right: copy + actions */}
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] border-2 border-white/40 px-4 py-3 text-center md:rounded-[3.5rem] md:px-8 md:py-6">
+          <h1 className="mb-2 shrink-0 text-2xl font-extrabold tracking-tight md:mb-4 md:text-4xl lg:text-5xl">
+            Meet your Facecard
+          </h1>
+          <p className="mb-4 max-w-md shrink-0 text-sm font-medium leading-relaxed text-white/90 md:mb-6 md:text-base">
+            This is what people see before meeting you.
+            <br className="hidden sm:block" />{' '}
+            <span className="sm:inline">
+              Adding more details makes it cooler and gets you better matches &amp; conversations.
+            </span>
+          </p>
 
-           <div className="space-y-6 w-full max-w-sm">
-             <button 
-               onClick={() => setView('editor')}
-               className="w-full py-4 border-2 border-white/30 border-b-4 rounded-2xl text-xl font-semibold hover:bg-yellow-400 hover:text-black hover:border-yellow-400 transition-all duration-300 transform active:scale-95 shadow-xl"
-             >
-               Make my Facecard cooler 😤
-             </button>
+          <div className="w-full max-w-sm shrink-0 space-y-3 md:space-y-5">
+            <button
+              type="button"
+              onClick={() => setView('editor')}
+              className="w-full transform rounded-2xl border-2 border-b-4 border-white/30 py-3 text-lg font-semibold shadow-xl transition-all duration-300 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black active:scale-95 md:py-4 md:text-xl"
+            >
+              Make my Facecard cooler 😤
+            </button>
 
-              <button 
-                onClick={() => router.push('/')}
-                className="w-full text-white text-sm font-medium flex items-center justify-center gap-2 hover:text-white transition-colors"
-              >
-                I'll do it later 🥱
-              </button>
-           </div>
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="flex w-full items-center justify-center gap-2 text-sm font-medium text-white hover:text-white"
+            >
+              I&apos;ll do it later 🥱
+            </button>
+          </div>
         </div>
-      </section>
+      </div>
 
       <style jsx>{`
         @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .animate-fade-in {
           animation: fade-in 1s ease-out forwards;

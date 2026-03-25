@@ -17,6 +17,8 @@ export default function SelectorOverlay({
   searchingMusic,
   searchMusic,
   selectMusic,
+  musicSavingKey,
+  musicTrackKey,
   searchQuery,
   setSearchQuery,
   searchItems,
@@ -78,11 +80,30 @@ export default function SelectorOverlay({
             </div>
 
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-              {musicResults.map((song) => (
+              {musicResults.map((song) => {
+                const rowKey = musicTrackKey ? musicTrackKey(song) : song.spotifyId || song.name;
+                const saving = Boolean(musicSavingKey && musicTrackKey && musicTrackKey(song) === musicSavingKey);
+                const busy = Boolean(musicSavingKey);
+                return (
                 <div
-                  key={song.spotifyId}
-                  onClick={() => selectMusic(song)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition group"
+                  key={rowKey}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => !busy && selectMusic(song)}
+                  onKeyDown={(e) => {
+                    if (busy) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      selectMusic(song);
+                    }
+                  }}
+                  className={`flex items-center gap-4 p-4 rounded-2xl border transition group ${
+                    saving
+                      ? 'bg-yellow-400/20 border-yellow-400/50 cursor-wait'
+                      : busy
+                        ? 'bg-white/5 border-white/10 opacity-60 cursor-not-allowed'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer'
+                  }`}
                 >
                   <img
                     src={song.albumArtUrl || "https://ui-avatars.com/api/?name=Music&background=random&color=fff"}
@@ -93,11 +114,16 @@ export default function SelectorOverlay({
                     <h4 className="font-bold truncate group-hover:text-yellow-400 transition">{song.name}</h4>
                     <p className="text-sm opacity-60 truncate">{song.artist}</p>
                   </div>
-                  <div className="text-yellow-400 opacity-0 group-hover:opacity-100 transition text-xl">
-                    +
-                  </div>
+                  {saving ? (
+                    <div className="h-6 w-6 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : (
+                    <div className="text-yellow-400 opacity-0 group-hover:opacity-100 transition text-xl">
+                      +
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
               {musicQuery.length > 2 && musicResults.length === 0 && !searchingMusic && (
                 <p className="text-center opacity-40 py-10">No songs found for "{musicQuery}"</p>
               )}

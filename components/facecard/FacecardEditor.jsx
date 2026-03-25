@@ -1,22 +1,25 @@
 'use client';
 
-export default function FacecardEditor({ 
-  user, 
-  firstName, 
-  zodiac, 
-  setView, 
-  handleSlotClick, 
-  setShowSelector, 
+export default function FacecardEditor({
+  user,
+  firstName,
+  zodiac,
+  setView,
+  handleSlotClick,
+  setShowSelector,
   progress,
   fileInputRef,
-  handleFileChange
+  handleFileChange,
+  onOpenFacecardPreview,
+  photoUploading = false,
 }) {
   return (
-    <div className="min-h-screen w-full relative text-white outfit-font overflow-hidden flex items-center justify-center p-6" 
-         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      
-      {/* Outer Glow Card */}
-      <div className="w-full max-w-[1150px] relative border border-2 border-white/60 rounded-[4rem] p-6 flex gap-10">
+    <div
+      className="relative flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden p-2 text-white outfit-font md:p-4"
+      style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+    >
+      {/* Outer Glow Card — scaled to fit viewport without scrolling */}
+      <div className="relative flex max-h-full min-h-0 w-full max-w-[1150px] origin-center scale-[0.62] flex-col gap-4 overflow-hidden rounded-[3rem] border-2 border-white/60 p-3 sm:scale-[0.72] md:scale-90 md:flex-row md:gap-6 md:rounded-[4rem] md:p-5 lg:scale-100">
         
         {/* Main Editor UI */}
         <div className="flex-1 border border-2 border-white/40 rounded-[3.5rem] p-8 relative flex flex-col gap-10">
@@ -59,12 +62,20 @@ export default function FacecardEditor({
             </div>
 
             {/* Right: Photo Slots */}
-            <div className="flex gap-4 justify-center">
+            <div className="relative flex gap-4 justify-center">
+              {photoUploading && (
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[2.5rem] bg-black/55 backdrop-blur-sm">
+                  <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3" />
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/90">Uploading &amp; saving…</p>
+                </div>
+              )}
 
               {/* Slot 1 */}
               <div 
                 onClick={() => handleSlotClick(0)}
-                className="w-[200px] h-[300px] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative cursor-pointer"
+                className={`w-[200px] h-[300px] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${
+                  photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'
+                }`}
               >
                 <img
                   src={user?.displayPictureUrl || "/imageprofile.png"}
@@ -79,7 +90,9 @@ export default function FacecardEditor({
               {/* Slot 2 (Photo Order 0) */}
               <div 
                 onClick={() => handleSlotClick(1)}
-                className="w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden cursor-pointer bg-white/5 hover:bg-white/10 transition-colors"
+                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${
+                  photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer hover:bg-white/10'
+                }`}
               >
                 {user?.photos?.find(p => p.order === 0)?.url ? (
                   <img src={user.photos.find(p => p.order === 0).url} className="w-full h-full object-cover" alt="Photo 2" />
@@ -91,7 +104,9 @@ export default function FacecardEditor({
               {/* Slot 3 (Photo Order 1) */}
               <div 
                 onClick={() => handleSlotClick(2)}
-                className="w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden cursor-pointer bg-white/5 hover:bg-white/10 transition-colors"
+                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${
+                  photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer hover:bg-white/10'
+                }`}
               >
                 {user?.photos?.find(p => p.order === 1)?.url ? (
                   <img src={user.photos.find(p => p.order === 1).url} className="w-full h-full object-cover" alt="Photo 3" />
@@ -105,7 +120,7 @@ export default function FacecardEditor({
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 className="hidden"
               />
             </div>
@@ -272,7 +287,11 @@ export default function FacecardEditor({
                   </div>
                </div>
 
-               <button className="w-full py-4 border-2 border-white/30 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs">
+               <button
+                  type="button"
+                  onClick={() => onOpenFacecardPreview?.()}
+                  className="w-full py-4 border-2 border-white/30 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
+                >
                   <span className="text-lg">👁</span> Facecard
                </button>
             </div>

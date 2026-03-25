@@ -9,6 +9,30 @@ import { calculateProgress, getZodiac, calculateAge } from '@/lib/facecard-utils
 import FacecardDisplay from '@/components/facecard/FacecardDisplay';
 import FacecardEditor from '@/components/facecard/FacecardEditor';
 import SelectorOverlay from '@/components/facecard/SelectorOverlay';
+import FaceCard from '@/components/Home/FaceCard';
+
+const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+const PROFILE_PHOTO_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+async function readHttpErrorMessage(res) {
+  try {
+    const ct = res.headers.get('content-type');
+    if (ct && ct.includes('application/json')) {
+      const j = await res.json();
+      if (typeof j === 'string') return j;
+      return j.message || j.error || j.detail || `Request failed (${res.status})`;
+    }
+    const t = await res.text();
+    return (t && t.trim()) || res.statusText || `HTTP ${res.status}`;
+  } catch {
+    return res.statusText || `HTTP ${res.status}`;
+  }
+}
+
+function musicTrackKey(song) {
+  if (!song) return '';
+  return song.spotifyId || song.id || `${song.name || ''}\0${song.artist || ''}`;
+}
 
 export default function FacecardPage() {
   const router = useRouter();
@@ -31,6 +55,9 @@ export default function FacecardPage() {
   const [musicResults, setMusicResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchingItems, setIsSearchingItems] = useState(false);
+  const [facecardPreviewOpen, setFacecardPreviewOpen] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [musicSavingKey, setMusicSavingKey] = useState(null);
 
   const progress = calculateProgress(user);
 
@@ -46,7 +73,7 @@ export default function FacecardPage() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const uid = payload.sub || payload.uid;
         
-        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values`, {
+        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -106,6 +133,7 @@ export default function FacecardPage() {
   }, [showSelector, masterInterests, masterValues, masterBrands]);
 
   const toggleInterest = async (interestId, name) => {
+    if (!user) return;
     const token = localStorage.getItem('accessToken');
     const current = user.interests || [];
     const exists = current.find(i => i.interestId === interestId);
@@ -120,7 +148,7 @@ export default function FacecardPage() {
     setUser(prev => ({ ...prev, interests: newList }));
 
     try {
-      await fetch(API.USERS.UPDATE_INTERESTS, {
+      const res = await fetch(API.USERS.UPDATE_INTERESTS, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -128,12 +156,15 @@ export default function FacecardPage() {
         },
         body: JSON.stringify({ interestIds: newList.map(i => i.interestId) })
       });
+      if (!res.ok) throw new Error('save failed');
     } catch (err) {
       console.error('Error saving interests:', err);
+      setUser(prev => (prev ? { ...prev, interests: current } : prev));
     }
   };
 
   const toggleValue = async (valueId, name) => {
+    if (!user) return;
     const token = localStorage.getItem('accessToken');
     const current = user.values || [];
     const exists = current.find(v => v.valueId === valueId);
@@ -148,7 +179,7 @@ export default function FacecardPage() {
     setUser(prev => ({ ...prev, values: newList }));
 
     try {
-      await fetch(API.USERS.UPDATE_VALUES, {
+      const res = await fetch(API.USERS.UPDATE_VALUES, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -156,12 +187,15 @@ export default function FacecardPage() {
         },
         body: JSON.stringify({ valueIds: newList.map(v => v.valueId) })
       });
+      if (!res.ok) throw new Error('save failed');
     } catch (err) {
       console.error('Error saving values:', err);
+      setUser(prev => (prev ? { ...prev, values: current } : prev));
     }
   };
 
   const toggleBrand = async (brandId, name, logoUrl) => {
+    if (!user) return;
     const token = localStorage.getItem('accessToken');
     const current = user.brandPreferences || [];
     const exists = current.find(b => b.brandId === brandId);
@@ -177,7 +211,7 @@ export default function FacecardPage() {
     setUser(prev => ({ ...prev, brandPreferences: newList }));
 
     try {
-      await fetch(API.USERS.UPDATE_BRANDS, {
+      const res = await fetch(API.USERS.UPDATE_BRANDS, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -185,8 +219,10 @@ export default function FacecardPage() {
         },
         body: JSON.stringify({ brandIds: newList.map(b => b.brandId) })
       });
+      if (!res.ok) throw new Error('save failed');
     } catch (err) {
       console.error('Error saving brands:', err);
+      setUser(prev => (prev ? { ...prev, brandPreferences: current } : prev));
     }
   };
 
@@ -289,13 +325,21 @@ export default function FacecardPage() {
     if (!query || query.length < 2) return;
     setSearchingMusic(true);
     try {
-      const response = await fetch(API.USERS.SEARCH_MUSIC(query));
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(API.USERS.SEARCH_MUSIC(query), {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       if (response.ok) {
         const data = await response.json();
         setMusicResults(data.songs || []);
+      } else {
+        const msg = await readHttpErrorMessage(response);
+        console.warn('[facecard] music search failed:', msg);
+        setMusicResults([]);
       }
     } catch (err) {
       console.error('Error searching music:', err);
+      setMusicResults([]);
     } finally {
       setSearchingMusic(false);
     }
@@ -303,116 +347,179 @@ export default function FacecardPage() {
 
   const selectMusic = async (song) => {
     const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('You need to be signed in to save music.');
+      return;
+    }
+    const key = musicTrackKey(song);
+    if (!song?.name) {
+      alert('Invalid song selection.');
+      return;
+    }
+    if (musicSavingKey) return;
+
+    setMusicSavingKey(key);
     try {
       const createRes = await fetch(API.USERS.CREATE_MUSIC_PREFERENCE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           songName: song.name,
           artistName: song.artist,
           albumArtUrl: song.albumArtUrl,
-          spotifyId: song.spotifyId
-        })
+          spotifyId: song.spotifyId,
+        }),
       });
-      
-      if (createRes.ok) {
-        const { song: savedSong } = await createRes.json();
-        const updateRes = await fetch(API.USERS.UPDATE_MUSIC_PREFERENCE, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ musicPreferenceId: savedSong.id })
-        });
 
-        if (updateRes.ok) {
-          setUser(prev => ({ ...prev, musicPreference: savedSong }));
-          setShowSelector(null);
-        }
+      if (!createRes.ok) {
+        const msg = await readHttpErrorMessage(createRes);
+        alert(msg || 'Could not save this song. Try another or try again.');
+        return;
       }
+
+      const body = await createRes.json().catch(() => ({}));
+      const savedSong = body.song || body;
+      const prefId = savedSong?.id;
+      if (!prefId) {
+        alert('Server did not return a saved song. Please try again.');
+        return;
+      }
+
+      const updateRes = await fetch(API.USERS.UPDATE_MUSIC_PREFERENCE, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ musicPreferenceId: prefId }),
+      });
+
+      if (!updateRes.ok) {
+        const msg = await readHttpErrorMessage(updateRes);
+        alert(msg || 'Song was saved but could not be linked to your profile.');
+        return;
+      }
+
+      setUser((prev) => ({ ...prev, musicPreference: savedSong }));
+      setShowSelector(null);
+      setMusicQuery('');
+      setMusicResults([]);
     } catch (err) {
       console.error('Error selecting music:', err);
+      alert(err instanceof Error ? err.message : 'Could not save music. Please try again.');
+    } finally {
+      setMusicSavingKey(null);
     }
   };
 
   const handleSlotClick = (slotIndex) => {
+    if (photoUploading) return;
     setActiveSlot(slotIndex);
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
     if (!file) return;
 
+    if (!PROFILE_PHOTO_ACCEPT_TYPES.includes(file.type)) {
+      alert('Please choose a JPEG, PNG, WebP, or GIF image.');
+      return;
+    }
+    if (file.size > PROFILE_PHOTO_MAX_BYTES) {
+      alert('Image must be 10MB or smaller.');
+      return;
+    }
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('You need to be signed in to upload photos.');
+      return;
+    }
+
+    setPhotoUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', 'profile-photos');
 
-      const token = localStorage.getItem('accessToken');
       const uploadRes = await fetch(`${API.FILES.UPLOAD}?folder=profile-photos`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
       if (!uploadRes.ok) {
-        const errData = await uploadRes.json().catch(() => ({}));
-        console.error('❌ Upload Response Error:', uploadRes.status, errData);
-        throw new Error(`Upload failed: ${errData.message || uploadRes.statusText}`);
+        const msg = await readHttpErrorMessage(uploadRes);
+        alert(msg || 'Upload failed. Check the file and try again.');
+        return;
       }
+
       const uploadData = await uploadRes.json();
-      const uploadedUrl = uploadData.file.url;
-      
+      const uploadedUrl = uploadData?.file?.url;
+      if (!uploadedUrl) {
+        alert('Upload succeeded but no file URL was returned. Please try again.');
+        return;
+      }
+
       if (activeSlot === 0) {
         const updateRes = await fetch(API.USERS.UPDATE_PROFILE, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ displayPictureUrl: uploadedUrl })
+          body: JSON.stringify({ displayPictureUrl: uploadedUrl }),
         });
-        if (updateRes.ok) {
-          setUser(prev => ({ ...prev, displayPictureUrl: uploadedUrl }));
+        if (!updateRes.ok) {
+          const msg = await readHttpErrorMessage(updateRes);
+          alert(msg || 'Photo uploaded but profile could not be updated.');
+          return;
         }
+        setUser((prev) => ({ ...prev, displayPictureUrl: uploadedUrl }));
       } else {
         const order = activeSlot - 1;
         const photoRes = await fetch(API.USERS.ADD_PHOTO, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ url: uploadedUrl, order })
+          body: JSON.stringify({ url: uploadedUrl, order }),
         });
-        if (photoRes.ok) {
-          setUser(prev => {
-            const currentPhotos = prev.photos || [];
-            const existingIndex = currentPhotos.findIndex(p => p.order === order);
-            const newPhotos = [...currentPhotos];
-            if (existingIndex > -1) {
-              newPhotos[existingIndex] = { ...newPhotos[existingIndex], url: uploadedUrl };
-            } else {
-              newPhotos.push({ url: uploadedUrl, order });
-              newPhotos.sort((a, b) => a.order - b.order);
-            }
-            return { ...prev, photos: newPhotos };
-          });
+        if (!photoRes.ok) {
+          const msg = await readHttpErrorMessage(photoRes);
+          alert(msg || 'Photo uploaded but could not be added to your gallery.');
+          return;
         }
+        setUser((prev) => {
+          const currentPhotos = prev.photos || [];
+          const existingIndex = currentPhotos.findIndex((p) => p.order === order);
+          const newPhotos = [...currentPhotos];
+          if (existingIndex > -1) {
+            newPhotos[existingIndex] = { ...newPhotos[existingIndex], url: uploadedUrl };
+          } else {
+            newPhotos.push({ url: uploadedUrl, order });
+            newPhotos.sort((a, b) => a.order - b.order);
+          }
+          return { ...prev, photos: newPhotos };
+        });
       }
     } catch (err) {
       console.error('Photo upload error:', err);
-      alert('Failed to upload photo. Please try again.');
+      alert(err instanceof Error ? err.message : 'Failed to upload photo. Please try again.');
     } finally {
-      if (e.target) e.target.value = '';
+      setPhotoUploading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-purple-950 flex items-center justify-center text-white">
+      <div className="flex h-dvh max-h-dvh items-center justify-center overflow-hidden bg-purple-950 text-white">
         <div className="animate-pulse">Loading Facecard...</div>
       </div>
     );
@@ -423,31 +530,28 @@ export default function FacecardPage() {
   const firstName = user?.username?.split(' ')[0] || "User";
 
   return (
-    <>
+    <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {view === 'success' ? (
-        <FacecardDisplay 
-          user={user} 
-          firstName={firstName} 
-          zodiac={zodiac} 
-          age={age} 
-          setView={setView} 
-          router={router} 
-        />
+        <FacecardDisplay user={user} age={age} setView={setView} router={router} />
       ) : (
-        <FacecardEditor 
-          user={user} 
-          firstName={firstName} 
-          zodiac={zodiac} 
-          setView={setView} 
-          handleSlotClick={handleSlotClick} 
-          setShowSelector={setShowSelector} 
+        <FacecardEditor
+          user={user}
+          firstName={firstName}
+          zodiac={zodiac}
+          setView={setView}
+          handleSlotClick={handleSlotClick}
+          setShowSelector={setShowSelector}
           progress={progress}
           fileInputRef={fileInputRef}
           handleFileChange={handleFileChange}
+          onOpenFacecardPreview={() => setFacecardPreviewOpen(true)}
+          photoUploading={photoUploading}
         />
       )}
+      </div>
 
-      <SelectorOverlay 
+      <SelectorOverlay
         showSelector={showSelector}
         setShowSelector={setShowSelector}
         user={user}
@@ -463,11 +567,50 @@ export default function FacecardPage() {
         searchingMusic={searchingMusic}
         searchMusic={searchMusic}
         selectMusic={selectMusic}
+        musicSavingKey={musicSavingKey}
+        musicTrackKey={musicTrackKey}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         searchItems={searchItems}
         isSearchingItems={isSearchingItems}
       />
-    </>
+
+      {facecardPreviewOpen && user && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setFacecardPreviewOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="relative max-h-[90dvh] overflow-hidden rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Facecard preview"
+          >
+            <button
+              type="button"
+              className="absolute -top-3 -right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-purple-950 text-2xl text-white shadow-lg transition hover:bg-white/10"
+              onClick={() => setFacecardPreviewOpen(false)}
+              aria-label="Close preview"
+            >
+              ×
+            </button>
+            <p className="mb-3 text-center text-xs uppercase tracking-[0.2em] text-white/70">
+              Preview — what others see before a call
+            </p>
+            <div className="flex justify-center">
+              <FaceCard
+                user={{
+                  ...user,
+                  age,
+                  city: user?.preferredCity || user?.city,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

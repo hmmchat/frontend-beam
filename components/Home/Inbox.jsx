@@ -122,6 +122,42 @@ function sortByLatest(list) {
   });
 }
 
+/** Persists last-open cursor so refresh + WS unread match WhatsApp-style “seen up to here”. */
+const INBOX_LAST_SEEN_PREFIX = "inbox:lastSeenMsgV2:";
+
+function readStoredLastSeen(convId) {
+  if (typeof window === "undefined" || convId == null || convId === "") return null;
+  try {
+    const raw = sessionStorage.getItem(INBOX_LAST_SEEN_PREFIX + String(convId));
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    if (o == null || typeof o !== "object") return null;
+    const lastSeenAtMs = Number(o.lastSeenAtMs);
+    if (Number.isNaN(lastSeenAtMs)) return null;
+    return {
+      lastSeenAtMs,
+      lastSeenMessageId: o.lastSeenMessageId != null ? String(o.lastSeenMessageId) : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLastSeen(convId, { lastSeenAtMs, lastSeenMessageId }) {
+  if (typeof window === "undefined" || convId == null || convId === "") return;
+  try {
+    sessionStorage.setItem(
+      INBOX_LAST_SEEN_PREFIX + String(convId),
+      JSON.stringify({
+        lastSeenAtMs,
+        lastSeenMessageId: lastSeenMessageId != null ? String(lastSeenMessageId) : null,
+      })
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 function fetchNetworkMessage(err) {
   if (err instanceof TypeError && (err.message === "Failed to fetch" || err.message === "Load failed")) {
     return "Network error — check your connection, VPN, and that NEXT_PUBLIC_API_BASE_URL points to a reachable API.";
@@ -206,6 +242,7 @@ export default function Inbox() {
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   /** After the user opens a conversation, we switch to client-side unread:
    *  badge = number of incoming messages received after last open while the conversation is closed.
+   *  last-seen is also written to sessionStorage so refresh does not fall back to stale server totals.
    */
   const [clientUnreadByConv, setClientUnreadByConv] = useState({});
   const clientLastSeenAtByConvRef = useRef({});
@@ -664,6 +701,35 @@ export default function Inbox() {
     [scheduleNotificationBadge]
   );
 
+  const computeSidebarUnread = useCallback((conversation, convKey, selected) => {
+    if (selected) return 0;
+    const stored = readStoredLastSeen(convKey);
+    const lastSeenMs =
+      clientLastSeenAtByConvRef.current[convKey] ?? stored?.lastSeenAtMs ?? null;
+    if (lastSeenMs == null && !stored) {
+      return Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+    }
+    const lm = conversation.lastMessage;
+    if (!lm) return 0;
+    const me = currentUserId != null ? String(currentUserId) : null;
+    const lmFrom = lm.fromUserId != null ? String(lm.fromUserId) : null;
+    if (me && lmFrom && lmFrom === me) return 0;
+    if (
+      stored?.lastSeenMessageId != null &&
+      lm.id != null &&
+      String(lm.id) === String(stored.lastSeenMessageId)
+    ) {
+      return 0;
+    }
+    const lmT = new Date(lm.createdAt || 0).getTime();
+    if (Number.isNaN(lmT)) {
+      return Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+    }
+    if (lastSeenMs != null && lmT <= lastSeenMs) return 0;
+    const cu = clientUnreadByConv[convKey] ?? 0;
+    return Math.max(cu, 1);
+  }, [clientUnreadByConv, currentUserId]);
+
   const loadThreadMessages = useCallback(
     async (chat) => {
       if (!chat) {
@@ -696,18 +762,26 @@ export default function Inbox() {
           setThreadNextCursor(data?.nextCursor);
           setThreadHasMore(Boolean(data?.hasMore));
           // Switch this conversation to client-side unread tracking.
-          // Set last-seen to the newest message we just loaded, then reset unread to 0.
+          // Set last-seen to the newest loaded message; persist so refresh does not show stale server totals.
+          const cidStr = String(cid);
           if (msgs?.length) {
-            let maxMs = 0;
-            for (const m of msgs) {
-              const t = new Date(m.createdAt || 0).getTime();
-              if (!Number.isNaN(t) && t > maxMs) maxMs = t;
-            }
-            clientLastSeenAtByConvRef.current[String(cid)] = maxMs;
+            const best = msgs.reduce((a, b) => {
+              const ta = new Date(a.createdAt || 0).getTime();
+              const tb = new Date(b.createdAt || 0).getTime();
+              return tb >= ta ? b : a;
+            });
+            const maxMs = new Date(best.createdAt || 0).getTime();
+            clientLastSeenAtByConvRef.current[cidStr] = Number.isNaN(maxMs) ? Date.now() : maxMs;
+            writeStoredLastSeen(cidStr, {
+              lastSeenAtMs: clientLastSeenAtByConvRef.current[cidStr],
+              lastSeenMessageId: best?.id ?? null,
+            });
           } else {
-            clientLastSeenAtByConvRef.current[String(cid)] = Date.now();
+            const now = Date.now();
+            clientLastSeenAtByConvRef.current[cidStr] = now;
+            writeStoredLastSeen(cidStr, { lastSeenAtMs: now, lastSeenMessageId: null });
           }
-          setClientUnreadByConv((prev) => ({ ...prev, [String(cid)]: 0 }));
+          setClientUnreadByConv((prev) => ({ ...prev, [cidStr]: 0 }));
           await markReadForPeer(chat.otherUser?.id || chat.otherUserId);
           return;
         }
@@ -834,7 +908,10 @@ export default function Inbox() {
         // Client-side unread: once we've opened a conversation, badge is driven by
         // incoming messages received after the last time we opened it.
         const convKey = String(m.conversationId);
-        const lastSeenAtMs = clientLastSeenAtByConvRef.current[convKey];
+        const lastSeenAtMs =
+          clientLastSeenAtByConvRef.current[convKey] ??
+          readStoredLastSeen(convKey)?.lastSeenAtMs ??
+          null;
         if (
           isIncoming &&
           lastSeenAtMs != null &&
@@ -1638,13 +1715,11 @@ export default function Inbox() {
                       const cid = conversation.conversationId || conversation.id || i;
                       const selected = activeChat?.rowKey === (conversation.conversationId || conversation.id);
                       const convKey = String(conversation.conversationId || conversation.id || i);
-                      const lastSeenAtMs = clientLastSeenAtByConvRef.current[convKey];
-                      const unreadCountDisplay =
+                      const unreadCountDisplay = computeSidebarUnread(
+                        conversation,
+                        convKey,
                         selected
-                          ? 0
-                          : lastSeenAtMs != null
-                            ? Math.max(0, Math.floor(Number(clientUnreadByConv[convKey] ?? 0)))
-                            : Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+                      );
                       const unread = unreadCountDisplay > 0;
                       const st = conversation.userStatus;
                       const live = Boolean(

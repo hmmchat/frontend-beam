@@ -32,9 +32,19 @@ export default function Onboarding() {
   const [suggestions, setSuggestions] = useState([]);
   const [isShuffleLoading, setIsShuffleLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isOverlayMode, setIsOverlayMode] = useState(false);
 
   // Get userId from token on mount
   useEffect(() => {
+    // Overlay deep link: /onboarding?intent=1&overlay=1 should land directly on step 2.
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const overlay = sp.get('overlay') === '1';
+      const intent = sp.get('intent') === '1';
+      if (overlay) setIsOverlayMode(true);
+      if (intent) setStep(2);
+    } catch (_) {}
+
     const checkUserProfile = async () => {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -688,7 +698,14 @@ if (prompt.trim() && accessToken) {
           {/* Bottom actions */}
           <div className="pt-4 flex gap-4">
             <button
-               onClick={() => setStep(1)}
+               onClick={() => {
+                 if (isOverlayMode) {
+                   // Ask parent overlay to close and return to call/matchmaking.
+                   window.parent?.postMessage('overlay:close', '*');
+                   return;
+                 }
+                 setStep(1);
+               }}
                className="flex-1 border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition"
             >
                ← Back

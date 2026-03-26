@@ -68,6 +68,10 @@ export default function FacecardPage() {
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
     setTargetUserId(String(sp.get('userId') || '').trim());
+    const requestedView = String(sp.get('view') || '').trim().toLowerCase();
+    if (requestedView === 'success' || requestedView === 'editor') {
+      setView(requestedView);
+    }
   }, []);
 
   useEffect(() => {

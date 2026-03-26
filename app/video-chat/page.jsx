@@ -6,6 +6,8 @@ import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import clsx from 'clsx';
 import FaceCard from '@/components/Home/FaceCard';
+import OverlayLayer from '@/components/ui/OverlayLayer';
+import CoinModal from '@/components/modals/CoinModal';
 
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
@@ -290,6 +292,8 @@ export default function VideoChat() {
   const [chatMessages, setChatMessages] = useState([]); // { userId, message, name, id }
   const [chatInput, setChatInput] = useState('');
   const [showChatInput, setShowChatInput] = useState(false);
+  const [coins, setCoins] = useState(0);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastHud, setBroadcastHud] = useState({ viewerCount: 0, waitlistCount: 0, lastShareMsg: '', shareOpen: false, shareUrl: '' });
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -298,6 +302,7 @@ export default function VideoChat() {
   const [waitlistError, setWaitlistError] = useState('');
   const [selectedWaitlistUser, setSelectedWaitlistUser] = useState(null);
   const [broadcastChatWarning, setBroadcastChatWarning] = useState('');
+  const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
@@ -354,6 +359,16 @@ export default function VideoChat() {
       el.srcObject = stream;
     }
   }, [remoteStreams]);
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const res = await apiRequest(API.WALLET.GET_BALANCE).catch(() => null);
+        if (res) setCoins(res.balance || 0);
+      } catch (e) {}
+    };
+    fetchWallet();
+  }, []);
 
   function cleanup() {
     // Close WebSocket
@@ -1800,6 +1815,58 @@ export default function VideoChat() {
                </div>
             </div>
             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              {!showChatInput && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCoinModalOpen(true)}
+                    className={clsx(
+                      'flex items-center gap-2',
+                      'rounded-full',
+                      'border border-white/15',
+                      'bg-black/50',
+                      'backdrop-blur-md',
+                      'px-4 py-2',
+                      'text-white',
+                      'hover:bg-white/10',
+                      'active:scale-95',
+                      'transition'
+                    )}
+                    title="Add coins"
+                  >
+                    <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
+                    <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
+                    <span className="text-lg leading-none -mt-[1px]">+</span>
+                  </button>
+
+                  <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                      title="Messages"
+                    >
+                      <img src="/assets/chat-with-indicator.svg" className="w-6 h-6" alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                      title="History"
+                    >
+                      <img src="/assets/history.svg" className="w-6 h-6" alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition overflow-hidden border border-white/10"
+                      title="Profile"
+                    >
+                      <img src="/assets/ico.png" className="w-full h-full object-cover" alt="" />
+                    </button>
+                  </div>
+                </div>
+              )}
                <LocalVideoSection {...localVideoProps} />
             </div>
           </>
@@ -1816,6 +1883,58 @@ export default function VideoChat() {
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
             />
              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+               {!showChatInput && (
+                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                   <button
+                     type="button"
+                     onClick={() => setIsCoinModalOpen(true)}
+                     className={clsx(
+                       'flex items-center gap-2',
+                       'rounded-full',
+                       'border border-white/15',
+                       'bg-black/50',
+                       'backdrop-blur-md',
+                       'px-4 py-2',
+                       'text-white',
+                       'hover:bg-white/10',
+                       'active:scale-95',
+                       'transition'
+                     )}
+                     title="Add coins"
+                   >
+                     <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
+                     <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
+                     <span className="text-lg leading-none -mt-[1px]">+</span>
+                   </button>
+
+                   <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
+                     <button
+                       type="button"
+                       onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
+                       className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                       title="Messages"
+                     >
+                       <img src="/assets/chat-with-indicator.svg" className="w-6 h-6" alt="" />
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
+                       className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                       title="History"
+                     >
+                       <img src="/assets/history.svg" className="w-6 h-6" alt="" />
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
+                       className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition overflow-hidden border border-white/10"
+                       title="Profile"
+                     >
+                       <img src="/assets/ico.png" className="w-full h-full object-cover" alt="" />
+                     </button>
+                   </div>
+                 </div>
+               )}
                <LocalVideoSection {...localVideoProps} />
             </div>
           </>
@@ -1842,6 +1961,58 @@ export default function VideoChat() {
                 onKickParticipant={() => handleKickRemote(remoteStreams[1].userId)}
               />
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+                {!showChatInput && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsCoinModalOpen(true)}
+                      className={clsx(
+                        'flex items-center gap-2',
+                        'rounded-full',
+                        'border border-white/15',
+                        'bg-black/50',
+                        'backdrop-blur-md',
+                        'px-4 py-2',
+                        'text-white',
+                        'hover:bg-white/10',
+                        'active:scale-95',
+                        'transition'
+                      )}
+                      title="Add coins"
+                    >
+                      <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
+                      <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
+                      <span className="text-lg leading-none -mt-[1px]">+</span>
+                    </button>
+
+                    <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
+                      <button
+                        type="button"
+                        onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                        title="Messages"
+                      >
+                        <img src="/assets/chat-with-indicator.svg" className="w-6 h-6" alt="" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                        title="History"
+                      >
+                        <img src="/assets/history.svg" className="w-6 h-6" alt="" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition overflow-hidden border border-white/10"
+                        title="Profile"
+                      >
+                        <img src="/assets/ico.png" className="w-full h-full object-cover" alt="" />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <LocalVideoSection {...localVideoProps} />
               </div>
             </div>
@@ -1877,6 +2048,59 @@ export default function VideoChat() {
               onKickParticipant={() => handleKickRemote(remoteStreams[2].userId)}
             />
             <div className={clsx('relative', 'min-h-0', 'min-w-0', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              {/* Tile-attached nav + coins */}
+              {!showChatInput && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCoinModalOpen(true)}
+                    className={clsx(
+                      'flex items-center gap-2',
+                      'rounded-full',
+                      'border border-white/15',
+                      'bg-black/50',
+                      'backdrop-blur-md',
+                      'px-4 py-2',
+                      'text-white',
+                      'hover:bg-white/10',
+                      'active:scale-95',
+                      'transition'
+                    )}
+                    title="Add coins"
+                  >
+                    <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
+                    <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
+                    <span className="text-lg leading-none -mt-[1px]">+</span>
+                  </button>
+
+                  <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                      title="Messages"
+                    >
+                      <img src="/assets/chat-with-indicator.svg" className="w-6 h-6" alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
+                      title="History"
+                    >
+                      <img src="/assets/history.svg" className="w-6 h-6" alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
+                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition overflow-hidden border border-white/10"
+                      title="Profile"
+                    >
+                      <img src="/assets/ico.png" className="w-full h-full object-cover" alt="" />
+                    </button>
+                  </div>
+                </div>
+              )}
               <LocalVideoSection {...localVideoProps} />
             </div>
           </div>
@@ -1895,6 +2119,17 @@ export default function VideoChat() {
             </button>
           </>
         )}
+
+        {/* In-call nav moved onto local tile */}
+
+        <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+
+        <OverlayLayer
+          open={overlay.open}
+          url={overlay.url}
+          title={overlay.title}
+          onClose={() => setOverlay({ open: false, url: '', title: '' })}
+        />
 
         {/* Broadcast HUD (left-side asset) */}
         {isBroadcasting && (

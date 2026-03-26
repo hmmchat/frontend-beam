@@ -61,6 +61,7 @@ export default function useVideoChatRoom() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [showChatInput, setShowChatInput] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -865,6 +866,16 @@ export default function useVideoChatRoom() {
         });
         break;
       }
+
+      case 'broadcast-started': {
+        setIsBroadcasting(true);
+        break;
+      }
+
+      case 'broadcast-stopped': {
+        setIsBroadcasting(false);
+        break;
+      }
     }
   };
 
@@ -912,6 +923,15 @@ export default function useVideoChatRoom() {
     if (!roomInfo?.roomId || !userIdRef.current) return;
     send({ type: 'start-broadcast', data: { roomId: roomInfo.roomId } });
     try { await setPresenceStatus('IN_BROADCAST_AVAILABLE'); } catch (_) {}
+    setIsBroadcasting(true);
+    setShowRandomness(false);
+  };
+
+  const handleStopBeamcast = async () => {
+    if (!roomInfo?.roomId || !userIdRef.current) return;
+    send({ type: 'stop-broadcast', data: { roomId: roomInfo.roomId } });
+    try { await setPresenceStatus('IN_SQUAD_AVAILABLE'); } catch (_) {}
+    setIsBroadcasting(false);
     setShowRandomness(false);
   };
 
@@ -940,7 +960,10 @@ export default function useVideoChatRoom() {
     showIcebreaker, chatMessages, chatInput, setChatInput, showChatInput, setShowChatInput,
     localVideoRef, remoteVideoRef, localStreamRef,
     handleSendFriendRequest, toggleCam, handleIcebreaker, toggleRandomness, handlePullStranger,
-    handleBeamcast, sendChatMessage, handleLeave, handleLeaveGroupOrRaincheck, handleKickRemote,
+    handleBeamcast,
+    handleStopBeamcast,
+    isBroadcasting,
+    sendChatMessage, handleLeave, handleLeaveGroupOrRaincheck, handleKickRemote,
     isValidFriendTargetUserId, sameParticipantId
   };
 }

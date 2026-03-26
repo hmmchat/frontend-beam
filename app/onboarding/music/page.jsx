@@ -116,7 +116,7 @@ export default function MusicOnboarding() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">What's Your Vibe? 🎵</h1>
+          <h1 className="text-4xl font-bold mb-4">What&apos;s Your Vibe? 🎵</h1>
           <p className="text-white/70 text-lg">
             Search and select your favorite song
           </p>

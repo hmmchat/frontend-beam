@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { API } from '@/lib/api';
 import { calculateProgress, getZodiac, calculateAge } from '@/lib/facecard-utils';
 
@@ -36,10 +36,10 @@ function musicTrackKey(song) {
 
 export default function FacecardPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [view, setView] = useState('success'); // 'success' or 'editor'
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [targetUserId, setTargetUserId] = useState('');
   const fileInputRef = useRef(null);
   const [activeSlot, setActiveSlot] = useState(null);
 
@@ -63,11 +63,16 @@ export default function FacecardPage() {
 
   const progress = calculateProgress(user);
 
+  // Read ?userId=... without using useSearchParams() (avoids Suspense requirement).
   useEffect(() => {
-    if (searchParams.get('view') === 'editor') {
-      setView('editor');
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    setTargetUserId(String(sp.get('userId') || '').trim());
+    const requestedView = String(sp.get('view') || '').trim().toLowerCase();
+    if (requestedView === 'success' || requestedView === 'editor') {
+      setView(requestedView);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -79,9 +84,13 @@ export default function FacecardPage() {
 
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const uid = payload.sub || payload.uid;
+        const authUid = payload.sub || payload.uid;
+        const effectiveUid = targetUserId || authUid;
         
-        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden`, {
+        const canEdit = !targetUserId || String(effectiveUid) === String(authUid);
+        if (!canEdit) setView('success'); // force read-only facecard view
+
+        const response = await fetch(`${API.USERS.GET_USER(effectiveUid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -136,7 +145,13 @@ export default function FacecardPage() {
 
     fetchProfile();
     fetchChoices();
-  }, [router]);
+  }, [router, targetUserId]);
+
+  // Prevent switching to editor when viewing someone else's facecard.
+  const safeSetView = (nextView) => {
+    if (targetUserId) return;
+    setView(nextView);
+  };
 
   useEffect(() => {
     if (!showSelector) {
@@ -573,13 +588,13 @@ export default function FacecardPage() {
     <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {view === 'success' ? (
-        <FacecardDisplay user={user} age={age} setView={setView} router={router} />
+        <FacecardDisplay user={user} age={age} setView={safeSetView} router={router} />
       ) : (
         <FacecardEditor
           user={user}
           firstName={firstName}
           zodiac={zodiac}
-          setView={setView}
+          setView={safeSetView}
           handleSlotClick={handleSlotClick}
           setShowSelector={setShowSelector}
           progress={progress}

@@ -11,17 +11,14 @@ import { API, apiRequest } from "@/lib/api";
 export default function History() {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
-  const [myUserId, setMyUserId] = useState(null);
+  const [timelinesBySessionId, setTimelinesBySessionId] = useState({});
   const [loading, setLoading] = useState(true);
-  const [expandedSessions, setExpandedSessions] = useState({});
-  const [timelineBySession, setTimelineBySession] = useState({});
-  const [timelineLoadingBySession, setTimelineLoadingBySession] = useState({});
 
   useEffect(() => {
-    setMyUserId(localStorage.getItem("userId"));
     const fetchHistory = async () => {
       try {
-        // GET /streaming/history is authenticated via JWT - no userId param needed
+        // GET /streaming/history is authenticated via JWT \u2014 no userId param needed
+        // Backend clamps to max 10 per user.
         const data = await apiRequest(API.STREAMING.GET_HISTORY(10));
         setCalls(data.calls || []);
       } catch (err) {
@@ -34,27 +31,33 @@ export default function History() {
     fetchHistory();
   }, []);
 
-  const fetchTimeline = async (sessionId) => {
-    if (timelineBySession[sessionId]) return;
-    setTimelineLoadingBySession((prev) => ({ ...prev, [sessionId]: true }));
-    try {
-      const data = await apiRequest(API.STREAMING.GET_HISTORY_TIMELINE(sessionId));
-      setTimelineBySession((prev) => ({ ...prev, [sessionId]: data.timeline || [] }));
-    } catch (err) {
-      console.error("Failed to fetch history timeline:", err);
-      setTimelineBySession((prev) => ({ ...prev, [sessionId]: [] }));
-    } finally {
-      setTimelineLoadingBySession((prev) => ({ ...prev, [sessionId]: false }));
-    }
-  };
+  // Fetch timeline for each call so the UI can show pull/kick/exit + join order.
+  useEffect(() => {
+    if (!calls?.length) return;
 
-  const toggleTimeline = (sessionId) => {
-    setExpandedSessions((prev) => {
-      const next = !prev[sessionId];
-      if (next) fetchTimeline(sessionId);
-      return { ...prev, [sessionId]: next };
-    });
-  };
+    let cancelled = false;
+    const run = async () => {
+      const next = {};
+      await Promise.allSettled(
+        calls.map(async (c) => {
+          try {
+            const timelineCall = await apiRequest(API.STREAMING.GET_HISTORY_TIMELINE(c.sessionId));
+            next[c.sessionId] = timelineCall?.timeline || [];
+          } catch (e) {
+            // Keep UI resilient if timeline fails for one call.
+            next[c.sessionId] = [];
+          }
+        })
+      );
+
+      if (!cancelled) setTimelinesBySessionId(next);
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [calls]);
 
   const formatDuration = (seconds) => {
     if (!seconds) return "0:00";
@@ -76,15 +79,7 @@ export default function History() {
     }).replace(',', ' |') + " IST";
   };
 
-  const formatTimelineTime = (dateStr) => {
-    if (!dateStr) return "";
-    return new Date(dateStr).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      timeZone: "Asia/Kolkata",
-    });
-  };
+  const viewerId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   return (
     <div className="h-screen w-full relative text-white overflow-hidden">
@@ -135,8 +130,67 @@ export default function History() {
                   key={call.sessionId}
                   className="border border-white/30 rounded-[36px] md:p-4 p-2 space-y-4"
                 >
+                  {/* Call-level activity summary (priority-ish events) */}
+                  {timelinesBySessionId[call.sessionId] ? (
+                    (() => {
+                      const timeline = timelinesBySessionId[call.sessionId] || [];
+                      const participantById = Object.fromEntries(
+                        (call.participants || []).map((p) => [String(p.userId), p])
+                      );
+
+                      const joinedEvents = timeline
+                        .filter((e) => e.eventType === "participant_joined_time")
+                        .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+                      const joinOrder = joinedEvents
+                        .slice(0, 3)
+                        .map((e) => participantById[String(e.userId)]?.username || "User")
+                        .join(" → ");
+
+                      const pulledIn = timeline
+                        .find((e) => e.eventType === "participant_joined_via_pull_stranger" && viewerId && String(e.userId) === String(viewerId));
+                      const kicked = timeline
+                        .find((e) => e.eventType === "participant_kicked" && viewerId && String(e.userId) === String(viewerId));
+                      const exited = timeline
+                        .find((e) => e.eventType === "participant_left_time" && viewerId && String(e.userId) === String(viewerId));
+
+                      const primaryEvents = [
+                        pulledIn ? { label: "Pulled stranger", at: pulledIn.at } : null,
+                        kicked ? { label: "Kicked out", at: kicked.at } : null,
+                        exited ? { label: "Exited", at: exited.at } : null,
+                      ].filter(Boolean);
+
+                      return (
+                        <div className="flex flex-col gap-2">
+                          {primaryEvents.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {primaryEvents.map((e, idx) => (
+                                <div
+                                  key={`${call.sessionId}-evt-${idx}`}
+                                  className="text-[11px] px-3 py-1 rounded-full border border-white/20 bg-black/30 text-white/90 font-semibold"
+                                >
+                                  {e.label}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-white/60">No special events recorded for this call.</div>
+                          )}
+
+                          {joinOrder && (
+                            <div className="text-xs text-white/70">
+                              Join order: <span className="text-white">{joinOrder}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-xs text-white/60">Loading timeline...</div>
+                  )}
+
                   {call.participants
-                    .filter((p) => p.userId !== myUserId)
+                    .filter(p => p.userId !== localStorage.getItem("userId"))
                     .map((participant, i) => (
                       <div
                         key={participant.userId}
@@ -159,10 +213,7 @@ export default function History() {
                             {formatDate(call.startedAt)}
                           </span>
 
-                          <IoMdInformationCircleOutline
-                            onClick={() => toggleTimeline(call.sessionId)}
-                            className="text-lg ml-auto cursor-pointer opacity-70 hover:opacity-100"
-                          />
+                          <IoMdInformationCircleOutline className="text-lg ml-auto cursor-pointer opacity-70 hover:opacity-100" />
                         </div>
 
                         {/* HR always */}
@@ -172,7 +223,12 @@ export default function History() {
                         <div className="flex items-center justify-between">
                           {/* Left */}
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-full overflow-hidden border border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/facecard?userId=${encodeURIComponent(participant.userId)}`)}
+                              className="w-14 h-14 rounded-full overflow-hidden border border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                              aria-label={`View ${participant.username || 'this user'} face card`}
+                            >
                               <Image
                                 src={participant.displayPictureUrl || "/assets/avatarDefault.png"}
                                 alt="user"
@@ -180,7 +236,7 @@ export default function History() {
                                 height={56}
                                 className="object-cover w-full h-full"
                               />
-                            </div>
+                            </button>
 
                             <div className="space-y-1">
                               <div className="font-medium">{participant.username || "Stranger"}</div>
@@ -207,42 +263,6 @@ export default function History() {
                         </div>
                       </div>
                     ))}
-
-                  {expandedSessions[call.sessionId] && (
-                    <div className="border border-white/20 rounded-3xl p-4 bg-black/20">
-                      <div className="text-xs uppercase tracking-wider text-white/70 mb-3">
-                        Room timeline
-                      </div>
-
-                      {timelineLoadingBySession[call.sessionId] ? (
-                        <div className="text-sm text-white/60">Loading timeline...</div>
-                      ) : (timelineBySession[call.sessionId] || []).length === 0 ? (
-                        <div className="text-sm text-white/60">No timeline events found.</div>
-                      ) : (
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                          {(timelineBySession[call.sessionId] || []).map((event, idx) => (
-                            <div
-                              key={`${call.sessionId}-${event.at}-${event.eventType}-${idx}`}
-                              className="flex items-start gap-3 border border-white/15 rounded-xl px-3 py-2"
-                            >
-                              <div className="text-[11px] text-white/60 min-w-[46px]">
-                                {formatTimelineTime(event.at)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium text-white">
-                                  {event.title}
-                                  {event.username ? ` · ${event.username}` : ""}
-                                </div>
-                                <div className="text-xs text-white/70 break-words">
-                                  {event.description}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               ))
             )}

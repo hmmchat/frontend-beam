@@ -156,7 +156,7 @@ export default function SelectorOverlay({
                 );
               })}
               {musicQuery.length > 2 && musicResults.length === 0 && !searchingMusic && (
-                <p className="text-center opacity-40 py-10">No songs found for "{musicQuery}"</p>
+                <p className="text-center opacity-40 py-10">{`No songs found for "${musicQuery}"`}</p>
               )}
             </div>
           </div>

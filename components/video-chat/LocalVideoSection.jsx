@@ -13,6 +13,7 @@ export default function LocalVideoSection({
   sendChatMessage,
   showChatInput,
   setShowChatInput,
+  onChatButtonClick,
   toggleCam,
   showLeaveNextButton,
   onLeaveOrNext,
@@ -42,7 +43,21 @@ export default function LocalVideoSection({
         </div>
       )}
 
-      <div className={clsx('absolute', 'bottom-32', 'left-6', 'flex', 'flex-col', 'gap-3', 'max-w-[70%]', 'z-10')}>
+      <div
+        className={clsx(
+          'absolute',
+          'left-6',
+          'flex',
+          'flex-col',
+          'gap-3',
+          'max-w-[70%]',
+          'max-h-[36vh]',
+          'overflow-y-auto',
+          'pr-1',
+          'z-10',
+          showChatInput ? 'bottom-44' : 'bottom-28'
+        )}
+      >
         {chatMessages.map((msg) => (
           <div key={msg.id} className={clsx('bg-white/10', 'backdrop-blur-xl', 'px-4', 'py-2.5', 'rounded-[1.2rem]', 'text-white', 'text-xs', 'font-bold', 'border', 'border-white/10', 'animate-in', 'fade-in', 'slide-in-from-left-4')}>
             <span className="text-white/50 mr-2 text-[10px]">{msg.name}:</span>
@@ -68,7 +83,11 @@ export default function LocalVideoSection({
             <button type="button" onClick={toggleCam} className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95">
               <img src="/video.png" className={`w-5 h-5 object-contain ${isCamOff ? 'opacity-30' : 'opacity-100'}`} alt="Video" />
             </button>
-            <button type="button" onClick={() => setShowChatInput(!showChatInput)} className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95">
+            <button
+              type="button"
+              onClick={onChatButtonClick || (() => setShowChatInput(!showChatInput))}
+              className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+            >
               <img src="/msg.png" className="w-5 h-5 object-contain" alt="Message" />
             </button>
             {showLeaveNextButton && onLeaveOrNext && (

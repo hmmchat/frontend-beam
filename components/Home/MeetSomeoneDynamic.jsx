@@ -16,11 +16,12 @@ import clsx from 'clsx';
 import LocationCard from './LocationCard';
 import SearchingPopup from './SearchingPopup';
 import CoinModal from '@/components/modals/CoinModal';
+import MeetSomeoneNew from './MeetSomeoneNew';
+import OverlayLayer from '@/components/ui/OverlayLayer';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
   const flowLog = (...args) => console.log('[RaincheckFlow][home]', ...args);
-  const [mounted, setMounted] = useState(false);
   const [currentCard, setCurrentCard] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,10 +40,7 @@ export default function MeetSomeoneDynamic() {
   const [waitingMatchedUser, setWaitingMatchedUser] = useState(null);
   const [matchedRoom, setMatchedRoom] = useState(null);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -722,24 +720,30 @@ export default function MeetSomeoneDynamic() {
     };
   }, [isSearching, waitingForMatch, swiping, sessionId, mode]);
 
-  if (!mounted) {
-    return (
-      <div
-        suppressHydrationWarning
-        className="relative min-h-screen w-full overflow-hidden font-[family-name:var(--font-otomanopee)]"
-      />
-    );
-  }
-
   return (
-    <div
-      suppressHydrationWarning
-      className="relative min-h-screen w-full overflow-hidden font-[family-name:var(--font-otomanopee)]"
-    >
-      <main className="grid grid-cols-1 md:grid-cols-2 h-screen overflow-hidden">
+    <div className={clsx('relative', 'min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
+      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
 
-        {/* LEFT SIDE */}
-<div className="relative flex h-full min-h-0 flex-col items-center justify-center overflow-hidden bg-gradient-purple-dark px-6 py-6 md:py-6 lg:py-6">
+        {/* MOBILE VIEW (CONDITIONAL) */}
+        {!isSearching && (
+          <div className="block md:hidden h-full w-full fixed inset-0 z-[1000]">
+            <MeetSomeoneNew 
+              onMeetNow={async () => {
+                setIsSearching(true);
+                await handleUpdateStatus('AVAILABLE');
+                await fetchCard(null, true);
+              }}
+              mode={mode}
+              setMode={setMode}
+              coins={coins}
+              activeUsers={activeMeetingCount}
+              myProfile={myProfile}
+            />
+          </div>
+        )}
+
+        {/* LEFT SIDE (DESKTOP) */}
+<div className="hidden md:flex relative h-full min-h-0 flex-col items-center justify-center overflow-hidden bg-gradient-purple-dark px-6 py-10 md:py-16 lg:py-8">
 
   <div
     className="absolute inset-0 z-0"
@@ -767,7 +771,7 @@ export default function MeetSomeoneDynamic() {
             >
               {!currentCard || isResumeLoading ? (
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-                  <div className={clsx('border-2', 'border-white/30', 'w-full', 'h-full', 'max-h-full', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
+                  <div className={clsx('border-2', 'border-white/30', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
                     <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
                       <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
                       <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Finding face cards...</p>
@@ -802,64 +806,66 @@ export default function MeetSomeoneDynamic() {
                     'flex-1',
                     'flex-col',
                     'items-center',
-                    'justify-start',
+                    'justify-center',
                     'overflow-hidden',
-                    'pt-2',
-                    'pb-1'
+                    'py-0'
                   )}
                 >
-                  <div className="relative flex w-full max-w-[392px] flex-col items-center justify-start gap-2 px-2">
-                    <FaceCard user={currentCard} />
+                  <div className="relative flex w-full max-w-[420px] flex-col items-center justify-center gap-2 px-2">
+                    {/* Face card + raincheck/accept must stay together as a single unit */}
+                    <div className="flex w-full flex-col items-center gap-2">
+                      <FaceCard user={currentCard} />
 
-  {/* BUTTONS */}
-<div className="flex w-full max-w-[352px] shrink-0 items-center justify-between gap-2 px-1">
+                      {/* BUTTONS */}
+                      <div className="flex w-full max-w-[370px] shrink-0 items-center justify-between gap-2 px-1">
 
-  {/* LEFT ARROW */}
-  <button className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center text-white text-xs">
-    ←
-  </button>
+                        {/* LEFT ARROW */}
+                        <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
+                          ←
+                        </button>
 
-  {/* RAINCHECK */}
-  <button
-    onClick={handleRaincheck}
-    className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
-  >
-    Raincheck!
-  </button>
+                        {/* RAINCHECK */}
+                        <button
+                          onClick={handleRaincheck}
+                          className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
+                        >
+                          Raincheck!
+                        </button>
 
-  {/* MEET */}
-  <button
-    onClick={handleProceed}
-    className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
-  >
-    Meet rn
-  </button>
+                        {/* MEET (accept) */}
+                        <button
+                          onClick={handleProceed}
+                          className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
+                        >
+                          Meet rn
+                        </button>
 
-  {/* RIGHT ARROW */}
-  <button className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center text-white text-xs">
-    →
-  </button>
+                        {/* RIGHT ARROW */}
+                        <button className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center text-white text-xs">
+                          →
+                        </button>
 
-</div>
+                      </div>
+                    </div>
 
-  {/* STATUS MESSAGE SLOT (kept outside controls so layout doesn't jump) */}
-  <div className="mt-1 w-full max-w-[352px] h-[44px]">
-    <div
-      className={clsx(
-        'flex h-full w-full items-center justify-center overflow-hidden rounded-xl border px-3 text-[10px] text-center font-semibold leading-tight transition-opacity',
-        (waitingForMatch || (currentCard?.otherUserAccepted && !waitingForMatch))
-          ? 'border-yellow-300/40 bg-yellow-300/10 text-yellow-100 opacity-100'
-          : 'border-transparent bg-transparent text-transparent opacity-0 pointer-events-none select-none'
-      )}
-    >
-      <span>
-        {waitingForMatch
-          ? `Request sent to ${waitingMatchedUser?.username || 'them'}. Waiting for acceptance...`
-          : `${currentCard?.username || "Your match"} accepted your match. Tap “Meet rn” to join now.`}
-      </span>
-    </div>
-  </div>
-
+                    {/* STATUS MESSAGE SLOT (always reserved height; never shifts face card/buttons) */}
+                    <div className="mt-1 w-full max-w-[370px] h-[52px]">
+                      <div
+                        className={clsx(
+                          'flex h-full w-full items-center justify-center overflow-hidden rounded-xl border px-4 text-[10px] text-center font-semibold leading-tight transition-opacity',
+                          waitingForMatch || (currentCard?.otherUserAccepted && !waitingForMatch)
+                            ? 'border-yellow-300/40 bg-yellow-300/10 text-yellow-100 opacity-100'
+                            : 'border-transparent bg-transparent text-transparent opacity-0 pointer-events-none select-none'
+                        )}
+                        style={{ lineHeight: 1.1 }}
+                      >
+                        <span className="px-1">
+                          {waitingForMatch
+                            ? `Request sent to ${waitingMatchedUser?.username || 'them'}. Waiting for acceptance...`
+                            : `${currentCard?.username || 'Your match'} accepted your match. Tap “Meet rn” to join now.`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -867,7 +873,7 @@ export default function MeetSomeoneDynamic() {
                 </div>
           ) : (
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-                  <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-full', 'max-h-full', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
+              <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
                 <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
                   <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
                   <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>
@@ -887,8 +893,8 @@ export default function MeetSomeoneDynamic() {
 
 
 
-        {/* RIGHT SIDE */}
-<div className="relative w-full h-full overflow-hidden">
+        {/* RIGHT SIDE (DESKTOP) */}
+<div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
 <div
   className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
@@ -904,35 +910,34 @@ export default function MeetSomeoneDynamic() {
 
           {/* Overlay for better text visibility */}
 
-          {!isSearching && (
-            <div className={clsx('absolute', 'top-8', 'left-8', 'z-50')}>
+
+
+          {/* Coins pill (restore original placement) */}
+          <div className={clsx('absolute', 'top-8', 'left-8', 'z-50')}>
             <Button variant="outline" width="hex" onClick={() => setIsCoinModalOpen(true)}>
-              <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} />
+              <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
-              <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} />
+              <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
             </Button>
           </div>
-          )}
-
 
           {/* Top Icons */}
-          {!isSearching && (
           <div className={clsx('absolute', 'top-4', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-5', 'z-50', 'bg-black/40', 'rounded-full', 'px-12', 'py-1')}>
             <button 
-              onClick={() => router.push('/inbox')}
+              onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
               className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
             >
               <img src="/assets/chat-with-indicator.svg" className={clsx('w-8', 'h-8')} />
             </button>
             <button 
-              onClick={() => router.push('/history')}
+              onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
               className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
             >
               <img src="/assets/history.svg" className={clsx('w-8', 'h-8')} />
             </button>
                {/* Profile */}
 <button 
-  onClick={() => router.push('/facecard?view=editor')}
+  onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
   className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden"
 >
   {myProfile ? (
@@ -960,23 +965,18 @@ export default function MeetSomeoneDynamic() {
         
 
           </div>
-          )}
 
 
-          {!isSearching && (
           <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-50', 'flex', 'gap-2')}>
   <button
     type="button"
-    onClick={() => router.push('/onboarding?step=2&from=home')}
-    className="rounded-full transition hover:scale-105 active:scale-95"
-    title="Add prompt"
+    onClick={() => setOverlay({ open: true, url: '/onboarding?intent=1&overlay=1', title: 'Intent' })}
+    className={clsx('w-12', 'h-12', 'rounded-full', 'hover:bg-white/10', 'active:scale-95', 'transition', 'flex', 'items-center', 'justify-center')}
+    title="Intent"
   >
-    <img src="/icones1.png" alt="Add prompt" className={clsx('w-12', 'h-12')} />
+    <img src="/icones1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
   </button>
-
-  <img src="/icones2.png" alt="" className={clsx('w-12', 'h-12')} />
 </div>
-          )}
 
           
 
@@ -1140,15 +1140,26 @@ export default function MeetSomeoneDynamic() {
 
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
           <div className={clsx('absolute', 'px-5', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
+            {/* Beam TV: no icon rendered here (only click target over existing UI) */}
+            <button
+              type="button"
+              onClick={() => router.push('/beam-tv')}
+              className={clsx(
+                'absolute',
+                'left-0',
+                'bottom-0',
+                'w-16',
+                'h-16',
+                'bg-transparent',
+                'rounded-2xl'
+              )}
+              aria-label="Beam TV"
+              title="Beam TV"
+            />
             {mode === 'solo' ? (
-              <button
-                type="button"
-                onClick={() => router.push('/beam-tv')}
-                className="rounded-full transition hover:scale-105 active:scale-95"
-                title="Open Beam TV"
-              >
+              <div>
                 <img src="/assets/Frame.png" className={clsx('w-9', 'h-9')} />
-              </button>
+              </div>
             ) : (
               <div className={clsx('flex', 'gap-6')}>
                 <img src="/assets/search-icon.svg" alt="" className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-10', 'h-10')} />
@@ -1188,6 +1199,13 @@ export default function MeetSomeoneDynamic() {
 
 
       </main>
+
+      <OverlayLayer
+        open={overlay.open}
+        url={overlay.url}
+        title={overlay.title}
+        onClose={() => setOverlay({ open: false, url: '', title: '' })}
+      />
 
       {/* Modals */}
       <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />

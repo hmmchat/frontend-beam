@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API } from "@/lib/api";
 
@@ -12,7 +12,6 @@ import { API } from "@/lib/api";
 
 export default function Onboarding() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [showSignIn, setShowSignIn] = useState(false);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -27,17 +26,25 @@ export default function Onboarding() {
   const [photos, setPhotos] = useState([null, null, null]);
   const [photoFiles, setPhotoFiles] = useState([null, null, null]);
   const fileRefs = useRef([]);
-  const initialStepParam = Number.parseInt(searchParams?.get('step') || '1', 10);
-  const initialStep = Number.isFinite(initialStepParam) && initialStepParam >= 1 && initialStepParam <= 2 ? initialStepParam : 1;
-  const [step, setStep] = useState(initialStep);
+  const [step, setStep] = useState(1);
   const [prompt, setPrompt] = useState("");
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isShuffleLoading, setIsShuffleLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isOverlayMode, setIsOverlayMode] = useState(false);
 
   // Get userId from token on mount
   useEffect(() => {
+    // Overlay deep link: /onboarding?intent=1&overlay=1 should land directly on step 2.
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const overlay = sp.get('overlay') === '1';
+      const intent = sp.get('intent') === '1';
+      if (overlay) setIsOverlayMode(true);
+      if (intent) setStep(2);
+    } catch (_) {}
+
     const checkUserProfile = async () => {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -386,15 +393,6 @@ if (prompt.trim() && accessToken) {
         backgroundPosition: "center"
       }}
     >
-      {searchParams?.get('from') === 'home' && (
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="absolute top-4 left-4 z-20 px-4 py-2 rounded-full border border-white/50 bg-black/30 hover:bg-black/40 transition text-sm"
-        >
-          ← Back to home
-        </button>
-      )}
 
 
 
@@ -408,7 +406,7 @@ if (prompt.trim() && accessToken) {
             <div className="mx-auto ">
 
             <h3 className="text-4xl font-bold outfit-font">Welcome onboard,</h3>
-              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95 outfit-font">Okeeyy! Let&apos;s get you started,</p>
+              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95 outfit-font">Okeeyy! Let's get you started,</p>
               <p className="md:text-xl text-sm md:font-medium opacity-95 outfit-font">Just get done with the itsy bitsy stuff first</p>
             </div>
           </div>
@@ -700,7 +698,14 @@ if (prompt.trim() && accessToken) {
           {/* Bottom actions */}
           <div className="pt-4 flex gap-4">
             <button
-               onClick={() => setStep(1)}
+               onClick={() => {
+                 if (isOverlayMode) {
+                   // Ask parent overlay to close and return to call/matchmaking.
+                   window.parent?.postMessage('overlay:close', '*');
+                   return;
+                 }
+                 setStep(1);
+               }}
                className="flex-1 border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition"
             >
                ← Back

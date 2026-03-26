@@ -62,7 +62,7 @@ const FaceCard = ({ user }) => {
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
 
   return (
-    <div className="w-[min(352px,39vw)] max-w-[352px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/40 p-[2px] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
+    <div className="w-[min(370px,38vw,calc(66vh/1.83))] shrink-0 aspect-[360/660] rounded-[30px] border border-white/40 p-[2px] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {/* HEADER */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">

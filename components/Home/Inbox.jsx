@@ -238,7 +238,7 @@ export default function Inbox() {
   const [listLoadError, setListLoadError] = useState(null);
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [threadActionBusy, setThreadActionBusy] = useState(false);
-  const [peerTyping, setPeerTyping] = useState(false);
+  const [peerTypingByConv, setPeerTypingByConv] = useState({});
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   /** After the user opens a conversation, we switch to client-side unread:
    *  badge = number of incoming messages received after last open while the conversation is closed.
@@ -261,9 +261,13 @@ export default function Inbox() {
   const loadListsRef = useRef(null);
   const loadNotificationBadgeRef = useRef(null);
   const markReadForPeerRef = useRef(null);
+  const inboxListRef = useRef([]);
+  const requestsListRef = useRef([]);
+  const sentListRef = useRef([]);
   /** Debounced list sync when WS payload has no unreadCountForConversation (older friend-service). */
   const wsListSyncTimerRef = useRef(null);
-  const typingTimerRef = useRef(null);
+  const peerTypingTimersRef = useRef({});
+  const myTypingStopTimerRef = useRef(null);
   const lastTypingSentAtRef = useRef(0);
   /** After prepending older messages: { scrollHeight, scrollTop } before update */
   const pendingThreadScrollRestoreRef = useRef(null);
@@ -706,8 +710,12 @@ export default function Inbox() {
     const stored = readStoredLastSeen(convKey);
     const lastSeenMs =
       clientLastSeenAtByConvRef.current[convKey] ?? stored?.lastSeenAtMs ?? null;
+    const serverUnread = Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+    const clientUnread = Math.max(0, Math.floor(Number(clientUnreadByConv[convKey] ?? 0)));
+    // If we've never opened this conversation (no last-seen), fall back to server unread,
+    // but still allow WS-driven client increments to show accurate counts.
     if (lastSeenMs == null && !stored) {
-      return Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+      return Math.max(serverUnread, clientUnread);
     }
     const lm = conversation.lastMessage;
     if (!lm) return 0;
@@ -723,11 +731,12 @@ export default function Inbox() {
     }
     const lmT = new Date(lm.createdAt || 0).getTime();
     if (Number.isNaN(lmT)) {
-      return Math.max(0, Math.floor(Number(conversation.unreadCount || 0)));
+      return Math.max(serverUnread, clientUnread);
     }
     if (lastSeenMs != null && lmT <= lastSeenMs) return 0;
-    const cu = clientUnreadByConv[convKey] ?? 0;
-    return Math.max(cu, 1);
+    // Conversation has activity after last seen; prefer authoritative counts.
+    // Previously this returned at least 1, which masked multi-unread states as "1".
+    return Math.max(serverUnread, clientUnread, 1);
   }, [clientUnreadByConv, currentUserId]);
 
   const loadThreadMessages = useCallback(
@@ -854,6 +863,12 @@ export default function Inbox() {
   loadListsRef.current = loadLists;
   loadNotificationBadgeRef.current = scheduleNotificationBadge;
   markReadForPeerRef.current = markReadForPeer;
+  inboxListRef.current = inboxList;
+  requestsListRef.current = requestsList;
+  sentListRef.current = sentList;
+
+  const activeConvId = activeChat?.conversationId != null ? String(activeChat.conversationId) : null;
+  const peerTyping = Boolean(activeConvId && peerTypingByConv[activeConvId]);
 
   const connectFriendsWs = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") || "" : "";
@@ -912,15 +927,11 @@ export default function Inbox() {
           clientLastSeenAtByConvRef.current[convKey] ??
           readStoredLastSeen(convKey)?.lastSeenAtMs ??
           null;
-        if (
-          isIncoming &&
-          lastSeenAtMs != null &&
-          !isActiveIncoming &&
-          convKey &&
-          !isSyntheticConversationId(convKey)
-        ) {
+        if (isIncoming && !isActiveIncoming && convKey && !isSyntheticConversationId(convKey)) {
           const t = new Date(m.createdAt || 0).getTime();
-          if (!Number.isNaN(t) && t > lastSeenAtMs) {
+          // If we have last-seen, only count messages after it; otherwise still increment so
+          // closed-thread unread badges can reflect multiple WS messages even without server totals.
+          if (lastSeenAtMs == null || (!Number.isNaN(t) && t > lastSeenAtMs)) {
             setClientUnreadByConv((prev) => ({
               ...prev,
               [convKey]: (prev[convKey] ?? 0) + 1,
@@ -961,7 +972,9 @@ export default function Inbox() {
                 ? 0
                 : nextUnread != null
                   ? nextUnread
-                  : Number(c.unreadCount || 0);
+                  : isIncoming
+                    ? Number(c.unreadCount || 0) + 1
+                    : Number(c.unreadCount || 0);
               return {
                 ...c,
                 lastMessage: {
@@ -1032,14 +1045,52 @@ export default function Inbox() {
 
       if (msg.type === "friend:typing" && msg.data) {
         const t = msg.data;
+        const convId = t.conversationId != null ? String(t.conversationId) : null;
+        if (!convId) return;
+
+        const all = [
+          ...(inboxListRef.current || []),
+          ...(requestsListRef.current || []),
+          ...(sentListRef.current || []),
+        ];
+        const row = all.find((c) => String(c?.conversationId || c?.id) === convId) || null;
+        const expectedOtherId = row?.otherUserId != null ? String(row.otherUserId) : null;
         const ac = activeChatRef.current;
         const activeCid = ac?.conversationId || ac?.rowKey;
-        if (!activeCid || String(activeCid) !== String(t.conversationId)) return;
-        if (String(t.fromUserId) !== String(ac?.otherUserId || ac?.otherUser?.id)) return;
-        setPeerTyping(Boolean(t.isTyping));
-        // auto-clear if we stop receiving typing pings
-        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-        typingTimerRef.current = setTimeout(() => setPeerTyping(false), 2500);
+        const activeOtherId = ac?.otherUserId || ac?.otherUser?.id || null;
+
+        const from = t.fromUserId != null ? String(t.fromUserId) : null;
+        // Be permissive: typing is transient UI. If conversationId matches, show it.
+        // Only drop if we *know* the event is for a different peer.
+        if (expectedOtherId && from && from !== expectedOtherId) return;
+        if (
+          !expectedOtherId &&
+          activeCid &&
+          String(activeCid) === convId &&
+          activeOtherId &&
+          from &&
+          String(from) !== String(activeOtherId)
+        ) {
+          return;
+        }
+
+        setPeerTypingByConv((prev) => {
+          const next = { ...(prev || {}) };
+          if (t.isTyping) next[convId] = true;
+          else delete next[convId];
+          return next;
+        });
+
+        if (peerTypingTimersRef.current[convId]) clearTimeout(peerTypingTimersRef.current[convId]);
+        peerTypingTimersRef.current[convId] = setTimeout(() => {
+          setPeerTypingByConv((prev) => {
+            if (!prev?.[convId]) return prev;
+            const next = { ...prev };
+            delete next[convId];
+            return next;
+          });
+          peerTypingTimersRef.current[convId] = null;
+        }, 2500);
       }
 
       if (msg.type === "friend:read" && msg.data) {
@@ -1102,22 +1153,16 @@ export default function Inbox() {
         // ignore
       }
       wsRef.current = null;
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current);
-        typingTimerRef.current = null;
-      }
+      if (myTypingStopTimerRef.current) clearTimeout(myTypingStopTimerRef.current);
+      myTypingStopTimerRef.current = null;
+      const timers = peerTypingTimersRef.current || {};
+      Object.keys(timers).forEach((k) => {
+        if (timers[k]) clearTimeout(timers[k]);
+      });
+      peerTypingTimersRef.current = {};
     };
     // Intentionally do not depend on activeChat; single socket for screen lifetime.
   }, [connectFriendsWs]);
-
-  // Reset typing indicator when switching chats.
-  useEffect(() => {
-    setPeerTyping(false);
-    if (typingTimerRef.current) {
-      clearTimeout(typingTimerRef.current);
-      typingTimerRef.current = null;
-    }
-  }, [activeChat?.rowKey]);
 
   const emitTyping = useCallback(
     (isTyping) => {
@@ -1133,8 +1178,9 @@ export default function Inbox() {
           JSON.stringify({
             type: "friend:typing",
             data: {
-              conversationId: activeChat.conversationId,
-              otherUserId: activeChat.otherUserId,
+              // friend-service expects string IDs
+              conversationId: String(activeChat.conversationId),
+              otherUserId: String(activeChat.otherUserId),
               isTyping: Boolean(isTyping),
             },
           })
@@ -1715,6 +1761,7 @@ export default function Inbox() {
                       const cid = conversation.conversationId || conversation.id || i;
                       const selected = activeChat?.rowKey === (conversation.conversationId || conversation.id);
                       const convKey = String(conversation.conversationId || conversation.id || i);
+                      const showTypingPreview = Boolean(peerTypingByConv?.[convKey]);
                       const unreadCountDisplay = computeSidebarUnread(
                         conversation,
                         convKey,
@@ -1780,8 +1827,28 @@ export default function Inbox() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-sm text-white/50 truncate font-light mt-0.5">
-                              {lastMessagePreview(conversation)}
+                            <div className="text-sm text-white/50 truncate font-light mt-0.5 flex items-center gap-2">
+                              {showTypingPreview ? (
+                                <>
+                                  <span className="text-white/70 font-semibold">Typing</span>
+                                  <span className="inline-flex items-center gap-1" aria-hidden>
+                                    <span
+                                      className="w-1.5 h-1.5 rounded-full bg-white/65 animate-bounce"
+                                      style={{ animationDelay: "0ms" }}
+                                    />
+                                    <span
+                                      className="w-1.5 h-1.5 rounded-full bg-white/65 animate-bounce"
+                                      style={{ animationDelay: "150ms" }}
+                                    />
+                                    <span
+                                      className="w-1.5 h-1.5 rounded-full bg-white/65 animate-bounce"
+                                      style={{ animationDelay: "300ms" }}
+                                    />
+                                  </span>
+                                </>
+                              ) : (
+                                lastMessagePreview(conversation)
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2102,6 +2169,30 @@ export default function Inbox() {
                           );
                         })
                       )}
+                      {peerTyping && (
+                        <div className="flex items-start gap-2">
+                          <div className="p-3 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-md">
+                            <div
+                              className="flex items-center gap-1.5 h-4"
+                              aria-label="Typing indicator"
+                              title="Typing"
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                                style={{ animationDelay: "0ms" }}
+                              />
+                              <span
+                                className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                                style={{ animationDelay: "150ms" }}
+                              />
+                              <span
+                                className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce"
+                                style={{ animationDelay: "300ms" }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2128,9 +2219,9 @@ export default function Inbox() {
                           const v = e.target.value;
                           setNewMessage(v);
                           emitTyping(Boolean(v.trim()));
-                          if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                          if (myTypingStopTimerRef.current) clearTimeout(myTypingStopTimerRef.current);
                           // send "stop typing" shortly after user stops input
-                          typingTimerRef.current = setTimeout(() => emitTyping(false), 900);
+                          myTypingStopTimerRef.current = setTimeout(() => emitTyping(false), 900);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !textInputLocked) sendMessage();

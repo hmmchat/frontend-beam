@@ -1,101 +1,63 @@
 "use client";
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+
 import MobileHome from '@/components/Mobile/MobileHome'
 import DesktopHome from '@/components/Mobile/DesktopHome'
-import MeetSomeoneDynamic from '@/components/Home/MeetSomeoneDynamic'
-import MeetSomeoneNew from '@/components/Home/MeetSomeoneNew'
-import { API, apiRequest } from '@/lib/api'
+const MeetSomeoneDynamic = dynamic(() => import('@/components/Home/MeetSomeoneDynamic'), { ssr: false })
 
 const MyComponent = () => {
+  const [isMounted, setIsMounted] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isSearchingOnMobile, setIsSearchingOnMobile] = useState(false);
-  const [activeMeetingCount, setActiveMeetingCount] = useState(0);
-  const [myProfile, setMyProfile] = useState(null);
-  const [coins, setCoins] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    
-    const isValidToken = (t) => {
-      try {
-        if (!t || t === 'null' || t === 'undefined' || t.split('.').length !== 3) return false;
-        const payload = JSON.parse(atob(t.split('.')[1]));
-        if (payload.exp && payload.exp * 1000 < Date.now()) return false;
-        return true;
-      } catch (e) {
-        return false;
+    setIsMounted(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token || token === 'null' || token === 'undefined' || token.split('.').length !== 3) {
+        setIsLoggedIn(false);
+        setAuthChecked(true);
+        return;
       }
-    };
-
-    if (isValidToken(token)) {
+      // If it's malformed, treat as logged out. Expiry is handled by backend 401.
+      JSON.parse(atob(token.split('.')[1]));
       setIsLoggedIn(true);
-      fetchInitialData();
-    } else {
+    } catch (_) {
       setIsLoggedIn(false);
+    } finally {
+      setAuthChecked(true);
+    }
+  }, []);
+
+  // Cleanup invalid tokens (no state writes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!authChecked || isLoggedIn) return;
+    try {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('userId');
       localStorage.removeItem('currentRoom');
-    }
-    setLoading(false);
-  }, []);
+    } catch (_) {}
+  }, [authChecked, isLoggedIn]);
 
-  const fetchInitialData = async () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
-      // Profile
-      const meRes = await apiRequest(API.USERS.GET_ME).catch(() => null);
-      if (meRes?.user) setMyProfile(meRes.user);
-
-      // Active Meetings
-      const metricsRes = await apiRequest(API.USERS.GET_ACTIVE_MEETINGS).catch(() => null);
-      if (metricsRes && typeof metricsRes.count === 'number') {
-        setActiveMeetingCount(metricsRes.count);
-      }
-
-      // Wallet
-      const walletRes = await apiRequest(API.WALLET.GET_BALANCE).catch(() => null);
-      if (walletRes) setCoins(walletRes.balance || 0);
-    } catch (e) {}
-  };
-
-  if (loading) return null;
+  if (!isMounted) {
+    return null;
+  }
 
   if (isLoggedIn) {
-    return (
-      <div className="h-screen w-screen overflow-hidden">
-        {/* Mobile View */}
-        <div className="block md:hidden h-full w-full">
-           {!isSearchingOnMobile ? (
-             <MeetSomeoneNew 
-               onMeetNow={() => setIsSearchingOnMobile(true)}
-               activeUsers={activeMeetingCount}
-               myProfile={myProfile}
-               coins={coins}
-             />
-           ) : (
-             <MeetSomeoneDynamic initialIsSearching={true} />
-           )}
-        </div>
-
-        {/* Desktop View */}
-        <div className="hidden md:block h-full w-full">
-          <MeetSomeoneDynamic />
-        </div>
-      </div>
-    );
+    return <MeetSomeoneDynamic />;
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
-      <div className='hidden md:block h-full w-full'>
+    <div>
+      <div className='hidden md:block'>
         <DesktopHome />
       </div>
-      <div className='block md:hidden h-full w-full'>
+      <div className='block md:hidden'>
         <MobileHome />
       </div>
     </div>

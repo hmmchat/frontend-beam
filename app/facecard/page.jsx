@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { API } from '@/lib/api';
 import { calculateProgress, getZodiac, calculateAge } from '@/lib/facecard-utils';
 
@@ -36,6 +36,7 @@ function musicTrackKey(song) {
 
 export default function FacecardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [view, setView] = useState('success'); // 'success' or 'editor'
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,12 @@ export default function FacecardPage() {
   const [musicSavingKey, setMusicSavingKey] = useState(null);
 
   const progress = calculateProgress(user);
+
+  useEffect(() => {
+    if (searchParams.get('view') === 'editor') {
+      setView('editor');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProfile = async () => {

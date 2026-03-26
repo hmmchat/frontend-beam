@@ -11,13 +11,18 @@ import { API, apiRequest } from "@/lib/api";
 export default function History() {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
+  const [myUserId, setMyUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedSessions, setExpandedSessions] = useState({});
+  const [timelineBySession, setTimelineBySession] = useState({});
+  const [timelineLoadingBySession, setTimelineLoadingBySession] = useState({});
 
   useEffect(() => {
+    setMyUserId(localStorage.getItem("userId"));
     const fetchHistory = async () => {
       try {
-        // GET /streaming/history is authenticated via JWT \u2014 no userId param needed
-        const data = await apiRequest(API.STREAMING.GET_HISTORY(50));
+        // GET /streaming/history is authenticated via JWT - no userId param needed
+        const data = await apiRequest(API.STREAMING.GET_HISTORY(10));
         setCalls(data.calls || []);
       } catch (err) {
         console.error("Failed to fetch history:", err);
@@ -28,6 +33,28 @@ export default function History() {
 
     fetchHistory();
   }, []);
+
+  const fetchTimeline = async (sessionId) => {
+    if (timelineBySession[sessionId]) return;
+    setTimelineLoadingBySession((prev) => ({ ...prev, [sessionId]: true }));
+    try {
+      const data = await apiRequest(API.STREAMING.GET_HISTORY_TIMELINE(sessionId));
+      setTimelineBySession((prev) => ({ ...prev, [sessionId]: data.timeline || [] }));
+    } catch (err) {
+      console.error("Failed to fetch history timeline:", err);
+      setTimelineBySession((prev) => ({ ...prev, [sessionId]: [] }));
+    } finally {
+      setTimelineLoadingBySession((prev) => ({ ...prev, [sessionId]: false }));
+    }
+  };
+
+  const toggleTimeline = (sessionId) => {
+    setExpandedSessions((prev) => {
+      const next = !prev[sessionId];
+      if (next) fetchTimeline(sessionId);
+      return { ...prev, [sessionId]: next };
+    });
+  };
 
   const formatDuration = (seconds) => {
     if (!seconds) return "0:00";
@@ -47,6 +74,16 @@ export default function History() {
       minute: "2-digit",
       hour12: false,
     }).replace(',', ' |') + " IST";
+  };
+
+  const formatTimelineTime = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Kolkata",
+    });
   };
 
   return (
@@ -99,7 +136,7 @@ export default function History() {
                   className="border border-white/30 rounded-[36px] md:p-4 p-2 space-y-4"
                 >
                   {call.participants
-                    .filter(p => p.userId !== localStorage.getItem("userId"))
+                    .filter((p) => p.userId !== myUserId)
                     .map((participant, i) => (
                       <div
                         key={participant.userId}
@@ -122,7 +159,10 @@ export default function History() {
                             {formatDate(call.startedAt)}
                           </span>
 
-                          <IoMdInformationCircleOutline className="text-lg ml-auto cursor-pointer opacity-70 hover:opacity-100" />
+                          <IoMdInformationCircleOutline
+                            onClick={() => toggleTimeline(call.sessionId)}
+                            className="text-lg ml-auto cursor-pointer opacity-70 hover:opacity-100"
+                          />
                         </div>
 
                         {/* HR always */}
@@ -167,6 +207,42 @@ export default function History() {
                         </div>
                       </div>
                     ))}
+
+                  {expandedSessions[call.sessionId] && (
+                    <div className="border border-white/20 rounded-3xl p-4 bg-black/20">
+                      <div className="text-xs uppercase tracking-wider text-white/70 mb-3">
+                        Room timeline
+                      </div>
+
+                      {timelineLoadingBySession[call.sessionId] ? (
+                        <div className="text-sm text-white/60">Loading timeline...</div>
+                      ) : (timelineBySession[call.sessionId] || []).length === 0 ? (
+                        <div className="text-sm text-white/60">No timeline events found.</div>
+                      ) : (
+                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                          {(timelineBySession[call.sessionId] || []).map((event, idx) => (
+                            <div
+                              key={`${call.sessionId}-${event.at}-${event.eventType}-${idx}`}
+                              className="flex items-start gap-3 border border-white/15 rounded-xl px-3 py-2"
+                            >
+                              <div className="text-[11px] text-white/60 min-w-[46px]">
+                                {formatTimelineTime(event.at)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-white">
+                                  {event.title}
+                                  {event.username ? ` · ${event.username}` : ""}
+                                </div>
+                                <div className="text-xs text-white/70 break-words">
+                                  {event.description}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}

@@ -8,6 +8,8 @@ export default function SelectorOverlay({
   toggleInterest,
   toggleValue,
   toggleBrand,
+  allZodiacs,
+  selectZodiac,
   allInterests,
   allValues,
   allBrands,
@@ -55,9 +57,38 @@ export default function SelectorOverlay({
               {showSelector === 'values' && "Select what you care about. These values help connect you with people who share your vision of the world."}
               {showSelector === 'brands' && "Select your favorite brands. These show what you're into and help find people with similar tastes."}
               {showSelector === 'music' && "Pick your anthem. The music you love says a lot about your vibe!"}
+              {showSelector === 'zodiacs' && "Pick your zodiac. We’ll show this on your profile and facecard."}
             </p>
           </div>
         </div>
+
+        {showSelector === 'zodiacs' && (
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-3">
+              {(allZodiacs || []).map((z) => {
+                const isSelected = user?.zodiacId === z.id || user?.zodiac?.id === z.id;
+                return (
+                  <button
+                    key={z.id}
+                    onClick={() => selectZodiac && selectZodiac(z.id)}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
+                      isSelected
+                        ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]'
+                        : 'bg-white/5 text-white border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    {z.imageUrl ? (
+                      <img src={z.imageUrl} alt={z.name} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-white/10" />
+                    )}
+                    <span className="text-sm uppercase tracking-wide">{z.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {showSelector === 'music' && (
           <div className="space-y-6">

@@ -7,6 +7,7 @@ export default function FacecardEditor({
   setView,
   handleSlotClick,
   setShowSelector,
+  onPickZodiac,
   progress,
   fileInputRef,
   handleFileChange,
@@ -184,9 +185,21 @@ export default function FacecardEditor({
             <div className="col-span-7 space-y-12 mb-2">
               
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center text-4xl shadow-inner">
-                    {zodiac.symbol}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof onPickZodiac === 'function') onPickZodiac();
+                      else setShowSelector('zodiacs');
+                    }}
+                    className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition"
+                    aria-label="Change zodiac"
+                  >
+                    {user?.zodiac?.imageUrl ? (
+                      <img src={user.zodiac.imageUrl} alt={user.zodiac.name || 'Zodiac'} className="h-full w-full object-contain p-2" />
+                    ) : (
+                      <span className="text-4xl">{zodiac.symbol}</span>
+                    )}
+                  </button>
 
                   <div 
                     onClick={() => setShowSelector('interests')}

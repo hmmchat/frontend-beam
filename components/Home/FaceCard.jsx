@@ -121,9 +121,17 @@ const FaceCard = ({ user }) => {
 
             {/* Zodiac — wider than brand capsule (~46px → ~58px) */}
             <div className="flex w-[58px] shrink-0 flex-col items-center rounded-2xl border border-white/45 bg-black/40 px-1.5 py-2 shadow-inner">
-              <span className="text-[28px] leading-none text-white">{zodiac.symbol}</span>
+              {user?.zodiac?.imageUrl ? (
+                <img
+                  src={user.zodiac.imageUrl}
+                  alt={user.zodiac.name || 'Zodiac'}
+                  className="h-10 w-10 object-contain"
+                />
+              ) : (
+                <span className="text-[28px] leading-none text-white">{zodiac.symbol}</span>
+              )}
               <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                {zodiac.name}
+                {user?.zodiac?.name || zodiac.name}
               </span>
             </div>
 

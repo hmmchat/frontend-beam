@@ -49,7 +49,8 @@ export default function FacecardPage() {
   const [allInterests, setAllInterests] = useState([]);
   const [allValues, setAllValues] = useState([]);
   const [allBrands, setAllBrands] = useState([]);
-  const [showSelector, setShowSelector] = useState(null); // 'interests' | 'values' | 'brands' | 'music'
+  const [allZodiacs, setAllZodiacs] = useState([]);
+  const [showSelector, setShowSelector] = useState(null); // 'interests' | 'values' | 'brands' | 'music' | 'zodiacs'
   const [searchingMusic, setSearchingMusic] = useState(false);
   const [musicQuery, setMusicQuery] = useState("");
   const [musicResults, setMusicResults] = useState([]);
@@ -73,7 +74,7 @@ export default function FacecardPage() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const uid = payload.sub || payload.uid;
         
-        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity`, {
+        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -95,10 +96,11 @@ export default function FacecardPage() {
 
     const fetchChoices = async () => {
       try {
-        const [intRes, valRes, brRes] = await Promise.all([
+        const [intRes, valRes, brRes, zodiacRes] = await Promise.all([
           fetch(API.DISCOVERY.GET_INTERESTS),
           fetch(API.DISCOVERY.GET_VALUES),
-          fetch(API.DISCOVERY.GET_BRANDS)
+          fetch(API.DISCOVERY.GET_BRANDS),
+          fetch(API.USERS.GET_ZODIACS)
         ]);
         if (intRes.ok) {
           const data = (await intRes.json()).interests;
@@ -114,6 +116,11 @@ export default function FacecardPage() {
           const data = (await brRes.json()).brands;
           setMasterBrands(data);
           setAllBrands(data);
+        }
+        if (zodiacRes.ok) {
+          const data = await zodiacRes.json();
+          const z = data?.zodiacs || [];
+          setAllZodiacs(Array.isArray(z) ? z : []);
         }
       } catch (error) {
         console.error('Error fetching choices:', error);
@@ -345,6 +352,32 @@ export default function FacecardPage() {
     }
   };
 
+  const updateZodiac = async (zodiacId) => {
+    if (!zodiacId) return;
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    try {
+      const res = await fetch(API.USERS.UPDATE_ZODIAC, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ zodiacId }),
+      });
+      if (!res.ok) {
+        const msg = await readHttpErrorMessage(res);
+        throw new Error(msg);
+      }
+      const data = await res.json();
+      if (data?.user) setUser(data.user);
+      setShowSelector(null);
+    } catch (e) {
+      console.error('Failed to update zodiac', e);
+      alert(e instanceof Error ? e.message : 'Failed to update zodiac');
+    }
+  };
+
   const selectMusic = async (song) => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -558,6 +591,8 @@ export default function FacecardPage() {
         toggleInterest={toggleInterest}
         toggleValue={toggleValue}
         toggleBrand={toggleBrand}
+        allZodiacs={allZodiacs}
+        selectZodiac={updateZodiac}
         allInterests={allInterests}
         allValues={allValues}
         allBrands={allBrands}

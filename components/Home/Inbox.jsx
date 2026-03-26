@@ -912,15 +912,10 @@ export default function Inbox() {
           clientLastSeenAtByConvRef.current[convKey] ??
           readStoredLastSeen(convKey)?.lastSeenAtMs ??
           null;
-        if (
-          isIncoming &&
-          lastSeenAtMs != null &&
-          !isActiveIncoming &&
-          convKey &&
-          !isSyntheticConversationId(convKey)
-        ) {
-          const t = new Date(m.createdAt || 0).getTime();
-          if (!Number.isNaN(t) && t > lastSeenAtMs) {
+        if (isIncoming && !isActiveIncoming && convKey && !isSyntheticConversationId(convKey)) {
+          // Only track WS-unread once a read-cursor exists (conversation has been opened on this device).
+          // Then, every incoming message while closed increments the badge: 1, 2, 3...
+          if (lastSeenAtMs != null) {
             setClientUnreadByConv((prev) => ({
               ...prev,
               [convKey]: (prev[convKey] ?? 0) + 1,
@@ -1776,7 +1771,7 @@ export default function Inbox() {
                               <span className="truncate">{conversation.otherUser?.username || "User"}</span>
                               {unread && (
                                 <span className="flex-shrink-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-yellow-400 text-black text-[10px] font-black flex items-center justify-center">
-                                  {unreadCountDisplay > 9 ? "9+" : unreadCountDisplay}
+                                  NEW
                                 </span>
                               )}
                             </div>

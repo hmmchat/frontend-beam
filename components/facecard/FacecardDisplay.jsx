@@ -1,3 +1,6 @@
+
+
+
 'use client';
 
 import FaceCard from '@/components/Home/FaceCard';
@@ -14,13 +17,20 @@ export default function FacecardDisplay({ user, age, setView, router }) {
     >
       <div className="mx-auto flex min-h-0 flex-1 flex-col gap-2 px-2 py-2 md:flex-row md:gap-3 md:px-4 md:py-3 max-w-[1200px] w-full">
         {/* Left: facecard */}
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] border-2 border-white/40 md:rounded-[3.5rem] px-2 py-2 md:px-4">
-          <div className="flex min-h-0 w-full max-w-[400px] flex-1 flex-col items-center justify-center gap-1 overflow-hidden md:gap-3">
-            <p className="shrink-0 text-center text-[10px] uppercase tracking-[0.2em] text-white/50 md:text-xs">
-              Your facecard (what others see)
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] md:border-2  md:border-white/40 md:rounded-[3.5rem] px-2 py-2 md:px-4">
+<div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-0 md:gap-1">
+            <p className="shrink-0 text-center text-lg  text-white md:text-xs mt-3">
+              This is  Your FaceCard
             </p>
-            <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden py-1">
-              <div className="origin-center scale-[0.58] sm:scale-[0.72] md:scale-[0.88] lg:scale-100">
+            <p className=' text-sm text-center font-thin font-weight-[500px] mt-2 '>People will see this before meeting you <br/> You Can add more info to get better matches</p>
+
+            
+            <div className="flex w-full items-center justify-center overflow-hidden py-0">
+
+
+<div className="origin-center scale-[0.93] sm:scale-[0.95] md:scale-[0.88] lg:scale-100">
+
+  <div className="w-full max-w-[420px] flex justify-center">
                 <FaceCard
                   user={{
                     ...user,
@@ -28,13 +38,52 @@ export default function FacecardDisplay({ user, age, setView, router }) {
                     city: user?.preferredCity || user?.city,
                   }}
                 />
+
+
+                </div>
               </div>
+
+
+
+
+
+
+
+
+
+              
             </div>
+ <div className="w-full flex shrink-0 space-x-16 md:hidden px-8 mt-0">
+   <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="w-auto px-5  transform rounded-full border border-white/30 py-3 text-sm font-semibold shadow-xl transition-all duration-300 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black active:scale-95 md:py-4 md:text-xl"
+            >
+              Later 🥱
+            </button>
+
+
+            <button
+              type="button"
+              onClick={() => setView('editor')}
+              className="w-auto px-5 transform rounded-full border border-white/30 py-3 text-sm font-semibold shadow-xl transition-all duration-300 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black active:scale-95 md:py-4 md:text-xl"
+            >
+              Add More Info 😤
+            </button>
+
+           
           </div>
+
+
+
+          </div>
+          
         </div>
 
+
+
         {/* Right: copy + actions */}
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] border-2 border-white/40 px-4 py-3 text-center md:rounded-[3.5rem] md:px-8 md:py-6">
+<div className="hidden md:flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-[2rem] border-2 border-white/40 px-4 py-3 text-center md:rounded-[3.5rem] md:px-8 md:py-6">
           <h1 className="mb-2 shrink-0 text-2xl font-extrabold tracking-tight md:mb-4 md:text-4xl lg:text-5xl">
             Meet your Facecard
           </h1>
@@ -64,6 +113,9 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </button>
           </div>
         </div>
+
+
+
       </div>
 
       <style jsx>{`

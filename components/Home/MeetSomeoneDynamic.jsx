@@ -17,6 +17,7 @@ import LocationCard from './LocationCard';
 import RequestSentPopup from './RequestSentPopup';
 import SearchingPopup from './SearchingPopup';
 import CoinModal from '@/components/modals/CoinModal';
+import MeetSomeoneNew from './MeetSomeoneNew';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
@@ -722,8 +723,26 @@ export default function MeetSomeoneDynamic() {
     <div className={clsx('relative', 'min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
       <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
 
-        {/* LEFT SIDE */}
-<div className="relative flex h-full min-h-0 flex-col items-center justify-center overflow-hidden bg-gradient-purple-dark px-6 py-10 md:py-16 lg:py-8">
+        {/* MOBILE VIEW (CONDITIONAL) */}
+        {!isSearching && (
+          <div className="block md:hidden h-full w-full fixed inset-0 z-[1000]">
+            <MeetSomeoneNew 
+              onMeetNow={async () => {
+                setIsSearching(true);
+                await handleUpdateStatus('AVAILABLE');
+                await fetchCard(null, true);
+              }}
+              mode={mode}
+              setMode={setMode}
+              coins={coins}
+              activeUsers={activeMeetingCount}
+              myProfile={myProfile}
+            />
+          </div>
+        )}
+
+        {/* LEFT SIDE (DESKTOP) */}
+<div className="hidden md:flex relative h-full min-h-0 flex-col items-center justify-center overflow-hidden bg-gradient-purple-dark px-6 py-10 md:py-16 lg:py-8">
 
   <div
     className="absolute inset-0 z-0"
@@ -864,8 +883,8 @@ export default function MeetSomeoneDynamic() {
 
 
 
-        {/* RIGHT SIDE */}
-<div className="relative w-full h-full overflow-hidden">
+        {/* RIGHT SIDE (DESKTOP) */}
+<div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
 <div
   className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"

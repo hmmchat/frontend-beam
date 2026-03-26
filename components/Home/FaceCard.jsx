@@ -46,7 +46,7 @@ const FaceCard = ({ user }) => {
   const albumArt = mp?.albumArtUrl || '/spotify1.png';
 
   return (
-    <div className="h-[660px] w-[360px] shrink-0 rounded-[30px] border border-white/40 p-[2px] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
+    <div className="h-[660px] w-[360px] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {/* HEADER */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">

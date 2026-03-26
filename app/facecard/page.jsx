@@ -39,6 +39,7 @@ export default function FacecardPage() {
   const [view, setView] = useState('success'); // 'success' or 'editor'
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [targetUserId, setTargetUserId] = useState('');
   const fileInputRef = useRef(null);
   const [activeSlot, setActiveSlot] = useState(null);
 
@@ -62,6 +63,13 @@ export default function FacecardPage() {
 
   const progress = calculateProgress(user);
 
+  // Read ?userId=... without using useSearchParams() (avoids Suspense requirement).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    setTargetUserId(String(sp.get('userId') || '').trim());
+  }, []);
+
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('accessToken');
@@ -72,9 +80,13 @@ export default function FacecardPage() {
 
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const uid = payload.sub || payload.uid;
+        const authUid = payload.sub || payload.uid;
+        const effectiveUid = targetUserId || authUid;
         
-        const response = await fetch(`${API.USERS.GET_USER(uid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden`, {
+        const canEdit = !targetUserId || String(effectiveUid) === String(authUid);
+        if (!canEdit) setView('success'); // force read-only facecard view
+
+        const response = await fetch(`${API.USERS.GET_USER(effectiveUid)}?fields=username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden`, {
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -129,7 +141,13 @@ export default function FacecardPage() {
 
     fetchProfile();
     fetchChoices();
-  }, [router]);
+  }, [router, targetUserId]);
+
+  // Prevent switching to editor when viewing someone else's facecard.
+  const safeSetView = (nextView) => {
+    if (targetUserId) return;
+    setView(nextView);
+  };
 
   useEffect(() => {
     if (!showSelector) {
@@ -566,13 +584,13 @@ export default function FacecardPage() {
     <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {view === 'success' ? (
-        <FacecardDisplay user={user} age={age} setView={setView} router={router} />
+        <FacecardDisplay user={user} age={age} setView={safeSetView} router={router} />
       ) : (
         <FacecardEditor
           user={user}
           firstName={firstName}
           zodiac={zodiac}
-          setView={setView}
+          setView={safeSetView}
           handleSlotClick={handleSlotClick}
           setShowSelector={setShowSelector}
           progress={progress}

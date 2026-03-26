@@ -176,7 +176,7 @@ export default function FacecardEditor({
                   Brands
                 </p>
                 <p className="text-[9px] uppercase tracking-tight opacity-50 mt-1">
-                  Can't live w/o 'em
+                  Can&apos;t live w/o &#39;em
                 </p>
               </div>
             </div>

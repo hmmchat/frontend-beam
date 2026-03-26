@@ -11,13 +11,15 @@ import { API, apiRequest } from "@/lib/api";
 export default function History() {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
+  const [timelinesBySessionId, setTimelinesBySessionId] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         // GET /streaming/history is authenticated via JWT \u2014 no userId param needed
-        const data = await apiRequest(API.STREAMING.GET_HISTORY(50));
+        // Backend clamps to max 10 per user.
+        const data = await apiRequest(API.STREAMING.GET_HISTORY(10));
         setCalls(data.calls || []);
       } catch (err) {
         console.error("Failed to fetch history:", err);
@@ -28,6 +30,34 @@ export default function History() {
 
     fetchHistory();
   }, []);
+
+  // Fetch timeline for each call so the UI can show pull/kick/exit + join order.
+  useEffect(() => {
+    if (!calls?.length) return;
+
+    let cancelled = false;
+    const run = async () => {
+      const next = {};
+      await Promise.allSettled(
+        calls.map(async (c) => {
+          try {
+            const timelineCall = await apiRequest(API.STREAMING.GET_HISTORY_TIMELINE(c.sessionId));
+            next[c.sessionId] = timelineCall?.timeline || [];
+          } catch (e) {
+            // Keep UI resilient if timeline fails for one call.
+            next[c.sessionId] = [];
+          }
+        })
+      );
+
+      if (!cancelled) setTimelinesBySessionId(next);
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [calls]);
 
   const formatDuration = (seconds) => {
     if (!seconds) return "0:00";
@@ -48,6 +78,8 @@ export default function History() {
       hour12: false,
     }).replace(',', ' |') + " IST";
   };
+
+  const viewerId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   return (
     <div className="h-screen w-full relative text-white overflow-hidden">
@@ -98,6 +130,65 @@ export default function History() {
                   key={call.sessionId}
                   className="border border-white/30 rounded-[36px] md:p-4 p-2 space-y-4"
                 >
+                  {/* Call-level activity summary (priority-ish events) */}
+                  {timelinesBySessionId[call.sessionId] ? (
+                    (() => {
+                      const timeline = timelinesBySessionId[call.sessionId] || [];
+                      const participantById = Object.fromEntries(
+                        (call.participants || []).map((p) => [String(p.userId), p])
+                      );
+
+                      const joinedEvents = timeline
+                        .filter((e) => e.eventType === "participant_joined_time")
+                        .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+                      const joinOrder = joinedEvents
+                        .slice(0, 3)
+                        .map((e) => participantById[String(e.userId)]?.username || "User")
+                        .join(" → ");
+
+                      const pulledIn = timeline
+                        .find((e) => e.eventType === "participant_joined_via_pull_stranger" && viewerId && String(e.userId) === String(viewerId));
+                      const kicked = timeline
+                        .find((e) => e.eventType === "participant_kicked" && viewerId && String(e.userId) === String(viewerId));
+                      const exited = timeline
+                        .find((e) => e.eventType === "participant_left_time" && viewerId && String(e.userId) === String(viewerId));
+
+                      const primaryEvents = [
+                        pulledIn ? { label: "Pulled stranger", at: pulledIn.at } : null,
+                        kicked ? { label: "Kicked out", at: kicked.at } : null,
+                        exited ? { label: "Exited", at: exited.at } : null,
+                      ].filter(Boolean);
+
+                      return (
+                        <div className="flex flex-col gap-2">
+                          {primaryEvents.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {primaryEvents.map((e, idx) => (
+                                <div
+                                  key={`${call.sessionId}-evt-${idx}`}
+                                  className="text-[11px] px-3 py-1 rounded-full border border-white/20 bg-black/30 text-white/90 font-semibold"
+                                >
+                                  {e.label}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-white/60">No special events recorded for this call.</div>
+                          )}
+
+                          {joinOrder && (
+                            <div className="text-xs text-white/70">
+                              Join order: <span className="text-white">{joinOrder}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-xs text-white/60">Loading timeline...</div>
+                  )}
+
                   {call.participants
                     .filter(p => p.userId !== localStorage.getItem("userId"))
                     .map((participant, i) => (
@@ -132,7 +223,12 @@ export default function History() {
                         <div className="flex items-center justify-between">
                           {/* Left */}
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-full overflow-hidden border border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/facecard?userId=${encodeURIComponent(participant.userId)}`)}
+                              className="w-14 h-14 rounded-full overflow-hidden border border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                              aria-label={`View ${participant.username || 'this user'} face card`}
+                            >
                               <Image
                                 src={participant.displayPictureUrl || "/assets/avatarDefault.png"}
                                 alt="user"
@@ -140,7 +236,7 @@ export default function History() {
                                 height={56}
                                 className="object-cover w-full h-full"
                               />
-                            </div>
+                            </button>
 
                             <div className="space-y-1">
                               <div className="font-medium">{participant.username || "Stranger"}</div>

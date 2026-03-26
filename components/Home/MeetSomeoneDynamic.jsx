@@ -14,7 +14,6 @@ import FaceCard from './FaceCard';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
 import LocationCard from './LocationCard';
-import RequestSentPopup from './RequestSentPopup';
 import SearchingPopup from './SearchingPopup';
 import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
@@ -806,60 +805,69 @@ export default function MeetSomeoneDynamic() {
                     'flex-col',
                     'items-center',
                     'justify-center',
-                    'overflow-y-auto',
-                    'py-6'
+                    'overflow-hidden',
+                    'py-0'
                   )}
                 >
-                  <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center gap-6 px-2">
-                    <FaceCard user={currentCard} />
+                  <div className="relative flex w-full max-w-[420px] flex-col items-center justify-center gap-2 px-2">
+                    {/* Face card + raincheck/accept must stay together as a single unit */}
+                    <div className="flex w-full flex-col items-center gap-2">
+                      <FaceCard user={currentCard} />
 
-  {currentCard?.otherUserAccepted && !waitingForMatch && (
-    <div className="mt-3 w-[460px] px-4 py-2 rounded-xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-100 text-xs text-center font-semibold">
-      {currentCard?.username || "Your match"} has accepted your match. Tap “Meet this person rn” to join now.
-    </div>
-  )}
+                      {/* BUTTONS */}
+                      <div className="flex w-full max-w-[370px] shrink-0 items-center justify-between gap-2 px-1">
 
-  {/* BUTTONS */}
-<div className="flex w-full max-w-[360px] shrink-0 items-center justify-between gap-2 px-1">
+                        {/* LEFT ARROW */}
+                        <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
+                          ←
+                        </button>
 
-  {/* LEFT ARROW */}
-  <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
-    ←
-  </button>
+                        {/* RAINCHECK */}
+                        <button
+                          onClick={handleRaincheck}
+                          className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
+                        >
+                          Raincheck!
+                        </button>
 
-  {/* RAINCHECK */}
-  <button
-    onClick={handleRaincheck}
-    className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
-  >
-    Raincheck!
-  </button>
+                        {/* MEET (accept) */}
+                        <button
+                          onClick={handleProceed}
+                          className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
+                        >
+                          Meet rn
+                        </button>
 
-  {/* MEET */}
-  <button
-    onClick={handleProceed}
-    className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
-  >
-    Meet rn
-  </button>
+                        {/* RIGHT ARROW */}
+                        <button className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center text-white text-xs">
+                          →
+                        </button>
 
-  {/* RIGHT ARROW */}
-  <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
-    →
-  </button>
+                      </div>
+                    </div>
 
-</div>
-
+                    {/* STATUS MESSAGE SLOT (always reserved height; never shifts face card/buttons) */}
+                    <div className="mt-1 w-full max-w-[370px] h-[52px]">
+                      <div
+                        className={clsx(
+                          'flex h-full w-full items-center justify-center overflow-hidden rounded-xl border px-4 text-[10px] text-center font-semibold leading-tight transition-opacity',
+                          waitingForMatch || (currentCard?.otherUserAccepted && !waitingForMatch)
+                            ? 'border-yellow-300/40 bg-yellow-300/10 text-yellow-100 opacity-100'
+                            : 'border-transparent bg-transparent text-transparent opacity-0 pointer-events-none select-none'
+                        )}
+                        style={{ lineHeight: 1.1 }}
+                      >
+                        <span className="px-1">
+                          {waitingForMatch
+                            ? `Request sent to ${waitingMatchedUser?.username || 'them'}. Waiting for acceptance...`
+                            : `${currentCard?.username || 'Your match'} accepted your match. Tap “Meet rn” to join now.`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-          {/* Request Sent (Waiting) Popup */}
-                  <RequestSentPopup 
-                    isVisible={waitingForMatch}
-                    user={waitingMatchedUser}
-                    onCancel={handleCancelWaiting}
-                  />
                 </div>
           ) : (
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>

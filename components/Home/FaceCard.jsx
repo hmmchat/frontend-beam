@@ -1,7 +1,13 @@
 'use client';
 
 import React from 'react';
-import { IoEllipsisVerticalSharp, IoLocationOutline } from 'react-icons/io5';
+import {
+  IoEllipsisVerticalSharp,
+  IoLocationOutline,
+  IoRadio,
+  IoVideocam,
+  IoVideocamOff
+} from 'react-icons/io5';
 import { getZodiac, calculateAge } from '@/lib/facecard-utils';
 
 function brandLogoUrl(entry) {
@@ -45,8 +51,18 @@ const FaceCard = ({ user }) => {
   const artist = mp?.artist || mp?.artistName || '';
   const albumArt = mp?.albumArtUrl || '/spotify1.png';
 
+  // Status-driven header badges/icons
+  const rawStatus = String(user.status || user.userStatus || '').toUpperCase();
+  const inSquad = rawStatus.includes('IN_SQUAD') || rawStatus === 'SQUAD';
+  const isBroadcasting =
+    Boolean(user.isBroadcasting || user.broadcastUrl) ||
+    rawStatus.includes('IN_BROADCAST') ||
+    rawStatus === 'BROADCAST';
+  // Default to ON unless explicitly false.
+  const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
+
   return (
-    <div className="h-[660px] w-[360px] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
+    <div className="w-[min(370px,38vw,calc(66vh/1.83))] shrink-0 aspect-[360/660] rounded-[30px] border border-white/40 p-[2px] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {/* HEADER */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">
@@ -62,14 +78,22 @@ const FaceCard = ({ user }) => {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-            >
-              Squad
-            </button>
-            <img src="./broadcast.png" alt="" className="h-6 w-6" />
-            <img src="./video-outline.png" alt="" className="h-6 w-6" />
+            {inSquad && (
+              <button
+                type="button"
+                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+              >
+                Squad
+              </button>
+            )}
+            {isBroadcasting && (
+              <span className="flex h-6 w-6 items-center justify-center text-white" title="Broadcasting">
+                <IoRadio className="h-5 w-5" />
+              </span>
+            )}
+            <span className="flex h-6 w-6 items-center justify-center text-white" title={isVideoOn ? 'Video on' : 'Video off'}>
+              {isVideoOn ? <IoVideocam className="h-5 w-5" /> : <IoVideocamOff className="h-5 w-5" />}
+            </span>
             <button type="button" className="flex h-6 w-6 items-center justify-center text-white">
               <IoEllipsisVerticalSharp />
             </button>

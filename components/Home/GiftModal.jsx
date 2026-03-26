@@ -5,19 +5,6 @@ import { IoChevronBack, IoChevronForward, IoClose } from "react-icons/io5";
 import Image from "next/image";
 import { FaGift } from "react-icons/fa6";
 
-const FALLBACK_GIFTS = [
-  { id: "gift1", name: "Monkey", price: 50, image: "/gift/gift1.png" },
-  { id: "gift2", name: "Deadpool", price: 100, image: "/gift/gift2.png" },
-  { id: "gift3", name: "Pikachu", price: 250, image: "/gift/gift3.png" },
-  { id: "gift4", name: "Stitch", price: 500, image: "/gift/gift4.png" },
-  { id: "gift5", name: "Superman", price: 2000, image: "/gift/gift5.png" },
-  { id: "gift6", name: "Pink Monster", price: 5000, image: "/gift/gift6.png" },
-  { id: "gift7", name: "Doraemon", price: 10000, image: "/gift/gift7.png" },
-  { id: "gift8", name: "Iron Man", price: 25000, image: "/gift/gift8.png" },
-];
-
-const PRESET_IMAGES = FALLBACK_GIFTS.map((g) => g.image);
-
 /**
  * @param {{ isOpen: boolean, onClose: () => void, onSelectGift: (gift: { id: string, name: string, price: number, image?: string }) => void, catalogGifts?: Array<{ id: string, name: string, price: number, image?: string }>|null, catalogLoading?: boolean }} props
  */
@@ -27,7 +14,7 @@ export default function GiftModal({ isOpen, onClose, onSelectGift, catalogGifts,
 
   const gifts = useMemo(() => {
     if (catalogGifts && catalogGifts.length > 0) return catalogGifts;
-    return FALLBACK_GIFTS;
+    return [];
   }, [catalogGifts]);
 
   const totalPages = Math.ceil(gifts.length / itemsPerPage) || 1;
@@ -101,32 +88,41 @@ export default function GiftModal({ isOpen, onClose, onSelectGift, catalogGifts,
           <p className="relative z-10 text-center text-white/60 text-sm mb-4">Loading gifts…</p>
         )}
 
-        <div className="relative z-10 grid grid-cols-4 gap-3 md:gap-4 mb-8">
-          {currentGifts.map((gift) => (
-            <button
-              key={gift.id}
-              type="button"
-              onClick={() => onSelectGift(gift)}
-              className="group relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 hover:border-yellow-400/50 hover:shadow-[0_0_20px_rgba(250,204,21,0.2)] active:scale-95"
-            >
-              <div className="relative w-12 h-12 md:w-16 md:h-16 mb-2">
-                <Image
-                  src={gift.image || PRESET_IMAGES[0]}
-                  alt={gift.name}
-                  fill
-                  className="object-contain transition-transform group-hover:scale-110"
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 relative">
-                  <Image src="/gift/dimond.png" alt="" fill className="object-contain" />
+        {gifts.length === 0 && !catalogLoading ? (
+          <div className="relative z-10 rounded-3xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
+            <p className="text-sm font-semibold text-white/80">No gifts configured</p>
+            <p className="mt-1 text-xs text-white/60">
+              Ask an admin to add gifts in the dashboard (Gifts section).
+            </p>
+          </div>
+        ) : (
+          <div className="relative z-10 grid grid-cols-4 gap-3 md:gap-4 mb-8">
+            {currentGifts.map((gift) => (
+              <button
+                key={gift.id}
+                type="button"
+                onClick={() => onSelectGift(gift)}
+                className="group relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 hover:border-yellow-400/50 hover:shadow-[0_0_20px_rgba(250,204,21,0.2)] active:scale-95"
+              >
+                <div className="relative w-12 h-12 md:w-16 md:h-16 mb-2">
+                  <Image
+                    src={gift.image || "/gift/gift1.png"}
+                    alt={gift.name}
+                    fill
+                    className="object-contain transition-transform group-hover:scale-110"
+                  />
                 </div>
-                <span className="text-xs md:text-sm font-bold text-white/90">{gift.price}</span>
-              </div>
-              <div className="absolute inset-0 rounded-3xl ring-2 ring-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          ))}
-        </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 relative">
+                    <Image src="/gift/dimond.png" alt="" fill className="object-contain" />
+                  </div>
+                  <span className="text-xs md:text-sm font-bold text-white/90">{gift.price}</span>
+                </div>
+                <div className="absolute inset-0 rounded-3xl ring-2 ring-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="relative z-10 flex justify-center gap-2">
           {Array.from({ length: totalPages }).map((_, i) => (

@@ -110,7 +110,7 @@ export default function History() {
           </div>
 
           <div>
-            <img src="./LOGO.png" alt="Logo" className="w-24 md:w-32" />
+            <img src="/LOGO.png" alt="Logo" className="w-24 md:w-32" />
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default function History() {
                         md:ring-2 md:ring-white/40 
                         md:ring-offset-2 md:ring-offset-purple-900/80">
 
-          <div className="h-full overflow-y-auto space-y-8 pr-2">
+          <div className="h-full overflow-y-auto space-y-8 pt-3 mt-3">
             {loading ? (
               <div className="text-center py-10 opacity-50">Loading history...</div>
             ) : calls.length === 0 ? (
@@ -268,6 +268,10 @@ export default function History() {
             )}
           </div>
         </div>
+
+
+
+        
       </div>
     </div>
   );

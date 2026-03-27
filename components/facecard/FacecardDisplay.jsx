@@ -22,7 +22,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             <p className="shrink-0 text-center text-lg  text-white md:text-xs mt-3">
               This is  Your FaceCard
             </p>
-            <p className=' text-sm text-center font-thin font-weight-[500px] mt-2 '>People will see this before meeting you <br/> You Can add more info to get better matches</p>
+            <p className=' md:text-[12px] text-center font-thin text-[10px] '>People will see this before meeting you <br/> You Can add more info to get better matches</p>
 
             
             <div className="flex w-full items-center justify-center overflow-hidden py-0">

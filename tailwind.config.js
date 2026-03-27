@@ -38,8 +38,18 @@ module.exports = {
                 'fade-in': 'fadeIn 0.3s ease-out',
                 'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 'zoom-slow': 'zoomSlow 20s ease-in-out infinite',
+                'grid-drift': 'gridDrift 20s linear infinite',
+                'bounce-slow': 'bounceSlow 3s ease-in-out infinite',
             },
             keyframes: {
+                gridDrift: {
+                    '0%': { backgroundPosition: '0 0' },
+                    '100%': { backgroundPosition: '80px 80px' },
+                },
+                bounceSlow: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' },
+                },
                 twinkle: {
                     '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
                     '50%': { opacity: '1', transform: 'scale(1.3)' },

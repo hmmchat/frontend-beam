@@ -7,6 +7,7 @@ import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import Button from '@/components/ui/Button';
 import { API, apiRequest } from '@/lib/api';
+import Link from 'next/link';
 
 export default function DesktopHome() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -114,7 +115,12 @@ export default function DesktopHome() {
 
 
                <div className="mb-10   flex  justify-between items-center ">
-  <img src="/assets/Frame.png" alt="" className=" border-2 border-white h-14 w-14 rounded-full p-3 border-white/80" />
+
+<Link href="/beam-tv">
+  <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md transition-all duration-200">
+    <img src="/assets/Frame.png" alt="beam-tv" />
+  </button>
+</Link>
 
   <button 
     className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"

@@ -18,6 +18,7 @@ import SearchingPopup from './SearchingPopup';
 import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
+import Link from 'next/link';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
@@ -968,6 +969,15 @@ export default function MeetSomeoneDynamic() {
 
 
           <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-50', 'flex', 'gap-2')}>
+
+  <Link href="/beam-tv">
+  <button className="h-12 w-12 rounded-full p-2 border-2 border-white/60 shadow-md transition-all duration-200">
+    <img src="/assets/Frame.png" alt="beam-tv" />
+  </button>
+</Link>
+
+
+
   <button
     type="button"
     onClick={() => setOverlay({ open: true, url: '/onboarding?intent=1&overlay=1', title: 'Intent' })}
@@ -976,6 +986,10 @@ export default function MeetSomeoneDynamic() {
   >
     <img src="/icones1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
   </button>
+
+
+
+
 </div>
 
           
@@ -1141,24 +1155,14 @@ export default function MeetSomeoneDynamic() {
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
           <div className={clsx('absolute', 'px-5', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
             {/* Beam TV: no icon rendered here (only click target over existing UI) */}
-            <button
-              type="button"
-              onClick={() => router.push('/beam-tv')}
-              className={clsx(
-                'absolute',
-                'left-0',
-                'bottom-0',
-                'w-16',
-                'h-16',
-                'bg-transparent',
-                'rounded-2xl'
-              )}
-              aria-label="Beam TV"
-              title="Beam TV"
-            />
+     
             {mode === 'solo' ? (
               <div>
-                <img src="/assets/Frame.png" className={clsx('w-9', 'h-9')} />
+            <Link href="/beam-tv">
+  <button className="h-14 w-14 rounded-full p-3   shadow-md transition-all duration-200">
+    <img src="/assets/Frame.png" alt="beam-tv" />
+  </button>
+</Link>
               </div>
             ) : (
               <div className={clsx('flex', 'gap-6')}>

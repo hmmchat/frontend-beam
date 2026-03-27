@@ -5,6 +5,7 @@ import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import Button from '@/components/ui/Button';
 import { API, apiRequest } from '@/lib/api';
+import Link from 'next/link';
 
 export default function Home() {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -83,12 +84,13 @@ export default function Home() {
     {/* 🔥 BOTTOM BAR (NOW HAS BG BEHIND IT) */}
     <div className="w-full flex items-center justify-between px-4 py-4">
 
-      <Image
-        src="/assets/Frame.png"
-        alt="User"
-        width={42}
-        height={42}
-      />
+
+
+<Link href="/beam-tv">
+  <button className="h-14 w-14 rounded-full p-3 bg-red-600 hover:bg-red-700 border-2 border-red-500 shadow-md transition-all duration-200">
+    <img src="/assets/Frame.png" alt="beam-tv" />
+  </button>
+</Link>
 
       <button
         className="border-2 border-white/80 text-white px-6 py-2 rounded-full bg-white/10 backdrop-blur-md shadow-md"

@@ -760,8 +760,8 @@ export default function Inbox() {
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
-      if (activeChat) void loadThreadMessages(activeChat).catch(() => {});
-      void loadLists({ quiet: true, skipNotificationBadge: true }).catch(() => {});
+      if (activeChat) void loadThreadMessages(activeChat).catch(() => { });
+      void loadLists({ quiet: true, skipNotificationBadge: true }).catch(() => { });
       scheduleNotificationBadge();
     };
     document.addEventListener("visibilitychange", onVis);
@@ -971,7 +971,7 @@ export default function Inbox() {
       <div className={clsx('flex', 'h-full', 'min-h-0', 'flex-col', 'md:py-12', 'md:px-12', 'lg:px-24', 'md:max-w-6xl', 'md:mx-auto', 'relative', 'z-10', 'font-[family-name:var(--font-otomanopee)]')}>
         <InboxHeader activeChat={activeChat} walletCoins={walletCoins} firstMessageCost={firstMessageCost} />
 
-        <div className={clsx('flex', 'min-h-0', 'flex-1', 'w-full', 'flex-col', 'rounded-[48px]', 'ring-2', 'ring-white/50', 'ring-offset-2', 'ring-offset-purple-900/90', 'overflow-hidden', 'bg-transparent', 'md:h-[78vh]', 'md:flex-row')}>
+        <div className={clsx('flex', 'min-h-0', 'flex-1', 'w-full', 'flex-col', 'rounded-[48px]', 'md:ring-2', 'md:ring-white/50', 'md:ring-offset-2', 'md:ring-offset-purple-900/90', 'overflow-hidden', 'bg-transparent', 'md:h-[78vh]', 'md:flex-row')}>
           <ConversationSidebar
             activeChat={activeChat}
             activeTab={activeTab}

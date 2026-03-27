@@ -34,7 +34,7 @@ export default function DesktopHome() {
     return (
         <div className="relative h-screen overflow-hidden font-[family-name:var(--font-otomanopee)]">
             {/* Header */}
-          
+
 
             {/* Main Layout */}
             <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
@@ -51,93 +51,93 @@ export default function DesktopHome() {
                             backgroundSize: 'cover',
                         }}
                     />
-     <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
-                 <div className="z-10 text-center max-w-lg  p-2">
-            <img src="/LOGO.png" className="md:w-64 mx-auto w-44" />
-            <p className="text-white text-2xl">Meet someone here,</p>
-<div className="inline-flex gap-2 mt-3 font-[family-name:var(--font-otomanopee)]">
-                            <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
-                            <p className='text-xs'>
-                                {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
-                            </p>
+                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
+                        <div className="z-10 text-center max-w-lg  p-2">
+                            <img src="/LOGO.png" className="md:w-64 mx-auto w-44" />
+                            <p className="text-white text-2xl">Meet someone here,</p>
+                            <div className="inline-flex gap-2 mt-3 font-[family-name:var(--font-otomanopee)]">
+                                <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
+                                <p className='text-xs'>
+                                    {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    </div>
-                       </div>
-        
+                </div>
+
 
                 {/* RIGHT SIDE */}
                 <div className="relative flex items-center justify-center px-6  py-16 md:py-20 overflow-hidden ">
                     {/* Background */}
-                 <div
-  className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
-  style={{
-    backgroundImage: 'url(/bg.jpg)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'repeat',
-  }}
-/>
+                    <div
+                        className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
+                        style={{
+                            backgroundImage: 'url(/bg.jpg)',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'repeat',
+                        }}
+                    />
 
                     {/* Top Icons */}
-              
-  <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
-                    {/* Pattern */}
+
+                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
+                        {/* Pattern */}
 
 
-                    {/* Action Card */}
-                    <div className="relative z-[2] w-full max-w-[600px] flex flex-col gap-8 h-full justify-between ">
-                        {/* Stats */}
-                       
-
-                        {/* CTA */}
-                        <Button
-
-                            
-                            className=" py-7 px-26 font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 mt-96 "
-                            onClick={() => setIsSignUpOpen(true)}
-                        >
-                            <img src="/assets/video-on.svg" alt="" className="w-8 h-8 opacity-70 " />
-                            Meet that someone
-                        </Button>
+                        {/* Action Card */}
+                        <div className="relative z-[2] w-full max-w-[600px] flex flex-col gap-8 h-full justify-between ">
+                            {/* Stats */}
 
 
-                        {/* Filters */}
-                        {/* <FilterButtons
+                            {/* CTA */}
+                            <Button
+
+
+                                className=" py-7 px-26 font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 mt-96 "
+                                onClick={() => setIsSignUpOpen(true)}
+                            >
+                                <img src="/assets/video-on.svg" alt="" className="w-8 h-8 opacity-70 " />
+                                Meet that someone
+                            </Button>
+
+
+                            {/* Filters */}
+                            {/* <FilterButtons
                             onGenderClick={() => setIsGenderModalOpen(true)}
                             onLocationClick={() => setIsLocationModalOpen(true)}
                             className="mt-auto"
                         /> */}
 
-                        
 
 
 
 
-               <div className="mb-10   flex  justify-between items-center ">
 
-<Link href="/beam-tv">
-  <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md transition-all duration-200">
-    <img src="/assets/Frame.png" alt="beam-tv" />
-  </button>
-</Link>
+                            <div className="mb-10   flex  justify-between items-center ">
 
-  <button 
-    className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"
-    onClick={() => setIsSignUpOpen(true)}
-  >
-    Sign Up
-  </button>
-</div>
+                                <Link href="/beam-tv">
+                                    <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md transition-all duration-200">
+                                        <img src="/assets/Frame.png" alt="beam-tv" />
+                                    </button>
+                                </Link>
+
+                                <button
+                                    className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"
+                                    onClick={() => setIsSignUpOpen(true)}
+                                >
+                                    Sign Up
+                                </button>
+                            </div>
 
 
 
 
+
+                        </div>
 
                     </div>
 
-</div>
-               
                 </div>
 
             </main>

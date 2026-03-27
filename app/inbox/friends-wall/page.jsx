@@ -51,7 +51,7 @@ export default function FriendWall() {
     try {
       setSharing(true);
       const token = localStorage.getItem('accessToken');
-      
+
       const response = await fetch(API.FRIENDS.GET_FRIENDS_WALL + '/share', {
         method: 'POST',
         headers: {
@@ -97,11 +97,11 @@ export default function FriendWall() {
 
       {/* Page Container */}
       <div className="h-full flex flex-col md:py-12 md:px-12 lg:px-24 md:max-w-6xl md:mx-auto relative z-10 font-[family-name:var(--font-otomanopee)]">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between gap-3 text-xl md:text-3xl font-semibold p-4 md:p-0 md:px-10 md:mb-4">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => router.back()}
               className="border-white border-1 rounded-full p-2 hover:bg-white/10 transition-colors"
             >
@@ -111,7 +111,7 @@ export default function FriendWall() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={handleShare}
               disabled={sharing}
               className="flex items-center gap-2 border border-white/80 px-4 py-1.5 rounded-full text-sm backdrop-blur-md hover:bg-white/10 transition-colors disabled:opacity-50"
@@ -125,7 +125,7 @@ export default function FriendWall() {
         {/* Main Card */}
         <div className="flex-1 w-full md:h-[78vh] rounded-[48px] 
           overflow-hidden flex flex-col bg-transparent py-6 px-4 md:p-10 mb-6 md:mb-0">
-          
+
           <div className="flex flex-col h-full">
             {/* Subtitle */}
             <p className="text-base md:text-lg text-white/80 leading-relaxed mb-8 max-w-2xl">

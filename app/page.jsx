@@ -41,7 +41,7 @@ const MyComponent = () => {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('userId');
       localStorage.removeItem('currentRoom');
-    } catch (_) {}
+    } catch (_) { }
   }, [authChecked, isLoggedIn]);
 
   if (!isMounted) {

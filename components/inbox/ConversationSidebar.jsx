@@ -35,23 +35,22 @@ export default function ConversationSidebar({
     <button
       type="button"
       onClick={() => setMsgFilter((f) => (f === key ? MsgFilter.ALL : key))}
-      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${
-        msgFilter === key ? "bg-white/25 border-white" : "border-white/30 bg-white/5"
-      }`}
+      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${msgFilter === key ? "bg-white/25 border-white" : "border-white/30 bg-white/5"
+        }`}
       title={
         key === MsgFilter.WITH_GIFT
           ? "Gift threads (may show no results if none)"
           : key === MsgFilter.TEXT_ONLY
-          ? "Text only — last message (may show no results)"
-          : "Friend requests / non-friend inbox"
+            ? "Text only — last message (may show no results)"
+            : "Friend requests / non-friend inbox"
       }
       aria-pressed={msgFilter === key}
       aria-label={
         key === MsgFilter.WITH_GIFT
           ? "Filter by gift messages"
           : key === MsgFilter.TEXT_ONLY
-          ? "Filter by text-only last message"
-          : "Filter friend requests and follows"
+            ? "Filter by text-only last message"
+            : "Filter friend requests and follows"
       }
     >
       {key === MsgFilter.WITH_GIFT && <FaGift className="text-lg sm:text-xl" aria-hidden />}
@@ -65,8 +64,9 @@ export default function ConversationSidebar({
       className={`min-h-0 md:w-[40%] w-full md:p-6 p-4
       ${activeChat ? "hidden md:flex" : "flex"} flex flex-col`}
     >
-      <div className="w-full py-6 text-white space-y-4">
-        <div className="flex flex-col gap-3 w-full">
+      <div className="w-full py-2 text-white space-y-4">
+
+        <div className="flex flex-col gap-3 w-full hidden md:block">
           <div className="flex items-center gap-2 border border-white/30 rounded-full px-3 py-2.5 w-full min-w-0">
             <FaMagnifyingGlass className="text-lg text-white/70 flex-shrink-0" aria-hidden />
             <input
@@ -91,21 +91,63 @@ export default function ConversationSidebar({
             <button
               type="button"
               onClick={() => { setActiveTab("inbox"); setActiveChat(null); }}
-              className={`px-4 py-1.5 rounded-full text-sm shrink-0 ${
-                activeTab === "inbox" ? "bg-white/20 border border-white" : "border border-transparent"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-sm shrink-0 ${activeTab === "inbox" ? "bg-white/20 border border-white" : "border border-transparent"
+                }`}
             >
               Inbox
             </button>
             <button
               type="button"
               onClick={() => { setActiveTab("requests"); setActiveChat(null); }}
-              className={`px-5 py-1.5 rounded-full text-sm shrink-0 ${
-                activeTab === "requests" ? "bg-white/20 border border-white" : "border border-transparent"
-              }`}
+              className={`px-5 py-1.5 rounded-full text-sm shrink-0 ${activeTab === "requests" ? "bg-white/20 border border-white" : "border border-transparent"
+                }`}
             >
               Requests{" "}
               <span className="text-xs font-thin">({notif ? requestsTabCount : "—"})</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full flex justify-center md:hidden">
+          <div className="flex items-center gap-6  border border-white/30 rounded-full px-2 py-1 w-full max-w-xl">
+
+            {/* Search Icon */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/30">
+              <FaMagnifyingGlass className="text-white/80 text-sm" />
+            </div>
+
+            {/* Inbox Tab */}
+            <button
+              onClick={() => {
+                setActiveTab("inbox");
+                setActiveChat(null);
+              }}
+              className={`px-8 py-2 rounded-full text-sm transition ${activeTab === "inbox"
+                ? "border border-white text-white"
+                : "text-white/70"
+                }`}
+            >
+              Inbox
+            </button>
+
+            {/* Requests Tab */}
+            <button
+              onClick={() => {
+                setActiveTab("requests");
+                setActiveChat(null);
+              }}
+              className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm transition ${activeTab === "requests"
+                ? "border border-white text-white"
+                : "text-white/70"
+                }`}
+            >
+              {/* Yellow Dot */}
+              <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+
+              Requests
+              <span className="text-xs font-light">
+                ({notif ? requestsTabCount : "—"})
+              </span>
             </button>
           </div>
         </div>
@@ -114,9 +156,8 @@ export default function ConversationSidebar({
           <button
             type="button"
             onClick={() => { setActiveTab("sent"); setActiveChat(null); }}
-            className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${
-              activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
-            }`}
+            className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
+              }`}
           >
             <FaEye className="text-lg" />
             <p className="text-[10px] font-thin text-white">Sent Requests</p>

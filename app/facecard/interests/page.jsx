@@ -15,7 +15,7 @@ export default function InterestsView() {
 
   const fetchProfile = async () => {
     const token = localStorage.getItem('accessToken');
-    
+
     if (!token) {
       router.push('/');
       return;

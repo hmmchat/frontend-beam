@@ -123,28 +123,31 @@ const FaceCard = ({ user }) => {
           */}
           <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center gap-3">
             {/* Brands — single capsule boundary around the stack */}
-            {brandLogos.length > 0 && (
-              <div className="flex w-fit max-w-[46px] flex-col items-center rounded-full border border-white/45 bg-black/30 px-2 py-2.5 shadow-inner">
-                <div className="flex flex-col items-center gap-2">
-                  {brandLogos.map((src, i) => (
+            <div className="flex w-fit max-w-[50px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
+              <div className="flex flex-col items-center gap-2">
+                {[0, 1, 2, 3, 4].map((idx) => {
+                  const src = brandLogos[idx];
+                  return (
                     <div
-                      key={`${src}-${i}`}
+                      key={`brand-slot-${idx}`}
                       className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-black/85 shadow-inner"
                     >
-                      <img
-                        src={src}
-                        className="h-full w-full object-cover object-center"
-                        style={{ transform: 'scale(1.1)' }}
-                        alt=""
-                      />
+                      {src && (
+                        <img
+                          src={src}
+                          className="h-full w-full object-cover object-center"
+                          style={{ transform: 'scale(1.1)' }}
+                          alt=""
+                        />
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
 
             {/* Zodiac — wider than brand capsule (~46px → ~58px) */}
-            <div className="flex w-[58px] shrink-0 flex-col items-center rounded-2xl border border-white/45 bg-black/40 px-1.5 py-2 shadow-inner">
+            <div className="flex w-[58px] shrink-0 flex-col items-center rounded-2xl border border-white/45  px-1.5 py-2 shadow-inner">
               {user?.zodiac?.imageUrl ? (
                 <img
                   src={user.zodiac.imageUrl}
@@ -152,23 +155,33 @@ const FaceCard = ({ user }) => {
                   className="h-10 w-10 object-contain"
                 />
               ) : (
-                <span className="text-[28px] leading-none text-white">{zodiac.symbol}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
+                  <span className="text-[20px] leading-none text-white/30">{zodiac.symbol || '?'}</span>
+                </div>
               )}
               <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                {user?.zodiac?.name || zodiac.name}
+                {user?.dateOfBirth ? (user?.zodiac?.name || zodiac.name) : 'Vacant'}
               </span>
             </div>
 
             {/* Music — album circle clearly larger than brand circles (36px → 72px) */}
-            <div className="flex w-[72px] shrink-0 flex-col items-center rounded-2xl border border-white/40 bg-black/35 px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
+            <div className="flex w-[72px] shrink-0 flex-col items-center rounded-2xl border border-white/40  px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
               <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
-                <img src={albumArt} className="h-full w-full object-cover" alt="" />
+                {user.musicPreference ? (
+                    <img src={albumArt} className="h-full w-full object-cover" alt="" />
+                ) : (
+                    <div className="w-full h-full bg-black/85 flex items-center justify-center">
+                        <span className="text-white/30 text-2xl font-light">?</span>
+                    </div>
+                )}
               </div>
               <div className="mt-2 h-px w-[90%] bg-white/30" />
               <div className="mt-1.5 w-full px-0.5 text-center text-white">
-                <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">{songTitle}</p>
+                <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">
+                    {user.musicPreference ? songTitle : 'Music Vacant'}
+                </p>
                 <p className="mt-0.5 line-clamp-2 text-[7px] font-extralight leading-tight text-white/70">
-                  {artist || '\u00a0'}
+                  {user.musicPreference ? artist : '\u00a0'}
                 </p>
               </div>
             </div>

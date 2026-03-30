@@ -131,7 +131,7 @@ export default function Onboarding() {
 
     const fetchSuggestions = async () => {
       try {
-        const response = await fetch(API.USERS.GET_INTENT_PROMPTS(6));
+        const response = await fetch(API.USERS.GET_INTENT_PROMPTS(9));
         if (response.ok) {
           const data = await response.json();
           // Data is { prompts: [{ id, text }, ...] }
@@ -397,7 +397,7 @@ if (prompt.trim() && accessToken) {
 
 
       <div className=" mx-auto  ">
-        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 py-4  ">
+        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[100vh] px-4 py-4  ">
 
             {step === 1 && (
     <>
@@ -417,7 +417,7 @@ if (prompt.trim() && accessToken) {
           {/* Right - Form */}
           <div className="flex justify-center border border-white/30 rounded-2xl  ">
             <div className="w-full max-w-[540px] rounded-2xl p-6  mx-auto ">
-              <form onSubmit={handleSubmit} className="space-y-6 border border-white/30 p-3 py-5 pb-10 rounded-[3rem]">
+              <form onSubmit={handleSubmit} className="space-y-6 border border-white/30 p-3 py-5  rounded-[3rem]">
                 
                 {/* 2️⃣ Photo upload UI */}
                 <div className="mb-8 border border-white/30 p-3 py-5 rounded-[3rem]">
@@ -627,7 +627,7 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Suggestions */}
-          <div className="border border-white/30 rounded-2xl p-6 space-y-4">
+          <div className="border h- border-white/30 rounded-2xl p-6 space-y-4">
             <div className="flex justify-between items-center text-white text-sm">
               <span className="opacity-70">Suggestions</span>
               <button 
@@ -635,7 +635,7 @@ if (prompt.trim() && accessToken) {
                 onClick={async () => {
                   setIsShuffleLoading(true);
                   try {
-                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(6));
+                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(9));
                     if (response.ok) {
                       const data = await response.json();
                       setSuggestions(data.prompts?.map(p => p.text) || []);
@@ -720,6 +720,7 @@ if (prompt.trim() && accessToken) {
           </div>
         </div>
       </div>
+
     </>
   )}
 

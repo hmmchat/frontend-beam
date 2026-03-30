@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
+  allowedDevOrigins: ['unslopped-photospectroscopical-kody.ngrok-free.dev'],
 
   output: 'export',
   trailingSlash: true,

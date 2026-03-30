@@ -49,6 +49,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
         // Create a simple JWT-like structure for the backend
         // The backend will verify this with Google's API
+        console.log('Sending Google access token to backend:', API.AUTH.GOOGLE);
         const response = await fetch(API.AUTH.GOOGLE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

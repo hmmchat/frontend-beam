@@ -15,7 +15,7 @@ export default function QuickActions({
           <img src="/dice.png" alt="Dice" className="w-8 h-8 object-contain" />
         </button>
       )}
-      <button type="button" onClick={handleIcebreaker} className={`absolute bottom-8 bg-black/60 left-[670px] w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
+      <button type="button" onClick={handleIcebreaker} className={`absolute bottom-8 bg-black/60 md:left-[670px] w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
         <img src="/icecream.png" alt="Ice" className="w-8 h-8 object-contain" />
       </button>
     </div>

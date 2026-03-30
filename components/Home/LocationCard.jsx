@@ -5,7 +5,16 @@ import { IoLocationSharp, IoArrowForward } from 'react-icons/io5';
 
 export default function LocationCard({ city, count, onSelect, onSkip }) {
   return (
-    <div className="relative w-full max-w-[420px] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-2xl border-2 border-white/20 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-xl flex flex-col items-center justify-between p-12 text-center group">
+    <div className="relative w-full md:max-w-[420px] aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-2xl border-2 border-white/20 bg-gradient-purple-dark backdrop-blur-xl flex flex-col items-center justify-between p-6 md:p-12 text-center group">
+      {/* Background Image with Opacity */}
+      <div
+        className="absolute inset-0 z-0 opacity-40 mix-blend-overlay"
+        style={{
+          backgroundImage: 'url(/assets/mb.jpg)',
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'cover',
+        }}
+      />
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500 rounded-full blur-[100px]" />
@@ -18,10 +27,10 @@ export default function LocationCard({ city, count, onSelect, onSkip }) {
         </div>
         
         <div className="space-y-2">
-          <h2 className="text-4xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
             {city || "Anywhere"}
           </h2>
-          <p className="text-white/60 text-lg font-medium">
+          <p className="text-white/60 text-base md:text-lg font-medium">
             {count || 0} people meeting now
           </p>
         </div>

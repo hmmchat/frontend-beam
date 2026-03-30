@@ -9,6 +9,14 @@ import FaceCard from '@/components/Home/FaceCard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import CoinModal from '@/components/modals/CoinModal';
 
+// Components
+import RemoteVideoTile from '@/components/VideoChat/RemoteVideoTile';
+import LocalVideoSection from '@/components/VideoChat/LocalVideoSection';
+import BroadcastHud from '@/components/VideoChat/BroadcastHud';
+import WaitlistModal from '@/components/VideoChat/WaitlistModal';
+import RandomnessModal from '@/components/VideoChat/RandomnessModal';
+import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
+
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
 // routes /streaming/ws directly (not /v1/streaming/ws on the streaming host)
@@ -35,223 +43,6 @@ const PULL_STRANGER_WINDOW_SECONDS = (() => {
 })();
 
 /** Module-level so React identity is stable — avoids remounting <video> on every parent re-render (e.g. 1s pull-stranger cooldown tick). */
-function RemoteVideoTile({
-  stream,
-  name,
-  age,
-  city,
-  displayPictureUrl,
-  /** Report + emoji: only on the primary peer tile (not every remote in group calls). */
-  showReportEmoji,
-  /** HOST removing a PARTICIPANT — server enforces; UI only when eligible. */
-  showKickParticipant,
-  onKickParticipant,
-  onSendFriendRequest,
-  /** Show + for any in-call peer (not only discovery match); server enforces same room. */
-  showAddFriend,
-  isAlreadyFriend,
-  isFriendRequestSent
-}) {
-  const videoRef = useRef(null);
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.srcObject !== stream) v.srcObject = stream;
-  }, [stream]);
-
-  return (
-    <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-      <video ref={videoRef} autoPlay playsInline className="h-full w-full min-h-0 object-cover" />
-
-      <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 bg-[#C7BCB1]/80 backdrop-blur-2xl px-3 py-2 rounded-[2.5rem] border border-white/30 shadow-xl">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
-                <img src={displayPictureUrl} className="w-full h-full object-cover" alt="" />
-              </div>
-              <div className="absolute -bottom-1.5 -left-1 text-2xl filter drop-shadow-md">🐒</div>
-            </div>
-            <div className="flex flex-col pr-4">
-              <span className="text-white text-base font-extrabold tracking-tight leading-tight">
-                {name || 'Matched!'}{age && age !== '?' ? `, ${age}` : ''}
-              </span>
-              {(city && city !== 'Unknown') && (
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span className="text-[11px] text-white/90 font-bold flex items-center gap-1">
-                    <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                    </svg>
-                    {city}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {showAddFriend && !isAlreadyFriend && (
-            <button
-              type="button"
-              onClick={onSendFriendRequest}
-              disabled={isFriendRequestSent}
-              className={`w-[4.5rem] h-[4.5rem] rounded-full flex items-center justify-center transition-all border-2 border-white/40 shadow-xl active:scale-95 ${
-                isFriendRequestSent ? 'bg-green-500/50' : 'bg-[#C7BCB1]/80 hover:bg-[#B7ACA1]'
-              }`}
-            >
-              {isFriendRequestSent ? (
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-9 h-9 text-white opacity-90" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              )}
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {showKickParticipant && onKickParticipant && (
-            <button
-              type="button"
-              onClick={onKickParticipant}
-              title="Remove guest from call"
-              className="w-10 h-10 rounded-full bg-red-600/80 flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 border border-white/20"
-            >
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
-            </button>
-          )}
-          {showReportEmoji && (
-            [
-              { img: '/gravecurrent.png', alt: 'Report' },
-              { img: '/smile.png', alt: 'Emoji' }
-            ].map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className="w-10 h-10 rounded-full bg-purple-900/80 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all border border-white/20"
-              >
-                <img src={item.img} className="w-5 h-5 object-contain" alt={item.alt} />
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LocalVideoSection({
-  localVideoRef,
-  localStreamRef,
-  isCamOff,
-  chatMessages,
-  chatInput,
-  setChatInput,
-  sendChatMessage,
-  showChatInput,
-  setShowChatInput,
-  onChatButtonClick,
-  toggleCam,
-  showLeaveNextButton,
-  onLeaveOrNext,
-  isRainchecking
-}) {
-  // Stable callback: inline ref functions change every render and make React detach/reattach <video> → visible flicker.
-  const setLocalVideoEl = useCallback(
-    (el) => {
-      localVideoRef.current = el;
-      if (el && localStreamRef.current) el.srcObject = localStreamRef.current;
-    },
-    [localVideoRef, localStreamRef]
-  );
-
-  return (
-    <>
-      <video
-        ref={setLocalVideoEl}
-        autoPlay
-        muted
-        playsInline
-        className={clsx('w-full', 'h-full', 'object-cover', 'scale-x-[-1]')}
-      />
-      {isCamOff && (
-        <div className={clsx('absolute', 'inset-0', 'bg-gray-900/90', 'flex', 'items-center', 'justify-center', 'text-white/20', 'font-bold', 'uppercase', 'tracking-widest', 'italic')}>
-          Camera is off
-        </div>
-      )}
-
-      <div
-        className={clsx(
-          'absolute',
-          'left-6',
-          'flex',
-          'flex-col',
-          'gap-3',
-          'max-w-[70%]',
-          'max-h-[36vh]',
-          'overflow-y-auto',
-          'pr-1',
-          'z-10',
-          showChatInput ? 'bottom-44' : 'bottom-28'
-        )}
-      >
-        {chatMessages.map((msg) => (
-          <div key={msg.id} className={clsx('bg-white/10', 'backdrop-blur-xl', 'px-4', 'py-2.5', 'rounded-[1.2rem]', 'text-white', 'text-xs', 'font-bold', 'border', 'border-white/10', 'animate-in', 'fade-in', 'slide-in-from-left-4')}>
-            <span className="text-white/50 mr-2 text-[10px]">{msg.name}:</span>
-            {msg.message}
-          </div>
-        ))}
-      </div>
-
-      <div className={clsx('absolute', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-end', 'justify-between', 'z-20')}>
-        <div className={clsx('flex', 'flex-col', 'gap-4', 'w-full', 'max-w-[240px]')}>
-          {showChatInput && (
-            <form onSubmit={sendChatMessage} className="animate-in slide-in-from-bottom-4">
-              <input
-                autoFocus
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type a message..."
-                className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-2 outline-none"
-              />
-            </form>
-          )}
-          <div className="flex flex-wrap gap-4">
-            <button type="button" onClick={toggleCam} className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95">
-              <img src="/video.png" className={`w-5 h-5 object-contain ${isCamOff ? 'opacity-30' : 'opacity-100'}`} alt="Video" />
-            </button>
-            <button type="button" onClick={onChatButtonClick || (() => setShowChatInput(!showChatInput))} className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95">
-              <img src="/msg.png" className="w-5 h-5 object-contain" alt="Message" />
-            </button>
-            {showLeaveNextButton && onLeaveOrNext && (
-              <button
-                type="button"
-                onClick={onLeaveOrNext}
-                disabled={isRainchecking}
-                title="Next or leave call"
-                className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 disabled:opacity-40"
-              >
-                <img src="/arrowright.png" className="w-5 h-5 object-contain" alt="Next" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <button type="button" className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-            <img src="/circle.png" className="absolute inset-0 w-full h-full" alt="" />
-            <img src="/dare.png" className="relative w-8 h-auto" alt="DARE" />
-          </button>
-          <button type="button" className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-            <img src="/circle.png" className="absolute inset-0 w-full h-full" alt="" />
-            <img src="/giftboc.png" className="relative w-8 h-8 object-contain" alt="GIFT" />
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
 
 export default function VideoChat() {
   const router = useRouter();
@@ -1802,7 +1593,7 @@ export default function VideoChat() {
 
   return (
     <div className={clsx('h-screen', 'w-screen', 'bg-black', 'flex', 'overflow-hidden', 'font-sans')}>
-      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'p-2', 'gap-2')}>
+      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'gap-2')}>
         
         {/* Layout Engine */}
         {remoteStreams.length === 0 ? (
@@ -1882,9 +1673,9 @@ export default function VideoChat() {
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
             />
-             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
                {!showChatInput && (
-                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+<div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden md:flex">
                    <button
                      type="button"
                      onClick={() => setIsCoinModalOpen(true)}
@@ -1898,7 +1689,8 @@ export default function VideoChat() {
                        'text-white',
                        'hover:bg-white/10',
                        'active:scale-95',
-                       'transition'
+                       'transition',
+                 
                      )}
                      title="Add coins"
                    >
@@ -1907,7 +1699,7 @@ export default function VideoChat() {
                      <span className="text-lg leading-none -mt-[1px]">+</span>
                    </button>
 
-                   <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
+                   <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md ">
                      <button
                        type="button"
                        onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
@@ -2110,11 +1902,11 @@ export default function VideoChat() {
         {!showChatInput && (
           <>
             {callRoles.isLocalHost && (
-              <button type="button" onClick={toggleRandomness} className="absolute bottom-8 bg-black/60 left-8 text-2xl w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40">
+              <button type="button" onClick={toggleRandomness} className="absolute md:bottom-8 bottom-96 bg-black/60 left-8 text-2xl w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ">
                 <img src="/dice.png" alt="Dice" className="w-8 h-8 object-contain" />
               </button>
             )}
-            <button type="button" onClick={handleIcebreaker} className={`absolute bottom-8 bg-black/60 left-[670px] w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
+            <button type="button" onClick={handleIcebreaker} className={`absolute md:bottom-8 bottom-96 bg-black/60 md:left-[670px] left-[300px]  w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
               <img src="/icecream.png" alt="Ice" className="w-8 h-8 object-contain" />
             </button>
           </>
@@ -2132,90 +1924,20 @@ export default function VideoChat() {
         />
 
         {/* Broadcast HUD (left-side asset) */}
-        {isBroadcasting && (
-          <div className="absolute left-6 top-28 z-[65] flex flex-col gap-3">
-            {/* Eye (viewer count) */}
-            <div className="w-14 rounded-[1.4rem] bg-black/60 backdrop-blur-md border border-white/15 overflow-hidden">
-              <button
-                type="button"
-                className="w-full h-14 flex items-center justify-center text-white/90"
-                title="Viewers"
-              >
-                <div className="flex flex-col items-center leading-none">
-                  <div className="text-[18px]">👁</div>
-                  <div className="text-[11px] font-black mt-1">{broadcastHud.viewerCount}</div>
-                </div>
-              </button>
-              {/* Waitlist (3 lines + count) */}
-              <button
-                type="button"
-                onClick={() => setShowWaitlist(true)}
-                className="w-full h-14 flex items-center justify-center border-t border-white/10 text-white/90 hover:bg-white/5"
-                title="Waitlist"
-              >
-                <div className="flex flex-col items-center leading-none">
-                  <div className="text-[18px]">≡</div>
-                  <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
-                </div>
-              </button>
-              {/* Share */}
-              <button
-                type="button"
-                onClick={handleShareBroadcastLink}
-                className="w-full h-14 flex items-center justify-center border-t border-white/10 text-white/90 hover:bg-white/5"
-                title="Share"
-              >
-                <div className="text-[18px]">↗</div>
-              </button>
-            </div>
-            {broadcastHud.lastShareMsg && (
-              <div className="text-white/70 text-xs font-bold bg-black/60 border border-white/10 rounded-full px-3 py-2 w-fit">
-                {broadcastHud.lastShareMsg}
-              </div>
-            )}
-
-            {broadcastHud.shareOpen && (
-              <div className="w-[260px] bg-black/70 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-white font-black text-xs tracking-wider">Share link</div>
-                  <button
-                    type="button"
-                    onClick={() => setBroadcastHud((prev) => ({ ...prev, shareOpen: false }))}
-                    className="w-8 h-8 rounded-full bg-white/10 border border-white/10 text-white/70 hover:bg-white/15"
-                    title="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <input
-                    readOnly
-                    value={broadcastHud.shareUrl}
-                    className="flex-1 bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-white/80 text-[11px] font-mono outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={copyShareUrl}
-                    className="px-3 py-2 rounded-xl bg-white/10 border border-white/10 text-white font-black text-xs hover:bg-white/15"
-                    title="Copy"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <BroadcastHud
+          isBroadcasting={isBroadcasting}
+          broadcastHud={broadcastHud}
+          setShowWaitlist={setShowWaitlist}
+          handleShareBroadcastLink={handleShareBroadcastLink}
+          setBroadcastHud={setBroadcastHud}
+          copyShareUrl={copyShareUrl}
+        />
 
         {/* Icebreaker Toast Overlay */}
-        {showIcebreaker && (
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[60] animate-in fade-in slide-in-from-top-4">
-            <div className="bg-purple-600/90 backdrop-blur-xl px-8 py-4 rounded-2xl border border-white/20 shadow-2xl max-w-md text-center">
-              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Icebreaker</p>
-              <p className="text-white text-base font-black leading-tight">{icebreaker}</p>
-            </div>
-          </div>
-        )}
+        <IcebreakerToast
+          isOpen={showIcebreaker}
+          icebreaker={icebreaker}
+        />
 
         {broadcastChatWarning && (
           <div className="absolute top-40 left-1/2 -translate-x-1/2 z-[61] animate-in fade-in slide-in-from-top-2">
@@ -2225,200 +1947,33 @@ export default function VideoChat() {
           </div>
         )}
 
-        {/* Randomness Modal Backdrop */}
-        {showRandomness && (
-          <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowRandomness(false)}>
-            <div className="w-full max-w-md space-y-4 animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
-              <div className="bg-purple-800/80 backdrop-blur-md border border-white/20 rounded-full py-3 text-center">
-                <h2 className="text-white text-xl font-black tracking-wider">Add randomness</h2>
-              </div>
-              {callRoles.isLocalHost ? (
-                <>
-                  <button
-                    onClick={handlePullStranger}
-                    disabled={isPullStrangerDisabled}
-                    className={`w-full bg-gradient-to-br from-purple-900/90 to-purple-800/90 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 flex items-center gap-6 text-left transition-all ${
-                      isPullStrangerDisabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:scale-[1.02] active:scale-95'
-                    }`}
-                  >
-                    <div className="w-20 h-20 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                      <img src="/pull.svg" className="w-10 h-10" alt="" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white text-lg font-black">Pull in a stranger</h3>
-                      <p className="text-white/70 text-[11px] font-medium">
-                        {isRoomFull
-                          ? 'Room is full (4/4)'
-                          : isEnablingPullStranger
-                            ? 'Enabling...'
-                            : pullStrangerCooldownSec > 0
-                              ? `Active for ${pullStrangerCooldownSec}s`
-                              : 'Summons a random person in the call'}
-                      </p>
-                    </div>
-                  </button>
-                  {!isBroadcasting ? (
-                    <button onClick={handleBeamcast} className="w-full bg-gradient-to-br from-purple-900/90 to-purple-800/90 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 flex items-center gap-6 text-left hover:scale-[1.02] transition-all active:scale-95">
-                      <div className="w-20 h-20 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                        <img src="/beamcast.svg" className="w-10 h-10" alt="" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white text-lg font-black">Beamcast</h3>
-                        <p className="text-white/70 text-[11px] font-medium">Starts streaming this call live on Beam TV</p>
-                      </div>
-                    </button>
-                  ) : (
-                    <button onClick={handleStopBeamcast} className="w-full bg-gradient-to-br from-red-900/70 to-red-800/70 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 flex items-center gap-6 text-left hover:scale-[1.02] transition-all active:scale-95">
-                      <div className="w-20 h-20 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                        <img src="/beamcast.svg" className="w-10 h-10" alt="" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white text-lg font-black">Stop Beamcast</h3>
-                        <p className="text-white/70 text-[11px] font-medium">Stops streaming and removes this room from Beam TV</p>
-                      </div>
-                    </button>
-                  )}
+        {/* Randomness Menu Overlay */}
+        <RandomnessModal
+          isOpen={showRandomness}
+          onClose={() => setShowRandomness(false)}
+          isLocalHost={callRoles.isLocalHost}
+          handlePullStranger={handlePullStranger}
+          isPullStrangerDisabled={isPullStrangerDisabled}
+          isRoomFull={isRoomFull}
+          isEnablingPullStranger={isEnablingPullStranger}
+          pullStrangerCooldownSec={pullStrangerCooldownSec}
+          isBroadcasting={isBroadcasting}
+          handleBeamcast={handleBeamcast}
+          handleStopBeamcast={handleStopBeamcast}
+          setShowWaitlist={setShowWaitlist}
+        />
 
-                  <button
-                    onClick={() => { setShowWaitlist(true); setShowRandomness(false); }}
-                    disabled={!isBroadcasting}
-                    className={`w-full bg-gradient-to-br from-purple-900/90 to-purple-800/90 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 flex items-center gap-6 text-left transition-all ${
-                      !isBroadcasting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'
-                    }`}
-                  >
-                    <div className="w-20 h-20 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                      <img src="/msg.png" className="w-10 h-10 object-contain" alt="" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white text-lg font-black">Waitlist</h3>
-                      <p className="text-white/70 text-[11px] font-medium">
-                        {isBroadcasting ? 'See who requested to join and accept them' : 'Start Beamcast to enable join requests'}
-                      </p>
-                    </div>
-                  </button>
-                </>
-              ) : (
-                <p className="text-center text-white/75 text-sm font-medium px-4 py-6 rounded-[2rem] border border-white/10 bg-white/5">
-                  Only hosts of this call can pull in a stranger or start Beamcast.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {showWaitlist && (
-          <div className="absolute inset-0 z-[55] bg-[#1f013d]/55 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowWaitlist(false)}>
-            <div className="w-full h-[90vh] max-w-4xl bg-gradient-to-b from-[#7015cc]/55 via-[#5e10b8]/52 to-[#4b0e9d]/50 border border-white/20 rounded-[2.2rem] px-5 py-6 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-3 px-1">
-                <div className="text-white text-xl font-black tracking-wide">Waitlist</div>
-                <button
-                  type="button"
-                  onClick={() => setShowWaitlist(false)}
-                  className="w-10 h-10 rounded-full bg-white/10 border border-white/20 text-white/85 hover:bg-white/15"
-                  title="Close"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {waitlistError && (
-                <div className="mb-3 text-red-200 text-xs font-bold">{waitlistError}</div>
-              )}
-
-              <div className="flex-1 min-h-0 overflow-auto pr-1">
-                {waitlistLoading && waitlist.length === 0 && (
-                  <div className="text-white/50 text-sm font-bold">Loading…</div>
-                )}
-                {!waitlistLoading && waitlist.length === 0 && (
-                  <div className="text-white/50 text-sm font-bold">No one is waiting to join yet.</div>
-                )}
-
-                <div className="flex flex-col">
-                  {waitlist.map((w) => {
-                    const u = w.profile || {
-                      id: w.userId,
-                      username: w.username || w.userId,
-                      displayPictureUrl: w.displayPictureUrl || '/avatar-placeholder.png',
-                      preferredCity: '',
-                      city: ''
-                    };
-                    return (
-                      <div
-                        key={w.userId}
-                        className="w-full px-2 py-3 flex items-center gap-4 hover:bg-white/10 transition cursor-pointer border-b border-white/20"
-                        onClick={() => setSelectedWaitlistUser(u)}
-                      >
-                        <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-yellow-300/90 bg-gray-200 shrink-0">
-                          <img src={u.displayPictureUrl || '/avatar-placeholder.png'} alt={u.username || 'User'} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white text-[2rem] leading-none font-black truncate">{u.username || 'User'}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            acceptFromWaitlist(w.userId);
-                          }}
-                          className="w-14 h-14 rounded-full border-2 border-white/45 text-white text-4xl leading-none flex items-center justify-center hover:bg-white/15 active:scale-95"
-                          title="Add to call"
-                        >
-                          +
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={refreshWaitlist}
-                  className="flex-1 px-4 py-3 rounded-full bg-white/10 text-white border border-white/15 font-black text-xs hover:bg-white/15"
-                >
-                  Refresh
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowWaitlist(false); }}
-                  className="flex-1 px-4 py-3 rounded-full bg-white/10 text-white border border-white/15 font-black text-xs hover:bg-white/15"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedWaitlistUser && (
-          <div className="absolute inset-0 z-[56] bg-black/45 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setSelectedWaitlistUser(null)}>
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <FaceCard user={selectedWaitlistUser} />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[82%] flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    acceptFromWaitlist(selectedWaitlistUser.id);
-                    setSelectedWaitlistUser(null);
-                  }}
-                  className="flex-1 px-4 py-3 rounded-full bg-green-500/30 text-green-50 border border-green-400/30 font-black text-sm hover:bg-green-500/40 active:scale-95 transition"
-                >
-                  Meet rn
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedWaitlistUser(null)}
-                  className="px-4 py-3 rounded-full bg-white/10 text-white border border-white/15 font-black text-sm hover:bg-white/15"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <WaitlistModal
+          isOpen={showWaitlist}
+          onClose={() => setShowWaitlist(false)}
+          waitlist={waitlist}
+          waitlistLoading={waitlistLoading}
+          waitlistError={waitlistError}
+          refreshWaitlist={refreshWaitlist}
+          acceptFromWaitlist={acceptFromWaitlist}
+          selectedWaitlistUser={selectedWaitlistUser}
+          setSelectedWaitlistUser={setSelectedWaitlistUser}
+        />
 
         {/* QA debug badge: room-health protection status */}
         {(roomHealthDebug.graceActive || roomHealthDebug.failureCount > 0) && (

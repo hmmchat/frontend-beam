@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import FilterButtons from '@/components/ui/FilterButtons';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
-import { IoLogOutOutline } from 'react-icons/io5';
+import { IoLogOutOutline, IoClose } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import FaceCard from './FaceCard';
@@ -135,7 +135,16 @@ export default function MeetSomeoneDynamic() {
     };
     clearGhostRoom();
 
-    // If user rainchecked from in-call "next", resume directly with next discovery card.
+    // 1) URL-based recovery (searching mode)
+    const urlSearching = params?.get('searching') === '1';
+    if (urlSearching) {
+        setIsSearching(true);
+        // resume discovery pool participation
+        handleUpdateStatus('AVAILABLE');
+        fetchCardSilently(Date.now().toString(), true);
+    }
+
+    // 2) Original resume logic (rainchecks, sessions, etc.)
     if (resumeDiscoveryFromUrl || pendingRaincheckRaw || forcedResumeRaw || resumeOnHomeRaw) {
       try {
         const pendingParsed = safeParse(pendingRaincheckRaw);
@@ -219,12 +228,26 @@ export default function MeetSomeoneDynamic() {
     };
     window.addEventListener('beforeunload', setOnlineKeepalive);
 
+    // Synchronize isSearching state with URL for browser back button support
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('searching') !== '1') {
+        setIsSearching(false);
+        setCurrentCard(null);
+        handleUpdateStatus('ONLINE');
+      } else if (params.get('searching') === '1') {
+        setIsSearching(true);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
     // CLEANUP: Stop polling if the component unmounts
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (discoveryPollRef.current) clearInterval(discoveryPollRef.current);
       if (rescueTimeoutRef.current) clearTimeout(rescueTimeoutRef.current);
       window.removeEventListener('beforeunload', setOnlineKeepalive);
+      window.removeEventListener('popstate', handlePopState);
       // Do not override status when transitioning into active video chat.
       if (!isEnteringCallRef.current) {
         const hasResumeFlags =
@@ -731,6 +754,12 @@ export default function MeetSomeoneDynamic() {
             <MeetSomeoneNew 
               onMeetNow={async () => {
                 setIsSearching(true);
+                // Push state to browser history so back button returns to home interface
+                if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('searching', '1');
+                    window.history.pushState({ searching: true }, '', url.toString());
+                }
                 await handleUpdateStatus('AVAILABLE');
                 await fetchCard(null, true);
               }}
@@ -914,7 +943,7 @@ export default function MeetSomeoneDynamic() {
 
 
           {/* Coins pill (restore original placement) */}
-          <div className={clsx('absolute', 'top-8', 'left-8', 'z-50')}>
+          <div className={clsx('absolute', 'top-8', 'left-8', 'z-50', isSearching && 'hidden md:flex')}>
             <Button variant="outline" width="hex" onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
@@ -923,23 +952,41 @@ export default function MeetSomeoneDynamic() {
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-4', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-5', 'z-50', 'bg-black/40', 'rounded-full', 'px-12', 'py-1')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'bg-black/40', 'rounded-full', 'px-4', 'md:px-12', 'py-1', isSearching && 'hidden md:flex')}>
             <button 
-              onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
-              className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
+              onClick={() => {
+                if (isSearching) {
+                  setOverlay({ open: true, url: '/inbox', title: 'Messages' });
+                } else {
+                  router.push('/inbox');
+                }
+              }}
+              className="w-10 md:w-12 h-10 md:h-12 flex items-center justify-center hover:bg-white/20 rounded-full"
             >
-              <img src="/assets/chat-with-indicator.svg" className={clsx('w-8', 'h-8')} />
+              <img src="/assets/chat-with-indicator.svg" className="w-8 h-8" alt="Messages" />
             </button>
             <button 
-              onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
-              className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
+              onClick={() => {
+                if (isSearching) {
+                  setOverlay({ open: true, url: '/history', title: 'History' });
+                } else {
+                  router.push('/history');
+                }
+              }}
+              className="w-10 md:w-12 h-10 md:h-12 flex items-center justify-center hover:bg-white/20 rounded-full"
             >
-              <img src="/assets/history.svg" className={clsx('w-8', 'h-8')} />
+              <img src="/assets/history.svg" className="w-8 h-8" alt="History" />
             </button>
                {/* Profile */}
 <button 
-  onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
-  className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden"
+  onClick={() => {
+    if (isSearching) {
+      setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' });
+    } else {
+      router.push('/facecard?view=editor');
+    }
+  }}
+  className="w-10 md:w-12 h-10 md:h-12 flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden"
 >
   {myProfile ? (
     <img 
@@ -968,11 +1015,11 @@ export default function MeetSomeoneDynamic() {
           </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-50', 'flex', 'gap-2')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-10', 'right-8', 'z-50', 'flex', 'gap-2', isSearching && 'hidden md:flex')}>
 
   <Link href="/beam-tv">
-  <button className="h-12 w-12 rounded-full p-2 border-2 border-white/60 shadow-md transition-all duration-200">
-    <img src="/assets/Frame.png" alt="beam-tv" />
+  <button className="h-12 w-12 rounded-full p-2 border-2 border-white/60 shadow-md transition-all duration-200 items-center justify-center flex">
+    <img src="/crown.png" alt="crown" />
   </button>
 </Link>
 
@@ -981,16 +1028,32 @@ export default function MeetSomeoneDynamic() {
   <button
     type="button"
     onClick={() => setOverlay({ open: true, url: '/onboarding?intent=1&overlay=1', title: 'Intent' })}
-    className={clsx('w-12', 'h-12', 'rounded-full', 'hover:bg-white/10', 'active:scale-95', 'transition', 'flex', 'items-center', 'justify-center')}
+    className="w-10 md:w-12 h-10 md:h-12 rounded-full hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
     title="Intent"
   >
     <img src="/icones1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
   </button>
-
-
-
-
 </div>
+
+{/* MOBILE ONLY CLOSE BUTTON while searching */}
+{isSearching && (
+  <button
+     onClick={async () => {
+       setIsSearching(false);
+       setCurrentCard(null);
+       // Reset search state in URL
+       if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('searching');
+          window.history.pushState({}, '', url.toString());
+       }
+     }}
+     className="md:hidden absolute top-4 right-4 z-[100] w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-all"
+     title="Exit Search"
+  >
+     <IoClose className="text-3xl" />
+  </button>
+)}
 
           
 
@@ -1009,6 +1072,12 @@ export default function MeetSomeoneDynamic() {
              <button
   onClick={async () => { 
     setIsSearching(true);
+    // Push state to browser history so back button returns to home interface
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('searching', '1');
+        window.history.pushState({ searching: true }, '', url.toString());
+    }
     // Enter discovery pool first, then fetch card to avoid first-fetch mismatch.
     await handleUpdateStatus('AVAILABLE');
     await fetchCard(null, true);
@@ -1030,28 +1099,112 @@ export default function MeetSomeoneDynamic() {
                   />
                 </>
               ) : (
-                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20')}>
+                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20', 'flex flex-col md:block')}>
+                  
+                  {/* MOBILE VIEW LOGIC: 50/50 split during search/location, Fullscreen for FaceCard */}
+                  {(() => {
+                    const isSearchingState = !currentCard || isResumeLoading;
+                    const isLocationState = currentCard?.type === 'LOCATION' || currentCard?.isLocationCard;
+                    const isFaceCardState = !isSearchingState && !isLocationState;
 
-<div className="absolute inset-0 z-[1]">
+                    return (
+                        <>
+                          {/* TOP HALF (OR FULL SCREEN) */}
+                          <div 
+                            className={clsx(
+                                "flex md:hidden w-full relative z-20 items-center justify-center pt-14 pb-4 px-4 overflow-hidden transition-all duration-500",
+                                isFaceCardState ? "h-full" : "h-1/2"
+                            )}
+                            style={{
+                              backgroundImage: 'url(/assets/mb.jpg)',
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              backgroundRepeat: 'no-repeat'
+                            }}
+                          >
+                            {!isFaceCardState && (
+                              <div className="absolute inset-2 border border-white/40 rounded-[2rem] pointer-events-none z-30" />
+                            )}
 
-  {/* 🎥 FULL VIDEO */}
-  <LocalVideo 
-    showSoloCheckbox={false} 
-    onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
-  />
+                            <div className={clsx(
+                                "origin-center transition-transform duration-500",
+                                isFaceCardState ? "scale-[0.8] sm:scale-[0.85]" : "scale-[0.75] sm:scale-[0.8]"
+                            )}>
+                              {isSearchingState ? (
+                                <div className="h-[660px] w-[360px] flex flex-col items-center justify-center text-center p-8 bg-black/40 backdrop-blur-md rounded-[30px] border border-white/20 shadow-2xl">
+                                  <div className="w-24 h-24 rounded-full border-4 border-t-purple-500 border-white/10 animate-spin mb-8" />
+                                  <h2 className="text-3xl font-bold text-white mb-2">Finding someone...</h2>
+                                  <div className="flex gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" />
+                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.15s]" />
+                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.3s]" />
+                                  </div>
+                                </div>
+                              ) : isLocationState ? (
+                                <LocationCard 
+                                  location={currentCard?.location || {
+                                    city: currentCard?.city || '...',
+                                    country: currentCard?.country || '...',
+                                    image: currentCard?.image || currentCard?.location?.image || '/assets/mb.jpg'
+                                  }} 
+                                  onAccept={() => handleAcceptCard(currentCard)}
+                                  onNext={() => fetchCard(null)}
+                                />
+                              ) : (
+                                <div className="relative group/card cursor-grab active:cursor-grabbing">
+                                  <FaceCard user={currentCard} />
 
-  {/* 🌫 LIGHT OVERLAY */}
-  <div className="absolute inset-0 bg-black/10" />
+                                  <div className="flex gap-2 mt-4 items-center justify-center gap-10 ">
+                                                        <button
+                          onClick={handleRaincheck}
+                          className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
+                        >
+                          Raincheck!
+                        </button>
 
-  {/* 🔲 BORDER FRAME */}
-  <div className="absolute inset-4 border border-white/30 rounded-[40px] pointer-events-none" />
-
+                        {/* MEET (accept) */}
+                        <button
+                          onClick={handleProceed}
+                          className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
+                        >
+                          Meet rn
+                        </button>
 </div>
 
+                                </div>
+                              )}
+                            </div>
 
+                          </div>
 
-</div>
-     
+                          {/* BOTTOM HALF (CAM PREVIEW) - Hidden when FaceCard is shown on mobile */}
+                          {!isFaceCardState && (
+                            <div className="flex md:hidden h-1/2 w-full relative z-[1] min-h-0">
+                                <div className="absolute inset-2 border border-white/40 rounded-[2rem] pointer-events-none z-10" />
+                                <LocalVideo 
+                                    showSoloCheckbox={false} 
+                                    onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
+                                />
+                            </div>
+                          )}
+                        </>
+                    );
+                  })()}
+
+                  <div className="hidden md:block relative flex-1 md:absolute md:inset-0 z-[1] w-full min-h-0">
+                    {/* 🎥 VIDEO (Desktop only - Mobile video handled above) */}
+                    <LocalVideo 
+                      showSoloCheckbox={false} 
+                      onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
+                    />
+                    
+                    {/* 🌫 LIGHT OVERLAY (Desktop only) */}
+                    <div className="hidden md:block absolute inset-0 bg-black/10" />
+
+                    {/* 🔲 BORDER FRAME (Desktop only) */}
+                    <div className="hidden md:block absolute inset-4 border border-white/30 rounded-[40px] pointer-events-none" />
+                  </div>
+                </div>
               )}
             </div>
           ) : (

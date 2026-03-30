@@ -7,6 +7,11 @@ import { FaCrown, FaMobileAlt } from 'react-icons/fa';
 import { API, apiRequest } from '@/lib/api';
 import clsx from 'clsx';
 import Image from 'next/image';
+import FilterButtons from '@/components/ui/FilterButtons';
+import GenderModal from '@/components/modals/GenderModal';
+import LocationModal from '@/components/modals/LocationModal';
+import OverlayLayer from '@/components/ui/OverlayLayer';
+import Button from '@/components/ui/Button';
 
 export default function MeetSomeoneNew({ 
   onMeetNow, 
@@ -21,6 +26,9 @@ export default function MeetSomeoneNew({
   const [internalCoins, setInternalCoins] = useState(25500);
   const [internalActiveUsers, setInternalActiveUsers] = useState(140567);
   const [internalMyProfile, setInternalMyProfile] = useState(null);
+  const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
 
   // Sync or use local state
   const mode = externalMode || internalMode;
@@ -75,6 +83,13 @@ export default function MeetSomeoneNew({
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
+    window.location.href = '/';
+  };
+
   const handleMeetNow = () => {
     if (onMeetNow) {
         onMeetNow();
@@ -86,68 +101,77 @@ export default function MeetSomeoneNew({
   return (
 <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
 
-  {/* 🔥 FULL SCREEN BACKGROUND */}
-  <div
-    className="absolute inset-0 z-0 opacity-70 mix-blend-hard-light"
-    style={{
-      backgroundImage: 'url(/bg.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-    }}
-  />
+<div
+  className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
+  style={{
+    backgroundImage: 'url(/bg.jpg)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'repeat',
+  }}
+/>    
 
-  {/* 🔥 OPTIONAL DARK OVERLAY */}
-  <div className="absolute  inset-0 z-[1]" />
+      
+
 
       {/* Overlay Glow */}
 
 
       {/* Top Bar */}
-      <div className="relative z-10 w-full px-6 pt-10 flex justify-between items-center">
+    <div className="relative z-10 w-full px-6 pt-10 flex justify-between items-center">
 
-        <div className="  border border-white/20 rounded-full py-2 px-4 flex items-center gap-2 shadow-lg">
-          <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] font-bold text-black shadow-[0_0_10px_rgba(250,204,21,0.5)]">
-            $
-          </div>
-          <span className="text-white font-bold text-sm">{coins.toLocaleString()}</span>
-          <button className="text-white font-bold ml-1 text-lg leading-none flex items-center justify-center">+</button>
-        </div>
+  {/* LEFT BUTTON (COINS) */}
+  <div>
+    <Button
+      className="h-10 px-4 flex items-center gap-2 border border-white border-b-4 rounded-full"
+      onClick={() => setIsCoinModalOpen(true)}
+    >
+      <img src="/assets/Coin-token.svg" className="w-5 h-5" />
+      <div className="text-sm font-semibold">{coins.toLocaleString()}</div>
+      <img src="/assets/plus.png" className="w-4 h-4" />
+    </Button>
+  </div>
 
-        <div className="flex gap-3">
-            <button className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center text-white shadow-lg  transition-all">
-                <FaCrown className="text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />
-            </button>
-            <button className="w-10 h-10   border border-white/20 rounded-full flex items-center justify-center text-white shadow-lg  transition-all">
-                <FaMobileAlt />
-            </button>
-        </div>
-      </div>
+  {/* RIGHT BUTTONS */}
+  <div className="flex gap-3">
+    <button className="h-10 w-10 border border-white rounded-full flex items-center justify-center text-white shadow-lg">
+      <FaCrown className="text-yellow-400" />
+    </button>
+
+    <button className="h-10 w-10 border border-white rounded-full flex items-center justify-center text-white shadow-lg">
+      <FaMobileAlt />
+    </button>
+  </div>
+
+</div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 w-full max-w-sm px-6 flex flex-col items-center justify-center gap-10 mt-[-20px]">
+      <div className="relative z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-10">
 
-        <div className="text-center">
-          <h1 className="text-7xl font-black text-yellow-400 drop-shadow-[0_4px_0_rgba(0,0,0,1)] italic tracking-tighter" 
-              style={{ fontFamily: 'var(--font-otomanopee), sans-serif' }}>
-            beam
-          </h1>
-          <p className="text-white text-xl font-medium mt-1">Meet Someone here</p>
-          <div className="flex items-center justify-center gap-2 mt-3 opacity-90">
-            <IoVideocam className="text-white/70" size={18} />
-            <p className="text-white/80 text-sm font-semibold">{activeUsers.toLocaleString()} beaming now</p>
-          </div>
-        </div>
+    <div className="text-center flex flex-col items-center justify-center mx-auto">
+  <img src="./LOGO.png" className="w-40 mx-auto" />
+  
+  <p className="text-white text-xl font-medium mt-1">
+    Meet Someone here
+  </p>
+
+  <div className="flex items-center justify-center gap-2 mt-3 opacity-90">
+    <IoVideocam className="text-white/70" size={18} />
+    <p className="text-white/80 text-sm font-semibold">
+      {activeUsers.toLocaleString()} beaming now
+    </p>
+  </div>
+</div>
 
 
         <div className="w-full relative py-10 px-0">
      
-            <div className="absolute inset-0 border-[1.5px] border-white/15 rounded-[45px] pointer-events-none" />
+            <div className="absolute inset-0 " />
             
             <div className="flex flex-col gap-10 items-center py-6 px-4">
         
                 <div className="flex items-center justify-between w-full">
-                     <button className="w-12 h-12  border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-inner group">
+                     <button className="w-12 h-12  brounded-2xl flex items-center justify-center text-white shadow-inner group">
                         <div className="flex flex-col items-center justify-center">
                               <Image
                                    src="/assets/Frame.png"
@@ -159,10 +183,10 @@ export default function MeetSomeoneNew({
                         </div>
                     </button>
 
-                    <div className="flex   border border-white/10 p-1 rounded-full w-48 relative shadow-inner h-11">
+                    <div className="flex   border border-white p-1 rounded-full w-48 relative shadow-inner h-11">
                         <div 
                             className={clsx(
-                                "absolute top-1 bottom-1 w-[calc(50%-4px)] border border-white/25 rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)",
+                                "absolute top-1 bottom-1 w-[calc(50%-4px)] border border-white rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)",
                                 mode === 'solo' ? "left-1" : "left-[calc(50%+2px)]"
                             )}
                         />
@@ -182,8 +206,8 @@ export default function MeetSomeoneNew({
                         </button>
                     </div>
 
-                    <button className="w-12 h-12  border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-inner group">
-                        <IoLayersOutline size={24} className="opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                    <button className="w-12 h-12  rounded-2xl flex items-center justify-center text-white shadow-inner group">
+                        <Image src="/Group.png" alt="User" width={42} height={42} className="opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                     </button>
                 </div>
 
@@ -191,10 +215,10 @@ export default function MeetSomeoneNew({
                 <div className="w-full px-2">
                     <button 
                         onClick={handleMeetNow}
-                        className="group relative w-full h-20  border border-white/30 rounded-[30px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl"
+                        className="group relative w-full h-20  border border-white border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 opacity-50" />
-                        <div className="w-11 h-11 rounded-full border border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="w-11 h-11 rounded-full border border-white flex items-center justify-center group-hover:scale-110 transition-transform">
                             <IoVideocam className="text-white text-2xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
                         </div>
                         <span className="text-white text-xl font-bold tracking-tight">Meet Someone now</span>
@@ -202,31 +226,41 @@ export default function MeetSomeoneNew({
                 </div>
 
  
-                <div className="flex w-full gap-4 px-2">
-                    <button className="flex-1 h-14   border border-white/15 rounded-[22px] flex items-center justify-center gap-2 text-white/90 font-bold  transition-all shadow-lg active:scale-95 group">
-                        <IoPersonOutline size={22} className="opacity-70 group-hover:opacity-100" />
-                        <span>Both</span>
-                    </button>
-                    <button className="flex-1 h-14 border border-white/15 rounded-[22px] flex items-center justify-center gap-2 text-white/90 font-bold  transition-all shadow-lg active:scale-95 group">
-                        <span>Location</span>
-                        <IoNavigate size={22} className="opacity-70 group-hover:opacity-100" />
-                    </button>
-                </div>
+                <FilterButtons 
+                    onGenderClick={() => setIsGenderModalOpen(true)}
+                    onLocationClick={() => setIsLocationModalOpen(true)}
+                    className="w-[80%] mt-4"
+                />
             </div>
         </div>
+
+
+
+
       </div>
 
       {/* Bottom Navigation */}
-      <div className="relative z-10 w-full max-w-sm px-6 pb-10 mt-auto">
-        <div className="  border border-white/90 rounded-full h-18 w-full flex items-center justify-between px-8 shadow-2xl">
+      <div className="relative z-10 w-full max-w-sm px-6 pb-10 mt-auto mx-auto">
+        <div className=" border border-white rounded-full h-18 w-full flex items-center justify-between px-8 shadow-2xl">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><IoHomeOutline /></button>
-            <button className="text-white/40 text-2xl hover:text-white/60 transition-colors"><IoTimeOutline /></button>
-            <button className="relative text-white/40 text-2xl hover:text-white/60 transition-colors">
+            <button 
+                onClick={() => router.push('/history')}
+                className="text-white/70 text-2xl hover:text-white/60 transition-colors"
+            >
+                <IoTimeOutline />
+            </button>
+            <button 
+                onClick={() => router.push('/inbox')}
+                className="relative text-white/70 text-2xl hover:text-white/60 transition-colors"
+            >
                 <IoChatbubbleOutline />
                 <div className="absolute top-0 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#201035] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </button>
-            <button className="flex items-center justify-center hover:scale-110 transition-transform">
-                <div className="w-11 h-11 rounded-full border-2 border-white/40 overflow-hidden  shadow-lg">
+            <button 
+                onClick={() => router.push('/facecard?view=editor')}
+                className="flex items-center justify-center hover:scale-110 transition-transform"
+            >
+                <div className="w-11 h-11 rounded-full border-2 border-white overflow-hidden  shadow-lg">
                     {myProfile?.displayPictureUrl ? (
                          <img src={myProfile.displayPictureUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -237,6 +271,19 @@ export default function MeetSomeoneNew({
         </div>
       </div>
 
+
+
+
+      {/* Modals */}
+      <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
+      <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+      
+      <OverlayLayer
+        open={overlay.open}
+        url={overlay.url}
+        title={overlay.title}
+        onClose={() => setOverlay({ open: false, url: '', title: '' })}
+      />
     </div>
   );
 }

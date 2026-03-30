@@ -397,12 +397,24 @@ if (prompt.trim() && accessToken) {
 
 
       <div className=" mx-auto  ">
+
+
+
+
         <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[100vh] px-4 py-4  ">
 
             {step === 1 && (
     <>
+
+
+           {/* <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
+  <img src="/Logo.png" className="w-40 mx-auto" />
+  <p className="text-white text-lg font-medium mt-1">
+    Meet someone here
+  </p>
+</div> */}
           {/* Left */} 
-          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-2xl py-20  ">
+          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-2xl py-20  hidden md:flex ">
             <div className="mx-auto ">
 
             <h3 className="text-4xl font-bold outfit-font">Welcome onboard,</h3>
@@ -415,50 +427,57 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Right - Form */}
-          <div className="flex justify-center border border-white/30 rounded-2xl  ">
-            <div className="w-full max-w-[540px] rounded-2xl p-6  mx-auto ">
-              <form onSubmit={handleSubmit} className="space-y-6 border border-white/30 p-3 py-5  rounded-[3rem]">
+          <div className="flex justify-center md:border md:border-white/30 md:rounded-2xl   ">
+            <div className="w-full md:max-w-[540px] rounded-2xl md:p-6 py-6 mx-auto ">
+              <form onSubmit={handleSubmit} className="space-y-6 md:border md:border-white/30 md:p-3 md:py-5  md:rounded-[3rem]">
                 
                 {/* 2️⃣ Photo upload UI */}
                 <div className="mb-8 border border-white/30 p-3 py-5 rounded-[3rem]">
                 
 
-                  <div className="flex justify-center gap-4">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="relative w-32 h-48 rounded-xl border-2 border-white/30 overflow-hidden bg-white/5 cursor-pointer"
-                        onClick={() => fileRefs.current[i]?.click()}
-                      >
-                        {photos[i] ? (
-                          <>
-                            <img src={photos[i]} className="w-full h-full object-cover" alt={`upload-${i}`} />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removePhoto(i);
-                              }}
-                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white text-black text-sm flex items-center justify-center"
-                            >
-                              ✕
-                            </button>
-                          </>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-white text-3xl">
-                            +
-                          </div>
-                        )}
+                  <div className="flex justify-center md:gap-4 gap-2">
+                    {[0, 1, 2].map((i) => {
+                      // Only show the slot if it's the first one OR the previous one is filled
+                      const isVisible = i === 0 || !!photos[i - 1];
+                      if (!isVisible) return null;
 
-                        <input
-                          ref={(el) => (fileRefs.current[i] = el)}
-                          type="file"
-                          accept="image/*"
-                          hidden
-                          onChange={(e) => handlePhotoChange(e.target.files?.[0], i)}
-                        />
-                      </div>
-                    ))}
+                      return (
+                        <div
+                          key={i}
+                          className="relative w-32 md:w-32 h-44 md:h-48 rounded-xl border-2 border-white/30 overflow-hidden bg-white/5 cursor-pointer animate-in fade-in zoom-in duration-300"
+                          onClick={() => fileRefs.current[i]?.click()}
+                        >
+                          {photos[i] ? (
+                            <>
+                              <img src={photos[i]} className="w-full h-full object-cover" alt={`upload-${i}`} />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removePhoto(i);
+                                }}
+                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white text-black text-sm flex items-center justify-center font-bold"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-white text-3xl">
+                              <span className="text-4xl text-white/30">+</span>
+                              <span className="text-[10px] mt-2 font-bold opacity-40 uppercase">Photo </span>
+                            </div>
+                          )}
+
+                          <input
+                            ref={(el) => (fileRefs.current[i] = el)}
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(e) => handlePhotoChange(e.target.files?.[0], i)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                     <p className="text-white/50 text-sm text-center mt-3">
                     Upload your niceeee pictures

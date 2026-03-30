@@ -66,7 +66,7 @@ export default function Home() {
         <div className="w-full px-4">
           <Button
             fullWidth
-            className="w-full py-5 bg-white/10 border border-white/70 text-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+            className="w-full py-5 bg-white/10 border border-white/70 border-b-6 text-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.3)]"
             onClick={() => setIsSignUpOpen(true)}
           >
             <div className="flex items-center justify-center gap-3">
@@ -87,13 +87,13 @@ export default function Home() {
 
 
 <Link href="/beam-tv">
-  <button className="h-14 w-14 rounded-full p-3 bg-red-600 hover:bg-red-700 border-2 border-red-500 shadow-md transition-all duration-200">
+  <button className="h-14 w-14 rounded-full p-3 border-2 border-white/60 border-b-4  transition-all duration-200">
     <img src="/assets/Frame.png" alt="beam-tv" />
   </button>
 </Link>
 
       <button
-        className="border-2 border-white/80 text-white px-6 py-2 rounded-full bg-white/10 backdrop-blur-md shadow-md"
+        className="border-2 border-white/60 border-b-4 text-white px-6 py-2 rounded-full"
         onClick={() => setIsSignUpOpen(true)}
       >
         Sign Up

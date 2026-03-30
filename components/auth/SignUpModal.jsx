@@ -49,7 +49,6 @@ function SignUpModalContent({ isOpen, onClose }) {
 
         // Create a simple JWT-like structure for the backend
         // The backend will verify this with Google's API
-        console.log('Sending Google access token to backend:', API.AUTH.GOOGLE);
         const response = await fetch(API.AUTH.GOOGLE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -259,21 +258,24 @@ function SignUpModalContent({ isOpen, onClose }) {
     <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="h-full sm:rounded-2xl rounded-none ">
         <div
-          className="flex flex-col justify-center items-center
-          h-full
+          className="flex flex-col
+          flex-col h-full
+         
           text-center
-      
-          md:block md:min-h-0"
+    
+          md:block "
         >
 
           {/* Header */}
-          <div className="mb-10 px-4 lg:px-0 flex flex-col items-center justify-center text-center">
-            <img src="/assets/logo.svg" alt="" className='w-40 mx-auto ' />
-            <p className="text-white text-lg lg:text-lg leading-relaxed font-medium">
-              Meet that someone<br />
-              immediately after Signing in
-            </p>
-          </div>
+       <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
+  <img src="/Logo.png" className="w-40 mx-auto" />
+  <p className="text-white text-lg font-medium mt-1">
+    Meet someone here
+  </p>
+</div>
+
+<div className=' flex-1 flex flex-col justify-center px-4 '>
+
 
           {/* OPTIONS */}
           {step === 'options' && (
@@ -381,8 +383,13 @@ function SignUpModalContent({ isOpen, onClose }) {
 
           {/* TERMS */}
 
+</div>
 
-          <div className='flex justify-center items-center outfit-font'>
+
+          <div className="mt-auto w-full flex justify-center items-center outfit-font pb-6 px-4">
+
+
+
             <div className=" pt-8 lg:px-0">
               <label className="flex items-center gap-6 cursor-pointer max-w-[450px]">
                 <input
@@ -406,7 +413,10 @@ function SignUpModalContent({ isOpen, onClose }) {
                 </span>
               </label>
             </div>
+            
           </div>
+
+          
         </div>
       </div>
     </Modal>

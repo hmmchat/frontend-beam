@@ -1142,10 +1142,10 @@ export default function MeetSomeoneDynamic() {
                                 </div>
                               ) : isLocationState ? (
                                 <LocationCard 
-                                  location={currentCard?.location || {
-                                    city: currentCard?.city || '...',
-                                    country: currentCard?.country || '...',
-                                    image: currentCard?.image || currentCard?.location?.image || '/assets/mb.jpg'
+                                  location={currentCard.location || {
+                                    city: currentCard.city,
+                                    country: currentCard.country,
+                                    image: currentCard.image
                                   }} 
                                   onAccept={() => handleAcceptCard(currentCard)}
                                   onNext={() => fetchCard(null)}

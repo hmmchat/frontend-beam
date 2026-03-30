@@ -67,6 +67,10 @@ export default function ThreadMessages({
             const isMe = message.fromUserId === currentUserId;
             const unreadBubble = !isMe && message.isRead === false;
             const hasText = Boolean(message.message && String(message.message).trim());
+            const isGif =
+              message.messageType === "GIF" ||
+              message.messageType === "GIF_WITH_MESSAGE" ||
+              Boolean(message.gif?.previewUrl || message.gif?.url);
             const giftUnreadOnly =
               unreadBubble &&
               !hasText &&
@@ -85,6 +89,31 @@ export default function ThreadMessages({
                       : "bg-white/10 text-white rounded-tl-none border border-white/5"
                   }`}
                 >
+                  {isGif && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const u = message.gif?.url || message.gif?.previewUrl;
+                        if (u) window.open(u, "_blank", "noopener,noreferrer");
+                      }}
+                      className="block w-full text-left"
+                      title="Open GIF"
+                    >
+                      <div className="bg-black/20 rounded-xl overflow-hidden border border-white/10">
+                        {message.gif?.previewUrl ? (
+                          <img
+                            src={message.gif.previewUrl}
+                            alt="GIF"
+                            className="block w-full max-w-[18rem] h-auto object-cover"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="px-4 py-6 text-sm text-white/60">GIF</div>
+                        )}
+                      </div>
+                    </button>
+                  )}
                   {(message.giftId ||
                     message.messageType === "GIFT" ||
                     message.messageType === "GIFT_WITH_MESSAGE") && (
@@ -116,7 +145,7 @@ export default function ThreadMessages({
                       </div>
                     </div>
                   )}
-                  {message.message && (
+                  {message.message && (!isGif || message.messageType === "GIF_WITH_MESSAGE") && (
                     <div
                       className={`px-4 py-2 whitespace-pre-wrap break-words text-[15px] ${
                         unreadBubble ? "font-bold" : ""

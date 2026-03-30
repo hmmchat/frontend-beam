@@ -1,7 +1,11 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { IoSendSharp } from "react-icons/io5";
 import GiftModal from "../Home/GiftModal";
 import clsx from 'clsx';
+import { FaRegFaceSmile, FaRegImages } from "react-icons/fa6";
+import EmojiPicker from "./EmojiPicker";
+import GifPicker from "./GifPicker";
 
 export default function ThreadComposer({
   newMessage,
@@ -18,6 +22,46 @@ export default function ThreadComposer({
   emitTyping,
   typingTimerRef,
 }) {
+  const inputRef = useRef(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
+
+  useEffect(() => {
+    const onDoc = (e) => {
+      // close pickers on outside click
+      const t = e.target;
+      if (!t) return;
+      if (t.closest?.("[data-emoji-root]")) return;
+      if (t.closest?.("[data-gif-root]")) return;
+      setEmojiOpen(false);
+      setGifOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const insertEmoji = (emoji) => {
+    if (!emoji || textInputLocked || sending) return;
+    const el = inputRef.current;
+    const current = newMessage ?? "";
+    if (!el) {
+      setNewMessage(current + emoji);
+      return;
+    }
+    const start = typeof el.selectionStart === "number" ? el.selectionStart : current.length;
+    const end = typeof el.selectionEnd === "number" ? el.selectionEnd : current.length;
+    const next = current.slice(0, start) + emoji + current.slice(end);
+    setNewMessage(next);
+    requestAnimationFrame(() => {
+      try {
+        el.focus();
+        const pos = start + emoji.length;
+        el.setSelectionRange(pos, pos);
+      } catch { }
+    });
+    emitTyping(Boolean(next.trim()));
+  };
+
   return (
     <>
       <div className={clsx('px-4', 'md:px-6', 'pt-3', 'pb-1', 'flex', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-0.5', 'text-[10px]', 'font-semibold', 'text-white/70', 'md:hidden')}>
@@ -31,6 +75,29 @@ export default function ThreadComposer({
       </div>
       <div className={clsx('p-4', 'md:p-6', 'pt-1', 'md:pt-6', 'flex', 'items-center', 'gap-3')}>
         <div className={clsx('relative', 'flex-1')}>
+          {/* z-index: input is painted after these in DOM; without z-20 the full-width input covers the icons */}
+          <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { setEmojiOpen((o) => !o); setGifOpen(false); }}
+              disabled={sending || textInputLocked}
+              className={clsx("p-2 rounded-full hover:bg-white/10 text-white/90 disabled:opacity-40")}
+              title="Emoji"
+              aria-label="Emoji"
+            >
+              <FaRegFaceSmile className="text-lg" />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setGifOpen((o) => !o); setEmojiOpen(false); }}
+              disabled={sending || textInputLocked}
+              className={clsx("p-2 rounded-full hover:bg-white/10 text-white/90 disabled:opacity-40")}
+              title="GIF"
+              aria-label="GIF"
+            >
+              <FaRegImages className="text-lg" />
+            </button>
+          </div>
           <input
             placeholder={textInputLocked ? "Send a gift to continue…" : "Type message"}
             value={newMessage}
@@ -45,16 +112,40 @@ export default function ThreadComposer({
               if (e.key === "Enter" && !textInputLocked) sendMessage();
             }}
             disabled={sending || textInputLocked}
-            className={clsx('w-full', 'bg-white/5', 'backdrop-blur-md', 'border', 'border-white/60', 'rounded-[12px]', 'py-3', 'md:py-4', 'px-6', 'pr-14', 'text-white', 'placeholder-white/40', 'focus:outline-none', 'focus:border-white/90', 'transition-all', 'shadow-inner', 'disabled:opacity-50')}
+            ref={inputRef}
+            className={clsx('relative z-0', 'w-full', 'bg-white/5', 'backdrop-blur-md', 'border', 'border-white/60', 'rounded-[12px]', 'py-3', 'md:py-4', 'pl-24', 'pr-14', 'text-white', 'placeholder-white/40', 'focus:outline-none', 'focus:border-white/90', 'transition-all', 'shadow-inner', 'disabled:opacity-50')}
           />
           <button
             type="button"
             onClick={() => sendMessage()}
             disabled={sending || textInputLocked || !newMessage.trim()}
-            className={clsx('absolute', 'right-4', 'top-1/2', '-translate-y-1/2', 'text-white', 'hover:text-white/80', 'transition-colors', 'disabled:opacity-30')}
+            className={clsx('absolute', 'right-4', 'top-1/2', 'z-20', '-translate-y-1/2', 'text-white', 'hover:text-white/80', 'transition-colors', 'disabled:opacity-30')}
           >
             <IoSendSharp className={clsx('text-xl', 'md:text-2xl')} />
           </button>
+
+          {emojiOpen && (
+            <div className="absolute bottom-[calc(100%+10px)] left-0 z-[80]" data-emoji-root>
+              <EmojiPicker
+                onSelect={(e) => {
+                  insertEmoji(e);
+                  setEmojiOpen(false);
+                }}
+              />
+            </div>
+          )}
+
+          {/* GIF picker placeholder: wired up in the parent via `sendMessage(gif)` */}
+          {gifOpen && (
+            <div className="absolute bottom-[calc(100%+10px)] left-0 z-[80] w-[20rem] max-w-[90vw]" data-gif-root>
+              <GifPicker
+                onSelect={(gif) => {
+                  sendMessage(gif);
+                  setGifOpen(false);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <button

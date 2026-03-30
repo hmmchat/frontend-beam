@@ -13,6 +13,10 @@ function lastMessagePreview(conv) {
     const txt = lm.message?.trim();
     return txt ? `Gift · ${txt}` : "Gift";
   }
+  if (t === "GIF" || t === "GIF_WITH_MESSAGE") {
+    const txt = lm.message?.trim();
+    return txt ? `GIF · ${txt}` : "GIF";
+  }
   return lm.message || "Message";
 }
 

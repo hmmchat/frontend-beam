@@ -24,6 +24,7 @@ const getWsUrl = () => {
 /** Shared RemoteVideoTile for rendering each broadcast participant */
 function RemoteVideoTile({
   stream,
+  screenShareStream,
   name,
   age,
   city,
@@ -37,18 +38,54 @@ function RemoteVideoTile({
   onSendFriendRequest
 }) {
   const videoRef = useRef(null);
+  const screenRef = useRef(null);
+  const pipRef = useRef(null);
+
   useEffect(() => {
+    if (screenShareStream) return;
     const v = videoRef.current;
     if (!v) return;
     if (v.srcObject !== stream) v.srcObject = stream;
-    // Ensure playback starts even when autoplay is finicky (Safari/iOS).
     const p = v.play?.();
     if (p && typeof p.catch === 'function') p.catch(() => {});
-  }, [stream]);
+  }, [stream, screenShareStream]);
+
+  useEffect(() => {
+    if (!screenShareStream) return;
+    const s = screenRef.current;
+    const p = pipRef.current;
+    if (s && s.srcObject !== screenShareStream) s.srcObject = screenShareStream;
+    if (p && p.srcObject !== stream) p.srcObject = stream;
+    const play = (el) => {
+      const pr = el?.play?.();
+      if (pr && typeof pr.catch === 'function') pr.catch(() => {});
+    };
+    play(s);
+    play(p);
+  }, [stream, screenShareStream]);
 
   return (
     <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-      <video ref={videoRef} autoPlay playsInline muted={forceMuted} className="h-full w-full min-h-0 object-cover" />
+      {screenShareStream ? (
+        <>
+          <video
+            ref={screenRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 z-0 h-full w-full bg-black object-contain"
+          />
+          <video
+            ref={pipRef}
+            autoPlay
+            playsInline
+            muted={forceMuted}
+            className="absolute bottom-4 right-4 z-[5] aspect-video max-h-[32%] w-[32%] max-w-[220px] rounded-xl border-2 border-white/50 object-cover shadow-2xl"
+          />
+        </>
+      ) : (
+        <video ref={videoRef} autoPlay playsInline muted={forceMuted} className="h-full w-full min-h-0 object-cover" />
+      )}
 
       <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
@@ -191,6 +228,7 @@ function BeamTVInner() {
   const recvTransportRef = useRef(null);
   const consumersRef = useRef({});
   const producerUserIdByProducerIdRef = useRef({});
+  const producerIdToMetaRef = useRef(new Map());
   const remoteStreamsRef = useRef([]);
   const broadcastProducersRetryRef = useRef({ roomId: '', tries: 0, timer: null });
   const lastSwipeAtRef = useRef(0);
@@ -210,6 +248,7 @@ function BeamTVInner() {
     recvTransportRef.current = null;
     consumersRef.current = {};
     producerUserIdByProducerIdRef.current = {};
+    producerIdToMetaRef.current.clear();
     if (broadcastProducersRetryRef.current.timer) {
       clearTimeout(broadcastProducersRetryRef.current.timer);
       broadcastProducersRetryRef.current.timer = null;
@@ -869,38 +908,105 @@ function BeamTVInner() {
         });
 
         consumersRef.current[consumer.id] = consumer;
-        
-        // Wait for MediaStreamTrack
+
         const { track } = consumer;
-        
-        // Find existing stream object or create new
-        // Backend doesn't include userId in broadcast-consumed; map it via producerId using broadcast-producers payload.
         const remoteUserId = producerUserIdByProducerIdRef.current?.[data.producerId] || 'broadcaster';
-        
+        const vSource =
+          data.kind === 'video' ? data.source || 'camera' : 'audio';
+        producerIdToMetaRef.current.set(String(data.producerId), {
+          userId: remoteUserId,
+          source: vSource
+        });
+
         setRemoteStreams((prev) => {
           const streamInfo = prev.find((s) => s.userId === remoteUserId);
-          if (streamInfo) {
-            streamInfo.stream.addTrack(track);
-            return [...prev];
-          } else {
-            const newStream = new MediaStream([track]);
+          if (data.kind === 'video' && vSource === 'screen') {
+            if (streamInfo) {
+              return prev.map((s) => {
+                if (s.userId !== remoteUserId) return s;
+                const oldSs = s.screenStream;
+                oldSs?.getTracks().forEach((t) => t.stop());
+                return { ...s, screenStream: new MediaStream([track]) };
+              });
+            }
             const newEntry = {
               userId: remoteUserId,
-              stream: newStream,
+              stream: new MediaStream(),
+              screenStream: new MediaStream([track]),
               profileFetched: false,
               name: 'Broadcaster',
               age: '?',
               displayPictureUrl: '/avatar-placeholder.png',
               city: '',
-              // Keep muted until user taps to enable sound (needed for autoplay policies).
               forceMuted: !(soundEnabled && audioUnlocked)
             };
             return [...prev, newEntry];
           }
+          if (streamInfo) {
+            const next = prev.map((s) =>
+              s.userId === remoteUserId
+                ? { ...s, stream: new MediaStream([...s.stream.getTracks(), track]) }
+                : s
+            );
+            return next;
+          }
+          const newStream = new MediaStream([track]);
+          const newEntry = {
+            userId: remoteUserId,
+            stream: newStream,
+            profileFetched: false,
+            name: 'Broadcaster',
+            age: '?',
+            displayPictureUrl: '/avatar-placeholder.png',
+            city: '',
+            forceMuted: !(soundEnabled && audioUnlocked)
+          };
+          return [...prev, newEntry];
         });
 
-        // Resume consumer locally
         await consumer.resume();
+        break;
+      }
+
+      case 'producer-closed': {
+        const closedPid = data?.producerId != null ? String(data.producerId) : '';
+        if (!closedPid) break;
+        const meta = producerIdToMetaRef.current.get(closedPid);
+        let foundCid = null;
+        let foundConsumer = null;
+        for (const cid of Object.keys(consumersRef.current)) {
+          const c = consumersRef.current[cid];
+          if (c && String(c.producerId) === closedPid) {
+            foundCid = cid;
+            foundConsumer = c;
+            break;
+          }
+        }
+        if (foundConsumer) {
+          try {
+            foundConsumer.close();
+          } catch (_) {}
+          delete consumersRef.current[foundCid];
+        }
+        if (meta) {
+          producerIdToMetaRef.current.delete(closedPid);
+          const tr = foundConsumer?.track;
+          setRemoteStreams((prev) =>
+            prev.map((s) => {
+              if (s.userId !== meta.userId) return s;
+              if (meta.source === 'screen') {
+                const ss = s.screenStream;
+                ss?.getTracks().forEach((t) => t.stop());
+                return { ...s, screenStream: null };
+              }
+              if (tr) {
+                const kept = s.stream.getTracks().filter((t) => t.id !== tr.id);
+                return { ...s, stream: new MediaStream(kept) };
+              }
+              return s;
+            })
+          );
+        }
         break;
       }
       case 'chat-message': {
@@ -1057,10 +1163,12 @@ function BeamTVInner() {
     const uid = String(tile?.userId || '');
     const showAddFriend = isLoggedIn() && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
     const showFollow = isLoggedIn() && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
+    const { screenStream: tileScreen, ...tileRest } = tile || {};
     return (
       <RemoteVideoTile
         key={`beam-tile-${uid}-${idx}`}
-        {...tile}
+        {...tileRest}
+        screenShareStream={tileScreen || null}
         forceMuted={tile.forceMuted}
         showFollow={showFollow}
         isFollowing={Boolean(favouriteByUserId[uid])}

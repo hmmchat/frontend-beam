@@ -94,6 +94,7 @@ export default function VideoChat() {
   const [selectedWaitlistUser, setSelectedWaitlistUser] = useState(null);
   const [broadcastChatWarning, setBroadcastChatWarning] = useState('');
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
@@ -131,6 +132,12 @@ export default function VideoChat() {
   const suppressAutoResumeUntilRef = useRef(0);
   const prevRemoteStreamCountRef = useRef(0);
   const getProducersRetryTimeoutsRef = useRef([]);
+  /** Next outbound video produce: camera (default) or screen (getDisplayMedia). */
+  const pendingVideoProduceSourceRef = useRef('camera');
+  const localScreenStreamRef = useRef(null);
+  const localScreenMsProducerRef = useRef(null);
+  /** producerId → { uiRemoteId, source: 'audio' | 'camera' | 'screen' } for producer-closed cleanup */
+  const producerIdToMetaRef = useRef(new Map());
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
 
@@ -175,6 +182,15 @@ export default function VideoChat() {
     getProducersRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
     getProducersRetryTimeoutsRef.current = [];
     myProducerIdsRef.current.clear();
+    pendingVideoProduceSourceRef.current = 'camera';
+    producerIdToMetaRef.current.clear();
+    localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localScreenStreamRef.current = null;
+    try {
+      localScreenMsProducerRef.current?.close?.();
+    } catch (_) {}
+    localScreenMsProducerRef.current = null;
+    setIsScreenSharing(false);
     // Nullify mediasoup refs (don't call .close() — it throws AwaitQueueStoppedError async)
     producersRef.current = {};
     consumersRef.current = {};
@@ -784,6 +800,63 @@ export default function VideoChat() {
     }
   };
 
+  const stopScreenShare = useCallback(() => {
+    const producer = localScreenMsProducerRef.current;
+    const rid = roomInfoRef.current?.roomId;
+    if (producer && rid) {
+      send({ type: 'close-producer', data: { roomId: rid, producerId: producer.id } });
+    }
+    try {
+      producer?.close?.();
+    } catch (_) {}
+    localScreenMsProducerRef.current = null;
+    localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localScreenStreamRef.current = null;
+    setIsScreenSharing(false);
+  }, []);
+
+  const startScreenShare = useCallback(async () => {
+    if (!sendTransportRef.current || !roomInfoRef.current?.roomId) return;
+    if (localScreenMsProducerRef.current) return;
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { max: 30 } },
+        audio: false
+      });
+      localScreenStreamRef.current = screenStream;
+      const track = screenStream.getVideoTracks()[0];
+      if (!track) {
+        screenStream.getTracks().forEach((t) => t.stop());
+        localScreenStreamRef.current = null;
+        return;
+      }
+      track.onended = () => {
+        stopScreenShare();
+      };
+      pendingVideoProduceSourceRef.current = 'screen';
+      const producer = await sendTransportRef.current.produce({
+        track,
+        encodings: [{ maxBitrate: 3_000_000 }],
+        appData: { source: 'screen' }
+      });
+      localScreenMsProducerRef.current = producer;
+      setIsScreenSharing(true);
+    } catch (e) {
+      console.warn('[WebRTC] Screen share cancelled or failed', e);
+      localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
+      localScreenStreamRef.current = null;
+      pendingVideoProduceSourceRef.current = 'camera';
+    }
+  }, [stopScreenShare]);
+
+  const toggleScreenShare = useCallback(() => {
+    if (localScreenMsProducerRef.current) {
+      stopScreenShare();
+    } else {
+      void startScreenShare();
+    }
+  }, [stopScreenShare, startScreenShare]);
+
   /** If the first get-producers races the peer's produce(), retry a few times (covers intermittent "stuck waiting"). */
   const scheduleGetProducersRetries = (targetRoomId) => {
     const delays = [3500, 8000, 16000];
@@ -841,6 +914,11 @@ export default function VideoChat() {
       remoteStreamsRef.current = next;
       return next;
     });
+    for (const [pid, meta] of [...producerIdToMetaRef.current.entries()]) {
+      if (String(meta.uiRemoteId) === leftId) {
+        producerIdToMetaRef.current.delete(pid);
+      }
+    }
     const cids = consumerIdsByUserRef.current[leftId];
     if (cids?.length) {
       cids.forEach((cid) => {
@@ -1037,8 +1115,24 @@ export default function VideoChat() {
           });
           transport.on('produce', ({ kind, rtpParameters }, cb) => {
             console.log('[WebRTC] Producing:', kind);
-            producersRef.current[`resolve_${kind}`] = cb;
-            send({ type: 'produce', data: { roomId: info.roomId, transportId: id, kind, rtpParameters } });
+            if (kind === 'video') {
+              if (!producersRef.current.videoCbQueue) producersRef.current.videoCbQueue = [];
+              producersRef.current.videoCbQueue.push(cb);
+              const src = pendingVideoProduceSourceRef.current || 'camera';
+              send({
+                type: 'produce',
+                data: {
+                  roomId: info.roomId,
+                  transportId: id,
+                  kind,
+                  rtpParameters,
+                  source: src
+                }
+              });
+            } else {
+              producersRef.current.resolve_audio = cb;
+              send({ type: 'produce', data: { roomId: info.roomId, transportId: id, kind, rtpParameters } });
+            }
           });
 
           // After send transport is ready, create the Recv transport
@@ -1051,6 +1145,7 @@ export default function VideoChat() {
             const publish = async () => {
               if (vTrack) {
                 console.log('[WebRTC] Publishing video track (simulcast when supported)...');
+                pendingVideoProduceSourceRef.current = 'camera';
                 try {
                   await transport.produce({
                     track: vTrack,
@@ -1103,7 +1198,16 @@ export default function VideoChat() {
         console.log('[WebRTC] Producer created:', data.kind, data.id);
         // Remember the local producer ids so we can skip "self" in new-producer safely.
         if (data?.id != null) myProducerIdsRef.current.add(String(data.id));
-        producersRef.current[`resolve_${data.kind}`]?.({ id: data.id });
+        if (data.kind === 'video') {
+          const q = producersRef.current.videoCbQueue || [];
+          const fn = q.shift();
+          fn?.({ id: data.id });
+        } else if (data.kind === 'audio') {
+          producersRef.current.resolve_audio?.({ id: data.id });
+        }
+        if (data.kind === 'video') {
+          pendingVideoProduceSourceRef.current = 'camera';
+        }
         break;
       }
 
@@ -1128,7 +1232,7 @@ export default function VideoChat() {
 
       case 'consumed': {
         console.log('[WebRTC] Consumer created:', data.kind, 'from user:', data.userId);
-        const { id, producerId, kind, rtpParameters, userId: remoteId } = data;
+        const { id, producerId, kind, rtpParameters, userId: remoteId, source: remoteSource } = data;
         if (remoteId == null || remoteId === '') {
           console.warn('[WebRTC] consumed missing remote userId; using producerId for grouping', { producerId, kind });
         }
@@ -1136,17 +1240,43 @@ export default function VideoChat() {
         consumersRef.current[id] = consumer;
         const uiRemoteId = remoteId != null && remoteId !== '' ? remoteId : `producer:${producerId}`;
         const uidKey = String(uiRemoteId);
+        const vSource = kind === 'video' ? remoteSource || 'camera' : 'audio';
+        producerIdToMetaRef.current.set(String(producerId), { uiRemoteId: uidKey, source: vSource });
         if (!consumerIdsByUserRef.current[uidKey]) consumerIdsByUserRef.current[uidKey] = [];
         consumerIdsByUserRef.current[uidKey].push(id);
 
-        setRemoteStreams(prev => {
-          const existing = prev.find(s => sameParticipantId(s.userId, uiRemoteId));
+        setRemoteStreams((prev) => {
+          const existing = prev.find((s) => sameParticipantId(s.userId, uiRemoteId));
           let next;
-          if (existing) {
+
+          if (kind === 'video' && vSource === 'screen') {
+            if (existing) {
+              const oldScreen = existing.screenStream;
+              oldScreen?.getTracks().forEach((t) => t.stop());
+              next = prev.map((s) =>
+                sameParticipantId(s.userId, uiRemoteId)
+                  ? { ...s, screenStream: new MediaStream([consumer.track]) }
+                  : s
+              );
+            } else {
+              next = [
+                ...prev,
+                {
+                  userId: uiRemoteId,
+                  stream: new MediaStream(),
+                  screenStream: new MediaStream([consumer.track]),
+                  name: '',
+                  age: '',
+                  displayPictureUrl: '/avatar-placeholder.png',
+                  city: '',
+                  profileFetched: false
+                }
+              ];
+            }
+          } else if (existing) {
             const newStream = new MediaStream([...existing.stream.getTracks(), consumer.track]);
-            next = prev.map(s => (sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: newStream } : s));
+            next = prev.map((s) => (sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: newStream } : s));
           } else {
-            // Do not use partnerInfo here — each remote has their own profile (fetched by userId).
             next = [
               ...prev,
               {
@@ -1164,7 +1294,57 @@ export default function VideoChat() {
           if (next.length > 0) hadRemotePeerInSessionRef.current = true;
           return next;
         });
-        console.log('[WebRTC] Remote stream updated for user:', uiRemoteId, '| kind:', kind);
+        console.log('[WebRTC] Remote stream updated for user:', uiRemoteId, '| kind:', kind, vSource === 'screen' ? '(screen)' : '');
+        break;
+      }
+
+      case 'producer-closed': {
+        const { producerId: closedPid } = data || {};
+        if (!closedPid) break;
+        const pid = String(closedPid);
+        const meta = producerIdToMetaRef.current.get(pid);
+        const trackByConsumer = (() => {
+          for (const cid of Object.keys(consumersRef.current)) {
+            const c = consumersRef.current[cid];
+            if (c && String(c.producerId) === pid) {
+              return { cid, consumer: c, track: c.track };
+            }
+          }
+          return null;
+        })();
+        if (trackByConsumer) {
+          try {
+            trackByConsumer.consumer.close();
+          } catch (_) {}
+          delete consumersRef.current[trackByConsumer.cid];
+        }
+        if (meta) {
+          producerIdToMetaRef.current.delete(pid);
+          const uidKey = String(meta.uiRemoteId);
+          if (trackByConsumer && consumerIdsByUserRef.current[uidKey]) {
+            consumerIdsByUserRef.current[uidKey] = consumerIdsByUserRef.current[uidKey].filter(
+              (x) => x !== trackByConsumer.cid
+            );
+          }
+          const tr = trackByConsumer?.track;
+          setRemoteStreams((prev) => {
+            const next = prev.map((s) => {
+              if (!sameParticipantId(s.userId, meta.uiRemoteId)) return s;
+              if (meta.source === 'screen') {
+                const ss = s.screenStream;
+                ss?.getTracks().forEach((t) => t.stop());
+                return { ...s, screenStream: null };
+              }
+              if (tr) {
+                const kept = s.stream.getTracks().filter((t) => t.id !== tr.id);
+                return { ...s, stream: new MediaStream(kept) };
+              }
+              return s;
+            });
+            remoteStreamsRef.current = next;
+            return next;
+          });
+        }
         break;
       }
       
@@ -1535,6 +1715,8 @@ export default function VideoChat() {
     localVideoRef,
     localStreamRef,
     isCamOff,
+    isScreenSharing,
+    onToggleScreenShare: status === 'connected' ? toggleScreenShare : undefined,
     chatMessages,
     chatInput,
     setChatInput,
@@ -1668,6 +1850,7 @@ export default function VideoChat() {
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
               stream={remoteStreams[0].stream}
+              screenShareStream={remoteStreams[0].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[0])}
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
@@ -1737,6 +1920,7 @@ export default function VideoChat() {
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
               stream={remoteStreams[0].stream}
+              screenShareStream={remoteStreams[0].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[0])}
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
@@ -1747,6 +1931,7 @@ export default function VideoChat() {
                 key={`remote-${remoteStreams[1].userId}`}
                 {...getRemoteFriendTileProps(remoteStreams[1])}
                 stream={remoteStreams[1].stream}
+                screenShareStream={remoteStreams[1].screenStream || null}
                 {...getRemoteTileProfile(remoteStreams[1])}
                 showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
                 showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
@@ -1816,6 +2001,7 @@ export default function VideoChat() {
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
               stream={remoteStreams[0].stream}
+              screenShareStream={remoteStreams[0].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[0])}
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
@@ -1825,6 +2011,7 @@ export default function VideoChat() {
               key={`remote-${remoteStreams[1].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[1])}
               stream={remoteStreams[1].stream}
+              screenShareStream={remoteStreams[1].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[1])}
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
               showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
@@ -1834,6 +2021,7 @@ export default function VideoChat() {
               key={`remote-${remoteStreams[2].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[2])}
               stream={remoteStreams[2].stream}
+              screenShareStream={remoteStreams[2].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[2])}
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[2])}
               showKickParticipant={canKickRemoteUser(remoteStreams[2].userId)}

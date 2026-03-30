@@ -5,6 +5,8 @@ import clsx from 'clsx';
 
 export default function RemoteVideoTile({
   stream,
+  /** Remote display/window share (camera+audio stay on `stream` for PiP). */
+  screenShareStream,
   name,
   age,
   city,
@@ -21,23 +23,57 @@ export default function RemoteVideoTile({
   isFriendRequestSent
 }) {
   const videoRef = useRef(null);
-  
+  const screenRef = useRef(null);
+  const pipRef = useRef(null);
+
   useEffect(() => {
+    if (screenShareStream) return;
     const v = videoRef.current;
     if (!v) return;
     if (v.srcObject !== stream) {
       v.srcObject = stream;
     }
-  }, [stream]);
+  }, [stream, screenShareStream]);
+
+  useEffect(() => {
+    if (!screenShareStream) return;
+    const s = screenRef.current;
+    const p = pipRef.current;
+    if (s && s.srcObject !== screenShareStream) s.srcObject = screenShareStream;
+    if (p && p.srcObject !== stream) p.srcObject = stream;
+    const play = (el) => {
+      const pr = el?.play?.();
+      if (pr && typeof pr.catch === 'function') pr.catch(() => {});
+    };
+    play(s);
+    play(p);
+  }, [stream, screenShareStream]);
 
   return (
     <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative',  'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-      <video 
-        ref={videoRef} 
-        autoPlay 
-        playsInline 
-        className="h-full w-full min-h-0 object-cover" 
-      />
+      {screenShareStream ? (
+        <>
+          <video
+            ref={screenRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 z-0 h-full w-full bg-black object-contain"
+          />
+          <video
+            ref={pipRef}
+            autoPlay
+            playsInline
+            className="absolute bottom-4 right-4 z-[5] aspect-video max-h-[32%] w-[32%] max-w-[220px] rounded-xl border-2 border-white/50 object-cover shadow-2xl"
+          />
+        </>
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="h-full w-full min-h-0 object-cover"
+        />
+      )}
 
       <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">

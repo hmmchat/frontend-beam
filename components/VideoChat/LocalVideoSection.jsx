@@ -7,6 +7,9 @@ export default function LocalVideoSection({
   localVideoRef,
   localStreamRef,
   isCamOff,
+  /** Screen share to call participants (getDisplayMedia — user picks window/screen). */
+  isScreenSharing,
+  onToggleScreenShare,
   chatMessages,
   chatInput,
   setChatInput,
@@ -83,6 +86,21 @@ export default function LocalVideoSection({
             </form>
           )}
           <div className="flex flex-wrap gap-4">
+            {typeof onToggleScreenShare === 'function' && (
+              <button
+                type="button"
+                onClick={onToggleScreenShare}
+                title={isScreenSharing ? 'Stop sharing screen' : 'Share screen or window'}
+                className={clsx(
+                  'w-12 h-12 rounded-full border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95',
+                  isScreenSharing ? 'border-emerald-400/80 bg-emerald-500/20' : 'border-white/40'
+                )}
+              >
+                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
+                </svg>
+              </button>
+            )}
             <button 
               type="button" 
               onClick={toggleCam} 

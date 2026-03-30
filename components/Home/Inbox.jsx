@@ -66,6 +66,35 @@ function canSendTextOnlyNonFriend(messages, currentUserId) {
   return mine.length === 0;
 }
 
+/** Backend infers GIF vs GIF_WITH_MESSAGE from `gif` + optional `message` — do not send `messageType` or null fields. */
+function buildSendMessagePayload({ trimmed, hasText, resolvedGift, resolvedGif }) {
+  const body = {};
+  if (hasText) body.message = trimmed;
+  if (resolvedGift) {
+    body.giftId = resolvedGift.id;
+    body.giftAmount = resolvedGift.price;
+  }
+  if (resolvedGif) {
+    const url = String(resolvedGif.url || resolvedGif.previewUrl || "").trim();
+    const previewUrl = String(resolvedGif.previewUrl || resolvedGif.url || "").trim();
+    if (!url || !previewUrl) {
+      throw new Error("Could not send GIF (missing URL).");
+    }
+    body.gif = { url, previewUrl };
+    const gid = resolvedGif.giphyId ?? resolvedGif.id;
+    if (gid != null && gid !== "") {
+      const s = String(gid);
+      body.gif.id = s;
+      body.gif.giphyId = s;
+    }
+    // Opt-in if your API requires explicit enum (default: server infers from `gif`)
+    if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_GIF_SEND_MESSAGE_TYPE === "true") {
+      body.messageType = hasText ? "GIF_WITH_MESSAGE" : "GIF";
+    }
+  }
+  return body;
+}
+
 function dedupeAppend(existing, incoming) {
   const keys = new Set(existing.map((c) => String(c.conversationId || c.id)));
   const add = incoming.filter((c) => !keys.has(String(c.conversationId || c.id)));
@@ -93,6 +122,10 @@ function lastMessagePreview(conv) {
   if (t === "GIFT" || t === "GIFT_WITH_MESSAGE") {
     const txt = lm.message?.trim();
     return txt ? `Gift · ${txt}` : "Gift";
+  }
+  if (t === "GIF" || t === "GIF_WITH_MESSAGE") {
+    const txt = lm.message?.trim();
+    return txt ? `GIF · ${txt}` : "GIF";
   }
   return lm.message || "Message";
 }
@@ -618,7 +651,9 @@ export default function Inbox() {
         const activeNow = activeChatRef.current;
         const activeCidNow = activeNow?.conversationId || activeNow?.rowKey;
         const isActiveIncoming = isIncoming && activeCidNow && String(activeCidNow) === String(m.conversationId);
-        const msgKey = m.id != null ? `id:${String(m.id)}` : `k:${m.fromUserId}:${m.toUserId}:${m.conversationId}:${m.createdAt}:${m.messageType}:${m.message || ""}:${m.giftId || ""}:${m.giftAmount || ""}`;
+        const msgKey = m.id != null
+          ? `id:${String(m.id)}`
+          : `k:${m.fromUserId}:${m.toUserId}:${m.conversationId}:${m.createdAt}:${m.messageType}:${m.message || ""}:${m.giftId || ""}:${m.giftAmount || ""}:${m.gif?.url || ""}:${m.gif?.previewUrl || ""}`;
         if (seenWsMessageKeysRef.current.has(msgKey)) return;
         seenWsMessageKeysRef.current.add(msgKey);
         const convKey = String(m.conversationId);
@@ -652,7 +687,21 @@ export default function Inbox() {
               if (String(cid) !== String(m.conversationId)) return c;
               found = true;
               const mergedUnread = isActiveIncoming ? 0 : nextUnread != null ? nextUnread : Number(c.unreadCount || 0);
-              return { ...c, lastMessage: { id: m.id, fromUserId: m.fromUserId, message: m.message, messageType: m.messageType, giftId: m.giftId, giftAmount: m.giftAmount, createdAt: m.createdAt }, lastMessageAt: m.createdAt, unreadCount: mergedUnread };
+              return {
+                ...c,
+                lastMessage: {
+                  id: m.id,
+                  fromUserId: m.fromUserId,
+                  message: m.message,
+                  messageType: m.messageType,
+                  giftId: m.giftId,
+                  giftAmount: m.giftAmount,
+                  gif: m.gif || null,
+                  createdAt: m.createdAt,
+                },
+                lastMessageAt: m.createdAt,
+                unreadCount: mergedUnread,
+              };
             });
             return sortByLatest(next);
           });
@@ -841,11 +890,39 @@ export default function Inbox() {
 
   const sendMessage = async (giftData = null) => {
     if (!activeChat || sending) return;
-    if (!newMessage.trim() && !giftData) return;
+    // Backward-compatible: `sendMessage(gift)` still works. We also accept `sendMessage(gif)`
+    // where gif looks like { url, previewUrl, ... }.
+    const candidate = giftData;
+    const isGiftCandidate =
+      candidate &&
+      typeof candidate === "object" &&
+      ("price" in candidate || "id" in candidate) &&
+      (typeof candidate.price === "number" || typeof candidate.price === "string");
+    const isGifCandidate =
+      candidate &&
+      typeof candidate === "object" &&
+      ("previewUrl" in candidate || "url" in candidate) &&
+      (typeof candidate.previewUrl === "string" || typeof candidate.url === "string");
+
+    const resolvedGift = isGiftCandidate ? candidate : null;
+    const resolvedGif = !resolvedGift && isGifCandidate ? candidate : null;
+
+    const trimmed = newMessage.trim();
+    const hasText = Boolean(trimmed);
+    if (!hasText && !resolvedGift && !resolvedGif) return;
     const realCid = activeChat.conversationId;
-    const textOnlyOk = activeChat.isFriend || giftData || canSendTextOnlyNonFriend(messages, currentUserId);
+    const textOnlyOk =
+      activeChat.isFriend ||
+      resolvedGift ||
+      canSendTextOnlyNonFriend(messages, currentUserId);
     if (!textOnlyOk) { alert("Further messages need a gift. Tap the gift button."); return; }
-    const body = { message: newMessage.trim() || null, ...(giftData && { giftId: giftData.id, giftAmount: giftData.price }) };
+    let body;
+    try {
+      body = buildSendMessagePayload({ trimmed, hasText, resolvedGift, resolvedGif });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not send");
+      return;
+    }
     try {
       setSending(true);
       if (!isSyntheticConversationId(realCid)) {

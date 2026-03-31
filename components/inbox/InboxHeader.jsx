@@ -28,10 +28,10 @@ export default function InboxHeader({ walletCoins, firstMessageCost, activeChat 
         </span>
       </button>
       <div className="flex items-center gap-4 hidden md:block">
-        <div className="flex flex-col items-end text-[10px] font-bold text-white/80">
+        {/* <div className="flex flex-col items-end text-[10px] font-bold text-white/80">
           {walletCoins != null && <span>{walletCoins} coins</span>}
           <span className="text-white/50 font-normal">1st msg ~{firstMessageCost} coins</span>
-        </div>
+        </div> */}
         <img src="/LOGO.png" alt="Logo" className="w-24 md:w-32" />
       </div>
     </div>

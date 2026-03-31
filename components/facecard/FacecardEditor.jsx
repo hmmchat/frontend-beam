@@ -1,4 +1,5 @@
 'use client';
+import React, { useState, useEffect } from 'react';
 
 export default function FacecardEditor({
   user,
@@ -14,176 +15,406 @@ export default function FacecardEditor({
   onOpenFacecardPreview,
   photoUploading = false,
 }) {
+  const [interestIndex, setInterestIndex] = useState(0);
+  const [causeIndex, setCauseIndex] = useState(0);
+  const interests = user?.interests?.map(i => i.interest?.name || i.name).filter(Boolean) || [];
+  const causes = user?.values?.map(v => v.value?.name || v.name).filter(Boolean) || [];
+
+  useEffect(() => {
+    if (interests.length <= 1) return;
+    const interval = setInterval(() => {
+      setInterestIndex((prev) => (prev + 1) % interests.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [interests.length]);
+
+  useEffect(() => {
+    if (causes.length <= 1) return;
+    const interval = setInterval(() => {
+      setCauseIndex((prev) => (prev + 1) % causes.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [causes.length]);
+
   return (
     <div
       className="relative flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden p-0 text-white outfit-font md:p-4"
       style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
-      <div className="flex h-screen border rounded-[3rem]  w-full flex-col md:hidden overflow-y-auto px-6 py-8 gap-6 animate-fade-in relative z-10">
+      
+<div className=" p-2  ">
+  <div className="flex border border-white/60 rounded-[2rem] w-full flex-col overflow-y-auto px-4  gap-6  relative z-10">
+        
+        {/* TOP ROW: Close, Name Box, Progress */}
+        <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2">
+          {/* Close Button */}
 
-        {/* Header: Close, Name, Progress */}
-        <div className="flex justify-between items-start pt-2">
-          <div className="flex gap-4 items-center">
+
+     
+          <div className="col-span-2">
             <button
               onClick={() => setView('success')}
-              className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center text-xl hover:bg-white/10"
+              className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
             >✕</button>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-bold tracking-tight">{firstName}</h2>
-              <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-mono">UserID: {user?.id?.slice(0, 8)}</p>
+          </div>
+
+          {/* Name Box with Brackets */}
+          <div className="col-span-6 flex justify-center">
+            <div className="relative px-6 py-1 min-w-[140px]">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
+              <div className="flex flex-col text-start">
+                <h2 className="text-xl  tracking-tight text-white">{firstName}</h2>
+                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-mono text-white">
+                  UserID:{user?.id?.slice(0, 8) || '4heu24sds'}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Progress Ring */}
-          <div className="relative w-16 h-16">
-            <svg className="w-full h-full drop-shadow-[0_0_8px_rgba(255,200,0,0.3)]" viewBox="0 0 100 100">
-              <circle className="text-white/10" strokeWidth="8" cx="50" cy="50" r="42" fill="transparent" stroke="currentColor"></circle>
-              <circle className="text-yellow-400 transition-all duration-1000" strokeWidth="10" strokeLinecap="round" cx="50" cy="50" r="42" fill="transparent" stroke="currentColor" strokeDasharray="264" strokeDashoffset={264 - (264 * (progress / 100))} transform="rotate(-90 50 50)"></circle>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-black">{progress}%</span>
+
+       
+<div className="col-span-4 row-span-2 flex justify-center items-center">
+  <div className="relative w-28 h-28">
+
+    <div className="absolute inset-0 rounded-full border-[8px] border-yellow-400 opacity-20 blur-md animate-pulse" />
+    <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+
+    <svg className="w-full h-full" viewBox="0 0 100 100">
+      <circle
+        className="text-white/5"
+        strokeWidth="6"
+        cx="50"
+        cy="50"
+        r="42"
+        fill="transparent"
+        stroke="currentColor"
+      />
+      <circle
+        className="text-yellow-400"
+        strokeWidth="10"
+        strokeLinecap="round"
+        cx="50"
+        cy="50"
+        r="42"
+        fill="transparent"
+        stroke="currentColor"
+        strokeDasharray="264"
+        strokeDashoffset={264 - (264 * (progress / 100))}
+        transform="rotate(-90 50 50)"
+      />
+    </svg>
+
+    <div className="absolute inset-0 flex items-center justify-center">
+      <span className="text-2xl font-black text-white">
+        {progress}<span className="text-sm opacity-60">%</span>
+      </span>
+    </div>
+
+  </div>
+</div>
+
+
+   <div className="col-span-5 mt-2">
+            <div className="relative  px-4 h-14 flex flex-col justify-center">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/30"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/30"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/30"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
+              
+              <div className="space-y-1">
+                <p className="text-xs uppercase  opacity-60 text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
+                <p className="text-xs font-thin  text-white">Zodiac : {zodiac?.name || 'Gemini'}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Basic Info Rows & Icons Area */}
-        <div className="grid grid-cols-10 gap-3 items-stretch">
-          <div className="col-span-6 space-y-3">
-            <div className="relative border-white/20 p-3 py-4 rounded-xl bg-white/5 flex flex-col justify-center">
-              <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/40" />
-              <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/40" />
-              <p className="text-[9px] uppercase tracking-widest leading-none opacity-60">DOB: {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
-              <p className="text-[9px] uppercase tracking-widest mt-1.5 font-bold">Zodiac: {zodiac?.name}</p>
-            </div>
-            <div className="relative p-3 py-4 rounded-xl bg-white/5 flex flex-col justify-center">
-              <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/40" />
-              <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/40" />
-              <p className="text-[9px] uppercase tracking-widest leading-none opacity-60">Gender Identity</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest mt-1.5">{user?.gender || "Female"}</p>
+          <div className="col-span-3 flex justify-center mt-2">
+            <button
+              onClick={onPickZodiac || (() => setShowSelector('zodiacs'))}
+              className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white"
+            >
+              {user?.zodiac?.imageUrl ? <img src={user.zodiac.imageUrl} className="h-10 w-10 object-contain" /> : zodiac?.symbol}
+            </button>
+          </div>
+
+
+
+          <div className="col-span-5 mt-2">
+            <div className="relative px-6 py-6 h-14 flex flex-col justify-center">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/30"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/30"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/30"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
+              
+              <div className="space-y-1">
+                <p className="text-xs  opacity-60 text-white">Gender Identity</p>
+                <p className="text-xs  text-white">{user?.gender || "Female"}</p>
+              </div>
             </div>
           </div>
 
-          <div className="col-span-4 flex flex-col gap-3">
-            <div className="flex gap-2 h-1/2">
+          {/* Gender Icon + Facecard Button Column */}
+          <div className="col-span-3 flex flex-col gap-4 mt-2">
+            <div className="flex justify-center">
               <button
-                onClick={onPickZodiac || (() => setShowSelector('zodiacs'))}
-                className="flex-1 border border-white/60 rounded-xl flex items-center justify-center bg-white/5 shadow-inner"
-              >
-                {user?.zodiac?.imageUrl ? <img src={user.zodiac.imageUrl} className="h-8 w-8 object-contain" /> : <span className="text-3xl">{zodiac?.symbol}</span>}
-              </button>
-              <button
-                onClick={() => { }} // Placeholder for gender edit if needed
-                className="flex-1 border border-white/60 rounded-xl flex items-center justify-center text-2xl bg-white/5 shadow-inner"
+                className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white"
               >
                 {user?.gender === 'MALE' ? '♂' : user?.gender === 'FEMALE' ? '♀' : '⚧'}
               </button>
             </div>
-            <button
-              onClick={() => onOpenFacecardPreview?.()}
-              className="w-full flex-1 border border-white/60 rounded-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 active:scale-95 transition"
-            >
-              <span className="text-base">👁</span> Facecard
-            </button>
+            
+            
           </div>
-        </div>
 
+
+
+<div className="col-span-4 flex justify-center items-center">
+
+     <button
+              onClick={() => onOpenFacecardPreview?.()}
+              className="w-full py-4 px-2 border-2 border-white/40 rounded-2xl flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 active:scale-95 transition-all"
+            >
+              <span className="text-xl">👁</span>
+              <span className="text-xs font-bold  tracking-widest text-white">Facecard</span>
+            </button> 
+
+         </div>
+         </div>
+          
+  
+
+        {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
+      
+
+        {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
+   
         {/* Action Rows: Interests, Causes, Brands */}
         <div className="flex flex-col gap-5">
           {/* Interests */}
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black uppercase tracking-wide w-14">Interests</span>
-            <div
-              onClick={() => setShowSelector('interests')}
-              className="flex-1 h-12 border border-white/40 rounded-[1.2rem] px-5 flex items-center text-[11px] opacity-70 bg-white/5 truncate cursor-pointer"
-            >
-              {user?.interests?.map(i => i.interest?.name || i.name).join(', ') || 'Select Interests...'}
-            </div>
-            <button onClick={() => setShowSelector('interests')} className="w-12 h-12 border border-white/60 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition">+</button>
-          </div>
+       <div className="flex items-center justify-between gap-3">
 
-          {/* Causes */}
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black uppercase tracking-wide w-14">Causes</span>
-            <div
-              onClick={() => setShowSelector('values')}
-              className="flex-1 h-12 border border-white/40 rounded-[1.2rem] px-5 flex items-center text-[11px] opacity-70 bg-white/5 truncate cursor-pointer"
-            >
-              {user?.values?.map(v => v.value?.name || v.name).join(', ') || 'Select Causes...'}
-            </div>
-            <button onClick={() => setShowSelector('values')} className="w-12 h-12 border border-white/60 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition">+</button>
-          </div>
+  {/* LEFT → Label */}
+  <span className="text-[12px] font-black  tracking-wide">
+    Interests
+  </span>
+
+  {/* RIGHT → Box + Button */}
+  <div className="flex items-center gap-3">
+
+    <div
+      onClick={() => setShowSelector('interests')}
+      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] cursor-pointer overflow-hidden"
+    >
+      {interests.length > 0 ? (
+        <div key={interestIndex} className="animate-slide-down">
+          {interests[interestIndex]}
+        </div>
+      ) : (
+        'Select'
+      )}
+    </div>
+
+    <button
+      onClick={() => setShowSelector('interests')}
+      className="w-12 h-12 border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+    >
+      +
+    </button>
+
+  </div>
+
+</div>
+
+       <div className="flex items-center justify-between gap-3">
+
+  {/* LEFT → Label */}
+  <span className="text-[12px] font-black  tracking-wide">
+    Causes
+  </span>
+
+  {/* RIGHT → Box + Button */}
+  <div className="flex items-center gap-3">
+
+    <div
+      onClick={() => setShowSelector('values')}
+      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] cursor-pointer overflow-hidden"
+    >
+      {causes.length > 0 ? (
+        <div key={causeIndex} className="animate-slide-down italic">
+          {causes[causeIndex]}
+        </div>
+      ) : (
+        'Select'
+      )}
+    </div>
+
+    <button
+      onClick={() => setShowSelector('values')}
+      className="w-12 h-12 border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+    >
+      +
+    </button>
+
+  </div>
+
+</div>
 
           {/* Brands */}
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black uppercase tracking-wide w-14">Brands</span>
-            <div className="flex-1 flex gap-2.5 overflow-x-auto scrollbar-hide py-1">
-              {[0, 1, 2, 3, 4].map(i => {
-                const selection = user?.brandPreferences?.[i];
-                return (
-                  <div key={i} onClick={() => setShowSelector('brands')} className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 cursor-pointer hover:bg-white/10">
-                    {selection ? <img src={selection.brand?.logoUrl} className="w-7 h-7 object-contain" /> : <span className="opacity-40 text-xl">+</span>}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+<div className="flex items-center justify-between gap-3">
+
+  {/* LEFT → Label */}
+  <span className="text-[12px] font-black  tracking-wide">
+    Brands
+  </span>
+
+  {/* RIGHT → Icons */}
+  <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+
+    {[0, 1, 2, 3, 4].map(i => {
+      const selection = user?.brandPreferences?.[i];
+      return (
+        <div
+          key={i}
+          onClick={() => setShowSelector('brands')}
+          className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 cursor-pointer hover:bg-white/10"
+        >
+          {selection
+            ? <img src={selection.brand?.logoUrl} className="w-10 h-10 rounded-full object-contain" />
+            : <span className="opacity-40 text-xl">+</span>}
         </div>
+      )
+    })}
+
+  </div>
+
+</div>
+
+
+        </div>
+
+
+
 
         {/* Photo Slots Section */}
-        <div className="relative group">
-          {photoUploading && (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-3xl bg-black/60 backdrop-blur-sm">
-              <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+       <div className="relative group">
+  {photoUploading && (
+    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-sm">
+      <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )}
+
+  <div className="grid grid-cols-3 gap-4">
+
+    {/* Photo 1 (DP) */}
+    <div
+      onClick={() => handleSlotClick(0)}
+      className="w-full h-[160px] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
+    >
+      <img
+        src={user?.displayPictureUrl || "/imageprofile.png"}
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-black text-[10px]">
+        ✎
+      </div>
+    </div>
+
+    {/* Other Slots */}
+    {[0, 1].map((idx) => {
+      const photo = user?.photos?.find(p => p.order === idx);
+      return (
+        <div
+          key={idx}
+          onClick={() => handleSlotClick(idx + 1)}
+          className="w-full h-[160px] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
+        >
+          {photo ? (
+            <img src={photo.url} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">
+              +
             </div>
           )}
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {/* Photo 1 (DP) */}
-            <div onClick={() => handleSlotClick(0)} className="w-[150px] h-[220px] shrink-0 border-2 border-b-8 border-white/50 rounded-[2rem] overflow-hidden relative shadow-2xl">
-              <img src={user?.displayPictureUrl || "/imageprofile.png"} className="w-full h-full object-cover" alt="DP" />
-              <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-black text-[10px] shadow-lg">✎</div>
-            </div>
-            {/* Other Slots */}
-            {[0, 1].map((idx) => {
-              const photo = user?.photos?.find(p => p.order === idx);
-              return (
-                <div key={idx} onClick={() => handleSlotClick(idx + 1)} className="w-[150px] h-[220px] shrink-0 border-2 border-b-8 border-white/20 rounded-[2rem] flex items-center justify-center relative overflow-hidden bg-white/5 shadow-inner">
-                  {photo ? <img src={photo.url} className="w-full h-full object-cover" /> : <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">+</div>}
-                </div>
-              )
-            })}
-          </div>
+        </div>
+      );
+    })}
+
+  </div>
+</div>
+       
+       
+
+
+       
+       
+       <div className="w-full flex items-center justify-between  mb-4 ">
+
+  {/* LEFT: Album + Info */}
+  <div className="flex items-center gap-5">
+
+    {/* Album */}
+    <div
+      onClick={() => setShowSelector('music')}
+      className="relative cursor-pointer active:scale-95 transition"
+    >
+      <div className="w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2">
+
+        <div className="w-28 h-28 rounded-full overflow-hidden animate-spin-slow ">
+          <img
+            src={user?.musicPreference?.albumArtUrl || "/spotify1.png"}
+            className="w-full h-full object-cover"
+          />
         </div>
 
-        {/* Footer: Music & Dots */}
-        <div className="flex justify-between items-end mt-auto mb-4">
-          {/* Music Record Button */}
-          <div onClick={() => setShowSelector('music')} className="relative group cursor-pointer active:scale-95 transition">
-            <div className="w-36 h-36 rounded-full border-8 border-white/5 flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-white/20 animate-spin-slow">
-                <img src={user?.musicPreference?.albumArtUrl || "/spotify1.png"} className="w-full h-full object-cover opacity-80" />
-              </div>
-              <div className="absolute w-10 h-10 rounded-full bg-black/50 border border-white/30 flex items-center justify-center backdrop-blur-md">
-                <div className="w-2.5 h-2.5 rounded-full bg-white/20 border border-white/40"></div>
-              </div>
-              <div className="absolute -bottom-2 bg-black/60 px-4 py-1.5 rounded-full border border-white/20 text-[9px] font-bold tracking-widest uppercase">
-                {user?.musicPreference?.name?.slice(0, 10) || 'Select'}
-              </div>
-            </div>
-          </div>
-
-          {/* Dots & Version */}
-          <div className="flex flex-col items-end gap-6 pb-2">
-            <div className="grid grid-cols-6 gap-2.5 opacity-20">
-              {[...Array(24)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-white rounded-full"></div>)}
-            </div>
-            <p className="text-[10px] opacity-40 font-black uppercase tracking-tighter text-right">Facecard creation tool V1</p>
-          </div>
+        {/* center dot */}
+        <div className="absolute w-8 h-8 rounded-full bg-black border border-white/20 flex items-center justify-center">
+          <div className="w-2 h-2 rounded-full bg-white/30"></div>
         </div>
+
+      </div>
+    </div>
+
+
+
+    <div className="relative px-6 py-3 min-w-[140px]">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
+    {/* Text */}
+    <div className="flex flex-col">
+      
+      <p className="text-white text-xs leading-tight">
+        {user?.musicPreference?.name || "Starboy"}
+      </p>
+      <p className="text-white/60 text-xs">
+        {user?.musicPreference?.artist || ""}
+      </p>
+    </div>
+    </div>
+
+  </div>
+
+  {/* RIGHT: Dots */}
+  <div className="grid grid-cols-6 gap-2 opacity-30">
+    {[...Array(48)].map((_, i) => (
+      <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
+    ))}
+  </div>
+
+</div>
+
+
+
+
 
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       </div>
-
+</div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
       <div className="relative hidden md:flex max-h-full min-h-0 w-full max-w-[1150px] origin-center scale-[0.62] flex-col gap-4 overflow-hidden rounded-[3rem] border-2 border-white/60 p-3 sm:scale-[0.72] md:scale-90 md:flex-row md:gap-6 md:rounded-[4rem] md:p-5 lg:scale-100">
@@ -366,12 +597,18 @@ export default function FacecardEditor({
 
                 <div
                   onClick={() => setShowSelector('interests')}
-                  className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition"
+                  className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition overflow-hidden"
                 >
                   <span className="text-sm opacity-60 tracking-wide">Interests:</span>
-                  <span className="text-sm opacity-90 truncate max-w-[150px]">
-                    {user?.interests?.map(i => i.interest?.name || i.name).filter(Boolean).join(', ') || 'Basketball, Music...'}
-                  </span>
+                  <div className="flex-1 flex justify-end overflow-hidden">
+                    {interests.length > 0 ? (
+                      <span key={interestIndex} className="text-sm opacity-90 truncate max-w-[150px] animate-slide-down">
+                        {interests[interestIndex]}
+                      </span>
+                    ) : (
+                      <span className="text-sm opacity-90">Basketball, Music...</span>
+                    )}
+                  </div>
                 </div>
 
                 <button
@@ -387,12 +624,18 @@ export default function FacecardEditor({
 
                 <div
                   onClick={() => setShowSelector('values')}
-                  className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition"
+                  className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition overflow-hidden"
                 >
                   <span className="text-sm opacity-60 tracking-wide">Causes:</span>
-                  <span className="text-sm opacity-90 italic truncate max-w-[150px]">
-                    {user?.values?.map(v => v.value?.name || v.name).filter(Boolean).join(', ') || 'Environment, Equality...'}
-                  </span>
+                  <div className="flex-1 flex justify-end overflow-hidden">
+                    {causes.length > 0 ? (
+                      <span key={causeIndex} className="text-sm opacity-90 italic truncate max-w-[150px] animate-slide-down">
+                        {causes[causeIndex]}
+                      </span>
+                    ) : (
+                      <span className="text-sm opacity-90 italic">Environment, Equality...</span>
+                    )}
+                  </div>
                 </div>
 
                 <button
@@ -428,7 +671,11 @@ export default function FacecardEditor({
                   );
                 })}
               </div>
+
+
             </div>
+
+            
           </div>
         </div>
 
@@ -515,12 +762,21 @@ export default function FacecardEditor({
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes slide-down {
+          0% { opacity: 0; transform: translateY(-20px); }
+          20% { opacity: 1; transform: translateY(0); }
+          80% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(20px); }
+        }
         @keyframes spin-slow {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
         .animate-fade-in {
           animation: fade-in 1s ease-out forwards;
+        }
+        .animate-slide-down {
+          animation: slide-down 2.5s ease-in-out infinite;
         }
         .animate-spin-slow {
           animation: spin-slow 15s linear infinite;
@@ -536,3 +792,8 @@ export default function FacecardEditor({
     </div>
   );
 }
+
+
+
+
+

@@ -1075,7 +1075,7 @@ export default function Inbox() {
           <div className={`min-h-0 md:w-[60%] w-full h-full flex flex-col p-2 ${activeChat ? "flex" : "hidden md:flex"}`}>
             {activeChat ? (
               <>
-                <div className={clsx('border', 'border-white/50', 'rounded-[50px]', 'flex-1', 'flex', 'flex-col', 'overflow-hidden')}>
+                <div className={clsx('md:border', 'md:border-white/50', 'md:rounded-[50px]', 'flex-1', 'flex', 'flex-col', 'overflow-hidden')}>
                   <ThreadHeader
                     activeChat={activeChat}
                     activeTab={activeTab}

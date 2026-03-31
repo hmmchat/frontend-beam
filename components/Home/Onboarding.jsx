@@ -612,7 +612,7 @@ if (prompt.trim() && accessToken) {
     {step === 2 && (
     < >
       {/* Left */}
-      <div className="flex items-center justify-center text-left border border-white/30 rounded-2xl px-12">
+      <div className="flex items-center justify-center text-left border border-white/30 rounded-2xl px-12 hidden md:flex">
         <div>
           <h2 className="text-4xl font-bold mb-4">Add Prompt</h2>
           <p className="text-lg opacity-90">
@@ -624,11 +624,11 @@ if (prompt.trim() && accessToken) {
       </div>
 
       {/* Right */}
-      <div className="flex justify-center border border-white/30 rounded-2xl p-6">
+      <div className="flex justify-center md:border md:border-white/30 rounded-2xl md:p-6">
         <div className="w-full max-w-lg space-y-6">
 
           {/* Prompt box */}
-    <div className="border border-white/30 rounded-2xl p-6 text-white">
+    <div className="border border-white/30 rounded-3xl p-6 text-white">
   <textarea
     value={prompt}
     onChange={(e) => {
@@ -691,7 +691,7 @@ if (prompt.trim() && accessToken) {
                       });
                     }}
                     className={`
-                      border border-white/30 rounded-xl px-4 py-3 text-xs transition text-center
+                      border border-white/30 border-b-4 rounded-xl px-4 py-3 text-xs transition text-center
                       hover:bg-white/5
                       ${isLong ? "col-span-2" : "col-span-1"}
                       ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}

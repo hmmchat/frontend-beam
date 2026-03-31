@@ -61,10 +61,10 @@ export default function ThreadComposer({
     });
     emitTyping(Boolean(next.trim()));
   };
-
+ 
   return (
     <>
-      <div className={clsx('px-4', 'md:px-6', 'pt-3', 'pb-1', 'flex', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-0.5', 'text-[10px]', 'font-semibold', 'text-white/70', 'md:hidden')}>
+      {/* <div className={clsx('px-4', 'md:px-6', 'pt-3', 'pb-1', 'flex', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-0.5', 'text-[10px]', 'font-semibold', 'text-white/70', 'md:hidden')}>
         {walletCoins != null ? (
           <span>{walletCoins} coins</span>
         ) : (
@@ -72,11 +72,11 @@ export default function ThreadComposer({
         )}
         <span className="text-white/35">·</span>
         <span>1st text ~{firstMessageCost} coins</span>
-      </div>
-      <div className={clsx('p-4', 'md:p-6', 'pt-1', 'md:pt-6', 'flex', 'items-center', 'gap-3')}>
+      </div> */}
+      <div className={clsx('px-2', 'md:p-4', 'pt-4', 'md:pt-6', 'flex', 'items-center', 'gap-3')}>
         <div className={clsx('relative', 'flex-1')}>
           {/* z-index: input is painted after these in DOM; without z-20 the full-width input covers the icons */}
-          <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2">
+          <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2 ">
             <button
               type="button"
               onClick={() => { setEmojiOpen((o) => !o); setGifOpen(false); }}

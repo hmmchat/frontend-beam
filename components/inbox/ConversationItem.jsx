@@ -44,8 +44,8 @@ export default function ConversationItem({ conversation, selected, unreadCountDi
           openRow(conversation);
         }
       }}
-      className={`flex cursor-pointer items-center gap-4 border-b border-white/20 pb-4 text-left px-2 rounded-xl transition-colors ${
-        unread ? "bg-purple-500/25 ring-1 ring-yellow-400/50" : "hover:bg-white/5"
+      className={`flex cursor-pointer items-center gap-4 border-b border-white/20 pb-4 text-left  transition-colors ${
+        unread ? " " : "hover:bg-white/5"
       } ${selected ? "bg-white/10" : ""}`}
     >
       <div className="relative h-12 w-12 shrink-0">

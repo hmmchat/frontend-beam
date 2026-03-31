@@ -66,91 +66,56 @@ export default function ConversationSidebar({
     >
       <div className="w-full py-2 text-white space-y-4">
 
-        <div className="flex flex-col gap-3 w-full hidden md:block">
-          <div className="flex items-center gap-2 border border-white/30 rounded-full px-3 py-2.5 w-full min-w-0">
-            <FaMagnifyingGlass className="text-lg text-white/70 flex-shrink-0" aria-hidden />
-            <input
-              type="search"
-              value={conversationSearch}
-              onChange={(e) => setConversationSearch(e.target.value)}
-              placeholder="Search name or last message…"
-              className="flex-1 min-w-[12rem] sm:min-w-[16rem] bg-transparent text-sm text-white placeholder:text-white/40 outline-none"
-              autoComplete="off"
-            />
-            {conversationSearch.trim() ? (
-              <button
-                type="button"
-                onClick={() => setConversationSearch("")}
-                className="text-xs text-white/60 hover:text-white px-2 py-1 rounded-full hover:bg-white/10 shrink-0"
-              >
-                Clear
-              </button>
-            ) : null}
-          </div>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => { setActiveTab("inbox"); setActiveChat(null); }}
-              className={`px-4 py-1.5 rounded-full text-sm shrink-0 ${activeTab === "inbox" ? "bg-white/20 border border-white" : "border border-transparent"
-                }`}
-            >
-              Inbox
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveTab("requests"); setActiveChat(null); }}
-              className={`px-5 py-1.5 rounded-full text-sm shrink-0 ${activeTab === "requests" ? "bg-white/20 border border-white" : "border border-transparent"
-                }`}
-            >
-              Requests{" "}
-              <span className="text-xs font-thin">({notif ? requestsTabCount : "—"})</span>
-            </button>
-          </div>
-        </div>
+        
+<div className="w-full flex justify-center">
+  <div className="flex items-center border border-white/30 rounded-full px-2 py-1 w-full max-w-xl">
 
-        <div className="w-full flex justify-center md:hidden">
-          <div className="flex items-center gap-6  border border-white/30 rounded-full px-2 py-1 w-full max-w-xl">
+    {/* Search Icon */}
+    <div className="flex items-center justify-center w-10 h-10 min-w-[40px] rounded-full border border-white/30 mr-2">
+      <FaMagnifyingGlass className="text-white/80 text-sm" />
+    </div>
 
-            {/* Search Icon */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/30">
-              <FaMagnifyingGlass className="text-white/80 text-sm" />
-            </div>
+    {/* Tabs Container */}
+    <div className="flex flex-1 justify-center gap-4 md:gap-6">
 
-            {/* Inbox Tab */}
-            <button
-              onClick={() => {
-                setActiveTab("inbox");
-                setActiveChat(null);
-              }}
-              className={`px-8 py-2 rounded-full text-sm transition ${activeTab === "inbox"
-                ? "border border-white text-white"
-                : "text-white/70"
-                }`}
-            >
-              Inbox
-            </button>
+      {/* Inbox Tab */}
+      <button
+        onClick={() => {
+          setActiveTab("inbox");
+          setActiveChat(null);
+        }}
+        className={`px-10 md:px-8 py-2 rounded-full text-sm transition ${
+          activeTab === "inbox"
+            ? "border border-white/60 text-white"
+            : "text-white/70"
+        }`}
+      >
+        Inbox
+      </button>
 
-            {/* Requests Tab */}
-            <button
-              onClick={() => {
-                setActiveTab("requests");
-                setActiveChat(null);
-              }}
-              className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm transition ${activeTab === "requests"
-                ? "border border-white text-white"
-                : "text-white/70"
-                }`}
-            >
-              {/* Yellow Dot */}
-              <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+      {/* Requests Tab */}
+      <button
+        onClick={() => {
+          setActiveTab("requests");
+          setActiveChat(null);
+        }}
+        className={`flex items-center gap-2 px-10 md:px-6 py-2 rounded-full text-sm transition ${
+          activeTab === "requests"
+            ? "border border-white/50 text-white"
+            : "text-white/70"
+        }`}
+      >
+        <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
 
-              Requests
-              <span className="text-xs font-light">
-                ({notif ? requestsTabCount : "—"})
-              </span>
-            </button>
-          </div>
-        </div>
+        Requests
+        <span className="text-xs font-light">
+          {notif ? requestsTabCount : ""}
+        </span>
+      </button>
+
+    </div>
+  </div>
+</div>
 
         <div className="flex items-center justify-between">
           <button
@@ -188,7 +153,7 @@ export default function ConversationSidebar({
             </button>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 md:px-0">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto  md:px-0">
             {currentList.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-white/60">No conversations yet</p>

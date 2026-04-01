@@ -268,7 +268,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
           {/* Header */}
        <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
-  <img src="/Logo.png" className="w-40 mx-auto" />
+  <img src="./LOGO.png" className="w-40 mx-auto" />
   <p className="text-white text-lg font-medium mt-1">
     Meet someone here
   </p>
@@ -287,7 +287,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                 icon={
                   <img src="/assets/devicon_google.png" alt="" className='w-6 h-6' />
                 }
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
+                className='whitespace-nowrap sm:whitespace-normal text-white text-sm sm:text-md py-6 font-[family-name:var(--font-otomanopee)]'
                 onClick={handleGoogleLogin}
                 disabled={loading || !agreedToTerms}
               >
@@ -302,7 +302,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                   <img src="/assets/meteor-icons_mobile.png" alt="" className='w-6 h-6' />
                 }
                 onClick={() => setStep('mobile')}
-                className='whitespace-nowrap sm:whitespace-normal text-lg sm:text-md py-6'
+                className='whitespace-nowrap sm:whitespace-normal text-sm sm:text-sm py-6 font-[family-name:var(--font-otomanopee)]'
                 disabled={loading || !agreedToTerms}
               >
                 Connect with Mobile

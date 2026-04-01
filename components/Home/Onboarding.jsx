@@ -30,6 +30,7 @@ export default function Onboarding() {
   const [prompt, setPrompt] = useState("");
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [layoutMap, setLayoutMap] = useState({});
   const [isShuffleLoading, setIsShuffleLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isOverlayMode, setIsOverlayMode] = useState(false);
@@ -145,6 +146,17 @@ export default function Onboarding() {
     checkUserProfile();
     fetchSuggestions();
   }, [router]);
+
+  useEffect(() => {
+    const map = {};
+    suggestions.forEach((text) => {
+      const length = text.length;
+      map[text] =
+        length > 40 ||
+        (length > 25 && Math.random() > 0.5);
+    });
+    setLayoutMap(map);
+  }, [suggestions]);
 
   // prevent body scroll when modal open
   useEffect(() => {
@@ -396,7 +408,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-      <div className=" mx-auto  ">
+      <div className=" mx-auto ">
 
 
 
@@ -427,12 +439,28 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Right - Form */}
-          <div className="flex justify-center md:border md:border-white/30 md:rounded-2xl   ">
-            <div className="w-full md:max-w-[540px] rounded-2xl md:p-6 py-6 mx-auto ">
-              <form onSubmit={handleSubmit} className="space-y-6 md:border md:border-white/30 md:p-3 md:py-5  md:rounded-[3rem]">
+          <div className="flex justify-center md:border md:border-white/30 md:rounded-2xl md:h-[97vh]   ">
+            <div className="w-full md:max-w-[540px] rounded-2xl  mx-auto ">
+
+
+
+ <div className="mx-auto md:hidden  flex flex-col items-center text-center mb-6 ">
+  <img src="/LOGO.png" className="w-28 mx-auto" />
+
+            <p className="text-sm font-bold outfit-font">Welcome onboard!</p>
+              <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 outfit-font">getting your started now</p>
+
+            </div>
+
+
+
+
+
+
+              <form onSubmit={handleSubmit} className="space-y-6 md:border md:border-white/30 md:p-3 md:py-5  md:rounded-[3rem] md:h-[43rem] mt-4">
                 
                 {/* 2️⃣ Photo upload UI */}
-                <div className="mb-8 border border-white/30 p-3 py-5 rounded-[3rem]">
+                <div className="mb-8 border border-white/30 p-3 md:py-5 rounded-[2rem] ">
                 
 
                   <div className="flex justify-center md:gap-4 gap-2">
@@ -444,7 +472,7 @@ if (prompt.trim() && accessToken) {
                       return (
                         <div
                           key={i}
-                          className="relative w-32 md:w-32 h-44 md:h-48 rounded-xl border-2 border-white/30 overflow-hidden bg-white/5 cursor-pointer animate-in fade-in zoom-in duration-300"
+                          className="relative w-[120px]  md:w-32 h-44 md:h-48 mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden cursor-pointer animate-in fade-in zoom-in duration-300"
                           onClick={() => fileRefs.current[i]?.click()}
                         >
                           {photos[i] ? (
@@ -463,8 +491,8 @@ if (prompt.trim() && accessToken) {
                             </>
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full text-white text-3xl">
-                              <span className="text-4xl text-white/30">+</span>
-                              <span className="text-[10px] mt-2 font-bold opacity-40 uppercase">Photo </span>
+                              <span className="text-4xl text-white/50 md:border-4 border-[3px] border-white/40 rounded-full px-2">+</span>
+
                             </div>
                           )}
 
@@ -494,7 +522,7 @@ if (prompt.trim() && accessToken) {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                    className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-4 md:px-4 md:py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
                     placeholder="Your name"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
@@ -503,14 +531,14 @@ if (prompt.trim() && accessToken) {
                 {/* 4️⃣ DOB inputs */}
                 <div className="px-4">
                   <label className="text-white text-sm mb-1 block">Date of birth</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-1">
                     <input
                       name="day"
                       value={dob.day}
                       onChange={(e) => setDob((d) => ({ ...d, day: numericOnly(e.target.value, 2) }))}
                       placeholder="Day"
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3 text-white text-center focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="month"
@@ -518,7 +546,7 @@ if (prompt.trim() && accessToken) {
                       onChange={(e) => setDob((d) => ({ ...d, month: numericOnly(e.target.value, 2) }))}
                       placeholder="Month"
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3 text-white text-center focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="year"
@@ -526,7 +554,7 @@ if (prompt.trim() && accessToken) {
                       onChange={(e) => setDob((d) => ({ ...d, year: numericOnly(e.target.value, 4) }))}
                       placeholder="Year"
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3 text-white text-center focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                   </div>
                   {(errors.day || errors.month || errors.year) && (
@@ -537,9 +565,15 @@ if (prompt.trim() && accessToken) {
                 </div>
 
                 {/* 5️⃣ Gender identity */}
-                <div className="px-4">
+                <div className="px-4 ">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-white text-sm">Gender Identity</label>
+                    <label className="text-white text-sm">Gender Identity
+                      <br/>  
+                      <span className="text-white/60 text-xs italic mt-1">   Gender is not visible on your profile</span>
+ 
+
+                    </label>
+                     
                     <label className="text-white/60 text-xs flex items-center gap-2 cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -551,9 +585,10 @@ if (prompt.trim() && accessToken) {
                       />
                       Prefer not to say
                     </label>
+                    
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-1">
                     {[
                       { label: "Female", value: "female", icon: "♀" },
                       { label: "Male", value: "male", icon: "♂" },
@@ -564,7 +599,7 @@ if (prompt.trim() && accessToken) {
                         type="button"
                         onClick={() => setGender(g.value)}
                         disabled={preferNotToSay}
-                        className={`flex-1 flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-white transition border border-b-4
+                        className={`flex-1 flex items-center justify-center  gap-2 rounded-xl border-2 px-5 py-4  md:px-2 md:py-3 text-white transition border border-b-4
                         ${
                           gender === g.value
                             ? "border-yellow-400 bg-yellow-400/10"
@@ -596,9 +631,9 @@ if (prompt.trim() && accessToken) {
   onClick={() => {
     if (validate()) setStep(2);
   }}
-  className="w-full mt-8 border-2 border-b-4 border-white/80 rounded-2xl py-4 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
+  className="w-84 md:w-full flex mx-auto justify-center items-center mt-8 md:mt-6 border border-b-4 border-white/80 rounded-2xl py-4 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
 >
-  Next: Add intent
+  Step 2/2: Add Prompt
 </button>
 
             </div>
@@ -654,7 +689,7 @@ if (prompt.trim() && accessToken) {
                 onClick={async () => {
                   setIsShuffleLoading(true);
                   try {
-                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(9));
+                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(7));
                     if (response.ok) {
                       const data = await response.json();
                       setSuggestions(data.prompts?.map(p => p.text) || []);
@@ -674,8 +709,7 @@ if (prompt.trim() && accessToken) {
 
             <div className="grid grid-cols-2 gap-3">
               {suggestions.map((text, i) => {
-                const wordCount = text.trim().split(/\s+/).length;
-                const isLong = wordCount > 6;
+                const isLong = layoutMap[text];
                 const isSelected = selectedPrompts.includes(text);
 
                 return (

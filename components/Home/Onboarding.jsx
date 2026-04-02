@@ -30,7 +30,6 @@ export default function Onboarding() {
   const [prompt, setPrompt] = useState("");
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
-  const [layoutMap, setLayoutMap] = useState({});
   const [isShuffleLoading, setIsShuffleLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isOverlayMode, setIsOverlayMode] = useState(false);
@@ -136,7 +135,11 @@ export default function Onboarding() {
         if (response.ok) {
           const data = await response.json();
           // Data is { prompts: [{ id, text }, ...] }
-          setSuggestions(data.prompts?.map(p => p.text) || []);
+ setSuggestions(
+  data.prompts
+    ?.map(p => p.text)
+    .slice(0,6) // 👈 yaha control kar number
+);
         }
       } catch (err) {
         console.error('Error fetching suggestions:', err);
@@ -146,17 +149,6 @@ export default function Onboarding() {
     checkUserProfile();
     fetchSuggestions();
   }, [router]);
-
-  useEffect(() => {
-    const map = {};
-    suggestions.forEach((text) => {
-      const length = text.length;
-      map[text] =
-        length > 40 ||
-        (length > 25 && Math.random() > 0.5);
-    });
-    setLayoutMap(map);
-  }, [suggestions]);
 
   // prevent body scroll when modal open
   useEffect(() => {
@@ -390,8 +382,61 @@ if (prompt.trim() && accessToken) {
 
   if (loading && !apiError && !name) {
     return (
-      <div className=" w-full flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
-        <div className="text-white text-2xl">Checking profile...</div>
+      <div 
+        className="w-full flex h-screen items-center justify-center bg-purple-950 p-4"
+        style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full md:max-w-6xl  h-auto">
+          {/* Left Column Skeleton */}
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-12 hidden lg:flex flex-col justify-center animate-pulse">
+            <div className="h-12 w-64 bg-white/10 rounded-lg mb-6" />
+            <div className="h-6 w-48 bg-white/5 rounded-lg mb-3" />
+            <div className="h-6 w-56 bg-white/5 rounded-lg" />
+          </div>
+
+          {/* Right Column (Form) Skeleton */}
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-8 flex flex-col gap-8 animate-pulse">
+            {/* Logo/Header (Mobile) */}
+            <div className="flex flex-col items-center lg:hidden mb-4">
+              <div className="h-14 w-32 bg-white/10 rounded-full mb-4" />
+              <div className="h-5 w-48 bg-white/5 rounded-lg" />
+            </div>
+
+            {/* Photo Slots */}
+            <div className="flex justify-center gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="w-[100px] h-36 md:w-32 md:h-48 rounded-2xl bg-white/10 border border-white/20" />
+              ))}
+            </div>
+
+            {/* Input Groups */}
+            <div className="space-y-6">
+              <div>
+                <div className="h-4 w-32 bg-white/10 rounded mb-2 ml-1" />
+                <div className="h-14 w-full bg-white/5 border border-white/20 rounded-xl" />
+              </div>
+              
+              <div>
+                <div className="h-4 w-32 bg-white/10 rounded mb-2 ml-1" />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
+                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
+                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
+                </div>
+              </div>
+            </div>
+
+            {/* Gender Pills */}
+            <div className="flex gap-2">
+              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
+              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
+              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
+            </div>
+
+            {/* Button Placeholder */}
+            <div className="h-16 w-full max-w-xs mx-auto bg-white/10 border border-white/30 rounded-2xl mt-4" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -647,7 +692,7 @@ if (prompt.trim() && accessToken) {
     {step === 2 && (
     < >
       {/* Left */}
-      <div className="flex items-center justify-center text-left border border-white/30 rounded-2xl px-12 hidden md:flex">
+      <div className="flex items-center justify-center text-left border border-white/30 rounded-2xl px-12 hidden md:flex h-[96vh]">
         <div>
           <h2 className="text-4xl font-bold mb-4">Add Prompt</h2>
           <p className="text-lg opacity-90">
@@ -662,6 +707,17 @@ if (prompt.trim() && accessToken) {
       <div className="flex justify-center md:border md:border-white/30 rounded-2xl md:p-6">
         <div className="w-full max-w-lg space-y-6">
 
+
+
+
+<div className="md:hidden  font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
+ <div className="flex items-center gap-2  md:hidden">
+              <div className="w-5 h-5 rounded-full border-2 border-white/50 flex items-center justify-center text-[10px]">i</div>
+       <p className="text-[10px] text-white/50 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
+  Prompts show up as your opener<br/>
+  Say Literally anything, it can be changed anytime
+</p>
+            </div>
           {/* Prompt box */}
     <div className="border border-white/30 rounded-3xl p-6 text-white">
   <textarea
@@ -707,49 +763,52 @@ if (prompt.trim() && accessToken) {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-wrap gap-3 justify-start">
               {suggestions.map((text, i) => {
-                const isLong = layoutMap[text];
+                const isLong = text.length > 25;
                 const isSelected = selectedPrompts.includes(text);
 
                 return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPrompts(prev => {
-                        const isSelected = prev.includes(text);
-                        const newSelection = isSelected ? [] : [text];
-                        setPrompt(newSelection[0] || "");
-                        return newSelection;
-                      });
-                    }}
-                    className={`
-                      border border-white/30 border-b-4 rounded-xl px-4 py-3 text-xs transition text-center
-                      hover:bg-white/5
-                      ${isLong ? "col-span-2" : "col-span-1"}
-                      ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
-                      min-h-[3.5rem] flex items-center justify-center
-                      whitespace-normal leading-relaxed
-                    `}
-                  >
-                    {text}
-                  </button>
+<button
+  key={i}
+  type="button"
+  onClick={() => {
+    setSelectedPrompts(prev => {
+      const isSelected = prev.includes(text);
+      const newSelection = isSelected ? [] : [text];
+      setPrompt(newSelection[0] || "");
+      return newSelection;
+    });
+  }}
+  className={`
+    border border-white/30 border-b-4 rounded-xl px-4 md:py-4 py-3  text-xs transition
+    hover:bg-white/5
+    ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
+    
+    inline-flex items-center justify-center
+    whitespace-nowrap
+    
+    max-w-full
+  `}
+>
+  {text}
+</button>
                 );
               })}
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+ <div className="flex items-center gap-2  hidden md:flex">
               <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">i</div>
               <p className="text-[10px] text-white/50 leading-tight">
                 Prompts show up as your opener<br/>
                 Say Literally anything, it can be changed anytime
               </p>
             </div>
+           
           </div>
 
           {/* Bottom actions */}
-          <div className="pt-4 flex gap-4">
+          <div className=" flex gap-4">
             <button
                onClick={() => {
                  if (isOverlayMode) {

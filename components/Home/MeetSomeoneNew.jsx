@@ -102,11 +102,11 @@ export default function MeetSomeoneNew({
 <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
 
 <div
-  className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
+  className="absolute inset-0  opacity-70 mix-blend-hard-light md:animate-zoom-slow"
   style={{
     backgroundImage: 'url(/bg.jpg)',
     backgroundSize: 'cover',
-    backgroundPosition: 'center',
+          backgroundPosition: '25% center',
     backgroundRepeat: 'repeat',
   }}
 />    
@@ -122,24 +122,24 @@ export default function MeetSomeoneNew({
 
   {/* LEFT BUTTON (COINS) */}
   <div>
-    <Button
-      className="h-10 px-4 flex items-center gap-2 border border-white border-b-4 rounded-full"
+    <button
+      className="h-11 px-8 py-7 flex items-center gap-2 border border-white border-b-4 rounded-full"
       onClick={() => setIsCoinModalOpen(true)}
     >
       <img src="/assets/Coin-token.svg" className="w-5 h-5" />
       <div className="text-sm font-semibold">{coins.toLocaleString()}</div>
       <img src="/assets/plus.png" className="w-4 h-4" />
-    </Button>
+    </button>
   </div>
 
   {/* RIGHT BUTTONS */}
   <div className="flex gap-3">
-    <button className="h-10 w-10 border border-white rounded-full flex items-center justify-center text-white shadow-lg">
+    <button className="h-[45px] w-[45px] border border-white rounded-full border-b-4 flex items-center justify-center text-white shadow-lg">
       <FaCrown className="text-yellow-400" />
     </button>
 
-    <button className="h-10 w-10 border border-white rounded-full flex items-center justify-center text-white shadow-lg">
-      <FaMobileAlt />
+    <button className="h-[45px] p-[14px] w-[45px] border border-white border-b-4 rounded-full flex items-center justify-center text-white shadow-lg">
+      <FaMobileAlt className='h-[20px] w-[20px]' />
     </button>
   </div>
 

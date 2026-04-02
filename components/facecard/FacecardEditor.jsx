@@ -43,7 +43,7 @@ export default function FacecardEditor({
     >
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
       
-<div className=" p-2  ">
+<div className=" p-2 md:hidden  ">
   <div className="flex border border-white/60 rounded-[2rem] w-full flex-col overflow-y-auto px-4  gap-6  relative z-10">
         
         {/* TOP ROW: Close, Name Box, Progress */}
@@ -61,7 +61,7 @@ export default function FacecardEditor({
 
           {/* Name Box with Brackets */}
           <div className="col-span-6 flex justify-center">
-            <div className="relative px-6 py-1 min-w-[140px]">
+            <div className="relative px-6 py-1 min-w-[140px] h-[50px]">
               <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
               <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
               <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
@@ -78,39 +78,60 @@ export default function FacecardEditor({
 
        
 <div className="col-span-4 row-span-2 flex justify-center items-center">
-  <div className="relative w-28 h-28">
+  <div className="relative w-[100px] h-[100px]">
 
-    <div className="absolute inset-0 rounded-full border-[8px] border-yellow-400 opacity-20 blur-md animate-pulse" />
-    <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+    {/* 🔥 OUTER GLOW RING */}
+    <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400 opacity-40 blur-[6px]" />
 
-    <svg className="w-full h-full" viewBox="0 0 100 100">
+    {/* 🔥 OUTER THIN RING */}
+    <div className="absolute inset-0 rounded-full border border-purple-900/60" />
+
+    {/* 🔥 MAIN SVG */}
+    <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 100 100">
+
+      {/* BACKGROUND TRACK */}
       <circle
-        className="text-white/5"
+        cx="50"
+        cy="50"
+        r="42"
         strokeWidth="6"
-        cx="50"
-        cy="50"
-        r="42"
-        fill="transparent"
+        className="text-white/10"
         stroke="currentColor"
+        fill="transparent"
       />
+
+      {/* 🔥 PROGRESS (THICK YELLOW RING) */}
       <circle
-        className="text-yellow-400"
-        strokeWidth="10"
-        strokeLinecap="round"
         cx="50"
         cy="50"
         r="42"
-        fill="transparent"
+        strokeWidth="6"
+        strokeLinecap="round"
+        className="text-yellow-400 drop-shadow-[0_0_8px_rgba(255,188,43,0.8)]"
         stroke="currentColor"
+        fill="transparent"
         strokeDasharray="264"
-        strokeDashoffset={264 - (264 * (progress / 100))}
-        transform="rotate(-90 50 50)"
+        strokeDashoffset={264 - (264 * progress) / 100}
       />
+
+      {/* 🔥 INNER THIN RING */}
+      <circle
+        cx="50"
+        cy="50"
+        r="34"
+        strokeWidth="3"
+        className="text-yellow-300/80"
+        stroke="currentColor"
+        fill="transparent"
+      />
+
     </svg>
 
+    {/* 🔥 CENTER TEXT */}
     <div className="absolute inset-0 flex items-center justify-center">
-      <span className="text-2xl font-black text-white">
-        {progress}<span className="text-sm opacity-60">%</span>
+      <span className="text-[28px] font-extrabold text-white">
+        {progress}
+        <span className="text-sm opacity-60">%</span>
       </span>
     </div>
 
@@ -152,7 +173,7 @@ export default function FacecardEditor({
               
               <div className="space-y-1">
                 <p className="text-xs  opacity-60 text-white">Gender Identity</p>
-                <p className="text-xs  text-white">{user?.gender || "Female"}</p>
+                <p className="text-xs  text-white">{user?.gender }</p>
               </div>
             </div>
           </div>
@@ -176,9 +197,9 @@ export default function FacecardEditor({
 
      <button
               onClick={() => onOpenFacecardPreview?.()}
-              className="w-full py-4 px-2 border-2 border-white/40 rounded-2xl flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 active:scale-95 transition-all"
+              className="w-full py-4 px-2 border-2 border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
             >
-              <span className="text-xl">👁</span>
+              <span className="text-xl"><img src="/eye.svg" alt="" /></span>
               <span className="text-xs font-bold  tracking-widest text-white">Facecard</span>
             </button> 
 
@@ -417,7 +438,7 @@ export default function FacecardEditor({
 </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
-      <div className="relative hidden md:flex max-h-full min-h-0 w-full max-w-[1150px] origin-center scale-[0.62] flex-col gap-4 overflow-hidden rounded-[3rem] border-2 border-white/60 p-3 sm:scale-[0.72] md:scale-90 md:flex-row md:gap-6 md:rounded-[4rem] md:p-5 lg:scale-100">
+<div className="relative hidden md:flex w-full max-w-[1150px] flex-col md:flex-row gap-4 md:gap-6 overflow-hidden rounded-[2rem] md:rounded-[3rem] border border-white/60 p-4 md:p-6">
 
         {/* Main Editor UI */}
         <div className="flex-1 border border-2 border-white/40 rounded-[3.5rem] p-8 relative flex flex-col gap-10">

@@ -19,16 +19,16 @@ export default function Button({
     secondary: "bg-[#1D024D] text-white border-[#9C81BE] backdrop-blur-md hover:bg-white/15 hover:border-white/30 hover:-translate-y-0.5",
     outline: "bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white rounded-4xl border-b-6",
     ghost: "bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white ",
-    outline2: "md:bg-[#1D024D] bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1.3rem] border-[1px] border-b-4",
+    outline2: " bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1.3rem] border-[1px] border-b-4",
   }
 
 
 
   // Width classes
   let widthClass = "";
-  if (fullWidth || width === 'full') {
-    widthClass = "w-full";
-  } else if (width === 'half') {
+if (fullWidth || width === 'full') {
+  widthClass = "w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto";
+} else if (width === 'half') {
     widthClass = "w-1/2";
   }
   else if (width === 'quarter') {

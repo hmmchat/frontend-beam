@@ -20,6 +20,50 @@ import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import Link from 'next/link';
 
+const FaceCardSkeleton = () => (
+  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px] animate-pulse">
+    <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-black/20 backdrop-blur-md">
+      {/* Header Skeleton */}
+      <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">
+        <div className="space-y-2">
+          <div className="h-5 w-28 bg-white/10 rounded" />
+          <div className="h-3 w-16 bg-white/5 rounded" />
+        </div>
+        <div className="flex gap-2">
+          <div className="h-6 w-6 rounded-full bg-white/10" />
+          <div className="h-6 w-6 rounded-full bg-white/10" />
+        </div>
+      </div>
+
+      <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/20 bg-black/10">
+        {/* Intent Skeleton */}
+        <div className="absolute left-3 right-3 top-2 h-16 rounded-[22px] bg-white/5 border border-white/10" />
+        
+        {/* Main Photo Skeleton */}
+        <div className="absolute bottom-4 right-1.5 top-[5.5rem] w-[71%] rounded-[18px] bg-white/10" />
+
+        {/* Left Rail Skeleton */}
+        <div className="absolute bottom-11 left-2 top-[5.5rem] flex w-[76px] flex-col items-center gap-3">
+          <div className="w-12 h-40 rounded-full bg-white/5 border border-white/10" />
+          <div className="w-12 h-14 rounded-xl bg-white/5 border border-white/10" />
+          <div className="w-14 h-24 rounded-t-full bg-white/5 border border-white/10" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const LocationCardSkeleton = () => (
+  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px] animate-pulse">
+    <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-black/20 backdrop-blur-md flex flex-col items-center justify-center p-8">
+      <div className="w-40 h-40 rounded-full bg-white/10 border-4 border-white/5 mb-8" />
+      <div className="h-6 w-40 bg-white/10 rounded mb-4" />
+      <div className="h-3 w-56 bg-white/5 rounded mb-8" />
+      <div className="h-14 w-full bg-white/5 border border-white/10 rounded-2xl" />
+    </div>
+  </div>
+);
+
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
   const flowLog = (...args) => console.log('[RaincheckFlow][home]', ...args);
@@ -750,7 +794,7 @@ export default function MeetSomeoneDynamic() {
 
         {/* MOBILE VIEW (CONDITIONAL) */}
         {!isSearching && (
-          <div className="block md:hidden h-full w-full fixed inset-0 z-[1000]">
+          <div className="block md:hidden ">
             <MeetSomeoneNew 
               onMeetNow={async () => {
                 setIsSearching(true);
@@ -802,10 +846,8 @@ export default function MeetSomeoneDynamic() {
               {!currentCard || isResumeLoading ? (
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
                   <div className={clsx('border-2', 'border-white/30', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
-                    <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-                      <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
-                      <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Finding face cards...</p>
-                      <p className={clsx('text-white/80', 'text-sm', 'mt-2')}>You are still in discovery pool.</p>
+                    <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2', 'flex', 'flex-col', 'items-center', 'gap-8')}>
+                      <FaceCardSkeleton />
                     </div>
                     <SearchingPopup
                       isVisible={true}
@@ -1131,14 +1173,8 @@ export default function MeetSomeoneDynamic() {
                                 isFaceCardState ? "scale-[0.8] sm:scale-[0.85]" : "scale-[0.75] sm:scale-[0.8]"
                             )}>
                               {isSearchingState ? (
-                                <div className="h-[660px] w-[360px] flex flex-col items-center justify-center text-center p-8 bg-black/40 backdrop-blur-md rounded-[30px] border border-white/20 shadow-2xl">
-                                  <div className="w-24 h-24 rounded-full border-4 border-t-purple-500 border-white/10 animate-spin mb-8" />
-                                  <h2 className="text-3xl font-bold text-white mb-2">Finding someone...</h2>
-                                  <div className="flex gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" />
-                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.15s]" />
-                                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.3s]" />
-                                  </div>
+                                <div className="flex flex-col items-center justify-center w-full">
+                                   <FaceCardSkeleton />
                                 </div>
                               ) : isLocationState ? (
                                 <LocationCard 

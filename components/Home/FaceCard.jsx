@@ -69,7 +69,12 @@ const FaceCard = ({ user }) => {
           <div>
             <h1 className="text-[18px] font-semibold text-[#FFB800]">
               {user.username || 'User'}{' '}
-              <span className="font-medium text-white">{age || '—'}</span>
+<span
+  className="font-sm text-transparent  px-2 py-0.5 rounded-full"
+  style={{ WebkitTextStroke: "0.7px white" }}
+>
+  {age || '—'}
+</span>
             </h1>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
               <IoLocationOutline className="shrink-0" />
@@ -104,13 +109,13 @@ const FaceCard = ({ user }) => {
         <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/45">
           {/* Intent */}
           <div className="absolute left-0 right-0 top-1 z-20 px-2">
-            <div className="rounded-[22px] border border-white/35 bg-black/20 px-3 py-6 text-center text-sm leading-snug text-white backdrop-blur-[2px]">
+            <div className="rounded-[22px] border border-white/35 px-3 py-6 text-center text-sm leading-snug text-white backdrop-blur-[2px]">
               {user.intent || 'Here to meet strangers and overthink later.'}
             </div>
           </div>
 
           {/* Main photo — right */}
-          <div className="absolute bottom-10 right-1.5 top-[5.25rem] w-[71%] overflow-hidden rounded-[18px]">
+          <div className="absolute bottom-4 right-1.5 top-[5.25rem] w-[71%] overflow-hidden rounded-[18px]">
             <img
               src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
               className="h-full w-full object-cover"
@@ -121,16 +126,16 @@ const FaceCard = ({ user }) => {
           {/*
             Left rail (template): (1) brands inside a pill border (2) wider zodiac block (3) music with larger album circle.
           */}
-          <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center gap-3">
+          <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center gap-1">
             {/* Brands — single capsule boundary around the stack */}
-            <div className="flex w-fit max-w-[50px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
-              <div className="flex flex-col items-center gap-2">
+            <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
+              <div className="flex flex-col items-center gap-1">
                 {[0, 1, 2, 3, 4].map((idx) => {
                   const src = brandLogos[idx];
                   return (
                     <div
                       key={`brand-slot-${idx}`}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-black/85 shadow-inner"
+                      className="flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
                     >
                       {src && (
                         <img
@@ -147,12 +152,12 @@ const FaceCard = ({ user }) => {
             </div>
 
             {/* Zodiac — wider than brand capsule (~46px → ~58px) */}
-            <div className="flex w-[58px] shrink-0 flex-col items-center rounded-2xl border border-white/45  px-1.5 py-2 shadow-inner">
+            <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45  px-2 py-2 shadow-inner">
               {user?.zodiac?.imageUrl ? (
                 <img
                   src={user.zodiac.imageUrl}
                   alt={user.zodiac.name || 'Zodiac'}
-                  className="h-10 w-10 object-contain"
+                  className="h-8 w-10 object-contain"
                 />
               ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
@@ -165,13 +170,16 @@ const FaceCard = ({ user }) => {
             </div>
 
             {/* Music — album circle clearly larger than brand circles (36px → 72px) */}
-            <div className="flex w-[72px] shrink-0 flex-col items-center rounded-2xl border border-white/40  px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
+            <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40  px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
               <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                 {user.musicPreference ? (
                     <img src={albumArt} className="h-full w-full object-cover" alt="" />
                 ) : (
-                    <div className="w-full h-full bg-black/85 flex items-center justify-center">
-                        <span className="text-white/30 text-2xl font-light">?</span>
+                    <div className="w-full h-full flex items-center justify-center">
+                        {/* <span className="text-white/30 text-2xl font-light">?</span> */}
+                              <div className="absolute bottom-12 left-0 w-4 h-[2px] bg-white/40 origin-left"></div>
+                              <div className="absolute bottom-12 left-4 w-8 h-[2px] bg-white/40 rotate-310 origin-left"></div>
+                                    <div className="absolute bottom-18 left-8 w-2 h-2 rounded-full bg-white/40"></div>
                     </div>
                 )}
               </div>

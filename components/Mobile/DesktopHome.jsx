@@ -32,7 +32,7 @@ export default function DesktopHome() {
     }, []);
 
     return (
-        <div className="relative h-screen overflow-hidden font-[family-name:var(--font-otomanopee)]">
+        <div className="relative h-screen font-[family-name:var(--font-otomanopee)]">
             {/* Header */}
 
 
@@ -53,7 +53,7 @@ export default function DesktopHome() {
                     />
                     <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
                         <div className="z-10 text-center max-w-lg  p-2">
-                            <img src="/LOGO.png" className="md:w-64 mx-auto w-44" />
+                            <img src="/LOGO.png" className="md:w-64 mx-auto w-44 sm:w-5" />
                             <p className="text-white text-2xl">Meet someone here,</p>
                             <div className="inline-flex gap-2 mt-3 font-[family-name:var(--font-otomanopee)]">
                                 <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
@@ -86,55 +86,36 @@ export default function DesktopHome() {
 
 
                         {/* Action Card */}
-                        <div className="relative z-[2] w-full max-w-[600px] flex flex-col gap-8 h-full justify-between ">
-                            {/* Stats */}
+                <div className="relative z-[2] w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col h-full px-8">
 
+  {/* CENTER CTA */}
+<div className="flex-1 flex items-center justify-center mt-40">
+  <Button
+    className="w-full max-w-lg py-7 bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 flex items-center justify-center gap-3"
+    onClick={() => setIsSignUpOpen(true)}
+  >
+    <img src="/assets/video-on.svg" className="w-8 h-8 opacity-70" />
+    Meet that someone
+  </Button>
+</div>
 
-                            {/* CTA */}
-                            <Button
+  {/* BOTTOM SECTION */}
+  <div className="mb-10 flex justify-between items-center">
+    <Link href="/beam-tv">
+      <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md">
+        <img src="/assets/Frame.png" />
+      </button>
+    </Link>
 
+    <button
+      className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"
+      onClick={() => setIsSignUpOpen(true)}
+    >
+      Sign Up
+    </button>
+  </div>
 
-                                className=" py-7 px-26 font-[family-name:var(--font-otomanopee)] bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 mt-96 "
-                                onClick={() => setIsSignUpOpen(true)}
-                            >
-                                <img src="/assets/video-on.svg" alt="" className="w-8 h-8 opacity-70 " />
-                                Meet that someone
-                            </Button>
-
-
-                            {/* Filters */}
-                            {/* <FilterButtons
-                            onGenderClick={() => setIsGenderModalOpen(true)}
-                            onLocationClick={() => setIsLocationModalOpen(true)}
-                            className="mt-auto"
-                        /> */}
-
-
-
-
-
-
-                            <div className="mb-10   flex  justify-between items-center ">
-
-                                <Link href="/beam-tv">
-                                    <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md transition-all duration-200">
-                                        <img src="/assets/Frame.png" alt="beam-tv" />
-                                    </button>
-                                </Link>
-
-                                <button
-                                    className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"
-                                    onClick={() => setIsSignUpOpen(true)}
-                                >
-                                    Sign Up
-                                </button>
-                            </div>
-
-
-
-
-
-                        </div>
+</div>
 
                     </div>
 

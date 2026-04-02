@@ -279,7 +279,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
           {/* OPTIONS */}
           {step === 'options' && (
-            <div className="flex flex-col gap-3 mb-8 md:px-4 lg:px-60 ">
+            <div className="flex flex-col gap-3 mb-8 md:px-4  ">
               {/* Google Login */}
               <Button 
                 variant="outline2"
@@ -312,36 +312,45 @@ function SignUpModalContent({ isOpen, onClose }) {
           )}
 
           {/* MOBILE NUMBER */}
+
+
           {step === 'mobile' && (
-            <div className=" text-left px-4 lg:px-60 py-18 outfit-font">
-              <Input
-                type="tel"
-                placeholder="+91 879-7967-858"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                label="Enter Mobile Number"
-              />
+  <div className="text-left py-8 flex w-72 md:w-96 sm:w-80  flex-col outfit-font mx-auto">
+    
+    <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto">
+      <Input
+        type="tel"
+        placeholder="+919876543210"
+        value={mobileNumber}
+        onChange={(e) => {
+          const value = e.target.value.replace(/\D/g, '');
+          setMobileNumber(value);
+        }}
+        label="Enter Mobile Number"
+      />
+    </div>
 
-              <ErrorAlert message={error} />
+    <ErrorAlert message={error} />
 
-              <div className="mt-8 mb-8 flex justify-center lg:justify-start ">
-                <Button
-                  variant="outline2"
-                  width="quarter"
-                  className='w-[120px] lg:w-[200px] text-xs lg:text-[15px]'
-                  position="left"
-                  onClick={handleGetOTP}
-                  disabled={loading}
-                >
-                  {loading ? 'Sending...' : 'Get OTP'}
-                </Button>
-              </div>
-            </div>
-          )}
+ <div className="mt-6 flex ">
+      <button
+  
+        className="text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80  bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1.3rem] border-[1px] border-b-4 inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
 
-          {/* OTP */}
+        onClick={handleGetOTP}
+        disabled={loading}
+      >
+        {loading ? 'Sending...' : 'Get OTP'}
+      </button>
+    </div>
+
+  </div>
+)}
+   {/* OTP */}
           {step === 'otp' && (
-            <div className="mb-8 text-left px-4 lg:px-40 py-18 outfit-font">
+            <div className="mb-8 text-left px-4 py-8 outfit-font flex justify-center">
+              <div className="w-full max-w-md">
+              
               <p className="text-white/90 text-sm font-medium max-w-[200px] mb-4">
                 Enter OTP
               </p>
@@ -367,7 +376,7 @@ function SignUpModalContent({ isOpen, onClose }) {
               <ErrorAlert message={error} />
 
               <div className="mt-6 flex justify-center lg:justify-start">
-                <Button
+                <button
                   variant="outline2"
                   width="quarter"
                   className='w-[120px] lg:w-[210px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80 '
@@ -376,8 +385,10 @@ function SignUpModalContent({ isOpen, onClose }) {
                   disabled={loading}
                 >
                   {loading ? 'Verifying...' : 'Enter OTP'}
-                </Button>
+                </button>
               </div>
+            </div>
+
             </div>
           )}
 

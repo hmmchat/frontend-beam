@@ -35,10 +35,10 @@ export default function Modal({
     >
       <div
         className={`
-    relative overflow-y-auto overflow-x-hidden animate-slide-up z-12
+    relative overflow-hidden animate-slide-up z-12
     
     /* MOBILE */
-    bg-[#4E0093]
+
     p-3 rounded-none 
     ${isBottomSheet ? 'w-full rounded-t-[32px]' : 'absolute inset-0 h-screen'}
     ${isBottomSheet ? '' : 'md:h-auto'}
@@ -51,9 +51,8 @@ export default function Modal({
     md:rounded-[32px]
    
 
-    md:backdrop-blur-[2px]
-    md:backdrop-saturate-[120%]
-    md:bg-[#4E0093]/70 
+   
+
     md:border md:border-white/25
 
     ${className}
@@ -66,15 +65,7 @@ export default function Modal({
         onClick={(e) => e.stopPropagation()}
       >
 
-        <div
-          className="
-      absolute inset-0
-      bg-[url('/test.png')]
-      bg-cover bg-center bg-repeat
-      opacity-30
-      pointer-events-none
-    "
-        />
+
         {children}
       </div>
       <div className='absolute inset-0 bg-[#02004A] -z-50 pointer-events-none'
@@ -89,7 +80,6 @@ export default function Modal({
 
   );
 }
-
 
 
 

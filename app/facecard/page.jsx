@@ -574,8 +574,88 @@ export default function FacecardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-dvh max-h-dvh items-center justify-center overflow-hidden bg-purple-950 text-white">
-        <div className="animate-pulse">Loading Facecard...</div>
+      <div 
+        className="relative flex h-dvh max-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-purple-950 text-white outfit-font"
+        style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        {/* --- MOBILE SKELETON --- */}
+        <div className="flex md:hidden border border-white/20 rounded-[2rem] w-[92%] max-w-sm h-auto flex-col overflow-hidden px-4 py-8 gap-8 relative z-10 bg-black/30 backdrop-blur-md animate-pulse">
+          <div className="grid grid-cols-12 gap-3 items-center px-2">
+            <div className="col-span-2 h-9 w-9 rounded-full bg-white/10 border border-white/20" />
+            <div className="col-span-6 flex justify-center">
+              <div className="h-12 w-32 rounded-xl bg-white/10" />
+            </div>
+            <div className="col-span-4 flex justify-center items-center">
+              <div className="w-[85px] h-[85px] rounded-full bg-white/10 border-4 border-white/5" />
+            </div>
+          </div>
+          <div className="grid grid-cols-12 gap-4 px-2">
+            <div className="col-span-7 h-14 rounded-xl bg-white/5 border border-white/10" />
+            <div className="col-span-5 h-14 rounded-xl bg-white/5 border border-white/10" />
+          </div>
+          <div className="flex flex-col gap-5 px-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center justify-between gap-3">
+                 <div className="w-16 h-3 bg-white/10 rounded" />
+                 <div className="w-36 h-10 bg-white/5 border border-white/10 rounded-full" />
+                 <div className="w-10 h-10 bg-white/10 rounded-xl" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-4 px-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="w-full h-40 rounded-[1rem] bg-white/10 border border-white/20" />
+            ))}
+          </div>
+          <div className="flex items-center gap-5 px-2">
+            <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20" />
+            <div className="h-12 w-32 rounded-xl bg-white/5 border border-white/10" />
+          </div>
+        </div>
+
+        {/* --- DESKTOP SKELETON --- */}
+        <div className="hidden md:flex relative h-full w-full max-w-[1150px] origin-center items-center justify-center p-5 animate-pulse">
+           <div className="flex w-full h-[85vh] flex-row gap-6 border-2 border-white/20 rounded-[4rem] p-6 bg-black/30 backdrop-blur-md">
+              {/* Main Content Area */}
+              <div className="flex-1 flex flex-col gap-10 border-2 border-white/10 rounded-[3.5rem] p-8">
+                 {/* Top Row with Photos */}
+                 <div className="flex items-start gap-6">
+                    <div className="w-16 h-16 rounded-full bg-white/10" />
+                    <div className="flex gap-4">
+                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/10 border border-white/20" />
+                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/5 border border-white/10" />
+                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/5 border border-white/10" />
+                    </div>
+                 </div>
+                 {/* Middle Labels Area */}
+                 <div className="grid grid-cols-10 gap-10 mt-4">
+                    <div className="col-span-3 space-y-10">
+                       <div className="h-16 w-full rounded-xl bg-white/5 border border-white/10" />
+                       <div className="h-16 w-full rounded-xl bg-white/5 border border-white/10" />
+                    </div>
+                    <div className="col-span-7 space-y-8">
+                       <div className="flex gap-4">
+                          <div className="h-16 w-20 rounded-xl bg-white/10" />
+                          <div className="h-16 flex-1 rounded-full bg-white/5 border border-white/10" />
+                       </div>
+                       <div className="flex gap-4">
+                          <div className="h-16 w-20 rounded-xl bg-white/10" />
+                          <div className="h-16 flex-1 rounded-full bg-white/5 border border-white/10" />
+                       </div>
+                    </div>
+                 </div>
+              </div>
+              {/* Right Sidebar Area */}
+              <div className="w-72 flex flex-col gap-12 py-10">
+                 <div className="w-48 h-48 rounded-full bg-white/10 border-4 border-white/5 self-center" />
+                 <div className="h-16 w-full rounded-3xl bg-white/5 border border-white/20" />
+                 <div className="flex flex-col items-center gap-6">
+                    <div className="w-40 h-40 rounded-full bg-white/10 border-2 border-white/10" />
+                    <div className="h-12 w-48 rounded-xl bg-white/5" />
+                 </div>
+              </div>
+           </div>
+        </div>
       </div>
     );
   }

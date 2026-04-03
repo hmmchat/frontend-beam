@@ -38,7 +38,7 @@ export default function FacecardEditor({
 
   return (
     <div
-      className="relative flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden p-0 text-white outfit-font md:p-4"
+      className="relative flex w-full min-h-screen flex-col items-center justify-start md:justify-center overflow-y-auto md:overflow-hidden p-0 text-white outfit-font md:p-4"
       style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
@@ -337,7 +337,7 @@ export default function FacecardEditor({
     {/* Photo 1 (DP) */}
     <div
       onClick={() => handleSlotClick(0)}
-      className="w-full h-[160px] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
+      className="w-full aspect-[3/4] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
     >
       <img
         src={user?.displayPictureUrl || "/imageprofile.png"}
@@ -355,7 +355,7 @@ export default function FacecardEditor({
         <div
           key={idx}
           onClick={() => handleSlotClick(idx + 1)}
-          className="w-full h-[160px] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
+          className="w-full aspect-[3/4] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
         >
           {photo ? (
             <img src={photo.url} className="w-full h-full object-cover" />
@@ -447,7 +447,11 @@ export default function FacecardEditor({
 </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
-<div className="relative hidden md:flex w-full max-w-[1150px] flex-col md:flex-row gap-4 md:gap-6 overflow-hidden rounded-[2rem] md:rounded-[3rem] border border-white/60 p-4 md:p-6">
+
+
+
+      <div className="scale-[0.95] lg:scale-100 [@media(max-height:800px)]:scale-[0.9] [@media(max-height:700px)]:scale-[0.8] [@media(max-height:600px)]:scale-[0.7] transition-all duration-300">
+<div className="relative hidden md:flex w-full max-w-[1150px]                 flex-col md:flex-row gap-4 md:gap-6 overflow-visible rounded-[2rem] md:rounded-[3rem] border border-white/60 p-4 md:p-6">
 
         {/* Main Editor UI */}
         <div className="flex-1 border border-2 border-white/40 rounded-[3.5rem] p-8 relative flex flex-col gap-10">
@@ -467,10 +471,10 @@ export default function FacecardEditor({
               </button>
 
               {/* Vertical Name Wrapper */}
-              <div className="relative h-[264px] w-[70px] flex items-center justify-center">
+              <div className="relative  w-[70px]  flex items-center justify-center">
 
                 {/* Rotated content */}
-                <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-2 relative">
+                <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-2  mt-24 relative">
 
                   {/* Corner brackets */}
                   <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60"></span>
@@ -501,7 +505,7 @@ export default function FacecardEditor({
               {/* Slot 1 */}
               <div
                 onClick={() => handleSlotClick(0)}
-                className={`w-[200px] h-[300px] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now'
+                className={`w-[160px] sm:w-[180px] md:w-[200px] aspect-[2/3] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now'
                   }`}
               >
                 <img
@@ -517,7 +521,7 @@ export default function FacecardEditor({
               {/* Slot 2 (Photo Order 0) */}
               <div
                 onClick={() => handleSlotClick(1)}
-                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
+                className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
                   }`}
               >
                 {user?.photos?.find(p => p.order === 0)?.url ? (
@@ -530,7 +534,7 @@ export default function FacecardEditor({
               {/* Slot 3 (Photo Order 1) */}
               <div
                 onClick={() => handleSlotClick(2)}
-                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
+                className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
                   }`}
               >
                 {user?.photos?.find(p => p.order === 1)?.url ? (
@@ -755,7 +759,7 @@ export default function FacecardEditor({
             onClick={() => setShowSelector('music')}
             className="flex-1 flex flex-col items-center gap-6 relative 0  meeting now group"
           >
-            <div className="relative w-44 h-44">
+            <div className="relative w-32 sm:w-36 md:w-44 aspect-square">
               <div className={`absolute inset-0 rounded-full border-[3px] border-white/20 ${user?.musicPreference ? 'animate-spin-slow' : ''}`}></div>
               <div className={`absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow bg-black' : ''}`}>
                 {user?.musicPreference?.albumArtUrl ? (
@@ -791,7 +795,7 @@ export default function FacecardEditor({
           </div>
         </div>
       </div>
-
+</div>
       <style jsx>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(20px); }

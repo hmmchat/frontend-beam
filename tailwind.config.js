@@ -39,6 +39,7 @@ module.exports = {
                 'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 'zoom-slow': 'zoomSlow 20s ease-in-out infinite',
                 'grid-drift': 'gridDrift 20s linear infinite',
+                "spin-slow": "spin 6s linear infinite",
                 'bounce-slow': 'bounceSlow 3s ease-in-out infinite',
             },
             keyframes: {

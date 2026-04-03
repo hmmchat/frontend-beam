@@ -102,13 +102,13 @@ export default function DesktopHome() {
   {/* BOTTOM SECTION */}
   <div className="mb-10 flex justify-between items-center">
     <Link href="/beam-tv">
-      <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md">
+      <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2">
         <img src="/assets/Frame.png" />
       </button>
     </Link>
 
     <button
-      className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10"
+      className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2" 
       onClick={() => setIsSignUpOpen(true)}
     >
       Sign Up

@@ -893,7 +893,7 @@ export default function MeetSomeoneDynamic() {
                 </div>
           ) : (
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-              <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-2xl', 'relative')}>
+              <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
                 <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
                   <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
                   <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>

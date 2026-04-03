@@ -62,8 +62,13 @@ const FaceCard = ({ user }) => {
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
 
   return (
-<div className="w-[320px] sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                aspect-[360/660] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
+<div className="w-[85vw] max-w-[360px] sm:w-[340px] md:w-[320px] lg:w-[360px] 
+                h-[75vh] md:aspect-[360/660] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
+
+
+
+
+                  
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {/* HEADER */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">
@@ -110,7 +115,7 @@ const FaceCard = ({ user }) => {
         <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/45">
           {/* Intent */}
           <div className="absolute left-0 right-0 top-1 z-20 px-2">
-            <div className="rounded-[22px] border border-white/35 px-3 py-6 text-center text-sm leading-snug text-white backdrop-blur-[2px]">
+            <div className="rounded-[22px] border border-white/35 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
               {user.intent || 'Here to meet strangers and overthink later.'}
             </div>
           </div>
@@ -204,6 +209,8 @@ const FaceCard = ({ user }) => {
           </div>
         </div>
       </div>
+
+
     </div>
   );
 };

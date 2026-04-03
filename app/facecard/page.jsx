@@ -764,7 +764,7 @@ function FacecardContent() {
 
             <button
               type="button"
-              className="absolute top-0 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
+              className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
               onClick={() => setFacecardPreviewOpen(false)}
               aria-label="Close preview"
             >

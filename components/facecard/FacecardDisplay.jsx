@@ -16,8 +16,9 @@ export default function FacecardDisplay({ user, age, setView, router }) {
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10">
 
         {/* LEFT */}
-        <div className="flex flex-1 flex-col items-center justify-center 
-                        overflow-hidden md:overflow-visible
+        <div className="flex flex-1 flex-col items-center justify-between md:justify-center
+min-h-[100dvh] md:min-h-0
+overflow-y-auto md:overflow-visible
                         rounded-[2rem] 
                         md:border md:border-white/30 md:rounded-[2.5rem] 
                         lg:rounded-[3rem] px-3 py-3 sm:px-4">
@@ -34,59 +35,53 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </p>
 
             {/* CARD */}
-            <div className="flex w-full justify-center mt-2 sm:mt-3 md:mt-2">
+          <div
+  className="
+    transition-all duration-300 ease-in-out
 
-              <div
-                className="
-                  transition-all duration-300 ease-in-out
+    scale-100
 
-                  scale-[0.85]
+    md:scale-[0.8]
+    lg:scale-[0.9]
+    xl:scale-100
 
-                  sm:scale-[0.9]
+    [@media(max-height:700px)]:md:scale-[0.7]
+    [@media(max-height:600px)]:md:scale-[0.6]
 
-                  md:scale-[0.8]
+    flex items-center justify-center
 
-                  lg:scale-[0.9]
-
-                  xl:scale-100
-
-                  [@media(max-height:700px)]:scale-[0.7]
-                  [@media(max-height:600px)]:scale-[0.6]
-
-                  flex items-center justify-center
-                  max-h-[calc(100vh-120px)]
-                "
-              >
-                <div className="flex justify-center">
-                  <FaceCard
-                    user={{
-                      ...user,
-                      age,
-                      city: user?.preferredCity || user?.city,
-                    }}
-                  />
-                </div>
-              </div>
-
-            </div>
+    md:max-h-[calc(100vh-120px)]
+  "
+>
+  <div className="flex justify-center w-full">
+    <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-none">
+      <FaceCard
+        user={{
+          ...user,
+          age,
+          city: user?.preferredCity || user?.city,
+        }}
+      />
+    </div>
+  </div>
+</div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full justify-between gap-4 px-2 mt-4 md:hidden">
-              <button
-                onClick={() => router.push('/')}
-                className="flex-1 rounded-full border border-white/30 py-2 text-xs sm:text-sm font-semibold transition hover:bg-yellow-400 hover:text-black"
-              >
-                Later 🥱
-              </button>
+        <div className="flex w-full justify-center gap-10 px-2 mt-4 md:hidden">
+  <button
+    onClick={() => router.push('/')}
+    className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+  >
+    Later 🥱
+  </button>
 
-              <button
-                onClick={() => setView('editor')}
-                className="flex-1 rounded-full border border-white/30 py-2 text-xs sm:text-sm font-semibold transition hover:bg-yellow-400 hover:text-black"
-              >
-                Add Info 😤
-              </button>
-            </div>
-
+  <button
+    onClick={() => setView('editor')}
+    className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+  >
+    Add Info 😤
+  </button>
+</div>
           </div>
         </div>
 

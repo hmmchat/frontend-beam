@@ -43,11 +43,11 @@ export default function FacecardEditor({
     >
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
       
-<div className=" p-2 md:hidden  ">
-  <div className="flex border border-white/60 rounded-[2rem] w-full flex-col overflow-y-auto px-4  gap-6  relative z-10">
+<div className="h-screen flex items-center justify-center md:hidden px-2">
+<div className="flex border border-white/60 rounded-[2rem] w-full h-[95vh] flex-col justify-between px-4 py-4 relative z-10">
         
         {/* TOP ROW: Close, Name Box, Progress */}
-        <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2">
+        <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4">
           {/* Close Button */}
 
 
@@ -66,12 +66,13 @@ export default function FacecardEditor({
               <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
               <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
               <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
-              <div className="flex flex-col text-start">
-                <h2 className="text-xl  tracking-tight text-white">{firstName}</h2>
-                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-mono text-white">
-                  UserID:{user?.id?.slice(0, 8) || '4heu24sds'}
-                </p>
-              </div>
+<div className="inline-flex flex-col justify-end items-start">
+  <h2 className="text-[12px] text-white">{firstName}</h2>
+
+  <p className="text-[10px] uppercase font-outfit text-white">
+    UserID:{user?.id?.slice(0, 8) || '4heu24sds'}
+  </p>
+</div>
             </div>
           </div>
 
@@ -147,8 +148,8 @@ export default function FacecardEditor({
               <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
               
               <div className="space-y-1">
-                <p className="text-xs uppercase  opacity-60 text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
-                <p className="text-xs font-thin  text-white">Zodiac : {zodiac?.name || 'Gemini'}</p>
+                <p className="text-[10px] uppercase  opacity-60 text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
+                <p className="text-[10px] font-thin  text-white">Zodiac : {zodiac?.name || 'Gemini'}</p>
               </div>
             </div>
           </div>
@@ -176,8 +177,8 @@ export default function FacecardEditor({
               <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
               
               <div className="space-y-1">
-                <p className="text-xs  opacity-60 text-white">Gender Identity</p>
-                <p className="text-xs  text-white">{user?.gender }</p>
+                <p className="text-[10px]  opacity-60 text-white">Gender Identity</p>
+                <p className="text-[10px]  text-white">{user?.gender }</p>
               </div>
             </div>
           </div>
@@ -410,18 +411,18 @@ export default function FacecardEditor({
 
 
 
-    <div className="relative px-6 py-3 min-w-[140px]">
+    <div className="relative px-6 py-1 min-w-[120px]">
               <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
               <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
               <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
               <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
     {/* Text */}
-    <div className="flex flex-col">
+<div className="inline-flex flex-col justify-end items-start">
       
-      <p className="text-white text-xs leading-tight">
+      <p className="text-white text-[10px] leading-tight">
         {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
       </p>
-      <p className="text-white/60 text-xs text-center">
+      <p className="text-white/60 text-[10px] text-center">
         {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
       </p>
     </div>

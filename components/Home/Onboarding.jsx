@@ -141,7 +141,7 @@ export default function Onboarding() {
  setSuggestions(
   data.prompts
     ?.map(p => p.text)
-    .slice(0,6) // 👈 yaha control kar number
+    .slice(0,16) // 👈 yaha control kar number
 );
         }
       } catch (err) {
@@ -494,7 +494,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[100vh] px-4 py-4  ">
+<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen px-4 py-3 overflow-hidden">
 
             {step === 1 && (
     <>
@@ -507,7 +507,7 @@ if (prompt.trim() && accessToken) {
   </p>
 </div> */}
           {/* Left */} 
-          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-2xl py-20  hidden md:flex ">
+          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-[3rem] py-10 md:py-16 hidden md:flex ">
             <div className="mx-auto ">
 
             <h3 className="text-4xl font-bold outfit-font">Welcome onboard,</h3>
@@ -520,8 +520,8 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Right - Form */}
-          <div className="flex justify-center md:border md:border-white/30 md:rounded-2xl md:h-[97vh]   ">
-            <div className="w-full md:max-w-[540px] rounded-2xl  mx-auto ">
+          <div className="flex flex-col justify-between h-full overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
+            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
 
 
 
@@ -536,9 +536,24 @@ if (prompt.trim() && accessToken) {
 
 
 
+<div className="flex flex-col justify-between h-full mt-10">
 
 
-              <form onSubmit={handleSubmit} className="space-y-6 md:border md:border-white/30 md:p-3 md:py-5  md:rounded-[3rem] md:h-[43rem] mt-4">
+  <div
+    className="
+      scale-[0.95]
+
+      lg:scale-100
+
+      [@media(max-height:800px)]:scale-[0.9]
+      [@media(max-height:700px)]:scale-[0.85]
+      [@media(max-height:600px)]:scale-[0.75]
+
+      origin-top
+      transition-all
+    "
+  >
+              <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6 md:border md:border-white/30 md:p-3 md:py-6  md:rounded-[3rem]  mt-4">
                 
                 {/* 2️⃣ Photo upload UI */}
                 <div className="mb-8 border border-white/30 p-3 md:py-5 rounded-[2rem] ">
@@ -553,7 +568,7 @@ if (prompt.trim() && accessToken) {
                       return (
                         <div
                           key={i}
-                          className="relative w-[120px]  md:w-32 h-44 md:h-48 mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden 0  meeting now animate-in fade-in zoom-in duration-300"
+                          className="relative w-[90px] sm:w-[110px] md:w-32 aspect-[3/4] mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden 0  meeting now animate-in fade-in zoom-in duration-300"
                           onClick={() => fileRefs.current[i]?.click()}
                         >
                           {photos[i] ? (
@@ -603,7 +618,7 @@ if (prompt.trim() && accessToken) {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-4 md:px-4 md:py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                    className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-3 md:px-4 md:py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
                     placeholder="Your name"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
@@ -620,7 +635,7 @@ if (prompt.trim() && accessToken) {
                       placeholder="Day"
                       maxLength={2}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="month"
@@ -630,7 +645,7 @@ if (prompt.trim() && accessToken) {
                       placeholder="Month"
                       maxLength={2}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="year"
@@ -640,7 +655,7 @@ if (prompt.trim() && accessToken) {
                       placeholder="Year"
                       maxLength={4}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                   </div>
                   {(errors.day || errors.month || errors.year) && (
@@ -685,7 +700,7 @@ if (prompt.trim() && accessToken) {
                         type="button"
                         onClick={() => setGender(g.value)}
                         disabled={preferNotToSay}
-                        className={`flex-1 flex items-center justify-center  gap-2 rounded-xl border-2 px-5 py-4  md:px-2 md:py-3 text-white transition border border-b-4
+                        className={`flex-1 flex items-center justify-center  gap-2 rounded-xl border-2 px-5 py-3  md:px-2 md:py-3 text-white transition border border-b-4
                         ${
                           gender === g.value
                             ? "border-yellow-400 bg-yellow-400/10"
@@ -711,16 +726,23 @@ if (prompt.trim() && accessToken) {
                 {/* 6️⃣ Bottom button */}
                
               </form>
+
+
+
+
              <button
   type="button"
   disabled={loading}
   onClick={() => {
     if (validate()) setStep(2);
   }}
-  className="w-84 md:w-full flex mx-auto justify-center items-center mt-8 md:mt-6 border border-b-4 border-white/80 rounded-2xl py-4 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
+  className="w-84 md:w-full flex mx-auto justify-center items-center mt-4 md:mt-5 border border-b-4 border-white/80 rounded-2xl py-3 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
 >
   Step 2/2: Add Prompt
 </button>
+</div>
+
+</div>
 
             </div>
           </div>
@@ -733,7 +755,7 @@ if (prompt.trim() && accessToken) {
     {step === 2 && (
     < >
       {/* Left */}
-      <div className="flex items-center justify-center text-left border border-white/30 rounded-2xl px-12 hidden md:flex h-[96vh]">
+      <div className="flex items-center justify-center text-left border border-white/30 rounded-[3rem] px-12 hidden md:flex h-full]">
         <div>
           <h2 className="text-4xl font-bold mb-4">Add Prompt</h2>
           <p className="text-lg opacity-90">
@@ -745,8 +767,8 @@ if (prompt.trim() && accessToken) {
       </div>
 
       {/* Right */}
-      <div className="flex justify-center md:border md:border-white/30 rounded-2xl md:p-6">
-        <div className="w-full max-w-lg space-y-6">
+      <div className="flex justify-center h-full md:border md:border-white/30 rounded-[3rem] md:p-6">
+        <div className="w-full max-w-lg h-full flex flex-col">
 
 
 
@@ -760,7 +782,7 @@ if (prompt.trim() && accessToken) {
 </p>
             </div>
           {/* Prompt box */}
-    <div className="border border-white/30 rounded-3xl p-6 text-white">
+    <div className="border border-white/30 rounded-3xl p-10 text-white">
   <textarea
     value={prompt}
     onChange={(e) => {
@@ -778,9 +800,9 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Suggestions */}
-          <div className="border h- border-white/30 rounded-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center text-white text-sm">
-              <span className="opacity-70">Suggestions</span>
+          <div className="border border-white/30 rounded-2xl p-4 flex-1 flex flex-col mt-3">
+            <div className="flex justify-between items-center text-white text-sm px-1">
+              <span className="opacity-90 text-[12px]">Suggestions</span>
               <button 
                 type="button" 
                 onClick={async () => {
@@ -804,7 +826,7 @@ if (prompt.trim() && accessToken) {
               </button>
             </div>
 
-        <div className="flex flex-wrap gap-3 justify-start">
+        <div className="flex flex-wrap gap-2 content-start flex-1 items-start mt-4">
               {suggestions.map((text, i) => {
                 const isLong = text.length > 25;
                 const isSelected = selectedPrompts.includes(text);
@@ -822,7 +844,7 @@ if (prompt.trim() && accessToken) {
     });
   }}
   className={`
-    border border-white/30 border-b-4 rounded-xl px-4 md:py-4 py-3  text-xs transition
+    border border-white/30 border-b-[3px] rounded-xl px-4 md:py-3 py-3  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
@@ -849,24 +871,12 @@ if (prompt.trim() && accessToken) {
           </div>
 
           {/* Bottom actions */}
-          <div className=" flex gap-4">
-            <button
-               onClick={() => {
-                 if (isOverlayMode) {
-                   // Ask parent overlay to close and return to call/matchmaking.
-                   window.parent?.postMessage('overlay:close', '*');
-                   return;
-                 }
-                 setStep(1);
-               }}
-               className="flex-1 border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition"
-            >
-               ← Back
-            </button>
+  <div className="mt-auto pt-4">
+            
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-2 w-full border-2 border-white/30 rounded-2xl py-4 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
+              className="flex-2 w-full border-2 border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
             >
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>

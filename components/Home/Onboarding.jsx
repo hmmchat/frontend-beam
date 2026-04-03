@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API } from "@/lib/api";
+import Skeleton from '@/components/ui/Skeleton';
 
 
 
@@ -26,6 +27,8 @@ export default function Onboarding() {
   const [photos, setPhotos] = useState([null, null, null]);
   const [photoFiles, setPhotoFiles] = useState([null, null, null]);
   const fileRefs = useRef([]);
+  const monthRef = useRef(null);
+  const yearRef = useRef(null);
   const [step, setStep] = useState(1);
   const [prompt, setPrompt] = useState("");
   const [selectedPrompts, setSelectedPrompts] = useState([]);
@@ -380,61 +383,94 @@ if (prompt.trim() && accessToken) {
 
   const numericOnly = (value, maxLen = 4) => value.replace(/\D/g, "").slice(0, maxLen);
 
+  const handleDobChange = (e, field) => {
+    let val = e.target.value.replace(/\D/g, "");
+    
+    if (field === "day") {
+      val = val.slice(0, 2);
+      const num = parseInt(val);
+      // Validate first digit (can only be 0, 1, 2, 3)
+      if (val.length === 1 && num > 3) return;
+      // Validate full 2-digit value (must be 01 - 31)
+      if (val.length === 2 && (num < 1 || num > 31)) return;
+      
+      setDob((prev) => ({ ...prev, day: val }));
+      if (val.length === 2) monthRef.current?.focus();
+    } 
+    else if (field === "month") {
+      val = val.slice(0, 2);
+      const num = parseInt(val);
+      // Validate first digit (can only be 0, 1)
+      if (val.length === 1 && num > 1) return;
+      // Validate full 2-digit value (must be 01 - 12)
+      if (val.length === 2 && (num < 1 || num > 12)) return;
+      
+      setDob((prev) => ({ ...prev, month: val }));
+      if (val.length === 2) yearRef.current?.focus();
+    } 
+    else if (field === "year") {
+      val = val.slice(0, 4);
+      setDob((prev) => ({ ...prev, year: val }));
+    }
+  };
+
   if (loading && !apiError && !name) {
     return (
       <div 
         className="w-full flex h-screen items-center justify-center bg-purple-950 p-4"
         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full md:max-w-6xl  h-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full md:max-w-6xl h-auto">
           {/* Left Column Skeleton */}
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-12 hidden lg:flex flex-col justify-center animate-pulse">
-            <div className="h-12 w-64 bg-white/10 rounded-lg mb-6" />
-            <div className="h-6 w-48 bg-white/5 rounded-lg mb-3" />
-            <div className="h-6 w-56 bg-white/5 rounded-lg" />
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-12 hidden lg:flex flex-col justify-center">
+            <Skeleton className="h-12 w-64 rounded-lg mb-6" />
+            <Skeleton className="h-6 w-48 rounded-lg mb-3 opacity-50" />
+            <Skeleton className="h-6 w-56 rounded-lg opacity-50" />
           </div>
 
           {/* Right Column (Form) Skeleton */}
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-8 flex flex-col gap-8 animate-pulse">
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 p-8 flex flex-col gap-8">
             {/* Logo/Header (Mobile) */}
             <div className="flex flex-col items-center lg:hidden mb-4">
-              <div className="h-14 w-32 bg-white/10 rounded-full mb-4" />
-              <div className="h-5 w-48 bg-white/5 rounded-lg" />
+              <Skeleton circle className="h-14 w-32 mb-4" />
+              <Skeleton className="h-5 w-48 opacity-50" />
             </div>
 
             {/* Photo Slots */}
             <div className="flex justify-center gap-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="w-[100px] h-36 md:w-32 md:h-48 rounded-2xl bg-white/10 border border-white/20" />
+                <Skeleton key={i} className="w-[100px] h-36 md:w-32 md:h-48 rounded-2xl border border-white/20" />
               ))}
             </div>
 
             {/* Input Groups */}
             <div className="space-y-6">
               <div>
-                <div className="h-4 w-32 bg-white/10 rounded mb-2 ml-1" />
-                <div className="h-14 w-full bg-white/5 border border-white/20 rounded-xl" />
+                <Skeleton className="h-4 w-32 mb-2 ml-1 opacity-50" />
+                <Skeleton className="h-14 w-full border border-white/20 rounded-xl" />
               </div>
               
               <div>
-                <div className="h-4 w-32 bg-white/10 rounded mb-2 ml-1" />
+                <Skeleton className="h-4 w-32 mb-2 ml-1 opacity-50" />
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
-                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
-                  <div className="h-14 bg-white/5 border border-white/10 rounded-xl" />
+                  <Skeleton className="h-14 border border-white/10 rounded-xl" />
+                  <Skeleton className="h-14 border border-white/10 rounded-xl" />
+                  <Skeleton className="h-14 border border-white/10 rounded-xl" />
                 </div>
               </div>
             </div>
 
             {/* Gender Pills */}
             <div className="flex gap-2">
-              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
-              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
-              <div className="h-14 flex-1 bg-white/5 border border-white/10 rounded-xl" />
+              <Skeleton className="h-14 flex-1 border border-white/10 rounded-xl" />
+              <Skeleton className="h-14 flex-1 border border-white/10 rounded-xl" />
+              <Skeleton className="h-14 flex-1 border border-white/10 rounded-xl" />
             </div>
 
             {/* Button Placeholder */}
-            <div className="h-16 w-full max-w-xs mx-auto bg-white/10 border border-white/30 rounded-2xl mt-4" />
+            <div className="overflow-hidden rounded-2xl mt-4">
+              <Skeleton className="h-16 w-full max-w-xs mx-auto border border-white/30" />
+            </div>
           </div>
         </div>
       </div>
@@ -517,7 +553,7 @@ if (prompt.trim() && accessToken) {
                       return (
                         <div
                           key={i}
-                          className="relative w-[120px]  md:w-32 h-44 md:h-48 mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden cursor-pointer animate-in fade-in zoom-in duration-300"
+                          className="relative w-[120px]  md:w-32 h-44 md:h-48 mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden 0  meeting now animate-in fade-in zoom-in duration-300"
                           onClick={() => fileRefs.current[i]?.click()}
                         >
                           {photos[i] ? (
@@ -580,24 +616,29 @@ if (prompt.trim() && accessToken) {
                     <input
                       name="day"
                       value={dob.day}
-                      onChange={(e) => setDob((d) => ({ ...d, day: numericOnly(e.target.value, 2) }))}
+                      onChange={(e) => handleDobChange(e, 'day')}
                       placeholder="Day"
+                      maxLength={2}
                       inputMode="numeric"
                       className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="month"
+                      ref={monthRef}
                       value={dob.month}
-                      onChange={(e) => setDob((d) => ({ ...d, month: numericOnly(e.target.value, 2) }))}
+                      onChange={(e) => handleDobChange(e, 'month')}
                       placeholder="Month"
+                      maxLength={2}
                       inputMode="numeric"
                       className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="year"
+                      ref={yearRef}
                       value={dob.year}
-                      onChange={(e) => setDob((d) => ({ ...d, year: numericOnly(e.target.value, 4) }))}
+                      onChange={(e) => handleDobChange(e, 'year')}
                       placeholder="Year"
+                      maxLength={4}
                       inputMode="numeric"
                       className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-4  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
                     />
@@ -619,7 +660,7 @@ if (prompt.trim() && accessToken) {
 
                     </label>
                      
-                    <label className="text-white/60 text-xs flex items-center gap-2 cursor-pointer">
+                    <label className="text-white/60 text-xs flex items-center gap-2 0  meeting now">
                       <input 
                         type="checkbox" 
                         checked={preferNotToSay}

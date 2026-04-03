@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import FaceCard from '@/components/Home/FaceCard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import CoinModal from '@/components/modals/CoinModal';
+import ProfileGuard from '@/components/auth/ProfileGuard';
 
 // Components
 import RemoteVideoTile from '@/components/VideoChat/RemoteVideoTile';
@@ -45,6 +46,14 @@ const PULL_STRANGER_WINDOW_SECONDS = (() => {
 /** Module-level so React identity is stable — avoids remounting <video> on every parent re-render (e.g. 1s pull-stranger cooldown tick). */
 
 export default function VideoChat() {
+  return (
+    <ProfileGuard>
+      <VideoChatContent />
+    </ProfileGuard>
+  );
+}
+
+function VideoChatContent() {
   const router = useRouter();
   const flowLog = (...args) => console.log('[RaincheckFlow][video-chat]', ...args);
   // Compute WS URL at runtime so we can check window.location.protocol

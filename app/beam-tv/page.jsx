@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import clsx from 'clsx';
+import BroadcastSkeleton from '@/components/beam-tv/BroadcastSkeleton';
 
 // WS URL computation (same safely fallbacks as video-chat)
 const getWsUrl = () => {
@@ -1246,7 +1247,7 @@ function BeamTVInner() {
           Beam<span className="text-purple-500">TV</span>
         </div>
         <button 
-          onClick={() => router.push('/video-chat')} 
+          onClick={() => router.push('/')} 
           className="text-white/80 font-bold bg-white/10 px-4 py-2 rounded-full border border-white/20 hover:bg-white/20 transition"
         >
           Exit TV
@@ -1255,11 +1256,7 @@ function BeamTVInner() {
 
       <div className="flex-1 flex p-4 pb-12 mt-16 gap-4 min-h-0 min-w-0">
         {status === 'loading' && (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
-             {/* Keep this state visually still (no animation) */}
-             <div className="w-12 h-12 border-4 border-white/10 border-t-purple-500 rounded-full mb-4" />
-             <p className="text-white/40 font-bold tracking-widest uppercase">Waiting for a live broadcast…</p>
-          </div>
+          <BroadcastSkeleton />
         )}
 
         {status === 'empty' && (

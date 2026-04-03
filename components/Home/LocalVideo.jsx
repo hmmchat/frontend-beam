@@ -57,11 +57,11 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
       {/* Solo Toggle Overlay */}
       {showSoloCheckbox && (
         <div className="absolute bottom-12 right-12 z-20">
-          <label className="flex items-center gap-2 text-white/90 text-sm cursor-pointer hover:text-white transition-all group">
+          <label className="flex items-center gap-2 text-white/90 text-sm 0  meeting now hover:text-white transition-all group">
             <div className="relative w-5 h-5 flex items-center justify-center">
               <input 
                 type="checkbox" 
-                className="peer shrink-0 appearance-none w-5 h-5 border-2 border-white/30 rounded bg-black/20 checked:bg-white checked:border-white transition-all cursor-pointer" 
+                className="peer shrink-0 appearance-none w-5 h-5 border-2 border-white/30 rounded bg-black/20 checked:bg-white checked:border-white transition-all 0  meeting now" 
                 onChange={(e) => onSoloChange?.(e.target.checked)}
               />
               <svg 

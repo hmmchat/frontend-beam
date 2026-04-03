@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
+import Skeleton from "@/components/ui/Skeleton";
 import { apiRequestFirstOk, buildGifsSearchUrls, buildGifsTrendingUrls } from "@/lib/api";
 
 function normalizeGif(row) {
@@ -109,7 +110,13 @@ export default function GifPicker({ onSelect, className }) {
       </div>
       <div className="p-2 max-h-[18rem] overflow-auto">
         {err && <div className="px-2 py-2 text-xs text-red-300">{err}</div>}
-        {loading && <div className="px-2 py-2 text-xs text-white/50">Loading…</div>}
+        {loading && (
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            ))}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
           {display.map((g) => (
             <button

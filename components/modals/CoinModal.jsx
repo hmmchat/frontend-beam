@@ -63,7 +63,7 @@ export default function CoinModal({ isOpen, onClose }) {
               <div 
                 key={index}
                 onClick={() => setSelectedPackage(pkg)}
-                className={`relative group cursor-pointer rounded-xl border-2 transition-all p-3 flex flex-col items-center justify-center gap-1 ${
+                className={`relative group 0  meeting now rounded-xl border-2 transition-all p-3 flex flex-col items-center justify-center gap-1 ${
                   selectedPackage === pkg 
                     ? 'border-[#7D40FF] bg-[#7D40FF]/20 shadow-[0_0_20px_rgba(125,64,255,0.3)]' 
                     : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'

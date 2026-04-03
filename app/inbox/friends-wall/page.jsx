@@ -150,7 +150,7 @@ export default function FriendWall() {
                     {friends.map((friend, i) => (
                       <div
                         key={friend.friendId || i}
-                        className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group cursor-pointer hover:border-white/80 transition-all shadow-lg shadow-black/20"
+                        className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group 0  meeting now hover:border-white/80 transition-all shadow-lg shadow-black/20"
                       >
                         <Image
                           src={friend.photoUrl || "/assets/ico.png"}

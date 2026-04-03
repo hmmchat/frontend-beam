@@ -402,7 +402,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
 
             <div className=" pt-8 lg:px-0">
-              <label className="flex items-center gap-6 cursor-pointer max-w-[450px]">
+              <label className="flex items-center gap-6 0  meeting now max-w-[450px]">
                 <input
                   type="checkbox"
                   checked={agreedToTerms}

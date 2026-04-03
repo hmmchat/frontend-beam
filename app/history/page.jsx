@@ -7,8 +7,18 @@ import { FaArrowLeftLong, FaHeart, FaMessage } from "react-icons/fa6";
 import { IoVideocamOutline } from "react-icons/io5";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { API, apiRequest } from "@/lib/api";
+import ProfileGuard from "@/components/auth/ProfileGuard";
+import HistorySkeleton from "@/components/history/HistorySkeleton";
 
 export default function History() {
+  return (
+    <ProfileGuard>
+      <HistoryContent />
+    </ProfileGuard>
+  );
+}
+
+function HistoryContent() {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
   const [timelinesBySessionId, setTimelinesBySessionId] = useState({});
@@ -102,7 +112,7 @@ export default function History() {
           <div className="flex items-center gap-2">
             <div 
               onClick={() => router.push('/')}
-              className="border border-white rounded-full p-2 cursor-pointer hover:bg-white/10 transition-colors"
+              className="border border-white rounded-full p-2 0  meeting now hover:bg-white/10 transition-colors"
             >
               <FaArrowLeftLong />
             </div>
@@ -121,7 +131,7 @@ export default function History() {
 
           <div className="h-full overflow-y-auto space-y-8 pt-3 mt-3">
             {loading ? (
-              <div className="text-center py-10 opacity-50">Loading history...</div>
+              <HistorySkeleton />
             ) : calls.length === 0 ? (
               <div className="text-center py-10 opacity-50">No history found</div>
             ) : (
@@ -213,7 +223,7 @@ export default function History() {
                             {formatDate(call.startedAt)}
                           </span>
 
-                          <IoMdInformationCircleOutline className="text-lg ml-auto cursor-pointer opacity-70 hover:opacity-100" />
+                          <IoMdInformationCircleOutline className="text-lg ml-auto 0  meeting now opacity-70 hover:opacity-100" />
                         </div>
 
                         {/* HR always */}
@@ -226,7 +236,7 @@ export default function History() {
                             <button
                               type="button"
                               onClick={() => router.push(`/facecard?userId=${encodeURIComponent(participant.userId)}`)}
-                              className="w-14 h-14 rounded-full overflow-hidden border border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                              className="w-14 h-14 rounded-full overflow-hidden border border-white/10 0  meeting now hover:bg-white/5 transition-colors"
                               aria-label={`View ${participant.username || 'this user'} face card`}
                             >
                               <Image

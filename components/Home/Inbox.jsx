@@ -224,6 +224,7 @@ export default function Inbox() {
   const [messages, setMessages] = useState([]);
   const [threadNextCursor, setThreadNextCursor] = useState(undefined);
   const [threadHasMore, setThreadHasMore] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
   const [loadingThreadOlder, setLoadingThreadOlder] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -544,6 +545,7 @@ export default function Inbox() {
 
   const loadThreadMessages = useCallback(async (chat) => {
     if (!chat) { setMessages([]); setThreadNextCursor(undefined); setThreadHasMore(false); return; }
+    setLoadingThread(true);
     const cid = chat.conversationId;
     const reqId =
       chat.followRequestId ||
@@ -588,6 +590,8 @@ export default function Inbox() {
     } catch (e) {
       console.error("[Inbox] loadThreadMessages", e);
       setMessages([]); setThreadNextCursor(undefined); setThreadHasMore(false);
+    } finally {
+      setLoadingThread(false);
     }
   }, [markReadForPeer]);
 
@@ -1141,6 +1145,7 @@ export default function Inbox() {
                     threadHasMore={threadHasMore}
                     activeChat={activeChat}
                     loadingThreadOlder={loadingThreadOlder}
+                    loading={loadingThread}
                     loadOlderThreadMessages={loadOlderThreadMessages}
                   />
                 </div>

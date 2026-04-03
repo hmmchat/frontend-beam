@@ -49,7 +49,7 @@ if (fullWidth || width === 'full') {
     }
   }
 
-  const disabledClass = disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer";
+  const disabledClass = disabled ? "opacity-50 cursor-not-allowed" : "0  meeting now";
 
   return (
     <button

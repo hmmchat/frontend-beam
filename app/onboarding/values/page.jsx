@@ -134,7 +134,7 @@ export default function ValuesOnboarding() {
               <div
                 key={value.id}
                 onClick={() => toggleValue(value.id)}
-                className={`p-6 rounded-xl cursor-pointer transition-all ${
+                className={`p-6 rounded-xl 0  meeting now transition-all ${
                   selectedValues.includes(value.id)
                     ? 'bg-purple-600/30 border-2 border-purple-500 scale-105'
                     : 'bg-white/5 hover:bg-white/10 border-2 border-transparent'

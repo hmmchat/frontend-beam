@@ -25,7 +25,7 @@ export default function ProfileCard({ user, profileCompletion, onPhotoUpload, up
         <div className="relative group">
           <div 
             onClick={onPhotoUpload}
-            className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/30 cursor-pointer group-hover:border-white/60 transition-all"
+            className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/30 0  meeting now group-hover:border-white/60 transition-all"
           >
             {user?.displayPictureUrl && !imageError ? (
               <img 

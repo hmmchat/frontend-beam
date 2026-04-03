@@ -19,34 +19,39 @@ import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import Link from 'next/link';
+import Skeleton from '@/components/ui/Skeleton';
 
 const FaceCardSkeleton = () => (
-  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px] animate-pulse">
+  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px]">
     <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-black/20 backdrop-blur-md">
       {/* Header Skeleton */}
       <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5">
         <div className="space-y-2">
-          <div className="h-5 w-28 bg-white/10 rounded" />
-          <div className="h-3 w-16 bg-white/5 rounded" />
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-3 w-16 opacity-50" />
         </div>
         <div className="flex gap-2">
-          <div className="h-6 w-6 rounded-full bg-white/10" />
-          <div className="h-6 w-6 rounded-full bg-white/10" />
+          <Skeleton circle className="h-6 w-6" />
+          <Skeleton circle className="h-6 w-6" />
         </div>
       </div>
 
       <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/20 bg-black/10">
         {/* Intent Skeleton */}
-        <div className="absolute left-3 right-3 top-2 h-16 rounded-[22px] bg-white/5 border border-white/10" />
+        <div className="absolute left-3 right-3 top-2 overflow-hidden rounded-[22px]">
+          <Skeleton className="w-full h-16 border border-white/10" />
+        </div>
         
         {/* Main Photo Skeleton */}
-        <div className="absolute bottom-4 right-1.5 top-[5.5rem] w-[71%] rounded-[18px] bg-white/10" />
+        <div className="absolute bottom-4 right-1.5 top-[5.5rem] w-[71%] overflow-hidden rounded-[18px]">
+          <Skeleton className="w-full h-full" />
+        </div>
 
         {/* Left Rail Skeleton */}
         <div className="absolute bottom-11 left-2 top-[5.5rem] flex w-[76px] flex-col items-center gap-3">
-          <div className="w-12 h-40 rounded-full bg-white/5 border border-white/10" />
-          <div className="w-12 h-14 rounded-xl bg-white/5 border border-white/10" />
-          <div className="w-14 h-24 rounded-t-full bg-white/5 border border-white/10" />
+          <Skeleton className="w-12 h-40 rounded-full border border-white/10" />
+          <Skeleton className="w-12 h-14 rounded-xl border border-white/10" />
+          <Skeleton className="w-14 h-24 rounded-t-full border border-white/10" />
         </div>
       </div>
     </div>
@@ -54,12 +59,12 @@ const FaceCardSkeleton = () => (
 );
 
 const LocationCardSkeleton = () => (
-  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px] animate-pulse">
+  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px]">
     <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-black/20 backdrop-blur-md flex flex-col items-center justify-center p-8">
-      <div className="w-40 h-40 rounded-full bg-white/10 border-4 border-white/5 mb-8" />
-      <div className="h-6 w-40 bg-white/10 rounded mb-4" />
-      <div className="h-3 w-56 bg-white/5 rounded mb-8" />
-      <div className="h-14 w-full bg-white/5 border border-white/10 rounded-2xl" />
+      <Skeleton circle className="w-40 h-40 border-4 border-white/5 mb-8" />
+      <Skeleton className="h-6 w-40 mb-4" />
+      <Skeleton className="h-3 w-56 mb-8 opacity-50" />
+      <Skeleton className="h-14 w-full border border-white/10 rounded-2xl" />
     </div>
   </div>
 );
@@ -179,93 +184,37 @@ export default function MeetSomeoneDynamic() {
     };
     clearGhostRoom();
 
-    // 1) URL-based recovery (searching mode)
+    // 1) URL-based recovery (searching mode) - DISABLED to prevent auto-camera open
+    // We only react to URL changes via popstate now, or explicit clicks.
+    /*
     const urlSearching = params?.get('searching') === '1';
     if (urlSearching) {
         setIsSearching(true);
-        // resume discovery pool participation
         handleUpdateStatus('AVAILABLE');
         fetchCardSilently(Date.now().toString(), true);
     }
+    */
 
     // 2) Original resume logic (rainchecks, sessions, etc.)
+    // DISABLED to follow "explicit click only" rule for camera/discovery
+    /*
     if (resumeDiscoveryFromUrl || pendingRaincheckRaw || forcedResumeRaw || resumeOnHomeRaw) {
-      try {
-        const pendingParsed = safeParse(pendingRaincheckRaw);
-        const forcedParsed = safeParse(forcedResumeRaw);
-        const resumeOnHomeParsed = safeParse(resumeOnHomeRaw);
-        const parsed = pendingParsed || forcedParsed || resumeOnHomeParsed || {};
-        const resumedSessionId = resumeSessionFromUrl || parsed?.sessionId || Date.now().toString();
-        localStorage.setItem('stickyDiscoveryResume', JSON.stringify({
-          sessionId: resumedSessionId,
-          ts: Date.now()
-        }));
-        flowLog('resume_branch_entered', {
-          resumedSessionId,
-          hasParsedNextCard: Boolean(parsed?.nextCard)
-        });
-        setSessionId(resumedSessionId);
-        setIsSearching(true);
-        // After in-call raincheck, user should stay in discovery pool.
-        handleUpdateStatus('AVAILABLE');
-
-        // Always fetch a fresh card on resume to prevent stale-card flashes.
-        flowLog('resume_branch_fetch_card_silently');
-        setIsResumeLoading(true);
-        setCurrentCard(null);
-        fetchCardSilently(resumedSessionId, true);
-      } catch (_) {
-        flowLog('resume_branch_error_parsing_payload');
-      } finally {
-        if (resumeDiscoveryFromUrl && typeof window !== 'undefined') {
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, '', cleanUrl);
-        }
-        localStorage.removeItem('forceDiscoveryResume');
-        localStorage.removeItem('pendingRaincheckResume');
-        localStorage.removeItem('pendingRaincheckNextCard');
-        localStorage.removeItem('resumeDiscoveryOnHome');
-        flowLog('resume_branch_cleanup_flags_done');
-      }
-    } else {
-      const stickyParsed = safeParse(stickyResumeRaw);
-      const stickyAgeMs = stickyParsed?.ts ? Date.now() - stickyParsed.ts : Number.POSITIVE_INFINITY;
-      const stickyStillFresh = Number.isFinite(stickyAgeMs) && stickyAgeMs >= 0 && stickyAgeMs < 15000;
-      if (stickyStillFresh) {
-        const stickySessionId = stickyParsed?.sessionId || Date.now().toString();
-        flowLog('sticky_resume_recover', { stickySessionId, stickyAgeMs });
-        setSessionId(stickySessionId);
-        setIsSearching(true);
-        setIsResumeLoading(true);
-        fetchCardSilently(stickySessionId, true);
-        return;
-      }
-
-      // Recovery guard: if backend still says user is AVAILABLE, auto-resume discovery.
-      // This prevents deadlocks when navigation flags are lost during room teardown races.
-      (async () => {
-        try {
-          const me = await apiRequest(API.USERS.GET_ME);
-          const currentStatus = String(me?.status || me?.user?.status || '');
-          flowLog('recovery_guard_me_status', { currentStatus });
-          if (currentStatus === 'AVAILABLE') {
-            const recoveredSessionId = Date.now().toString();
-            setSessionId(recoveredSessionId);
-            setIsSearching(true);
-            flowLog('recovery_guard_auto_resume', { recoveredSessionId });
-            setIsResumeLoading(true);
-            fetchCardSilently(recoveredSessionId, true);
-            return;
-          }
-        } catch (_) {
-          flowLog('recovery_guard_me_status_error');
-          // Non-blocking: fall back to homepage baseline status
-        }
-        // Homepage default state is ONLINE unless user explicitly enters discovery pool.
-        flowLog('recovery_guard_set_online');
-        handleUpdateStatus('ONLINE');
-      })();
+      // ... logic disabled to prevent auto-camera open on mount ...
     }
+    */
+
+    // Default to ONLINE; never auto-start searching on mount
+    flowLog('recovery_guard_set_online');
+    handleUpdateStatus('ONLINE');
+    setIsSearching(false);
+    setCurrentCard(null);
+
+    // Clean up all resume flags on visit
+    localStorage.removeItem('forceDiscoveryResume');
+    localStorage.removeItem('pendingRaincheckResume');
+    localStorage.removeItem('pendingRaincheckNextCard');
+    localStorage.removeItem('resumeDiscoveryOnHome');
+    localStorage.removeItem('stickyDiscoveryResume');
 
     const setOnlineKeepalive = () => {
       setPresenceStatusKeepalive('ONLINE');
@@ -279,9 +228,8 @@ export default function MeetSomeoneDynamic() {
         setIsSearching(false);
         setCurrentCard(null);
         handleUpdateStatus('ONLINE');
-      } else if (params.get('searching') === '1') {
-        setIsSearching(true);
       }
+      // Removed auto-start of search on back/forward to follow "explicit click only" rule
     };
     window.addEventListener('popstate', handlePopState);
 
@@ -1249,9 +1197,15 @@ export default function MeetSomeoneDynamic() {
 
               {/* Video background for squad mode */}
               <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl border-2 border-white/20">
-                <LocalVideo 
-                  showSoloCheckbox={false}
-                />
+                {isSearching ? (
+                   <LocalVideo 
+                     showSoloCheckbox={false}
+                   />
+                ) : (
+                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <img src="/LOGO.png" className="w-32 opacity-20" alt="" />
+                   </div>
+                )}
                 <div className="absolute inset-0 bg-black/30" />
                 <div className="absolute inset-4 border border-white/20 rounded-[40px] pointer-events-none" />
               </div>
@@ -1337,6 +1291,26 @@ export default function MeetSomeoneDynamic() {
                   </button>
                 </div>
               </div>
+
+              {!isSearching && (
+                <button
+                  onClick={async () => { 
+                    setIsSearching(true);
+                    if (typeof window !== 'undefined') {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('searching', '1');
+                        window.history.pushState({ searching: true }, '', url.toString());
+                    }
+                    await handleUpdateStatus('AVAILABLE');
+                    await fetchCard(null, false); // Squad mode matching
+                  }}
+                  className={clsx(
+                    'relative z-20 mt-10 w-4/6 py-6 px-12 font-bold flex items-center justify-center gap-3 border rounded-2xl transition-all uppercase tracking-widest bg-black/30 text-white border-white hover:bg-black/40'
+                  )}
+                >
+                  Meet Someone Now
+                </button>
+              )}
               </div> {/* end squad UI overlay */}
             </div>
           )}

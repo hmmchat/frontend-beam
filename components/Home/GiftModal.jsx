@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { IoChevronBack, IoChevronForward, IoClose } from "react-icons/io5";
 import Image from "next/image";
 import { FaGift } from "react-icons/fa6";
+import Skeleton from "@/components/ui/Skeleton";
 
 /**
  * @param {{ isOpen: boolean, onClose: () => void, onSelectGift: (gift: { id: string, name: string, price: number, image?: string }) => void, catalogGifts?: Array<{ id: string, name: string, price: number, image?: string }>|null, catalogLoading?: boolean }} props
@@ -85,7 +86,14 @@ export default function GiftModal({ isOpen, onClose, onSelectGift, catalogGifts,
         </div>
 
         {catalogLoading && (
-          <p className="relative z-10 text-center text-white/60 text-sm mb-4">Loading gifts…</p>
+          <div className="relative z-10 grid grid-cols-4 gap-3 md:gap-4 mb-8">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-4">
+                <Skeleton circle className="w-12 h-12 md:w-16 md:h-16 mb-2" />
+                <Skeleton className="w-12 h-4 rounded-full" />
+              </div>
+            ))}
+          </div>
         )}
 
         {gifts.length === 0 && !catalogLoading ? (

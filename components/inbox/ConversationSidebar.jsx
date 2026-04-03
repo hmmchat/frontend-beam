@@ -1,6 +1,7 @@
 "use client";
 import { FaMagnifyingGlass, FaGift, FaEnvelope, FaHeart, FaEye } from "react-icons/fa6";
 import ConversationItem from "./ConversationItem";
+import InboxSkeleton from "./InboxSkeleton";
 
 const MsgFilter = {
   ALL: null,
@@ -141,9 +142,7 @@ export default function ConversationSidebar({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/50 p-6">
         {loading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-white/60">Loading conversations...</p>
-          </div>
+          <InboxSkeleton />
         ) : listLoadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2 text-center">
             <p className="text-base font-semibold text-amber-200/95">Couldn&apos;t load conversations</p>

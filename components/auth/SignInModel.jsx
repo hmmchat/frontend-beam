@@ -189,7 +189,7 @@ const correctOTP = "1234"; // Replace with backend verification
 
         {/* Terms and Conditions */}
         <div className="mt-8 pt-6 border-t border-white/10">
-          <label className="flex items-start gap-3 cursor-pointer text-left">
+          <label className="flex items-start gap-3 0  meeting now text-left">
             <input
               type="checkbox"
               checked={agreedToTerms}

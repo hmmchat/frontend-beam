@@ -28,6 +28,8 @@ function isSyntheticConversationId(cid) {
   return s.startsWith("follow_") || s.startsWith("pending_fr_") || s.startsWith("outgoing_fr_");
 }
 
+import MessageSkeleton from "./MessageSkeleton";
+
 export default function ThreadMessages({
   messages,
   currentUserId,
@@ -36,6 +38,7 @@ export default function ThreadMessages({
   threadHasMore,
   activeChat,
   loadingThreadOlder,
+  loading,
   loadOlderThreadMessages,
 }) {
   return (
@@ -58,7 +61,9 @@ export default function ThreadMessages({
               </button>
             </div>
           )}
-        {messages.length === 0 ? (
+        {loading ? (
+          <MessageSkeleton />
+        ) : messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center py-20">
             <p className="text-white/40 italic">No messages yet</p>
           </div>

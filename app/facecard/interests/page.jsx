@@ -89,7 +89,7 @@ export default function InterestsView() {
                 {interests.map((interest) => (
                   <div
                     key={interest.id}
-                    className="px-6 py-3 rounded-full bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 transition-all cursor-pointer"
+                    className="px-6 py-3 rounded-full bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 transition-all 0  meeting now"
                   >
                     <span className="mr-2">{interest.interest?.emoji || '💡'}</span>
                     <span>{interest.interest?.name}</span>

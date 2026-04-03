@@ -54,7 +54,7 @@ export default function WaitlistModal({
               return (
                 <div
                   key={w.userId}
-                  className="w-full px-2 py-3 flex items-center gap-4 hover:bg-white/10 transition cursor-pointer border-b border-white/20"
+                  className="w-full px-2 py-3 flex items-center gap-4 hover:bg-white/10 transition 0  meeting now border-b border-white/20"
                   onClick={() => setSelectedWaitlistUser(u)}
                 >
                   <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-yellow-300/90 bg-gray-200 shrink-0">

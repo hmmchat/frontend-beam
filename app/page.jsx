@@ -2,33 +2,72 @@
 
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { API, apiRequest } from '@/lib/api';
 
 
 import MobileHome from '@/components/Mobile/MobileHome'
 import DesktopHome from '@/components/Mobile/DesktopHome'
-const MeetSomeoneDynamic = dynamic(() => import('@/components/Home/MeetSomeoneDynamic'), { ssr: false })
+import HomeSkeleton from '@/components/Home/HomeSkeleton'
+
+const MeetSomeoneDynamic = dynamic(() => import('@/components/Home/MeetSomeoneDynamic'), { 
+  ssr: false,
+  loading: () => <HomeSkeleton />
+})
 
 const MyComponent = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileComplete, setProfileComplete] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    const token = localStorage.getItem('accessToken');
+    
+    if (!token || token === 'null' || token === 'undefined' || token.split('.').length !== 3) {
+      setIsLoggedIn(false);
+      setAuthChecked(true);
+      setProfileChecked(true);
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token || token === 'null' || token === 'undefined' || token.split('.').length !== 3) {
-        setIsLoggedIn(false);
-        setAuthChecked(true);
-        return;
-      }
-      // If it's malformed, treat as logged out. Expiry is handled by backend 401.
       JSON.parse(atob(token.split('.')[1]));
       setIsLoggedIn(true);
+
+      const checkProfile = async () => {
+        try {
+          const data = await apiRequest(API.USERS.GET_ME);
+          const user = data?.user || data;
+          
+          if (user && user.username) {
+            setProfileComplete(true);
+          } else {
+            console.warn('[Home] Incomplete profile:', user);
+            setProfileComplete(false);
+            window.location.href = '/onboarding';
+          }
+        } catch (err) {
+          console.error('[Home] Profile check failed:', err);
+          if (err.status === 404) {
+            setProfileComplete(false);
+            window.location.href = '/onboarding';
+          } else if (err.status === 401) {
+            setIsLoggedIn(false);
+            localStorage.removeItem('accessToken');
+          }
+        } finally {
+          setProfileChecked(true);
+          setAuthChecked(true);
+        }
+      };
+
+      checkProfile();
     } catch (_) {
       setIsLoggedIn(false);
-    } finally {
       setAuthChecked(true);
+      setProfileChecked(true);
     }
   }, []);
 
@@ -44,11 +83,9 @@ const MyComponent = () => {
     } catch (_) { }
   }, [authChecked, isLoggedIn]);
 
-  if (!isMounted) {
-    return null;
-  }
+  // No loading overlay anymore. Handled by fallback rendering.
 
-  if (isLoggedIn) {
+  if (isLoggedIn && profileComplete) {
     return <MeetSomeoneDynamic />;
   }
 

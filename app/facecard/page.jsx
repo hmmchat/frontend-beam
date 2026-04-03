@@ -10,6 +10,7 @@ import FacecardDisplay from '@/components/facecard/FacecardDisplay';
 import FacecardEditor from '@/components/facecard/FacecardEditor';
 import SelectorOverlay from '@/components/facecard/SelectorOverlay';
 import FaceCard from '@/components/Home/FaceCard';
+import Skeleton from '@/components/ui/Skeleton';
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -34,7 +35,17 @@ function musicTrackKey(song) {
   return song.spotifyId || song.id || `${song.name || ''}\0${song.artist || ''}`;
 }
 
+import ProfileGuard from '@/components/auth/ProfileGuard';
+
 export default function FacecardPage() {
+  return (
+    <ProfileGuard>
+      <FacecardContent />
+    </ProfileGuard>
+  );
+}
+
+function FacecardContent() {
   const router = useRouter();
   const [view, setView] = useState('success'); // 'success' or 'editor'
   const [user, setUser] = useState(null);
@@ -135,8 +146,27 @@ export default function FacecardPage() {
         }
         if (zodiacRes.ok) {
           const data = await zodiacRes.json();
-          const z = data?.zodiacs || [];
-          setAllZodiacs(Array.isArray(z) ? z : []);
+          // Backend returns { ok: true, zodiacs: [...] } or just the array depending on route
+          const z = data?.zodiacs || (Array.isArray(data) ? data : []);
+          console.log('[Facecard] Fetched zodiacs:', z.length);
+          setAllZodiacs(z);
+        } else {
+          console.warn('[Facecard] Failed to fetch zodiacs:', zodiacRes.status);
+          // Fallback to static data if backend fails, to ensure selector works
+          setAllZodiacs([
+            { id: 'aries', name: 'Aries', imageUrl: 'https://cdn.hmmchat.live/horoscopes/aries.png' },
+            { id: 'taurus', name: 'Taurus', imageUrl: 'https://cdn.hmmchat.live/horoscopes/taurus.png' },
+            { id: 'gemini', name: 'Gemini', imageUrl: 'https://cdn.hmmchat.live/horoscopes/gemini.png' },
+            { id: 'cancer', name: 'Cancer', imageUrl: 'https://cdn.hmmchat.live/horoscopes/cancer.png' },
+            { id: 'leo', name: 'Leo', imageUrl: 'https://cdn.hmmchat.live/horoscopes/leo.png' },
+            { id: 'virgo', name: 'Virgo', imageUrl: 'https://cdn.hmmchat.live/horoscopes/virgo.png' },
+            { id: 'libra', name: 'Libra', imageUrl: 'https://cdn.hmmchat.live/horoscopes/libra.png' },
+            { id: 'scorpio', name: 'Scorpio', imageUrl: 'https://cdn.hmmchat.live/horoscopes/scorpio.png' },
+            { id: 'sagittarius', name: 'Sagittarius', imageUrl: 'https://cdn.hmmchat.live/horoscopes/sagittarius.png' },
+            { id: 'capricorn', name: 'Capricorn', imageUrl: 'https://cdn.hmmchat.live/horoscopes/capricorn.png' },
+            { id: 'aquarius', name: 'Aquarius', imageUrl: 'https://cdn.hmmchat.live/horoscopes/aquarius.png' },
+            { id: 'pisces', name: 'Pisces', imageUrl: 'https://cdn.hmmchat.live/horoscopes/pisces.png' },
+          ]);
         }
       } catch (error) {
         console.error('Error fetching choices:', error);
@@ -579,79 +609,79 @@ export default function FacecardPage() {
         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {/* --- MOBILE SKELETON --- */}
-        <div className="flex md:hidden border border-white/20 rounded-[2rem] w-[92%] max-w-sm h-auto flex-col overflow-hidden px-4 py-8 gap-8 relative z-10 bg-black/30 backdrop-blur-md animate-pulse">
+        <div className="flex md:hidden border border-white/20 rounded-[2rem] w-[92%] max-w-sm h-auto flex-col overflow-hidden px-4 py-8 gap-8 relative z-10 bg-black/30 backdrop-blur-md">
           <div className="grid grid-cols-12 gap-3 items-center px-2">
-            <div className="col-span-2 h-9 w-9 rounded-full bg-white/10 border border-white/20" />
+            <Skeleton circle className="col-span-2 h-9 w-9 border border-white/20" />
             <div className="col-span-6 flex justify-center">
-              <div className="h-12 w-32 rounded-xl bg-white/10" />
+              <Skeleton className="h-12 w-32 rounded-xl" />
             </div>
             <div className="col-span-4 flex justify-center items-center">
-              <div className="w-[85px] h-[85px] rounded-full bg-white/10 border-4 border-white/5" />
+              <Skeleton circle className="w-[85px] h-[85px] border-4 border-white/5" />
             </div>
           </div>
           <div className="grid grid-cols-12 gap-4 px-2">
-            <div className="col-span-7 h-14 rounded-xl bg-white/5 border border-white/10" />
-            <div className="col-span-5 h-14 rounded-xl bg-white/5 border border-white/10" />
+            <Skeleton className="col-span-7 h-14 rounded-xl border border-white/10" />
+            <Skeleton className="col-span-5 h-14 rounded-xl border border-white/10" />
           </div>
           <div className="flex flex-col gap-5 px-2">
             {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center justify-between gap-3">
-                 <div className="w-16 h-3 bg-white/10 rounded" />
-                 <div className="w-36 h-10 bg-white/5 border border-white/10 rounded-full" />
-                 <div className="w-10 h-10 bg-white/10 rounded-xl" />
+                 <Skeleton className="w-16 h-3" />
+                 <Skeleton className="w-36 h-10 rounded-full border border-white/10" />
+                 <Skeleton className="w-10 h-10 rounded-xl" />
               </div>
             ))}
           </div>
           <div className="grid grid-cols-3 gap-4 px-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="w-full h-40 rounded-[1rem] bg-white/10 border border-white/20" />
+              <Skeleton key={i} className="w-full h-40 rounded-[1rem] border border-white/20" />
             ))}
           </div>
           <div className="flex items-center gap-5 px-2">
-            <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20" />
-            <div className="h-12 w-32 rounded-xl bg-white/5 border border-white/10" />
+            <Skeleton circle className="w-20 h-20 border-2 border-white/20" />
+            <Skeleton className="h-12 w-32 rounded-xl border border-white/10" />
           </div>
         </div>
 
         {/* --- DESKTOP SKELETON --- */}
-        <div className="hidden md:flex relative h-full w-full max-w-[1150px] origin-center items-center justify-center p-5 animate-pulse">
+        <div className="hidden md:flex relative h-full w-full max-w-[1150px] origin-center items-center justify-center p-5">
            <div className="flex w-full h-[85vh] flex-row gap-6 border-2 border-white/20 rounded-[4rem] p-6 bg-black/30 backdrop-blur-md">
               {/* Main Content Area */}
               <div className="flex-1 flex flex-col gap-10 border-2 border-white/10 rounded-[3.5rem] p-8">
                  {/* Top Row with Photos */}
                  <div className="flex items-start gap-6">
-                    <div className="w-16 h-16 rounded-full bg-white/10" />
+                    <Skeleton circle className="w-16 h-16" />
                     <div className="flex gap-4">
-                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/10 border border-white/20" />
-                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/5 border border-white/10" />
-                       <div className="w-[180px] h-[280px] rounded-[2rem] bg-white/5 border border-white/10" />
+                       <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/20" />
+                       <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/10" />
+                       <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/10" />
                     </div>
                  </div>
                  {/* Middle Labels Area */}
                  <div className="grid grid-cols-10 gap-10 mt-4">
                     <div className="col-span-3 space-y-10">
-                       <div className="h-16 w-full rounded-xl bg-white/5 border border-white/10" />
-                       <div className="h-16 w-full rounded-xl bg-white/5 border border-white/10" />
+                       <Skeleton className="h-16 w-full rounded-xl border border-white/10" />
+                       <Skeleton className="h-16 w-full rounded-xl border border-white/10" />
                     </div>
                     <div className="col-span-7 space-y-8">
                        <div className="flex gap-4">
-                          <div className="h-16 w-20 rounded-xl bg-white/10" />
-                          <div className="h-16 flex-1 rounded-full bg-white/5 border border-white/10" />
+                          <Skeleton className="h-16 w-20 rounded-xl" />
+                          <Skeleton className="h-16 flex-1 rounded-full border border-white/10" />
                        </div>
                        <div className="flex gap-4">
-                          <div className="h-16 w-20 rounded-xl bg-white/10" />
-                          <div className="h-16 flex-1 rounded-full bg-white/5 border border-white/10" />
+                          <Skeleton className="h-16 w-20 rounded-xl" />
+                          <Skeleton className="h-16 flex-1 rounded-full border border-white/10" />
                        </div>
                     </div>
                  </div>
               </div>
               {/* Right Sidebar Area */}
               <div className="w-72 flex flex-col gap-12 py-10">
-                 <div className="w-48 h-48 rounded-full bg-white/10 border-4 border-white/5 self-center" />
-                 <div className="h-16 w-full rounded-3xl bg-white/5 border border-white/20" />
+                 <Skeleton circle className="w-48 h-48 border-4 border-white/5 self-center" />
+                 <Skeleton className="h-16 w-full rounded-3xl border border-white/20" />
                  <div className="flex flex-col items-center gap-6">
-                    <div className="w-40 h-40 rounded-full bg-white/10 border-2 border-white/10" />
-                    <div className="h-12 w-48 rounded-xl bg-white/5" />
+                    <Skeleton circle className="w-40 h-40 border-2 border-white/10" />
+                    <Skeleton className="h-12 w-48 rounded-xl" />
                  </div>
               </div>
            </div>
@@ -714,36 +744,58 @@ export default function FacecardPage() {
 
       {facecardPreviewOpen && user && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 "
           onClick={() => setFacecardPreviewOpen(false)}
           role="presentation"
         >
           <div
-            className="relative max-h-[90dvh] overflow-hidden rounded-3xl"
+            className="relative w-full overflow-hidden md:rounded-[2.5rem] md:border md:border-white/30 md:p-8 md:shadow-2xl transition-all animate-fade-in"
+            style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Facecard preview"
           >
+            {/* Corner Brackets */}
+            <span className="absolute hidden md:block top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/40 m-4 rounded-tl-xl"></span>
+            <span className="absolute hidden md:block top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white/40 m-4 rounded-tr-xl"></span>
+            <span className="absolute hidden md:block bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white/40 m-4 rounded-bl-xl"></span>
+            <span className="absolute hidden md:block bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/40 m-4 rounded-br-xl"></span>
+
             <button
               type="button"
-              className="absolute -top-3 -right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-purple-950 text-2xl text-white shadow-lg transition hover:bg-white/10"
+              className="absolute top-0 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
               onClick={() => setFacecardPreviewOpen(false)}
               aria-label="Close preview"
             >
-              ×
+              ✕
             </button>
-            <p className="mb-3 text-center text-xs uppercase tracking-[0.2em] text-white/70">
-              Preview — what others see before a call
-            </p>
-            <div className="flex justify-center">
-              <FaceCard
-                user={{
-                  ...user,
-                  age,
-                  city: user?.preferredCity || user?.city,
-                }}
-              />
+
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-black uppercase tracking-widest text-white">Facecard Preview</h3>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-mono">
+                  What others see before a call
+                </p>
+              </div>
+
+              <div className="w-full flex justify-center py-4">
+                <div className="origin-center scale-[0.85] sm:scale-90 md:scale-100 transition-transform">
+                  <FaceCard
+                    user={{
+                      ...user,
+                      age,
+                      city: user?.preferredCity || user?.city,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-8 gap-2 opacity-20">
+                {[...Array(16)].map((_, i) => (
+                  <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

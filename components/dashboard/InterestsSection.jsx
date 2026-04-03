@@ -6,7 +6,7 @@ export default function InterestsSection({ interests }) {
   return (
     <div 
       onClick={() => interests?.length > 0 && router.push('/facecard/interests')}
-      className={`bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 mb-6 ${interests?.length > 0 ? 'cursor-pointer hover:bg-white/15 transition-all' : ''}`}
+      className={`bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 mb-6 ${interests?.length > 0 ? '0  meeting now hover:bg-white/15 transition-all' : ''}`}
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Interests</h2>

@@ -57,7 +57,7 @@ export default function Home() {
 
         <div 
           onClick={() => setIsInfoOpen(!isInfoOpen)} 
-          className="absolute top-6 right-6 z-[60] cursor-pointer active:scale-90 transition-transform"
+          className="absolute top-6 right-6 z-[60] 0  meeting now active:scale-90 transition-transform"
         >
           {isInfoOpen ? (
             <IoMdClose className='w-[3rem] h-[3rem] text-white border rounded-full p-2' />

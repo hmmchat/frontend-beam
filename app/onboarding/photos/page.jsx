@@ -174,7 +174,7 @@ export default function PhotosOnboarding() {
               <div 
                 key={`empty-${index}`}
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center cursor-pointer hover:border-white/60 hover:bg-white/5 transition-all"
+                className="aspect-square rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center 0  meeting now hover:border-white/60 hover:bg-white/5 transition-all"
               >
                 <div className="text-center">
                   <div className="text-4xl mb-2">+</div>

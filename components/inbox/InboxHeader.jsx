@@ -11,7 +11,7 @@ export default function InboxHeader({ walletCoins, firstMessageCost, activeChat 
     >
       <div className="flex items-center gap-3">
         <div className="border-white border-1 rounded-full p-2" onClick={() => router.push("/")}>
-          <FaArrowLeftLong className="text-xl md:text-xl cursor-pointer" />
+          <FaArrowLeftLong className="text-xl md:text-xl 0  meeting now" />
         </div>
         <span className="text-sm">Messages</span>
       </div>

@@ -64,28 +64,39 @@ export default function SelectorOverlay({
 
         {showSelector === 'zodiacs' && (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-3">
-              {(allZodiacs || []).map((z) => {
-                const isSelected = user?.zodiacId === z.id || user?.zodiac?.id === z.id;
-                return (
-                  <button
-                    key={z.id}
-                    onClick={() => selectZodiac && selectZodiac(z.id)}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
-                      isSelected
-                        ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]'
-                        : 'bg-white/5 text-white border-white/20 hover:border-white/40'
-                    }`}
-                  >
-                    {z.imageUrl ? (
-                      <img src={z.imageUrl} alt={z.name} className="w-8 h-8 object-contain" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-lg bg-white/10" />
-                    )}
-                    <span className="text-sm uppercase tracking-wide">{z.name}</span>
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap gap-4">
+              {(allZodiacs || []).length > 0 ? (
+                allZodiacs.map((z) => {
+                  const isSelected = user?.zodiacId === z.id || user?.zodiac?.id === z.id;
+                  return (
+                    <button
+                      key={z.id}
+                      onClick={() => selectZodiac && selectZodiac(z.id)}
+                      className={`flex items-center gap-4 px-6 py-4 rounded-3xl border transition-all duration-300 transform active:scale-95 group ${
+                        isSelected
+                          ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_20px_rgba(250,204,21,0.5)]'
+                          : 'bg-white/5 text-white border-white/20 hover:border-white/60 hover:bg-white/10 shadow-lg'
+                      }`}
+                    >
+                      {z.imageUrl ? (
+                        <div className="w-10 h-10 flex items-center justify-center p-1 bg-black/10 rounded-xl">
+                           <img src={z.imageUrl} alt={z.name} className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${isSelected ? 'bg-black/20' : 'bg-white/10'}`}>
+                          ✨
+                        </div>
+                      )}
+                      <span className="text-sm font-bold uppercase tracking-widest">{z.name}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="w-full py-12 flex flex-col items-center justify-center gap-4 bg-white/5 rounded-3xl border border-white/10">
+                   <div className="w-12 h-12 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
+                   <p className="text-white/40 text-sm italic">Summoning zodiac signs...</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -133,7 +144,7 @@ export default function SelectorOverlay({
                       ? 'bg-yellow-400/20 border-yellow-400/50 cursor-wait'
                       : busy
                         ? 'bg-white/5 border-white/10 opacity-60 cursor-not-allowed'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 0  meeting now'
                   }`}
                 >
                   <img

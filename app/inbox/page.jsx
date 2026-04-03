@@ -1,11 +1,14 @@
 import React from "react";
 import Inbox from "../../components/Home/Inbox";
+import ProfileGuard from "@/components/auth/ProfileGuard";
 
 const InboxPage = () => {
     return (
-        <main >
-            <Inbox />
-        </main>
+        <ProfileGuard>
+            <main >
+                <Inbox />
+            </main>
+        </ProfileGuard>
     );
 };
 

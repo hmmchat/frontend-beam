@@ -175,7 +175,7 @@ export default function MusicOnboarding() {
                 <div
                   key={index}
                   onClick={() => handleSelectSong(song)}
-                  className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all ${
+                  className={`flex items-center gap-4 p-4 rounded-lg 0  meeting now transition-all ${
                     selectedSong?.spotifyId === song.spotifyId
                       ? 'bg-purple-600/30 border-2 border-purple-500'
                       : 'bg-white/5 hover:bg-white/10 border-2 border-transparent'

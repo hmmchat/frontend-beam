@@ -156,9 +156,13 @@ export default function FacecardEditor({
           <div className="col-span-3 flex justify-center mt-2">
             <button
               onClick={onPickZodiac || (() => setShowSelector('zodiacs'))}
-              className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white"
+              className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
             >
-              {user?.zodiac?.imageUrl ? <img src={user.zodiac.imageUrl} className="h-10 w-10 object-contain" /> : zodiac?.symbol}
+              {user?.zodiac?.imageUrl ? (
+             <img src={user.zodiac.imageUrl} className="h-10 w-10 object-contain" />
+              ) : (
+                zodiac?.symbol || <span className="opacity-40 text-2xl">+</span>
+              )}
             </button>
           </div>
 
@@ -228,7 +232,7 @@ export default function FacecardEditor({
 
     <div
       onClick={() => setShowSelector('interests')}
-      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] cursor-pointer overflow-hidden"
+      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
     >
       {interests.length > 0 ? (
         <div key={interestIndex} className="animate-slide-down">
@@ -262,7 +266,7 @@ export default function FacecardEditor({
 
     <div
       onClick={() => setShowSelector('values')}
-      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] cursor-pointer overflow-hidden"
+      className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
     >
       {causes.length > 0 ? (
         <div key={causeIndex} className="animate-slide-down italic">
@@ -301,7 +305,7 @@ export default function FacecardEditor({
         <div
           key={i}
           onClick={() => setShowSelector('brands')}
-          className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 cursor-pointer hover:bg-white/10"
+          className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 0  meeting now hover:bg-white/10"
         >
           {selection
             ? <img src={selection.brand?.logoUrl} className="w-10 h-10 rounded-full object-contain" />
@@ -380,15 +384,20 @@ export default function FacecardEditor({
     {/* Album */}
     <div
       onClick={() => setShowSelector('music')}
-      className="relative cursor-pointer active:scale-95 transition"
+      className="relative 0  meeting now active:scale-95 transition"
     >
-      <div className="w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2">
+      <div className={`w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2 ${user?.musicPreference ? 'bg-black' : 'bg-white/5'}`}>
 
-        <div className="w-28 h-28 rounded-full overflow-hidden animate-spin-slow ">
-          <img
-            src={user?.musicPreference?.albumArtUrl || "/spotify1.png"}
-            className="w-full h-full object-cover"
-          />
+        <div className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow' : ''}`}>
+          {user?.musicPreference?.albumArtUrl ? (
+            <img
+              src={user.musicPreference.albumArtUrl}
+              className="w-full h-full object-cover"
+              alt="Album Art"
+            />
+          ) : (
+            <span className="text-4xl opacity-20 text-white">+</span>
+          )}
         </div>
 
         {/* center dot */}
@@ -410,10 +419,10 @@ export default function FacecardEditor({
     <div className="flex flex-col">
       
       <p className="text-white text-xs leading-tight">
-        {user?.musicPreference?.name || "Starboy"}
+        {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
       </p>
-      <p className="text-white/60 text-xs">
-        {user?.musicPreference?.artist || ""}
+      <p className="text-white/60 text-xs text-center">
+        {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
       </p>
     </div>
     </div>
@@ -492,7 +501,7 @@ export default function FacecardEditor({
               {/* Slot 1 */}
               <div
                 onClick={() => handleSlotClick(0)}
-                className={`w-[200px] h-[300px] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'
+                className={`w-[200px] h-[300px] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now'
                   }`}
               >
                 <img
@@ -508,7 +517,7 @@ export default function FacecardEditor({
               {/* Slot 2 (Photo Order 0) */}
               <div
                 onClick={() => handleSlotClick(1)}
-                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer hover:bg-white/10'
+                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
                   }`}
               >
                 {user?.photos?.find(p => p.order === 0)?.url ? (
@@ -521,7 +530,7 @@ export default function FacecardEditor({
               {/* Slot 3 (Photo Order 1) */}
               <div
                 onClick={() => handleSlotClick(2)}
-                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : 'cursor-pointer hover:bg-white/10'
+                className={`w-[200px] border-b-6 h-[300px] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${photoUploading ? 'pointer-events-none opacity-60' : '0  meeting now hover:bg-white/10'
                   }`}
               >
                 {user?.photos?.find(p => p.order === 1)?.url ? (
@@ -612,13 +621,13 @@ export default function FacecardEditor({
                   {user?.zodiac?.imageUrl ? (
                     <img src={user.zodiac.imageUrl} alt={user.zodiac.name || 'Zodiac'} className="h-full w-full object-contain p-2" />
                   ) : (
-                    <span className="text-4xl">{zodiac?.symbol}</span>
+                    zodiac?.symbol || <span className="opacity-40 text-3xl">+</span>
                   )}
                 </button>
 
                 <div
                   onClick={() => setShowSelector('interests')}
-                  className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition overflow-hidden"
+                  className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                 >
                   <span className="text-sm opacity-60 tracking-wide">Interests:</span>
                   <div className="flex-1 flex justify-end overflow-hidden">
@@ -627,7 +636,7 @@ export default function FacecardEditor({
                         {interests[interestIndex]}
                       </span>
                     ) : (
-                      <span className="text-sm opacity-90">Basketball, Music...</span>
+                      <span className="text-sm opacity-90"></span>
                     )}
                   </div>
                 </div>
@@ -640,12 +649,12 @@ export default function FacecardEditor({
 
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center text-3xl shadow-inner">
-                  {user?.gender === 'MALE' ? '♂' : user?.gender === 'FEMALE' ? '♀' : '⚧'}
+                  {user?.gender === 'MALE' ? '♂' : user?.gender === 'FEMALE' ? '♀' : ''}
                 </div>
 
                 <div
                   onClick={() => setShowSelector('values')}
-                  className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition overflow-hidden"
+                  className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                 >
                   <span className="text-sm opacity-60 tracking-wide">Causes:</span>
                   <div className="flex-1 flex justify-end overflow-hidden">
@@ -654,7 +663,7 @@ export default function FacecardEditor({
                         {causes[causeIndex]}
                       </span>
                     ) : (
-                      <span className="text-sm opacity-90 italic">Environment, Equality...</span>
+                      <span className="text-sm opacity-90 italic"></span>
                     )}
                   </div>
                 </div>
@@ -673,7 +682,7 @@ export default function FacecardEditor({
                     <div
                       key={i}
                       onClick={() => setShowSelector('brands')}
-                      className={`relative w-20 h-20 rounded-2xl border border-2 border-b-6 border-white/50 flex items-center justify-center shadow-inner cursor-pointer transition-all hover:scale-105 ${selection ? 'bg-white/10' : 'bg-transparent'}`}
+                      className={`relative w-20 h-20 rounded-2xl border border-2 border-b-6 border-white/50 flex items-center justify-center shadow-inner 0  meeting now transition-all hover:scale-105 ${selection ? 'bg-white/10' : 'bg-transparent'}`}
                     >
                       {selection && (
                         selection.brand?.logoUrl ? (
@@ -736,23 +745,28 @@ export default function FacecardEditor({
               onClick={() => onOpenFacecardPreview?.()}
               className="w-full py-4 border-2 border-white/30 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
             >
-              <span className="text-lg">👁</span> Facecard
+                <span className="text-xl"><img src="/eye.svg" alt="" /></span>
+              <span className="text-xs font-bold  tracking-widest text-white">Facecard</span>
             </button>
           </div>
 
           {/* Music Section */}
           <div
             onClick={() => setShowSelector('music')}
-            className="flex-1 flex flex-col items-center gap-6 relative cursor-pointer group"
+            className="flex-1 flex flex-col items-center gap-6 relative 0  meeting now group"
           >
             <div className="relative w-44 h-44">
-              <div className="absolute inset-0 rounded-full border-[3px] border-white/20 animate-spin-slow"></div>
-              <div className="absolute inset-2 rounded-full overflow-hidden animate-spin-slow border-2 border-white/10 shadow-2xl">
-                <img
-                  src={user?.musicPreference?.albumArtUrl || "/spotify1.png"}
-                  className="w-full h-full object-cover rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
-                  alt="Album Art"
-                />
+              <div className={`absolute inset-0 rounded-full border-[3px] border-white/20 ${user?.musicPreference ? 'animate-spin-slow' : ''}`}></div>
+              <div className={`absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow bg-black' : ''}`}>
+                {user?.musicPreference?.albumArtUrl ? (
+                  <img
+                    src={user.musicPreference.albumArtUrl}
+                    className="w-full h-full object-cover rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
+                    alt="Album Art"
+                  />
+                ) : (
+                  <span className="text-6xl opacity-20 text-white">+</span>
+                )}
               </div>
               <div className="absolute inset-[4.5rem] bg-black/40 rounded-full border border-white/20 z-10 flex items-center justify-center shadow-inner backdrop-blur-md">
                 <div className="w-4 h-4 rounded-full bg-white/20 border border-white/40"></div>

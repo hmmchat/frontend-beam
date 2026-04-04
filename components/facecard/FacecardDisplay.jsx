@@ -16,20 +16,23 @@ export default function FacecardDisplay({ user, age, setView, router }) {
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10">
 
         {/* LEFT */}
-        <div className="flex flex-1 flex-col items-center justify-between md:justify-center
+        <div className="flex flex-1 flex-col items-center justify-center md:justify-center
 min-h-[100dvh] md:min-h-0
 overflow-y-auto md:overflow-visible
                         rounded-[2rem] 
                         md:border md:border-white/30 md:rounded-[2.5rem] 
                         lg:rounded-[3rem] px-3 py-3 sm:px-4">
 
-          <div className="flex w-full flex-col items-center justify-center text-center ">
+<div className="flex w-full flex-col items-center text-center gap-6 
+                flex-1 justify-center 
+                -mt-40 md:mt-0
+          ">
 
-            <p className="text-base sm:text-lg md:text-sm lg:text-base ">
+            <p className="text-base sm:text-lg md:text-sm lg:text-base  md:hidden">
               This is Your FaceCard
             </p>
 
-            <p className="text-[10px] sm:text-xs md:text-[11px]  font-thin mb-4">
+            <p className="text-[10px] sm:text-xs md:text-[11px]  font-thin mb-4 md:hidden">
               People will see this before meeting you <br />
               You can add more info to get better matches
             </p>
@@ -39,11 +42,9 @@ overflow-y-auto md:overflow-visible
   className="
     transition-all duration-300 ease-in-out
 
-    scale-100
+    
 
-    md:scale-[0.8]
-    lg:scale-[0.9]
-    xl:scale-100
+ 
 
     [@media(max-height:700px)]:md:scale-[0.7]
     [@media(max-height:600px)]:md:scale-[0.6]
@@ -51,10 +52,11 @@ overflow-y-auto md:overflow-visible
     flex items-center justify-center
 
     md:max-h-[calc(100vh-120px)]
+    
   "
 >
-  <div className="flex justify-center w-full">
-    <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-none">
+  <div className="flex justify-center w-full ">
+    <div className="w-full   ">
       <FaceCard
         user={{
           ...user,
@@ -67,7 +69,7 @@ overflow-y-auto md:overflow-visible
 </div>
 
             {/* MOBILE BUTTONS */}
-        <div className="flex w-full justify-center gap-10 px-2 mt-4 md:hidden">
+        <div className="flex w-full justify-center gap-10 px-2  md:hidden">
   <button
     onClick={() => router.push('/')}
     className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
@@ -82,6 +84,9 @@ overflow-y-auto md:overflow-visible
     Add Info 😤
   </button>
 </div>
+
+
+
           </div>
         </div>
 

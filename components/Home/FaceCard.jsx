@@ -63,7 +63,7 @@ const FaceCard = ({ user }) => {
 
   return (
 <div className="w-[85vw] max-w-[360px] sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                h-[75vh] md:aspect-[360/660] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
+                 md:aspect-[360/660] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
 
 
 
@@ -120,22 +120,29 @@ const FaceCard = ({ user }) => {
             </div>
           </div>
 
+
+
+          <div className='flex flex-cols h-10 '>
+
+
+
+<div className='w-[40%]'>
           {/* Main photo — right */}
-          <div className="absolute bottom-4 right-1.5 top-[5.25rem] w-[71%] overflow-hidden rounded-[18px]">
+          <div className="absolute bottom-2.5 left-22  top-[5.25rem]   overflow-hidden rounded-[18px]">
             <img
               src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
-              className="h-full w-full object-cover"
+              className="h-full w-[98%] object-cover rounded-[18px]"
               alt=""
             />
           </div>
-
+</div>
           {/*
             Left rail (template): (1) brands inside a pill border (2) wider zodiac block (3) music with larger album circle.
           */}
-          <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center gap-1">
+          <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center md:gap-1 gap-2">
             {/* Brands — single capsule boundary around the stack */}
             <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-2 md:gap-1">
                 {[0, 1, 2, 3, 4].map((idx) => {
                   const src = brandLogos[idx];
                   return (
@@ -199,6 +206,18 @@ const FaceCard = ({ user }) => {
                 </p>
               </div>
             </div>
+
+
+
+          </div>
+
+
+
+
+
+
+
+
           </div>
 
           {/* Pagination */}

@@ -694,7 +694,7 @@ export default function FacecardEditor({
                           <img
                             src={selection.brand.logoUrl}
                             alt={selection.brand.name}
-                            className="w-12 h-12 object-contain"
+                            className="w-20 h-20 rounded-2xl  object-contain"
                           />
                         ) : (
                           <span className="text-white font-bold text-xl">

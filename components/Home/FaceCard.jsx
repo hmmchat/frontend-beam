@@ -61,8 +61,8 @@ const FaceCard = ({ user }) => {
   // Default to ON unless explicitly false.
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
 
-  return (
-<div className="w-[85vw] max-w-[360px] sm:w-[340px] md:w-[320px] lg:w-[360px] 
+  return ( 
+<div className="w-[85vw] aspect-[360/670]   max-w-[360px] sm:w-[340px] md:w-[320px] lg:w-[360px] 
                  md:aspect-[360/660] shrink-0 rounded-[30px] border border-white/40 p-[2px]">
 
 
@@ -120,105 +120,85 @@ const FaceCard = ({ user }) => {
             </div>
           </div>
 
+          {/* MAIN BODY — flex row: left sidebar + right image */}
+          <div className="absolute bottom-2 left-2 right-2 top-[5.25rem] flex gap-2">
 
-
-          <div className='flex flex-cols h-10 '>
-
-
-
-<div className='w-[40%]'>
-          {/* Main photo — right */}
-          <div className="absolute bottom-2.5 left-22  top-[5.25rem]   overflow-hidden rounded-[18px]">
-            <img
-              src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
-              className="h-full w-[98%] object-cover rounded-[18px]"
-              alt=""
-            />
-          </div>
-</div>
-          {/*
-            Left rail (template): (1) brands inside a pill border (2) wider zodiac block (3) music with larger album circle.
-          */}
-          <div className="absolute bottom-11 left-2 top-[5.25rem] z-20 flex w-[76px] flex-col items-center md:gap-1 gap-2">
-            {/* Brands — single capsule boundary around the stack */}
-            <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
-              <div className="flex flex-col items-center gap-2 md:gap-1">
-                {[0, 1, 2, 3, 4].map((idx) => {
-                  const src = brandLogos[idx];
-                  return (
-                    <div
-                      key={`brand-slot-${idx}`}
-                      className="flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
-                    >
-                      {src && (
-                        <img
-                          src={src}
-                          className="h-full w-full object-cover object-center"
-                          style={{ transform: 'scale(1.1)' }}
-                          alt=""
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Zodiac — wider than brand capsule (~46px → ~58px) */}
-            <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45  px-2 py-2 shadow-inner">
-              {user?.zodiac?.imageUrl ? (
-                <img
-                  src={user.zodiac.imageUrl}
-                  alt={user.zodiac.name || 'Zodiac'}
-                  className="h-8 w-10 object-contain"
-                />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
-                  <span className="text-[20px] leading-none text-white/30">{zodiac.symbol || '?'}</span>
+            {/* LEFT SIDEBAR */}
+            <div className="w-[26%] flex flex-col items-center gap-1 z-20">
+              {/* Brands capsule */}
+              <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
+                <div className="flex flex-col items-center gap-1">
+                  {[0, 1, 2, 3, 4].map((idx) => {
+                    const src = brandLogos[idx];
+                    return (
+                      <div
+                        key={`brand-slot-${idx}`}
+                        className="flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
+                      >
+                        {src && (
+                          <img
+                            src={src}
+                            className="h-full w-full object-cover object-center"
+                            style={{ transform: 'scale(1.1)' }}
+                            alt=""
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-              <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                {user?.dateOfBirth ? (user?.zodiac?.name || zodiac.name) : 'Vacant'}
-              </span>
-            </div>
+              </div>
 
-            {/* Music — album circle clearly larger than brand circles (36px → 72px) */}
-            <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40  px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
-              <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
-                {user.musicPreference ? (
-                    <img src={albumArt} className="h-full w-full object-cover" alt="" />
+              {/* Zodiac */}
+              <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
+                {user?.zodiac?.imageUrl ? (
+                  <img
+                    src={user.zodiac.imageUrl}
+                    alt={user.zodiac.name || 'Zodiac'}
+                    className="h-8 w-10 object-contain"
+                  />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        {/* <span className="text-white/30 text-2xl font-light">?</span> */}
-                              <div className="absolute bottom-12 left-0 w-4 h-[2px] bg-white/40 origin-left"></div>
-                              <div className="absolute bottom-12 left-4 w-8 h-[2px] bg-white/40 rotate-310 origin-left"></div>
-                                    <div className="absolute bottom-18 left-8 w-2 h-2 rounded-full bg-white/40"></div>
-                    </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
+                    <span className="text-[20px] leading-none text-white/30">{zodiac.symbol || '?'}</span>
+                  </div>
                 )}
+                <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
+                  {user?.dateOfBirth ? (user?.zodiac?.name || zodiac.name) : 'Vacant'}
+                </span>
               </div>
-              <div className="mt-2 h-px w-[90%] bg-white/30" />
-              <div className="mt-1.5 w-full px-0.5 text-center text-white">
-                <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">
+
+              {/* Music */}
+              <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
+                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                  {user.musicPreference ? (
+                    <img src={albumArt} className="h-full w-full object-cover" alt="" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center" />
+                  )}
+                </div>
+                <div className="mt-2 h-px w-[90%] bg-white/30" />
+                <div className="mt-1.5 w-full px-0.5 text-center text-white">
+                  <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">
                     {user.musicPreference ? songTitle : 'Music Vacant'}
-                </p>
-                <p className="mt-0.5 line-clamp-2 text-[7px] font-extralight leading-tight text-white/70">
-                  {user.musicPreference ? artist : '\u00a0'}
-                </p>
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-[7px] font-extralight leading-tight text-white/70">
+                    {user.musicPreference ? artist : '\u00a0'}
+                  </p>
+                </div>
               </div>
             </div>
 
-
-
-          </div>
-
-
-
-
-
-
-
+            {/* RIGHT IMAGE */}
+            <div className="flex-1 h-full overflow-hidden rounded-[18px]">
+              <img
+                src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
+                className="h-full w-full object-cover"
+                alt=""
+              />
+            </div>
 
           </div>
+
 
           {/* Pagination */}
           <div className="absolute bottom-1 left-0 right-0 z-20 flex justify-center gap-2">

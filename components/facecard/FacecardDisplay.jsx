@@ -5,7 +5,7 @@ import FaceCard from '@/components/Home/FaceCard';
 export default function FacecardDisplay({ user, age, setView, router }) {
   return (
     <div
-      className="flex min-h-screen w-full flex-col overflow-hidden bg-purple-950 text-white outfit-font"
+      className="flex min-h-screen w-full flex-col bg-purple-950 text-white outfit-font"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: 'cover',
@@ -25,8 +25,8 @@ overflow-y-auto md:overflow-visible
 
 <div className="flex w-full flex-col items-center text-center gap-6 
                 flex-1 justify-center 
-                -mt-40 md:mt-0
-          ">
+                -mt-36 md:mt-0
+                scale-[0.85] sm:scale-90 md:scale-100">
 
             <p className="text-base sm:text-lg md:text-sm lg:text-base  md:hidden">
               This is Your FaceCard
@@ -43,20 +43,10 @@ overflow-y-auto md:overflow-visible
     transition-all duration-300 ease-in-out
 
     
-
- 
-
-    [@media(max-height:700px)]:md:scale-[0.7]
-    [@media(max-height:600px)]:md:scale-[0.6]
-
-    flex items-center justify-center
-
-    md:max-h-[calc(100vh-120px)]
-    
   "
 >
   <div className="flex justify-center w-full ">
-    <div className="w-full   ">
+    <div className="w-full    ">
       <FaceCard
         user={{
           ...user,

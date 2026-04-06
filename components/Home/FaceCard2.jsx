@@ -39,7 +39,7 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard = ({ user }) => {
+const FaceCard2 = ({ user }) => {
   if (!user) return null;
 
   const age = user.age ?? calculateAge(user.dateOfBirth);
@@ -69,7 +69,7 @@ const FaceCard = ({ user }) => {
                 sm:w-[340px] md:w-[320px] lg:w-[360px] 
                 md:aspect-[350/660] shrink-0 rounded-[30px] 
                 border border-white/40 p-[2px]
-                md:border-0 md:p-0">
+                 md:p-0">
 
 
 
@@ -277,4 +277,4 @@ const FaceCard = ({ user }) => {
   );
 };
 
-export default FaceCard;
+export default FaceCard2;

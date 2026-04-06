@@ -1,6 +1,10 @@
 'use client';
 
 import FaceCard from '@/components/Home/FaceCard';
+import { IoIosArrowBack } from "react-icons/io";
+
+
+import { IoIosArrowForward } from "react-icons/io";
 
 export default function FacecardDisplay({ user, age, setView, router }) {
   return (
@@ -25,10 +29,10 @@ overflow-y-auto md:overflow-visible
 
 <div className="flex w-full flex-col items-center text-center gap-6 
                 flex-1 justify-center 
-                -mt-36 md:mt-0
+                -mt-28 md:mt-0
                 scale-[0.85] sm:scale-90 md:scale-100">
 
-            <p className="text-base sm:text-lg md:text-sm lg:text-base  md:hidden">
+            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base  md:hidden">
               This is Your FaceCard
             </p>
 
@@ -59,7 +63,17 @@ overflow-y-auto md:overflow-visible
 </div>
 
             {/* MOBILE BUTTONS */}
-        <div className="flex w-full justify-center gap-10 px-2  md:hidden">
+        <div className="flex w-full justify-center gap-4 px-2  md:hidden">
+
+
+              <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white ">
+            <IoIosArrowBack />
+              </button>
+            
+              {/* Right Button */}
+          
+
+
   <button
     onClick={() => router.push('/')}
     className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
@@ -73,6 +87,15 @@ overflow-y-auto md:overflow-visible
   >
     Add Info 😤
   </button>
+
+    <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white ">
+            <IoIosArrowForward />
+              </button>
+
+
+
+
+
 </div>
 
 
@@ -97,6 +120,8 @@ overflow-y-auto md:overflow-visible
           </p>
 
           <div className="w-full max-w-sm mt-4 space-y-3 lg:space-y-4">
+
+
 
             <button
               onClick={() => setView('editor')}

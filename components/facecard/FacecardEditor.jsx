@@ -43,8 +43,8 @@ export default function FacecardEditor({
     >
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
       
-<div className="h-screen flex items-center justify-center md:hidden px-2">
-<div className="flex border border-white/60 rounded-[2rem] w-full h-[95vh] flex-col justify-between px-4 py-4 relative z-10">
+<div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
+<div className="flex border border-white/60 rounded-[2rem] w-full min-h-[90dvh] flex-col  gap-8 px-4 py-4 relative z-10">
         
         {/* TOP ROW: Close, Name Box, Progress */}
         <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4">
@@ -61,106 +61,82 @@ export default function FacecardEditor({
 
           {/* Name Box with Brackets */}
           <div className="col-span-6 flex justify-center">
-            <div className="relative px-6 py-1 min-w-[140px] h-[50px]">
-              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
-              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
-              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
-              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
-<div className="inline-flex flex-col justify-end items-start">
+            <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
+<div className="flex flex-col justify-center h-full">
   <h2 className="text-[12px] text-white">{firstName}</h2>
 
-  <p className="text-[10px] uppercase font-outfit text-white">
+  <p className="text-[10px]  font-outfit text-white">
     UserID:{user?.id?.slice(0, 8) || '4heu24sds'}
   </p>
 </div>
             </div>
           </div>
 
-
-       
 <div className="col-span-4 row-span-2 flex justify-center items-center">
-  <div className="relative w-[100px] h-[100px]">
+  
+  <div className="relative w-[120px] h-[120px] flex items-center justify-center">
 
-    {/* 🔥 OUTER GLOW RING */}
-    <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400 opacity-40 blur-[6px]" />
+    {/* Glow */}
 
-    {/* 🔥 OUTER THIN RING */}
-    <div className="absolute inset-0 rounded-full border border-purple-900/60" />
 
-    {/* 🔥 MAIN SVG */}
-    <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 100 100">
+    {/* Outer ring */}
+       <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 shadow-[0_0_15px_rgba(236,72,153,0.7),inset_0_0_10px_rgba(236,72,153,0.5)]" />
 
-      {/* BACKGROUND TRACK */}
-      <circle
-        cx="50"
-        cy="50"
-        r="42"
-        strokeWidth="6"
-        className="text-white/10"
-        stroke="currentColor"
-        fill="transparent"
-      />
+<div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-white" />
 
-      {/* 🔥 PROGRESS (THICK YELLOW RING) */}
-      <circle
-        cx="50"
-        cy="50"
-        r="42"
-        strokeWidth="6"
-        strokeLinecap="round"
-        className="text-yellow-400 drop-shadow-[0_0_8px_rgba(255,188,43,0.8)]"
-        stroke="currentColor"
-        fill="transparent"
-        strokeDasharray="264"
-        strokeDashoffset={264 - (264 * progress) / 100}
-      />
+<div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-pink-500/60" />
 
-      {/* 🔥 INNER THIN RING */}
-      <circle
-        cx="50"
-        cy="50"
-        r="34"
-        strokeWidth="3"
-        className="text-yellow-300/80"
-        stroke="currentColor"
-        fill="transparent"
-      />
+{/* Main yellow ring with pink glow */}
+<div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]">
 
-    </svg>
+  {/* Inner thin ring */}
+  <div className="absolute w-[75px] h-[75px] rounded-full border-[3px] border-[#FFBC2B]" />
 
-    {/* 🔥 CENTER TEXT */}
-    <div className="absolute inset-0 flex items-center justify-center">
-      <span className="text-[28px] font-extrabold text-white">
+
+
+      {/* Center text */}
+      <span className="text-[18px] text-white font-semibold">
         {progress}
         <span className="text-sm opacity-60">%</span>
       </span>
+
     </div>
 
   </div>
+
 </div>
 
-
-   <div className="col-span-5 mt-2">
-            <div className="relative  px-4 h-14 flex flex-col justify-center">
-              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/30"></span>
-              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/30"></span>
-              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/30"></span>
-              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
+   <div className="col-span-5 mt-1">
+                     <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
               
-              <div className="space-y-1">
+              <div className="">
                 <p className="text-[10px] uppercase  opacity-60 text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
                 <p className="text-[10px] font-thin  text-white">Zodiac : {zodiac?.name || 'Gemini'}</p>
               </div>
             </div>
+
+
+
+
+
+
           </div>
 
-          <div className="col-span-3 flex justify-center mt-2">
+          <div className="col-span-3 flex justify-center mt-1">
             <button
               onClick={onPickZodiac || (() => setShowSelector('zodiacs'))}
-              className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
+              className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
             >
               {user?.zodiac?.imageUrl ? (
-             <img src={user.zodiac.imageUrl} className="h-10 w-10 object-contain" />
+             <img src={user.zodiac.imageUrl} className="h-[20px] w-[20px] object-contain brightness-0 invert" />
               ) : (
                 zodiac?.symbol || <span className="opacity-40 text-2xl">+</span>
               )}
@@ -169,14 +145,14 @@ export default function FacecardEditor({
 
 
 
-          <div className="col-span-5 mt-2">
-            <div className="relative px-6 py-6 h-14 flex flex-col justify-center">
-              <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/30"></span>
-              <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/30"></span>
-              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/30"></span>
-              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/30"></span>
+          <div className="col-span-5 mt-1">
+                              <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
               
-              <div className="space-y-1">
+              <div className="">
                 <p className="text-[10px]  opacity-60 text-white">Gender Identity</p>
                 <p className="text-[10px]  text-white">{user?.gender }</p>
               </div>
@@ -187,7 +163,7 @@ export default function FacecardEditor({
           <div className="col-span-3 flex flex-col gap-4 mt-2">
             <div className="flex justify-center">
               <button
-                className="w-16 h-16 border-2 border-white/40 border-b-4 rounded-2xl flex items-center justify-center text-4xl text-white"
+                className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white"
               >
                 {user?.gender === 'MALE' ? '♂' : user?.gender === 'FEMALE' ? '♀' : '⚧'}
               </button>
@@ -202,7 +178,7 @@ export default function FacecardEditor({
 
      <button
               onClick={() => onOpenFacecardPreview?.()}
-              className="w-full py-4 px-2 border-2 border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
+              className="w-full py-4 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
             >
               <span className="text-xl"><img src="/eye.svg" alt="" /></span>
               <span className="text-xs font-bold  tracking-widest text-white">Facecard</span>
@@ -448,6 +424,21 @@ export default function FacecardEditor({
 </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -718,42 +709,38 @@ export default function FacecardEditor({
         <div className="w-72 flex flex-col gap-10 py-6 pr-4">
 
           {/* Progress Area */}
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative w-48 h-48">
-              <div className="absolute inset-0 rounded-full border-[10px] border-white/5"></div>
-              <div className="absolute inset-0 rounded-full border-[12px] border-yellow-400 opacity-20 blur-xl scale-110"></div>
+        <div className="flex flex-col items-center gap-6">
+  <div className="relative w-56 h-56 flex items-center justify-center">
+    {/* Outer ring */}
+    <div className="absolute w-[186px] h-[186px] rounded-full border-[3px] border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.7),inset_0_0_15px_rgba(236,72,153,0.5)]" />
+    <div className="absolute w-[180px] h-[180px] rounded-full border-[3px] border-white" />
+    <div className="absolute w-[174px] h-[174px] rounded-full border-[3px] border-pink-500/60" />
 
-              <svg className="w-full h-full drop-shadow-[0_0_15px_rgba(255,200,0,0.5)]" viewBox="0 0 100 100">
-                <circle className="text-white/10" strokeWidth="6" cx="50" cy="50" r="44" fill="transparent" stroke="currentColor"></circle>
-                <circle
-                  className="text-yellow-400 transition-all duration-1000"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="transparent"
-                  stroke="currentColor"
-                  strokeDasharray="276"
-                  strokeDashoffset={276 - (276 * (progress / 100))}
-                  transform="rotate(-90 50 50)"
-                ></circle>
-              </svg>
+    {/* Main yellow ring */}
+    <div className="w-[160px] h-[160px] rounded-full border-[8px] border-yellow-400 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.8),inset_0_0_18px_rgba(236,72,153,0.6)]">
+      
+      {/* Inner thin ring */}
+      <div className="absolute w-[140px] h-[140px] rounded-full border-[4px] border-[#FFBC2B]" />
+      
+      {/* Center text */}
+      <span className="text-4xl text-white font-semibold">
+        {progress}
+        <span className="text-2xl opacity-60 ml-1">%</span>
+      </span>
+    </div>
+  </div>
 
-              <div className="absolute inset-0 flex items-end justify-center mb-18">
-                <span className="text-5xl font-black text-white/90">{progress}<span className="text-xl opacity-40 ml-1">%</span></span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onOpenFacecardPreview?.()}
-              className="w-full py-4 border-2 border-white/30 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
-            >
-                <span className="text-xl"><img src="/eye.svg" alt="" /></span>
-              <span className="text-xs font-bold  tracking-widest text-white">Facecard</span>
-            </button>
-          </div>
+  <button
+    type="button"
+    onClick={() => onOpenFacecardPreview?.()}
+    className="w-5/6 py-4 border-2 border-white/30 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
+  >
+    <span className="text-xl">
+      <img src="/eye.svg" alt="" />
+    </span>
+    <span className="text-xs font-bold tracking-widest text-white">Facecard</span>
+  </button>
+</div>
 
           {/* Music Section */}
           <div

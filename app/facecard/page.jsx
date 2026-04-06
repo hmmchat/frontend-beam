@@ -11,6 +11,7 @@ import FacecardEditor from '@/components/facecard/FacecardEditor';
 import SelectorOverlay from '@/components/facecard/SelectorOverlay';
 import FaceCard from '@/components/Home/FaceCard';
 import Skeleton from '@/components/ui/Skeleton';
+import FaceCard2 from '@/components/Home/FaceCard2';
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -744,12 +745,12 @@ function FacecardContent() {
 
       {facecardPreviewOpen && user && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 "
+     className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden "
           onClick={() => setFacecardPreviewOpen(false)}
           role="presentation"
         >
           <div
-            className="relative w-full overflow-hidden md:rounded-[2.5rem] md:border md:border-white/30 md:p-8 md:shadow-2xl transition-all animate-fade-in"
+            className="relative w-full h-full flex flex-col items-center justify-center"
             style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
@@ -771,8 +772,8 @@ function FacecardContent() {
               ✕
             </button>
 
-            <div className="relative z-10 flex flex-col items-center gap-6">
-              <div className="text-center space-y-1">
+            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[90vh] ">
+              <div className="text-center space-y-1 -mb-14 ">
                 <h3 className="text-xl font-black uppercase tracking-widest text-white">Facecard Preview</h3>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-mono">
                   What others see before a call
@@ -780,8 +781,8 @@ function FacecardContent() {
               </div>
 
               <div className="w-full flex justify-center py-4">
-                <div className="origin-center scale-[0.85] sm:scale-90 md:scale-100 transition-transform">
-                  <FaceCard
+                <div className="origin-center origin-center scale-[0.8] sm:scale-[0.8] md:scale-[0.8] lg:scale-[0.9] transition-transform">
+                  <FaceCard2
                     user={{
                       ...user,
                       age,
@@ -791,11 +792,13 @@ function FacecardContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-8 gap-2 opacity-20">
+              <div className="grid grid-cols-8 gap-2 -mt-10 hidden md:flex opacity-20">
                 {[...Array(16)].map((_, i) => (
                   <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
                 ))}
               </div>
+
+
             </div>
           </div>
         </div>

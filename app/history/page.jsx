@@ -172,23 +172,10 @@ function HistoryContent() {
 
                       return (
                         <div className="flex flex-col gap-2">
-                          {primaryEvents.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {primaryEvents.map((e, idx) => (
-                                <div
-                                  key={`${call.sessionId}-evt-${idx}`}
-                                  className="text-[11px] px-3 py-1 rounded-full border border-white/20 bg-black/30 text-white/90 font-semibold"
-                                >
-                                  {e.label}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-white/60">No special events recorded for this call.</div>
-                          )}
+                          
 
                           {joinOrder && (
-                            <div className="text-xs text-white/70">
+                            <div className="text-xs text-white/70 px-4">
                               Join order: <span className="text-white">{joinOrder}</span>
                             </div>
                           )}

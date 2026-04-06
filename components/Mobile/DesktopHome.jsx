@@ -51,7 +51,7 @@ export default function DesktopHome() {
                             backgroundSize: 'cover',
                         }}
                     />
-                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
+                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-[3rem]'>
                         <div className="z-10 text-center max-w-lg  p-2">
                             <img src="/LOGO.png" className="md:w-64 mx-auto w-44 sm:w-5" />
                             <p className="text-white text-2xl">Meet someone here,</p>
@@ -81,7 +81,7 @@ export default function DesktopHome() {
 
                     {/* Top Icons */}
 
-                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-2xl'>
+                    <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-[3rem]'>
                         {/* Pattern */}
 
 

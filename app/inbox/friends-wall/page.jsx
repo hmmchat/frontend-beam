@@ -128,7 +128,7 @@ export default function FriendWall() {
 
           <div className="flex flex-col h-full">
             {/* Subtitle */}
-            <p className="text-base md:text-lg text-white/80 leading-relaxed mb-8 max-w-2xl">
+            <p className="text-xs md:text-lg text-white/80 leading-relaxed mb-8 max-w-2xl px-2">
               Once they were drifters now they are your real friend,
               and you are to them as well
             </p>

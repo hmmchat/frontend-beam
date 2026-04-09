@@ -1,12 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import FaceCard from '@/components/Home/FaceCard';
-import { IoIosArrowBack } from "react-icons/io";
-
-
-import { IoIosArrowForward } from "react-icons/io";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { getFacecardPhotos } from '@/lib/facecard-utils';
 
 export default function FacecardDisplay({ user, age, setView, router }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const allPhotos = getFacecardPhotos(user);
+
+  const handlePrev = (e) => {
+    e?.stopPropagation();
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : allPhotos.length - 1));
+  };
+
+  const handleNext = (e) => {
+    e?.stopPropagation();
+    setCurrentImageIndex((prev) => (prev < allPhotos.length - 1 ? prev + 1 : 0));
+  };
   return (
     <div
       className="flex min-h-screen w-full flex-col bg-purple-950 text-white outfit-font"
@@ -32,7 +43,7 @@ overflow-y-auto md:overflow-visible
                 -mt-28 md:mt-0
                 scale-[0.85] sm:scale-90 md:scale-100">
 
-            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base  md:hidden">
+            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base  md:hidden -mb-5">
               This is Your FaceCard
             </p>
 
@@ -57,6 +68,8 @@ overflow-y-auto md:overflow-visible
           age,
           city: user?.preferredCity || user?.city,
         }}
+        currentIndex={currentImageIndex}
+        onIndexChange={setCurrentImageIndex}
       />
     </div>
   </div>
@@ -66,7 +79,10 @@ overflow-y-auto md:overflow-visible
         <div className="flex w-full justify-center gap-4 px-2  md:hidden">
 
 
-              <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white ">
+              <button 
+                onClick={handlePrev}
+                className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
+              >
             <IoIosArrowBack />
               </button>
             
@@ -88,7 +104,10 @@ overflow-y-auto md:overflow-visible
     Add Info 😤
   </button>
 
-    <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white ">
+    <button 
+      onClick={handleNext}
+      className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+    >
             <IoIosArrowForward />
               </button>
 
@@ -109,11 +128,11 @@ overflow-y-auto md:overflow-visible
                         px-4 py-5 
                         lg:px-6 lg:py-6 xl:px-10">
 
-          <h1 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-extrabold">
+          <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold">
             Meet your Facecard
           </h1>
 
-          <p className="mt-3 max-w-md text-xs md:text-sm lg:text-base text-white/90">
+          <p className="mt-3 max-w-md text-xs md:text-sm lg:text-sm text-white/90 font-outfit">
             This is what people see before meeting you.
             <br />
             Adding more details makes it cooler and gets you better matches.

@@ -67,7 +67,7 @@ export default function Home() {
         </div>
 
         {isInfoOpen && (
-          <div className="absolute top-24  z-20 inset-x-0 bottom-8 z-50 bg-black/10 backdrop-blur-xs flex flex-col items-center px-8 py-12 overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2.25rem] border border-[1px] border-white/70">
+          <div className="absolute top-24  z-20 inset-x-0 bottom-8 z-50 bg-black/10 backdrop-blur-xs flex flex-col items-center py-12 overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2.25rem] border border-[1px] border-white/70">
             {/* Decorative Side Brackets */}
             <div className="absolute right-0 top-1/4 h-[174px] w-[18px] border-[1px] border-white/70 border-r-0 rounded-l-xl  pointer-events-none" />
             <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl  pointer-events-none" />
@@ -77,8 +77,8 @@ export default function Home() {
               <p className="text-white text-[14px] font-medium opacity-90">Meet someone here</p>
             </div>
 
-           <div className="w-full flex overflow-y-scroll justify-center opacity-80">
-  <div className="text-white text-[14px] font-normal font-[Outfit] leading-relaxed text-left max-w-[299px] pb-10 space-y-6">
+    <div className="w-full flex overflow-y-scroll justify-center opacity-80 px-10 custom-scroll">
+  <div className="text-white text-[14px] font-normal font-[Outfit] leading-relaxed text-left  pb-10 space-y-6">
     
     <p>At 10:30 pm, when people are done for the day and slip into bed, something small happens.</p>
 

@@ -194,33 +194,51 @@ export default function SelectorOverlay({
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {(showSelector === 'interests' ? allInterests : showSelector === 'values' ? allValues : allBrands).map(item => {
-                const isSelected = showSelector === 'interests' 
-                  ? user?.interests?.some(i => i.interestId === item.id)
-                  : showSelector === 'values'
-                    ? user?.values?.some(v => v.valueId === item.id)
-                    : user?.brandPreferences?.some(b => b.brandId === item.id);
+              {(() => {
+                const results = showSelector === 'interests' ? allInterests : showSelector === 'values' ? allValues : allBrands;
                 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      if (showSelector === 'interests') toggleInterest(item.id, item.name);
-                      else if (showSelector === 'values') toggleValue(item.id, item.name);
-                      else toggleBrand(item.id, item.name, item.logoUrl);
-                    }}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
-                      isSelected 
-                        ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_0_15px_rgba(250,204,21,0.4)]' 
-                        : 'bg-white/5 text-white border-white/20 hover:border-white/40'
-                    }`}
-                  >
-                    {item.logoUrl && <img src={item.logoUrl} alt="" className="w-5 h-5 object-contain" />}
-                    <span className="text-sm uppercase tracking-wide">{item.name}</span>
-                    <span className="text-lg leading-none">{isSelected ? '✕' : '+'}</span>
-                  </button>
-                );
-              })}
+                // 1. Get truly selected items (from user state)
+                const selectedOnes = (showSelector === 'interests' 
+                  ? user?.interests?.map(i => ({ id: i.interestId, name: i.interest?.name || i.name }))
+                  : showSelector === 'values'
+                    ? user?.values?.map(v => ({ id: v.valueId, name: v.value?.name || v.name }))
+                    : user?.brandPreferences?.map(b => ({ id: b.brandId, name: b.brand?.name, logoUrl: b.brand?.logoUrl }))
+                ) || [];
+
+                // 2. Build a unified list starting with selected items
+                const selectedIds = new Set(selectedOnes.map(s => s.id));
+                const unifiedList = [
+                  ...selectedOnes,
+                  ...results.filter(item => !selectedIds.has(item.id))
+                ];
+
+                if (unifiedList.length === 0 && !isSearchingItems) {
+                  return <p className="text-white/30 text-xs italic py-4">No results found...</p>;
+                }
+
+                return unifiedList.map(item => {
+                  const isSelected = selectedIds.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        if (showSelector === 'interests') toggleInterest(item.id, item.name);
+                        else if (showSelector === 'values') toggleValue(item.id, item.name);
+                        else toggleBrand(item.id, item.name, item.logoUrl);
+                      }}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all duration-300 transform active:scale-95 ${
+                        isSelected 
+                          ? 'bg-yellow-400 text-black border-yellow-400 font-bold shadow-[0_5px_15px_rgba(250,204,21,0.3)]' 
+                          : 'bg-white/5 text-white border-white/20 hover:border-white/40'
+                      }`}
+                    >
+                      {item.logoUrl && <img src={item.logoUrl} alt="" className="w-5 h-5 object-contain" />}
+                      <span className="text-sm uppercase tracking-wide">{item.name}</span>
+                      <span className="text-lg leading-none">{isSelected ? '✕' : '+'}</span>
+                    </button>
+                  );
+                });
+              })()}
             </div>
           </div>
         )}

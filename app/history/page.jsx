@@ -92,7 +92,7 @@ function HistoryContent() {
   const viewerId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   return (
-    <div className="h-screen w-full relative text-white overflow-hidden">
+    <div className="fixed inset-0 h-[100dvh] w-full text-white overflow-hidden">
 
       {/* Background */}
       <div

@@ -26,8 +26,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${otomanopeeOne.variable} ${outfit.variable}`}>
-      <body>
+    <html lang="en">
+      <body className={`${otomanopeeOne.variable} ${outfit.variable}`}>
         {children}
       </body>
     </html>

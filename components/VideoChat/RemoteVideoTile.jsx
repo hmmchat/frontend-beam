@@ -128,7 +128,7 @@ export default function RemoteVideoTile({
           )}
         </div>
 
-        <div className="flex flex-col gap-4 hidden md:block">
+        <div className="flex flex-col gap-4 hidden">
           {showKickParticipant && onKickParticipant && (
             <button
               type="button"
@@ -157,6 +157,8 @@ export default function RemoteVideoTile({
           )}
         </div>
       </div>
+      {/* 🔲 HUD BORDER FRAME */}
+      <div className="absolute inset-4 border border-white/30 rounded-[30px] pointer-events-none z-20" />
     </div>
   );
 }

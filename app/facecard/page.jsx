@@ -9,7 +9,7 @@ import { calculateProgress, getZodiac, calculateAge } from '@/lib/facecard-utils
 import FacecardDisplay from '@/components/facecard/FacecardDisplay';
 import FacecardEditor from '@/components/facecard/FacecardEditor';
 import SelectorOverlay from '@/components/facecard/SelectorOverlay';
-import FaceCard from '@/components/Home/FaceCard';
+
 import Skeleton from '@/components/ui/Skeleton';
 import FaceCard2 from '@/components/Home/FaceCard2';
 
@@ -691,7 +691,6 @@ function FacecardContent() {
     );
   }
 
-  const zodiac = getZodiac(user?.dateOfBirth);
   const age = calculateAge(user?.dateOfBirth);
   const firstName = user?.username?.split(' ')[0] || "User";
 
@@ -704,7 +703,7 @@ function FacecardContent() {
         <FacecardEditor
           user={user}
           firstName={firstName}
-          zodiac={zodiac}
+          zodiac={user?.zodiac}
           setView={safeSetView}
           handleSlotClick={handleSlotClick}
           setShowSelector={setShowSelector}
@@ -792,11 +791,7 @@ function FacecardContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-8 gap-2 -mt-10 hidden md:flex opacity-20">
-                {[...Array(16)].map((_, i) => (
-                  <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
-                ))}
-              </div>
+            
 
 
             </div>

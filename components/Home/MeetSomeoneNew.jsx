@@ -242,18 +242,18 @@ export default function MeetSomeoneNew({
       {/* Bottom Navigation */}
       <div className="relative z-10 w-full max-w-sm px-6 pb-10 mt-auto mx-auto">
         <div className=" border border-white rounded-full h-18 w-full flex items-center justify-between px-8 shadow-2xl">
-            <button className="text-white text-2xl hover:scale-125 transition-transform"><IoHomeOutline /></button>
+            <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-6 h-6" /></button>
             <button 
                 onClick={() => router.push('/history')}
                 className="text-white/70 text-2xl hover:text-white/60 transition-colors"
             >
-                <IoTimeOutline />
+                   <img src="./mobhistory.svg" alt="chat" className="w-6 h-6" />
             </button>
             <button 
                 onClick={() => router.push('/inbox')}
                 className="relative text-white/70 text-2xl hover:text-white/60 transition-colors"
             >
-                <IoChatbubbleOutline />
+                 <img src="./mobmessage.svg" alt="chat" className="w-6 h-6" />
                 <div className="absolute top-0 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#201035] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </button>
             <button 

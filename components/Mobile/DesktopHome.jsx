@@ -32,7 +32,7 @@ export default function DesktopHome() {
     }, []);
 
     return (
-        <div className="relative h-screen font-[family-name:var(--font-otomanopee)]">
+        <div className="relative h-screen  ">
             {/* Header */}
 
 
@@ -52,16 +52,19 @@ export default function DesktopHome() {
                         }}
                     />
                     <div className='border-2 z-10 border-white/40 w-full h-[96vh] justify-center items-center flex  rounded-[3rem]'>
-                        <div className="z-10 text-center max-w-lg  p-2">
-                            <img src="/LOGO.png" className="md:w-64 mx-auto w-44 sm:w-5" />
-                            <p className="text-white text-2xl">Meet someone here,</p>
-                            <div className="inline-flex gap-2 mt-3 font-[family-name:var(--font-otomanopee)]">
-                                <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
-                                <p className='text-xs'>
-                                    {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
-                                </p>
-                            </div>
-                        </div>
+                        <div className="z-10 text-center max-w-lg p-2">
+  <img src="/LOGO.png" className="md:w-64 mx-auto w-44 sm:w-5" />
+  
+  <p className="text-white text-xl font-otomanopee" >Meet someone here,</p>
+
+  <div className="inline-flex gap-2 mt-3">
+    <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
+    
+    <p className="text-sm font-outfit ">
+      {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+    </p>
+  </div>
+</div>
                     </div>
                 </div>
 
@@ -86,17 +89,17 @@ export default function DesktopHome() {
 
 
                         {/* Action Card */}
-                <div className="relative z-[2] w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col h-full px-8">
+                <div className="relative z-[2] w-full flex flex-col h-full px-8">
 
   {/* CENTER CTA */}
 <div className="flex-1 flex items-center justify-center mt-40">
-  <Button
-    className="w-full max-w-lg py-7 bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 flex items-center justify-center gap-3"
+  <button
+    className=" w-[85%] border-2 py-7 bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 flex items-center justify-center gap-3"
     onClick={() => setIsSignUpOpen(true)}
   >
     <img src="/assets/video-on.svg" className="w-8 h-8 opacity-70" />
     Meet that someone
-  </Button>
+  </button>
 </div>
 
   {/* BOTTOM SECTION */}

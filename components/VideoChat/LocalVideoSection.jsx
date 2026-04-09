@@ -141,6 +141,8 @@ export default function LocalVideoSection({
           </button>
         </div>
       </div>
+      {/* 🔲 HUD BORDER FRAME */}
+      <div className="absolute inset-4 border border-white/30 rounded-[30px] pointer-events-none z-20" />
     </>
   );
 }

@@ -44,7 +44,7 @@ export default function FacecardEditor({
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
       
 <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-<div className="flex border border-white/60 rounded-[2rem] w-full min-h-[90dvh] flex-col  gap-8 px-4 py-4 relative z-10">
+<div className="flex border border-white/60 rounded-[2rem] w-full min-h-[90dvh] flex-col  gap-5 px-4 py-4 relative z-10">
         
         {/* TOP ROW: Close, Name Box, Progress */}
         <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4">
@@ -118,7 +118,7 @@ export default function FacecardEditor({
               <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
               
               <div className="">
-                <p className="text-[10px] uppercase  opacity-60 text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
+                <p className="text-[10px] uppercase   text-white">DOB : {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("en-GB") : "22/08/1998"}</p>
                 <p className="text-[10px] font-thin  text-white">Zodiac : {zodiac?.name || 'Gemini'}</p>
               </div>
             </div>
@@ -135,10 +135,10 @@ export default function FacecardEditor({
               onClick={onPickZodiac || (() => setShowSelector('zodiacs'))}
               className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
             >
-              {user?.zodiac?.imageUrl ? (
-             <img src={user.zodiac.imageUrl} className="h-[20px] w-[20px] object-contain brightness-0 invert" />
+              {zodiac?.imageUrl ? (
+                <img src={zodiac.imageUrl} className="h-[20px] w-[20px] object-contain brightness-0 invert" />
               ) : (
-                zodiac?.symbol || <span className="opacity-40 text-2xl">+</span>
+                <span className="opacity-40 text-2xl">+</span>
               )}
             </button>
           </div>
@@ -365,7 +365,7 @@ export default function FacecardEditor({
     >
       <div className={`w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2 ${user?.musicPreference ? 'bg-black' : 'bg-white/5'}`}>
 
-        <div className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow' : ''}`}>
+        <div className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center  ${user?.musicPreference ? 'animate-spin-slow' : ''}`}>
           {user?.musicPreference?.albumArtUrl ? (
             <img
               src={user.musicPreference.albumArtUrl}
@@ -408,7 +408,7 @@ export default function FacecardEditor({
 
   {/* RIGHT: Dots */}
   <div className="grid grid-cols-6 gap-2 opacity-30">
-    {[...Array(48)].map((_, i) => (
+    {[...Array(42)].map((_, i) => (
       <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
     ))}
   </div>
@@ -474,11 +474,11 @@ export default function FacecardEditor({
                   <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60"></span>
                   <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60"></span>
 
-                  <h2 className="text-3xl font-black tracking-wide uppercase leading-none text-center">
+                  <h2 className="text-2xl  tracking-wide  leading-none text-center">
                     {firstName}
                   </h2>
 
-                  <p className="text-[11px] opacity-40 font-mono tracking-widest uppercase mt-1 text-center">
+                  <p className="text-[11px] opacity-90 font-outfit tracking-widest uppercase mt-1 text-center">
                     USERID: {user?.id?.slice(0, 8)}
                   </p>
                 </div>
@@ -551,53 +551,64 @@ export default function FacecardEditor({
           <div className="grid grid-cols-10 gap-10 items-center">
 
             {/* DOB & Gender Text Labels */}
-            <div className="col-span-3 space-y-14">
+            <div className="col-span-3 space-y-16">
 
               {/* DOB + Zodiac */}
-              <div className="relative px-5 py-5">
-                <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
-                <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
-                <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
-                <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
+<div className="relative px-5 py-3 flex justify-center">
+  <div className="flex flex-col items-start text-left">
+    
+    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
+    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
+    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
+    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
 
-                <p className="text-[9px] uppercase tracking-widest opacity-80">
-                  DOB : {user?.dateOfBirth
-                    ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                    : "22/08/1998"}
-                </p>
-                <p className="text-[9px] uppercase tracking-widest opacity-80 mt-1">
-                  Zodiac : {zodiac?.name}
-                </p>
-              </div>
+    <p className="text-[12px] uppercase opacity-80 font-outfit">
+      DOB : {user?.dateOfBirth
+        ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+        : "22/08/1998"}
+    </p>
+
+    <p className="text-[12px]  mt-1 font-outfit">
+      Zodiac : {zodiac?.name || "Vacant"}
+    </p>
+
+  </div>
+</div>
 
               {/* Gender */}
-              <div className="relative px-4 py-5">
+<div className="relative px-5 py-3 flex justify-center">
+  <div className="flex flex-col items-start text-left">
                 <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
                 <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
                 <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
                 <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
 
-                <p className="text-[9px] uppercase tracking-widest opacity-80">
+                <p className="text-[12px] font-outfit  ">
                   Gender Identity
                 </p>
-                <p className="text-[9px] uppercase tracking-widest opacity-80 mt-1">
+                <p className="text-[12px] font-outfit   mt-1">
                   {user?.gender || "Female"}
                 </p>
               </div>
+</div>
+
 
               {/* Brands */}
-              <div className="relative px-4 py-5">
+<div className="relative px-5 py-3 flex justify-center">
+  <div className="flex flex-col items-start text-left">
                 <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
                 <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
                 <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
                 <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
 
-                <p className="text-[9px] font-bold uppercase tracking-widest">
+                <p className="text-[12px]   ">
                   Brands
                 </p>
-                <p className="text-[9px] uppercase tracking-tight opacity-50 mt-1">
+                <p className="text-[12px] font-outfit  ">
                   Can&apos;t live w/o &#39;em
                 </p>
+              </div>
+
               </div>
             </div>
 
@@ -611,7 +622,7 @@ export default function FacecardEditor({
                     if (typeof onPickZodiac === 'function') onPickZodiac();
                     else setShowSelector('zodiacs');
                   }}
-                  className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition"
+                  className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
                   aria-label="Change zodiac"
                 >
                   {user?.zodiac?.imageUrl ? (
@@ -625,10 +636,10 @@ export default function FacecardEditor({
                   onClick={() => setShowSelector('interests')}
                   className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                 >
-                  <span className="text-sm opacity-60 tracking-wide">Interests:</span>
+                  <span className="text-sm tracking-wide">Interests:</span>
                   <div className="flex-1 flex justify-end overflow-hidden">
                     {interests.length > 0 ? (
-                      <span key={interestIndex} className="text-sm opacity-90 truncate max-w-[150px] animate-slide-down">
+                      <span key={interestIndex} className="text-sm font-outfit opacity-90 truncate max-w-[150px] animate-slide-down">
                         {interests[interestIndex]}
                       </span>
                     ) : (
@@ -639,7 +650,7 @@ export default function FacecardEditor({
 
                 <button
                   onClick={() => setShowSelector('interests')}
-                  className="w-18 h-18 rounded-2xl border border-white/80 flex items-center justify-center text-3xl transition hover:bg-white/10"
+                  className="w-18 h-18 rounded-2xl border border-white/70  border border-b-[3px] flex items-center justify-center text-3xl transition hover:bg-white/10"
                 >+</button>
               </div>
 
@@ -652,10 +663,10 @@ export default function FacecardEditor({
                   onClick={() => setShowSelector('values')}
                   className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                 >
-                  <span className="text-sm opacity-60 tracking-wide">Causes:</span>
+                  <span className="text-sm  tracking-wide">Causes:</span>
                   <div className="flex-1 flex justify-end overflow-hidden">
                     {causes.length > 0 ? (
-                      <span key={causeIndex} className="text-sm opacity-90 italic truncate max-w-[150px] animate-slide-down">
+                      <span key={causeIndex} className="text-sm opacity-90 font-outfit truncate max-w-[150px] animate-slide-down">
                         {causes[causeIndex]}
                       </span>
                     ) : (
@@ -666,7 +677,7 @@ export default function FacecardEditor({
 
                 <button
                   onClick={() => setShowSelector('values')}
-                  className="w-18 h-18 rounded-2xl border border-white/80 flex items-center justify-center text-3xl transition hover:bg-white/10"
+                  className="w-18 h-18 rounded-2xl border border-b-[3px] border-white/70 flex items-center justify-center text-3xl transition hover:bg-white/10"
                 >+</button>
               </div>
 
@@ -678,14 +689,14 @@ export default function FacecardEditor({
                     <div
                       key={i}
                       onClick={() => setShowSelector('brands')}
-                      className={`relative w-20 h-20 rounded-2xl border border-2 border-b-6 border-white/50 flex items-center justify-center shadow-inner 0  meeting now transition-all hover:scale-105 ${selection ? 'bg-white/10' : 'bg-transparent'}`}
+                      className={`relative w-20 h-20 rounded-full border border-2  border-white/50 flex items-center justify-center shadow-inner 0  meeting now transition-all hover:scale-105 ${selection ? 'bg-white/10' : 'bg-transparent'}`}
                     >
                       {selection && (
                         selection.brand?.logoUrl ? (
                           <img
                             src={selection.brand.logoUrl}
                             alt={selection.brand.name}
-                            className="w-20 h-20 rounded-2xl  object-contain"
+                            className="w-[100%] h-[100%] rounded-full  object-contain"
                           />
                         ) : (
                           <span className="text-white font-bold text-xl">
@@ -733,7 +744,7 @@ export default function FacecardEditor({
   <button
     type="button"
     onClick={() => onOpenFacecardPreview?.()}
-    className="w-5/6 py-4 border-2 border-white/30 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
+    className="w-5/6 py-4 border-2 border-b-4 border-white/40 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
   >
     <span className="text-xl">
       <img src="/eye.svg" alt="" />
@@ -747,6 +758,21 @@ export default function FacecardEditor({
             onClick={() => setShowSelector('music')}
             className="flex-1 flex flex-col items-center gap-6 relative 0  meeting now group"
           >
+
+
+            <div className="absolute -right-16  -translate-y-1/2">
+  <div className="relative w-20 h-20">
+
+    <div className="absolute bottom-10 -left-1 w-16 h-[2px] bg-white/40 -rotate-[25deg] origin-left"></div>
+
+    <div className="absolute  -left-1 w-[2px] top-10 h-12 bg-white/40"></div>
+    
+    <div className="absolute -bottom-5 right-[77px] w-3 h-3 bg-white/40 rounded-full"></div>
+  </div>
+</div>
+
+
+            
             <div className="relative w-32 sm:w-36 md:w-44 aspect-square">
               <div className={`absolute inset-0 rounded-full border-[3px] border-white/20 ${user?.musicPreference ? 'animate-spin-slow' : ''}`}></div>
               <div className={`absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow bg-black' : ''}`}>
@@ -772,8 +798,8 @@ export default function FacecardEditor({
                 <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60" />
                 <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60" />
 
-                <p className="text-sm font-medium">{user?.musicPreference?.name || user?.musicPreference?.songName || 'Select Song'}</p>
-                <p className="text-xs opacity-60">{user?.musicPreference?.artist || user?.musicPreference?.artistName || 'Spotify'}</p>
+                <p className="text-sm  text-start font-outfit">{user?.musicPreference?.name || user?.musicPreference?.songName || 'Select Song'}</p>
+                <p className="text-xs  font-outfit">{user?.musicPreference?.artist || user?.musicPreference?.artistName || 'Spotify'}</p>
               </div>
             </div>
 
@@ -781,6 +807,11 @@ export default function FacecardEditor({
               {[...Array(36)].map((_, i) => <div key={i} className="w-1 h-1 bg-white rounded-full"></div>)}
             </div>
           </div>
+
+
+
+
+          
         </div>
       </div>
 </div>

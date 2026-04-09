@@ -17,6 +17,7 @@ import BroadcastHud from '@/components/VideoChat/BroadcastHud';
 import WaitlistModal from '@/components/VideoChat/WaitlistModal';
 import RandomnessModal from '@/components/VideoChat/RandomnessModal';
 import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
+import QuickActions from '@/components/video-chat/QuickActions';
 
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
@@ -1784,8 +1785,7 @@ function VideoChatContent() {
 
   return (
     <div className={clsx('h-screen', 'w-screen', 'bg-black', 'flex', 'overflow-hidden', 'font-sans')}>
-      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'gap-2')}>
-        
+      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'gap-2', 'relative')}>
         {/* Layout Engine */}
         {remoteStreams.length === 0 ? (
           /* Landing/Loading state: Full peer section placeholder and local */
@@ -1798,7 +1798,7 @@ function VideoChatContent() {
             </div>
             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
               {!showChatInput && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                   <button
                     type="button"
                     onClick={() => setIsCoinModalOpen(true)}
@@ -1867,7 +1867,7 @@ function VideoChatContent() {
             />
              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
                {!showChatInput && (
-<div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden md:flex">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                    <button
                      type="button"
                      onClick={() => setIsCoinModalOpen(true)}
@@ -1948,7 +1948,7 @@ function VideoChatContent() {
               />
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
                 {!showChatInput && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                     <button
                       type="button"
                       onClick={() => setIsCoinModalOpen(true)}
@@ -2039,7 +2039,7 @@ function VideoChatContent() {
             <div className={clsx('relative', 'min-h-0', 'min-w-0', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
               {/* Tile-attached nav + coins */}
               {!showChatInput && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                   <button
                     type="button"
                     onClick={() => setIsCoinModalOpen(true)}
@@ -2094,20 +2094,15 @@ function VideoChatContent() {
             </div>
           </div>
         )}
-
+ 
         {/* Icebreaker: any participant. Dice / host-only randomness (pull stranger, Beamcast) per streaming-service. */}
-        {!showChatInput && (
-          <>
-            {callRoles.isLocalHost && (
-              <button type="button" onClick={toggleRandomness} className="absolute md:bottom-8 bottom-96 bg-black/60 left-8 text-2xl w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ">
-                <img src="/dice.png" alt="Dice" className="w-8 h-8 object-contain" />
-              </button>
-            )}
-            <button type="button" onClick={handleIcebreaker} className={`absolute md:bottom-8 bottom-96 bg-black/60 md:left-[670px] left-[300px]  w-14 h-14 rounded-full flex items-center justify-center border border-white/10 hover:bg-black/80 transition-all z-40 ${callRoles.isLocalHost ? '' : 'left-8 right-auto'}`}>
-              <img src="/icecream.png" alt="Ice" className="w-8 h-8 object-contain" />
-            </button>
-          </>
-        )}
+        {/* Quick Actions (Dice & Icebreaker) */}
+        <QuickActions 
+          showChatInput={showChatInput}
+          callRoles={callRoles}
+          toggleRandomness={toggleRandomness}
+          handleIcebreaker={handleIcebreaker}
+        />
 
         {/* In-call nav moved onto local tile */}
 

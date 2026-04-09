@@ -4,6 +4,7 @@ module.exports = {
         "./app/**/*.{js,ts,jsx,tsx,mdx}",
         "./components/**/*.{js,ts,jsx,tsx,mdx}",
     ],
+
     theme: {
         extend: {
             colors: {
@@ -21,27 +22,38 @@ module.exports = {
                     500: '#F59E0B',
                 },
             },
+
+            // ✅ Fonts (fixed + fallback)
+            fontFamily: {
+                outfit: ['var(--font-outfit)'],
+                otomanopee: ['var(--font-otomanopee)'],
+            },
             backgroundImage: {
                 'gradient-primary': 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)',
                 'gradient-gold': 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)',
-                'gradient-purple-dark': 'linear-gradient(135deg, rgba(78, 0, 147, 1) 0%, rgba(88, 28, 135, 0.95) 50%, rgba(78, 0, 147, 1) 100%)',
-                'gradient-purple-right': 'linear-gradient(135deg, rgba(58, 12, 163, 0.95) 0%, rgba(88, 28, 135, 0.9) 100%)',
+                'gradient-purple-dark':
+                    'linear-gradient(135deg, rgba(78,0,147,1) 0%, rgba(88,28,135,0.95) 50%, rgba(78,0,147,1) 100%)',
+                'gradient-purple-right':
+                    'linear-gradient(135deg, rgba(58,12,163,0.95) 0%, rgba(88,28,135,0.9) 100%)',
             },
+
             backdropBlur: {
                 xs: '2px',
             },
+
             animation: {
-                'twinkle': 'twinkle linear infinite',
-                'float': 'float 6s ease-in-out infinite',
+                twinkle: 'twinkle linear infinite',
+                float: 'float 6s ease-in-out infinite',
                 'pattern-float': 'patternFloat 20s linear infinite',
-                'shake': 'shake 0.4s ease',
+                shake: 'shake 0.4s ease',
                 'fade-in': 'fadeIn 0.3s ease-out',
                 'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 'zoom-slow': 'zoomSlow 20s ease-in-out infinite',
                 'grid-drift': 'gridDrift 20s linear infinite',
-                "spin-slow": "spin 6s linear infinite",
+                'spin-slow': 'spin 6s linear infinite',
                 'bounce-slow': 'bounceSlow 3s ease-in-out infinite',
             },
+
             keyframes: {
                 gridDrift: {
                     '0%': { backgroundPosition: '0 0' },
@@ -73,8 +85,14 @@ module.exports = {
                     to: { opacity: '1' },
                 },
                 slideUp: {
-                    from: { opacity: '0', transform: 'translateY(40px) scale(0.95)' },
-                    to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+                    from: {
+                        opacity: '0',
+                        transform: 'translateY(40px) scale(0.95)',
+                    },
+                    to: {
+                        opacity: '1',
+                        transform: 'translateY(0) scale(1)',
+                    },
                 },
                 zoomSlow: {
                     '0%, 100%': { transform: 'scale(1)' },
@@ -83,5 +101,6 @@ module.exports = {
             },
         },
     },
+
     plugins: [],
 };

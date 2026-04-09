@@ -1043,7 +1043,7 @@ export default function Inbox() {
   };
 
   return (
-    <div className={clsx('h-screen', 'w-full', 'relative', 'text-white', 'font-sans', 'overflow-hidden')}>
+    <div className={clsx('fixed', 'inset-0', 'h-[100dvh]', 'w-full', 'text-white', 'font-sans', 'overflow-hidden')}>
       <div
         className={clsx('absolute', 'inset-0', '-z-50')}
         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundRepeat: "repeat", backgroundSize: "auto" }}

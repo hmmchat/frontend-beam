@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -9,7 +9,7 @@ import {
   IoVideocamOff
 } from 'react-icons/io5';
 import { IoIosArrowBack } from "react-icons/io";
-import { getZodiac, calculateAge } from '@/lib/facecard-utils';
+import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 
 import { IoIosArrowForward } from "react-icons/io";
 function brandLogoUrl(entry) {
@@ -39,11 +39,12 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard = ({ user }) => {
+const FaceCard = ({ user, hideArrows, currentIndex, onIndexChange }) => {
+  const [internalIndex, setInternalIndex] = useState(0);
+
   if (!user) return null;
 
   const age = user.age ?? calculateAge(user.dateOfBirth);
-  const zodiac = getZodiac(user.dateOfBirth);
   const city = user.city || user.preferredCity || 'Unknown';
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
@@ -63,17 +64,38 @@ const FaceCard = ({ user }) => {
   // Default to ON unless explicitly false.
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
 
+  // Combine all photos
+  const allPhotos = getFacecardPhotos(user);
+  
+  const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
+
+  console.log('FaceCard Debug:', {
+    username: user.username,
+    photosCount: allPhotos.length,
+    activeIndex,
+    allPhotos
+  });
+
+  const handlePrev = (e) => {
+    e?.stopPropagation();
+    const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
+    console.log('FaceCard handlePrev:', { activeIndex, newIdx, allPhotosCount: allPhotos.length });
+    if (onIndexChange) onIndexChange(newIdx);
+    else setInternalIndex(newIdx);
+  };
+
+  const handleNext = (e) => {
+    e?.stopPropagation();
+    const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
+    console.log('FaceCard handleNext:', { activeIndex, newIdx, allPhotosCount: allPhotos.length });
+    if (onIndexChange) onIndexChange(newIdx);
+    else setInternalIndex(newIdx);
+  };
+
   return ( 
     <>
-<div className="w-[85vw] aspect-[360/670] max-w-[360px] 
-                sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[350/660] shrink-0 rounded-[30px] 
-                border border-white/40 p-[2px]
-                md:border-0 md:p-0">
 
-
-
-<div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+    <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
           <div>
             <h1 className="text-[18px] font-semibold text-[#FFB800]">
               {user.username || 'User'}{' '}
@@ -112,6 +134,15 @@ const FaceCard = ({ user }) => {
             </button>
           </div>
         </div>
+
+<div className="w-[85vw] aspect-[360/670] max-w-[360px] 
+                sm:w-[340px] md:w-[320px] lg:w-[360px] 
+                md:aspect-[350/660] shrink-0 rounded-[30px] 
+                border border-white/40 p-[2px]
+                md:border-0 md:p-0">
+
+
+
 
                   
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
@@ -203,12 +234,12 @@ const FaceCard = ({ user }) => {
                     className="h-8 w-10 object-contain"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
-                    <span className="text-[20px] leading-none text-white/30">{zodiac.symbol || '?'}</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20">
+                    <span className="text-[20px] leading-none text-white/30">+</span>
                   </div>
                 )}
                 <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                  {user?.dateOfBirth ? (user?.zodiac?.name || zodiac.name) : 'Vacant'}
+                  {user?.zodiac?.name || 'Vacant'}
                 </span>
               </div>
 
@@ -236,7 +267,7 @@ const FaceCard = ({ user }) => {
             {/* RIGHT IMAGE */}
             <div className="flex-1 h-full overflow-hidden rounded-[18px]">
               <img
-                src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
+                src={allPhotos[activeIndex]}
                 className="h-full w-full object-cover"
                 alt=""
               />
@@ -247,9 +278,18 @@ const FaceCard = ({ user }) => {
 
           {/* Pagination */}
           <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
-            <div className="h-1 w-6 rounded-full bg-white" />
-            <div className="h-1 w-2 rounded-full bg-white/35" />
-            <div className="h-1 w-2 rounded-full bg-white/35" />
+            {allPhotos.map((_, idx) => (
+              <div 
+                key={idx}
+                className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-6 bg-white' : 'w-2 bg-white/35'}`} 
+              />
+            ))}
+            {allPhotos.length === 1 && (
+              <>
+                <div className="h-1 w-2 rounded-full bg-white/35" />
+                <div className="h-1 w-2 rounded-full bg-white/35" />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -259,19 +299,27 @@ const FaceCard = ({ user }) => {
    
 
 
-   <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
-  
-  {/* Left Button */}
-  <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white ">
-<IoIosArrowBack />
-  </button>
+   {!hideArrows && (
+     <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
+    
+       {/* Left Button */}
+       <button 
+        onClick={handlePrev}
+        className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
+       >
+         <IoIosArrowBack />
+       </button>
 
-  {/* Right Button */}
-  <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white ">
-<IoIosArrowForward />
-  </button>
+       {/* Right Button */}
+       <button 
+        onClick={handleNext}
+        className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+       >
+         <IoIosArrowForward />
+       </button>
 
-</div>
+     </div>
+   )}
 </>
 
   );

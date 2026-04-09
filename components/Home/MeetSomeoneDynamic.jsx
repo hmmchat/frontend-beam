@@ -14,12 +14,14 @@ import FaceCard from './FaceCard';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
 import LocationCard from './LocationCard';
+import { getFacecardPhotos } from '@/lib/facecard-utils';
 
 import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import Link from 'next/link';
 import Skeleton from '@/components/ui/Skeleton';
+import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
 
 
 
@@ -56,6 +58,7 @@ export default function MeetSomeoneDynamic() {
   const [matchedRoom, setMatchedRoom] = useState(null);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -298,7 +301,14 @@ export default function MeetSomeoneDynamic() {
       // GET /discovery/card uses Bearer JWT — no userId in query params
       const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       console.log('Got Card:', data);
-      setCurrentCard(data.card);
+      setCurrentCard(prev => {
+        const nextId = data?.card?.userId || data?.card?._id || data?.card?.id;
+        const prevId = prev?.userId || prev?._id || prev?.id;
+        if (nextId === prevId && prevId) {
+          return { ...prev, ...data.card };
+        }
+        return data?.card || null;
+      });
       setSessionId(data.sessionId || currentSid || Date.now().toString());
 
     } catch (error) {
@@ -326,7 +336,16 @@ export default function MeetSomeoneDynamic() {
       if (data?.card) {
         setIsSearching(true);
       }
-      setCurrentCard(data?.card || null);
+      setCurrentCard(prev => {
+        const nextId = data?.card?.userId || data?.card?._id || data?.card?.id;
+        const prevId = prev?.userId || prev?._id || prev?.id;
+        if (nextId === prevId && prevId) {
+          // Preserve existing full profile fields (like zodiac, photos) 
+          // when discovery polling returns minimal same-user data.
+          return { ...prev, ...data.card };
+        }
+        return data?.card || null;
+      });
       setSessionId(data?.sessionId || currentSid || Date.now().toString());
       flowLog('fetchCardSilently_done', {
         hasCard: Boolean(data?.card),
@@ -340,6 +359,71 @@ export default function MeetSomeoneDynamic() {
       setTimeout(() => setIsResumeLoading(false), 500);
     }
   };
+
+  const [isDiscoveryUserFetching, setIsDiscoveryUserFetching] = useState(false);
+
+  useEffect(() => {
+    // Only reset index when the user actually changes to a different person
+    const cardId = currentCard?.userId || currentCard?._id || currentCard?.id;
+    if (cardId) {
+      setCurrentImageIndex(0);
+
+      // Skip full profile fetch if we already have the critical data (photos, zodiac)
+      const needsFullProfile = (!currentCard.photos || currentCard.photos.length === 0) && !currentCard.zodiac;
+      if (needsFullProfile && currentCard.type !== 'LOCATION' && !currentCard.isLocationCard) {
+        const fetchFullCardProfile = async () => {
+          try {
+            setIsDiscoveryUserFetching(true);
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(API.USERS.GET_USER(cardId), {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data?.user) {
+                // Merge full profile data into current card (especially photos)
+                setCurrentCard(prev => {
+                  // Only update if it's still the same user
+                  const currentId = prev?.userId || prev?._id || prev?.id;
+                  if (currentId === cardId) {
+                    return { ...prev, ...data.user };
+                  }
+                  return prev;
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch full discovery profile:', err);
+          } finally {
+            setIsDiscoveryUserFetching(false);
+          }
+        };
+        fetchFullCardProfile();
+      }
+    }
+  }, [currentCard?.userId, currentCard?._id, currentCard?.id]);
+
+  const allPhotos = getFacecardPhotos(currentCard);
+
+  const handleNextImage = (e) => {
+    e?.stopPropagation();
+    if (!allPhotos.length) return;
+    console.log('MeetSomeoneDynamic handleNextImage:', { currentIndex: currentImageIndex, allPhotosCount: allPhotos.length });
+    setCurrentImageIndex((prev) => (prev + 1) % allPhotos.length);
+  };
+
+  const handlePrevImage = (e) => {
+    e?.stopPropagation();
+    if (!allPhotos.length) return;
+    console.log('MeetSomeoneDynamic handlePrevImage:', { currentIndex: currentImageIndex, allPhotosCount: allPhotos.length });
+    setCurrentImageIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+  };
+   console.log('MeetSomeoneDynamic Debug (currentCard photos):', {
+    username: currentCard?.username,
+    photosCount: allPhotos?.length,
+    currentImageIndex,
+    allPhotos
+  });
 
   useEffect(() => {
     // Do not reset discovery state on first render.
@@ -740,6 +824,9 @@ export default function MeetSomeoneDynamic() {
       backgroundSize: 'cover',
     }}
   />
+
+  {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
+  <div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[40px] pointer-events-none z-30" />
         
           {isSearching ? (
             <div
@@ -782,69 +869,48 @@ export default function MeetSomeoneDynamic() {
                     'py-0'
                   )}
                 >
-                  <div className="relative flex w-full max-w-[420px] flex-col items-center justify-center gap-2 px-2">
-                    {/* Face card + raincheck/accept must stay together as a single unit */}
-                    <div className="flex w-full flex-col items-center gap-2">
-                      <FaceCard user={currentCard} />
+                  <div className="flex w-full flex-col items-center gap-2 
+                max-h-[80vh] justify-center
+                [@media(max-height:800px)]:scale-[0.9]
+                [@media(max-height:700px)]:scale-[0.8]">
 
-                      {/* BUTTONS */}
-                      <div className="flex w-full max-w-[370px] shrink-0 items-center justify-between gap-2 px-1">
+  <FaceCard 
+    user={currentCard} 
+    hideArrows={true} 
+    currentIndex={currentImageIndex}
+    onIndexChange={setCurrentImageIndex}
+  />
 
-                        {/* LEFT ARROW */}
-                        <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white text-sm">
-                          ←
-                        </button>
+  {/* BUTTONS */}
+  <div className="flex w-full items-center justify-between gap-3 px-2 mt-4 md:mt-6">
 
-                        {/* RAINCHECK */}
-                        <button
-                          onClick={handleRaincheck}
-                          className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
-                        >
-                          Raincheck!
-                        </button>
+    <button onClick={handlePrevImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
+      <IoIosArrowBack />
+    </button>
 
-                        {/* MEET (accept) */}
-                        <button
-                          onClick={handleProceed}
-                          className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
-                        >
-                          Meet rn
-                        </button>
+    <div className="flex flex-1 items-center gap-3">
+      <button onClick={handleRaincheck} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
+        Raincheck!
+      </button>
 
-                        {/* RIGHT ARROW */}
-                        <button className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center text-white text-xs">
-                          →
-                        </button>
+      <button onClick={handleProceed} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
+        Meet rn
+      </button>
+    </div>
 
-                      </div>
-                    </div>
+    <button onClick={handleNextImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
+      <IoIosArrowForward />
+    </button>
 
-                    {/* STATUS MESSAGE SLOT (always reserved height; never shifts face card/buttons) */}
-                    <div className="mt-1 w-full max-w-[370px] h-[52px]">
-                      <div
-                        className={clsx(
-                          'flex h-full w-full items-center justify-center overflow-hidden rounded-xl border px-4 text-[10px] text-center font-semibold leading-tight transition-opacity',
-                          waitingForMatch || (currentCard?.otherUserAccepted && !waitingForMatch)
-                            ? 'border-yellow-300/40 bg-yellow-300/10 text-yellow-100 opacity-100'
-                            : 'border-transparent bg-transparent text-transparent opacity-0 pointer-events-none select-none'
-                        )}
-                        style={{ lineHeight: 1.1 }}
-                      >
-                        <span className="px-1">
-                          {waitingForMatch
-                            ? `Request sent to ${waitingMatchedUser?.username || 'them'}. Waiting for acceptance...`
-                            : `${currentCard?.username || 'Your match'} accepted your match. Tap “Meet rn” to join now.`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+  </div>
+</div>
                 </div>
               )}
 
                 </div>
           ) : (
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-              <div className={clsx('border-2', 'border-white/40', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
+              <div className={clsx( 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
                 <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
                   <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
                   <p className={clsx('text-white', 'text-2xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>
@@ -884,7 +950,7 @@ export default function MeetSomeoneDynamic() {
 
 
           {/* Coins pill (restore original placement) */}
-          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-8', 'z-50', isSearching && 'hidden md:flex')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-8', 'z-50', isSearching && 'hidden')}>
             <button className=' inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-full text-base font-semibold border border-b-4 border-white/50 transition-all duration-300 ease-out relative overflow-hidden' onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
@@ -893,7 +959,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-12', 'py-1', isSearching && 'hidden md:flex')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-12', 'py-1', isSearching && 'hidden')}>
             <button 
               onClick={() => {
                 if (isSearching) {
@@ -956,7 +1022,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-11', 'right-8', 'z-50', 'flex', 'gap-2', isSearching && 'hidden md:flex')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-11', 'right-8', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
   <Link href="/beam-tv">
   <button className="h-12 w-12 rounded-full p-2 border-2 border-white/60 shadow-md transition-all duration-200 items-center justify-center flex">
@@ -1083,9 +1149,8 @@ export default function MeetSomeoneDynamic() {
                               backgroundRepeat: 'no-repeat'
                             }}
                           >
-                            {!isFaceCardState && (
-                              <div className="absolute inset-2 border border-white/40 rounded-[2rem] pointer-events-none z-30" />
-                            )}
+                            {/* 🔲 HUD BORDER FRAME (Mobile Top/Full) */}
+                            <div className="absolute inset-2 border border-white/40 rounded-[2rem] pointer-events-none z-30" />
 
                             <div className={clsx(
                                 "origin-center transition-transform duration-500",
@@ -1106,25 +1171,43 @@ export default function MeetSomeoneDynamic() {
                                 />
                               ) : (
                                 <div className="relative group/card cursor-grab active:cursor-grabbing">
-                                  <FaceCard user={currentCard} />
+                                  <FaceCard 
+                                    user={currentCard} 
+                                    hideArrows={true} 
+                                    currentIndex={currentImageIndex}
+                                    onIndexChange={setCurrentImageIndex}
+                                  />
 
-                                  <div className="flex gap-2 mt-4 items-center justify-center gap-10 ">
-                                                        <button
-                          onClick={handleRaincheck}
-                          className="px-4 py-2 rounded-full border border-white/30 text-white text-sm whitespace-nowrap"
-                        >
-                          Raincheck!
-                        </button>
+                                  <div className="flex gap-2 mt-4 items-center justify-center gap-6 ">
+                                    <button
+                                      onClick={handlePrevImage}
+                                      className="relative z-[110] w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-75 cursor-pointer backdrop-blur-sm"
+                                    >
+                                      ←
+                                    </button>
 
-                        {/* MEET (accept) */}
-                        <button
-                          onClick={handleProceed}
-                          className="px-3 py-1.5 rounded-full border border-white/30 text-white text-xs whitespace-nowrap"
-                        >
-                          Meet rn
-                        </button>
-</div>
+                                    <button
+                                      onClick={handleRaincheck}
+                                      className="px-4 py-2 rounded-full border border-white/30 text-white text-xs whitespace-nowrap hover:bg-white/10 transition active:scale-95"
+                                    >
+                                      Raincheck!
+                                    </button>
 
+                                    {/* MEET (accept) */}
+                                    <button
+                                      onClick={handleProceed}
+                                      className="px-4 py-2 rounded-full border border-white/30 text-white text-xs whitespace-nowrap hover:bg-white/10 transition active:scale-95"
+                                    >
+                                      Meet rn
+                                    </button>
+
+                                    <button
+                                      onClick={handleNextImage}
+                                      className="relative z-[110] w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-75 cursor-pointer backdrop-blur-sm"
+                                    >
+                                      →
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1177,7 +1260,7 @@ export default function MeetSomeoneDynamic() {
                    </div>
                 )}
                 <div className="absolute inset-0 bg-black/30" />
-                <div className="absolute inset-4 border border-white/20 rounded-[40px] pointer-events-none" />
+                <div className="absolute inset-4 border border-white/40 rounded-[40px] pointer-events-none" />
               </div>
 
               {/* Squad UI overlay */}

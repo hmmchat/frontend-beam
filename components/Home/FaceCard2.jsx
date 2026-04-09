@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -9,7 +9,7 @@ import {
   IoVideocamOff
 } from 'react-icons/io5';
 import { IoIosArrowBack } from "react-icons/io";
-import { getZodiac, calculateAge } from '@/lib/facecard-utils';
+import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 
 import { IoIosArrowForward } from "react-icons/io";
 function brandLogoUrl(entry) {
@@ -39,11 +39,12 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard2 = ({ user }) => {
+const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
+  const [internalIndex, setInternalIndex] = useState(0);
+
   if (!user) return null;
 
   const age = user.age ?? calculateAge(user.dateOfBirth);
-  const zodiac = getZodiac(user.dateOfBirth);
   const city = user.city || user.preferredCity || 'Unknown';
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
@@ -62,6 +63,25 @@ const FaceCard2 = ({ user }) => {
     rawStatus === 'BROADCAST';
   // Default to ON unless explicitly false.
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
+
+  // Combine all photos
+  const allPhotos = getFacecardPhotos(user);
+  
+  const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
+
+  const handlePrev = (e) => {
+    e?.stopPropagation();
+    const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
+    if (onIndexChange) onIndexChange(newIdx);
+    else setInternalIndex(newIdx);
+  };
+
+  const handleNext = (e) => {
+    e?.stopPropagation();
+    const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
+    if (onIndexChange) onIndexChange(newIdx);
+    else setInternalIndex(newIdx);
+  };
 
   return ( 
     <>
@@ -204,11 +224,11 @@ const FaceCard2 = ({ user }) => {
                   />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/85 border border-white/20">
-                    <span className="text-[20px] leading-none text-white/30">{zodiac.symbol || '?'}</span>
+                    <span className="text-[20px] leading-none text-white/30">+</span>
                   </div>
                 )}
                 <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                  {user?.dateOfBirth ? (user?.zodiac?.name || zodiac.name) : 'Vacant'}
+                  {user?.zodiac?.name || 'Vacant'}
                 </span>
               </div>
 
@@ -236,7 +256,7 @@ const FaceCard2 = ({ user }) => {
             {/* RIGHT IMAGE */}
             <div className="flex-1 h-full overflow-hidden rounded-[18px]">
               <img
-                src={user.displayPictureUrl || '/assets/placeholder-user.jpg'}
+                src={allPhotos[activeIndex]}
                 className="h-full w-full object-cover"
                 alt=""
               />
@@ -247,9 +267,18 @@ const FaceCard2 = ({ user }) => {
 
           {/* Pagination */}
           <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
-            <div className="h-1 w-6 rounded-full bg-white" />
-            <div className="h-1 w-2 rounded-full bg-white/35" />
-            <div className="h-1 w-2 rounded-full bg-white/35" />
+            {allPhotos.map((_, idx) => (
+              <div 
+                key={idx}
+                className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-6 bg-white' : 'w-2 bg-white/35'}`} 
+              />
+            ))}
+            {allPhotos.length === 1 && (
+              <>
+                <div className="h-1 w-2 rounded-full bg-white/35" />
+                <div className="h-1 w-2 rounded-full bg-white/35" />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -262,12 +291,18 @@ const FaceCard2 = ({ user }) => {
    <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
   
   {/* Left Button */}
-  <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white ">
+  <button 
+    onClick={handlePrev}
+    className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
+  >
 <IoIosArrowBack />
   </button>
 
   {/* Right Button */}
-  <button className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white ">
+  <button 
+    onClick={handleNext}
+    className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+  >
 <IoIosArrowForward />
   </button>
 

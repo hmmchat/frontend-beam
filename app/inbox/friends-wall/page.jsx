@@ -84,7 +84,7 @@ export default function FriendWall() {
   };
 
   return (
-    <div className="h-screen w-full relative text-white font-sans overflow-hidden">
+    <div className="fixed inset-0 h-[100dvh] w-full text-white font-sans overflow-hidden">
       {/* Background */}
       <div
         className="absolute inset-0 -z-50"

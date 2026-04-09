@@ -401,7 +401,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
 
 
-            <div className=" pt-8 lg:px-0">
+            <div className=" pt-8 lg:px-0 font-outfit">
               <label className="flex items-center gap-6 0  meeting now max-w-[450px]">
                 <input
                   type="checkbox"

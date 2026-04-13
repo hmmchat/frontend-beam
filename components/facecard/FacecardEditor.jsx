@@ -760,37 +760,46 @@ export default function FacecardEditor({
           >
 
 
-            <div className="absolute -right-16  -translate-y-1/2">
-  <div className="relative w-20 h-20">
-
-    <div className="absolute bottom-10 -left-1 w-16 h-[2px] bg-white/40 -rotate-[25deg] origin-left"></div>
-
-    <div className="absolute  -left-1 w-[2px] top-10 h-12 bg-white/40"></div>
-    
-    <div className="absolute -bottom-5 right-[77px] w-3 h-3 bg-white/40 rounded-full"></div>
-  </div>
-</div>
-
+            {user?.musicPreference ? (
+              <div className="absolute -right-16  z-20 -translate-y-1/2">
+                <div className="relative w-20 h-20">
+                  <div className="absolute bottom-10 -left-2 w-16 h-[2px] bg-white/40  origin-left"></div>
+                  <div className="absolute  -left-13  rotate-45 w-[2px] h-32 z-10  bg-white/40 mt-5"></div>
+                  <div className="absolute -bottom-14 right-[10.8rem] w-3 h-3 bg-white/40 rounded-full"></div>
+                </div>
+              </div>
+            ) : (
+              <div className="absolute -right-16  -translate-y-1/2">
+                <div className="relative w-20 h-20">
+                  <div className="absolute bottom-10 -left-1 w-16 h-[2px] bg-white/40 -rotate-[25deg] origin-left"></div>
+                  <div className="absolute  -left-1 w-[2px] top-10 h-12 bg-white/40"></div>
+                  <div className="absolute -bottom-5 right-[77px] w-3 h-3 bg-white/40 rounded-full"></div>
+                </div>
+              </div>
+            )}
 
             
-            <div className="relative w-32 sm:w-36 md:w-44 aspect-square">
-              <div className={`absolute inset-0 rounded-full border-[3px] border-white/20 ${user?.musicPreference ? 'animate-spin-slow' : ''}`}></div>
-              <div className={`absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl flex items-center justify-center ${user?.musicPreference ? 'animate-spin-slow bg-black' : ''}`}>
-                {user?.musicPreference?.albumArtUrl ? (
-                  <img
-                    src={user.musicPreference.albumArtUrl}
-                    className="w-full h-full object-cover rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
-                    alt="Album Art"
-                  />
-                ) : (
-                  <span className="text-6xl opacity-20 text-white">+</span>
-                )}
-              </div>
-              <div className="absolute inset-[4.5rem] bg-black/40 rounded-full border border-white/20 z-10 flex items-center justify-center shadow-inner backdrop-blur-md">
-                <div className="w-4 h-4 rounded-full bg-white/20 border border-white/40"></div>
-              </div>
-            </div>
+           <div className="relative w-32 sm:w-36 md:w-44 aspect-square flex items-center justify-center">
 
+  <div className="absolute inset-0 rounded-full border-[3px] border-white/20" />
+
+  <div className="absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-black animate-spin-slow flex items-center justify-center">
+    {user?.musicPreference?.albumArtUrl ? (
+      <img
+        src={user.musicPreference.albumArtUrl}
+        className="w-full h-full object-cover rounded-full"
+        alt="Album Art"
+      />
+    ) : (
+      <span className="text-6xl opacity-20 text-white">+</span>
+    )}
+  </div>
+
+  <div className="absolute w-6 h-6 rounded-full bg-black border border-white/20 flex items-center justify-center z-10">
+    <div className="w-2 h-2 rounded-full bg-white/40"></div>
+  </div>
+
+</div>
             <div className="relative w-full py-6 flex justify-center">
               <div className="relative px-16 py-4 text-center text-white">
                 <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60" />

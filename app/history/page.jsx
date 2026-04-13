@@ -9,6 +9,7 @@ import { IoMdInformationCircleOutline } from "react-icons/io";
 import { API, apiRequest } from "@/lib/api";
 import ProfileGuard from "@/components/auth/ProfileGuard";
 import HistorySkeleton from "@/components/history/HistorySkeleton";
+import { MdOutlineLocationOn } from "react-icons/md";
 
 export default function History() {
   return (
@@ -105,7 +106,7 @@ function HistoryContent() {
       />
 
       {/* Page Container */}
-      <div className="h-full flex flex-col px-4 md:px-16 py-10 max-w-6xl mx-auto">
+      <div className="h-full flex flex-col px-4 md:px-16 md:py-10 py-6 max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 justify-between">
@@ -125,11 +126,11 @@ function HistoryContent() {
         </div>
 
         {/* Main Card */}
-        <div className="flex-1 rounded-[40px] md:p-6 overflow-hidden 
-                        md:ring-2 md:ring-white/40 
-                        md:ring-offset-2 md:ring-offset-purple-900/80">
+        <div className="flex-1 rounded-[60px] md:p-6 overflow-hidden 
+                        md:ring md:ring-white/40  
+                        ">
 
-          <div className="h-full overflow-y-auto space-y-8 pt-3 mt-3">
+          <div className="h-full overflow-y-auto space-y-8 pt-3 mt-3 px-6">
             {loading ? (
               <HistorySkeleton />
             ) : calls.length === 0 ? (
@@ -138,7 +139,7 @@ function HistoryContent() {
               calls.map((call, gi) => (
                 <div
                   key={call.sessionId}
-                  className="border border-white/30 rounded-[36px] md:p-4 p-2 space-y-4"
+                  className="border border-white/40 rounded-[32px] md:p-4 p-2 space-y-4"
                 >
                   {/* Call-level activity summary (priority-ish events) */}
                   {timelinesBySessionId[call.sessionId] ? (
@@ -174,11 +175,7 @@ function HistoryContent() {
                         <div className="flex flex-col gap-2">
                           
 
-                          {joinOrder && (
-                            <div className="text-xs text-white/70 px-4">
-                              Join order: <span className="text-white">{joinOrder}</span>
-                            </div>
-                          )}
+                         
                         </div>
                       );
                     })()
@@ -191,7 +188,7 @@ function HistoryContent() {
                     .map((participant, i) => (
                       <div
                         key={participant.userId}
-                        className="border border-white/30 rounded-3xl p-5 space-y-4"
+                        className="border border-white/40 rounded-[26px] p-5 space-y-4"
                       >
                         {/* Top row: Squad + Date */}
                         <div className="flex items-center gap-3">
@@ -206,15 +203,15 @@ function HistoryContent() {
                             </p>
                           )}
 
-                          <span className="text-xs text-white/70">
+                          <span className="text-xs font-outfit text-white/90">
                             {formatDate(call.startedAt)}
                           </span>
 
-                          <IoMdInformationCircleOutline className="text-lg ml-auto 0  meeting now opacity-70 hover:opacity-100" />
+                          <img src="/history/infoicon.svg" alt="info" className="w-6 h-6 ml-auto" />
                         </div>
 
                         {/* HR always */}
-                        <hr className="border-white/30" />
+                        <hr className="border-white/40" />
 
                         {/* Card content */}
                         <div className="flex items-center justify-between">
@@ -236,9 +233,9 @@ function HistoryContent() {
                             </button>
 
                             <div className="space-y-1">
-                              <div className="font-medium">{participant.username || "Stranger"}</div>
-                              <div className="text-sm text-white/70">📍 {participant.location || "Somewhere"}</div>
-                              <div className="flex items-center gap-2 text-sm text-white/80">
+                              <div className="md:text-[16px] text-[12px]">👦 {participant.username || "Stranger"}</div>
+                              <div className="md:text-[16px] text-[11px] font-outfit text-white/80 flex items-center gap-1"> <MdOutlineLocationOn /> {participant.location || "Somewhere"}</div>
+                              <div className="flex items-center gap-2 md:text-sm text-[11px] font-outfit ">
                                 <IoVideocamOutline />
                                 {formatDuration(participant.durationSeconds)}
                               </div>
@@ -249,12 +246,12 @@ function HistoryContent() {
                           <div className="flex items-center gap-4">
                             <button
                               onClick={() => participant.conversationId && router.push(`/inbox?chat=${participant.conversationId}`)}
-                              className="w-10 h-10 border border-white/30 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                              className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
                             >
-                              <FaMessage />
+                              <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
                             </button>
-                            <button className={`w-10 h-10 border border-white/30 rounded-full grid place-items-center hover:bg-white/10 transition-colors ${participant.isFriend ? 'text-red-400 border-red-400/50' : ''}`}>
-                              <FaHeart />
+                            <button className={`w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors ${participant.isFriend ? 'text-red-400 border-red-400/50' : ''}`}>
+                         <img src="/history/heart.svg" alt="heart" className="w-6 h-6" />
                             </button>
                           </div>
                         </div>
@@ -264,6 +261,8 @@ function HistoryContent() {
               ))
             )}
           </div>
+
+          
         </div>
 
 

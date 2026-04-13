@@ -933,6 +933,9 @@ export default function MeetSomeoneDynamic() {
         {/* RIGHT SIDE (DESKTOP) */}
 <div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
+{/* 🔲 HUD BORDER FRAME (Desktop Right) */}
+<div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[40px] pointer-events-none z-30" />
+
 <div
   className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
   style={{
@@ -1038,7 +1041,7 @@ export default function MeetSomeoneDynamic() {
     className="w-10 md:w-12 h-10 md:h-12 rounded-full hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
     title="Intent"
   >
-    <img src="/icones1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
+    <img src="/icons1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
   </button>
 </div>
 
@@ -1093,7 +1096,7 @@ export default function MeetSomeoneDynamic() {
     await fetchCard(null, true);
   }}
   className={clsx(
-    'group relative z-20 mt-60 w-[75%] h-24 border-2 border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl',
+    'group relative z-20 mt-48 w-[75%] h-24 border-2 border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl',
     isSearching
       ? 'bg-yellow-500 text-black border-black animate-pulse'
       : 'bg-black/30 text-white border-white hover:bg-black/40'
@@ -1250,16 +1253,8 @@ export default function MeetSomeoneDynamic() {
 
               {/* Video background for squad mode */}
               <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl border-2 border-white/20">
-                {isSearching ? (
-                   <LocalVideo 
-                     showSoloCheckbox={false}
-                   />
-                ) : (
-                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <img src="/LOGO.png" className="w-32 opacity-20" alt="" />
-                   </div>
-                )}
-                <div className="absolute inset-0 bg-black/30" />
+                
+
                 <div className="absolute inset-4 border border-white/40 rounded-[40px] pointer-events-none" />
               </div>
 
@@ -1345,47 +1340,44 @@ export default function MeetSomeoneDynamic() {
                 </div>
               </div>
 
-              {!isSearching && (
-                <button
-                  onClick={async () => { 
-                    setIsSearching(true);
-                    if (typeof window !== 'undefined') {
-                        const url = new URL(window.location.href);
-                        url.searchParams.set('searching', '1');
-                        window.history.pushState({ searching: true }, '', url.toString());
-                    }
-                    await handleUpdateStatus('AVAILABLE');
-                    await fetchCard(null, false); // Squad mode matching
-                  }}
-                  className={clsx(
-                    'group relative z-20 mt-10 w-4/6 h-20 border border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl bg-black/30 text-white border-white hover:bg-black/40'
-                  )}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 opacity-50" />
-                  <div className="w-11 h-11 rounded-full border border-white flex items-center justify-center group-hover:scale-110 transition-transform z-10">
-                    <IoVideocam className="text-white text-2xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
-                  </div>
-                  <span className="text-white text-xl font-bold tracking-tight z-10">
-                    Meet Someone now
-                  </span>
-                </button>
-              )}
               </div> {/* end squad UI overlay */}
             </div>
           )}
 
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
-          <div className={clsx('absolute', 'px-5', 'bottom-6', 'left-6', 'right-6', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'px-5', 'bottom-10', 'left-6', 'right-6', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
             {/* Beam TV: no icon rendered here (only click target over existing UI) */}
      
             {mode === 'solo' ? (
+
+              <div className='flex gap-2'>
               <div className='border rounded-full  border-b-4 p-1 border-white/40'>
             <Link href="/beam-tv">
   <button className="h-14 w-14 rounded-full p-3   shadow-md transition-all duration-200">
     <img src="/assets/Frame.png" alt="beam-tv" />
   </button>
+
+
+
+
+ 
 </Link>
+
+
+
               </div>
+
+
+
+ <div className='border rounded-full  border-b-4 p-1 border-white/40'>
+            <Link href="/cards">
+  <button className="h-14 w-14 rounded-full p-3   shadow-md transition-all duration-200">
+    <img src="/hugeiconscards.svg" alt="cards" />
+  </button>
+</Link>
+
+    </div>
+        </div>
             ) : (
               <div className={clsx('flex', 'gap-6')}>
                 <img src="/assets/search-icon.svg" alt="" className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-10', 'h-10')} />
@@ -1393,12 +1385,12 @@ export default function MeetSomeoneDynamic() {
               </div>
             )}
 
-            <div className={clsx('w-fit', 'flex', 'gap-2', 'border-white/40', 'border-1', 'rounded-full', 'p-1', 'bg-black/20', 'backdrop-blur-sm')}>
+            <div className={clsx('w-fit', 'flex', 'gap-2', 'border-white/40', 'border-1', 'rounded-full', 'p-1')}>
               <button
                 onClick={() => setMode('solo')}
                 className={`px-6 py-1 rounded-full transition ${
                   mode === 'solo'
-                    ? 'text-white bg-black/40 border-[1.5px] border-white/40'
+                    ? 'text-white bg-black/20 border-[1.5px] border-white/40'
                     : 'text-white hover:bg-white/20'
                 }`}
               >

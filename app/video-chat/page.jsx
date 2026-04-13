@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import FaceCard from '@/components/Home/FaceCard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import CoinModal from '@/components/modals/CoinModal';
+
 import ProfileGuard from '@/components/auth/ProfileGuard';
 
 // Components
@@ -98,6 +99,7 @@ function VideoChatContent() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastHud, setBroadcastHud] = useState({ viewerCount: 0, waitlistCount: 0, lastShareMsg: '', shareOpen: false, shareUrl: '' });
   const [showWaitlist, setShowWaitlist] = useState(false);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [waitlist, setWaitlist] = useState([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
@@ -1735,9 +1737,9 @@ function VideoChatContent() {
     setShowChatInput,
     onChatButtonClick: handleChatButtonClick,
     toggleCam,
-    showLeaveNextButton: status === 'connected',
-    onLeaveOrNext: handleLeaveGroupOrRaincheck,
-    isRainchecking
+    isGiftModalOpen,
+    setIsGiftModalOpen,
+    setIsCoinModalOpen
   };
   const getRemoteFriendTileProps = (streamInfo) => {
     const uid = String(streamInfo.userId ?? '');
@@ -1784,7 +1786,16 @@ function VideoChatContent() {
   };
 
   return (
-    <div className={clsx('h-screen', 'w-screen', 'bg-black', 'flex', 'overflow-hidden', 'font-sans')}>
+    <div className={clsx('h-screen', 'w-screen', 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans')}>
+
+             <div
+                        className="absolute inset-0 z-0 "
+                        style={{
+                            backgroundImage: 'url(/assets/mb.jpg)',
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: 'cover',
+                        }}
+                    />
       <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'gap-2', 'relative')}>
         {/* Layout Engine */}
         {remoteStreams.length === 0 ? (
@@ -1821,35 +1832,11 @@ function VideoChatContent() {
                     <span className="text-lg leading-none -mt-[1px]">+</span>
                   </button>
 
-                  <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md">
-                    <button
-                      type="button"
-                      onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
-                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
-                      title="Messages"
-                    >
-                      <img src="/assets/chat-with-indicator.svg" className="w-6 h-6" alt="" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOverlay({ open: true, url: '/history', title: 'History' })}
-                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition"
-                      title="History"
-                    >
-                      <img src="/assets/history.svg" className="w-6 h-6" alt="" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' })}
-                      className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition overflow-hidden border border-white/10"
-                      title="Profile"
-                    >
-                      <img src="/assets/ico.png" className="w-full h-full object-cover" alt="" />
-                    </button>
-                  </div>
+                 
                 </div>
               )}
-               <LocalVideoSection {...localVideoProps} />
+               <LocalVideoSection {...localVideoProps}  />
+               
             </div>
           </>
         ) : remoteStreams.length === 1 ? (
@@ -1864,8 +1851,11 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
+              showLeaveNextButton={status === 'connected'}
+              onLeaveOrNext={handleLeaveGroupOrRaincheck}
+              isRainchecking={isRainchecking}
             />
-             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
                {!showChatInput && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                    <button
@@ -1934,6 +1924,9 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
+              showLeaveNextButton={status === 'connected'}
+              onLeaveOrNext={handleLeaveGroupOrRaincheck}
+              isRainchecking={isRainchecking}
             />
             <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
               <RemoteVideoTile
@@ -2015,6 +2008,9 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
+              showLeaveNextButton={status === 'connected'}
+              onLeaveOrNext={handleLeaveGroupOrRaincheck}
+              isRainchecking={isRainchecking}
             />
             <RemoteVideoTile
               key={`remote-${remoteStreams[1].userId}`}
@@ -2095,8 +2091,7 @@ function VideoChatContent() {
           </div>
         )}
  
-        {/* Icebreaker: any participant. Dice / host-only randomness (pull stranger, Beamcast) per streaming-service. */}
-        {/* Quick Actions (Dice & Icebreaker) */}
+    
         <QuickActions 
           showChatInput={showChatInput}
           callRoles={callRoles}

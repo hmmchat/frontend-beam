@@ -141,7 +141,7 @@ export default function Onboarding() {
  setSuggestions(
   data.prompts
     ?.map(p => p.text)
-    .slice(0,16) // 👈 yaha control kar number
+    .slice(0,6) // 👈 yaha control kar number
 );
         }
       } catch (err) {
@@ -510,9 +510,9 @@ if (prompt.trim() && accessToken) {
           <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-[3rem] py-10 md:py-16 hidden md:flex ">
             <div className="mx-auto ">
 
-            <h3 className="text-4xl font-bold outfit-font">Welcome onboard,</h3>
-              <p className="md:text-xl text-sm md:mt-3 md:font-medium opacity-95 outfit-font">Okeeyy! Let's get you started,</p>
-              <p className="md:text-xl text-sm md:font-medium opacity-95 outfit-font">Just get done with the itsy bitsy stuff first</p>
+            <h3 className="text-4xl font-bold ">Welcome onboard,</h3>
+              <p className="md:text-lg text-sm md:mt-3  opacity-95 font-outfit">Okeeyy! Let's get you started,</p>
+              <p className="md:text-lg text-sm  opacity-95 font-outfit">Just get done with the itsy bitsy stuff first</p>
             </div>
           </div>
 
@@ -520,7 +520,10 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Right - Form */}
-          <div className="flex flex-col justify-between h-full overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
+
+
+
+          <div className="flex flex-col justify-between items-center justify-center h-full overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
             <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
 
 
@@ -536,7 +539,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<div className="flex flex-col justify-between h-full mt-10">
+<div className="flex flex-col justify-between h-full mt-10 md:mt-0">
 
 
   <div
@@ -568,7 +571,15 @@ if (prompt.trim() && accessToken) {
                       return (
                         <div
                           key={i}
-                          className="relative w-[90px] sm:w-[110px] md:w-32 aspect-[3/4] mdrounded-[1.5rem] rounded-[1rem] md:border-2 md:border-b-4 border border-b-[3px] border-white/40 overflow-hidden 0  meeting now animate-in fade-in zoom-in duration-300"
+className="
+  relative 
+  w-[90px] sm:w-[110px] md:w-32 
+  aspect-[2/3] md:aspect-[3/4] 
+  rounded-[1rem] md:rounded-[1.5rem]
+  border border-b-[3px] md:border-2 md:border-b-4 
+  border-white/40 overflow-hidden 
+  animate-in fade-in zoom-in duration-300
+"
                           onClick={() => fileRefs.current[i]?.click()}
                         >
                           {photos[i] ? (
@@ -603,7 +614,7 @@ if (prompt.trim() && accessToken) {
                       );
                     })}
                   </div>
-                    <p className="text-white/50 text-sm text-center mt-3">
+                    <p className="text-white/50 text-sm text-center font-outfit mt-3">
                     Upload your niceeee pictures
                   </p>
                 </div>
@@ -611,7 +622,7 @@ if (prompt.trim() && accessToken) {
                 {/* 3️⃣ Name input */}
 
 
-                <div className="px-4">
+                <div className="md:px-4 font-outfit">
                   <label className="text-white text-sm mb-1 block">
                     Enter name/ username
                   </label>
@@ -625,7 +636,7 @@ if (prompt.trim() && accessToken) {
                 </div>
 
                 {/* 4️⃣ DOB inputs */}
-                <div className="px-4">
+                <div className="md:px-4 font-outfit">
                   <label className="text-white text-sm mb-1 block">Date of birth</label>
                   <div className="grid grid-cols-3 gap-1">
                     <input
@@ -666,7 +677,7 @@ if (prompt.trim() && accessToken) {
                 </div>
 
                 {/* 5️⃣ Gender identity */}
-                <div className="px-4 ">
+                <div className="md:px-4 font-outfit">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-white text-sm">Gender Identity
                       <br/>  
@@ -724,28 +735,32 @@ if (prompt.trim() && accessToken) {
                 )}
 
                 {/* 6️⃣ Bottom button */}
+
+
+                             <button
+  type="button"
+  disabled={loading}
+  onClick={() => {
+    if (validate()) setStep(2);
+  }}
+  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-5 border border-b-4 border-white/80 rounded-2xl py-3 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
+>
+  Step 2/2: Add Prompt
+</button>
                
               </form>
 
 
 
 
-             <button
-  type="button"
-  disabled={loading}
-  onClick={() => {
-    if (validate()) setStep(2);
-  }}
-  className="w-84 md:w-full flex mx-auto justify-center items-center mt-4 md:mt-5 border border-b-4 border-white/80 rounded-2xl py-3 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
->
-  Step 2/2: Add Prompt
-</button>
+
 </div>
 
 </div>
 
             </div>
           </div>
+
 
 
                         </>
@@ -757,8 +772,8 @@ if (prompt.trim() && accessToken) {
       {/* Left */}
       <div className="flex items-center justify-center text-left border border-white/30 rounded-[3rem] px-12 hidden md:flex h-full]">
         <div>
-          <h2 className="text-4xl font-bold mb-4">Add Prompt</h2>
-          <p className="text-lg opacity-90">
+          <h2 className="text-4xl font-bold mb-4 text-center">Add Prompt</h2>
+          <p className="text-md opacity-90 text-center font-outfit">
             Okeeyy! Let’s get you started,
             <br />
             Just get done with the itsy bitsy stuff first
@@ -768,19 +783,25 @@ if (prompt.trim() && accessToken) {
 
       {/* Right */}
       <div className="flex justify-center h-full md:border md:border-white/30 rounded-[3rem] md:p-6">
-        <div className="w-full max-w-lg h-full flex flex-col">
+<div className="w-full max-w-lg h-full flex flex-col  p-4">
 
 
 
 
-<div className="md:hidden  font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
- <div className="flex items-center gap-2  md:hidden">
-              <div className="w-5 h-5 rounded-full border-2 border-white/50 flex items-center justify-center text-[10px]">i</div>
-       <p className="text-[10px] text-white/50 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
+<div className="md:hidden  tetxt-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
+ <div className="flex items-center gap-2  md:hidden font-outfit">
+
+       <p className="text-[10px] font-outfit text-white mt-1 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
   Prompts show up as your opener<br/>
   Say Literally anything, it can be changed anytime
 </p>
             </div>
+
+
+            
+          {/* Bordered wrapper — matches step 1 form border */}
+<div className="md:border md:border-white/30 md:block rounded-[3rem] py-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-hidden">
+
           {/* Prompt box */}
     <div className="border border-white/30 rounded-3xl p-10 text-white">
   <textarea
@@ -791,7 +812,7 @@ if (prompt.trim() && accessToken) {
     }}
     placeholder="Type your own"
     rows={3}
-    className="w-full bg-transparent resize-none outline-none text-center placeholder-white/60"
+    className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60"
   />
   <div className="text-[10px] text-right opacity-40 mt-1">
     {prompt.length}/255
@@ -800,7 +821,7 @@ if (prompt.trim() && accessToken) {
 
 
           {/* Suggestions */}
-          <div className="border border-white/30 rounded-2xl p-4 flex-1 flex flex-col mt-3">
+          <div className="border border-white/30 rounded-2xl p-4 flex flex-col mt-3 font-outfit flex-1 min-h-0 overflow-y-auto">
             <div className="flex justify-between items-center text-white text-sm px-1">
               <span className="opacity-90 text-[12px]">Suggestions</span>
               <button 
@@ -844,7 +865,7 @@ if (prompt.trim() && accessToken) {
     });
   }}
   className={`
-    border border-white/30 border-b-[3px] rounded-xl px-4 md:py-3 py-3  text-xs transition
+    border border-[2px]  border-white/30 border-b-[4px] rounded-xl px-4 md:py-4 py-3  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
@@ -860,7 +881,7 @@ if (prompt.trim() && accessToken) {
               })}
             </div>
 
- <div className="flex items-center gap-2  hidden md:flex">
+ <div className="flex items-center gap-2  mt-6 hidden md:flex">
               <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">i</div>
               <p className="text-[10px] text-white/50 leading-tight">
                 Prompts show up as your opener<br/>
@@ -871,7 +892,7 @@ if (prompt.trim() && accessToken) {
           </div>
 
           {/* Bottom actions */}
-  <div className="mt-auto pt-4">
+  <div className="mt-auto pt-3">
             
             <button
               onClick={handleSubmit}
@@ -881,6 +902,9 @@ if (prompt.trim() && accessToken) {
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>
           </div>
+
+          </div>{/* end bordered wrapper */}
+          
         </div>
       </div>
 

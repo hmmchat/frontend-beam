@@ -117,18 +117,6 @@ export default function CoinModal({ isOpen, onClose }) {
             ))}
           </div>
         </div>
-
-        {/* Bottom Bar */}
-        <div className="bg-black/20 backdrop-blur-md border-t border-white/10 p-6 md:p-8 flex items-center justify-between gap-6">
-          <div className="flex flex-col gap-0">
-            <span className="text-white/60 text-[10px]">Total amount to be debited</span>
-            <span className="text-white text-2xl font-bold">₹ {selectedPackage.price}</span>
-          </div>
-
-          <button className="bg-white text-[#300569] hover:bg-white/90 px-8 py-3 rounded-full text-md font-bold transition-all shadow-xl active:scale-95">
-            Proceed to Pay
-          </button>
-        </div>
       </div>
     </Modal>
   );

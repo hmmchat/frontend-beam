@@ -45,6 +45,8 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
           <p className="text-sm opacity-70">{error}</p>
         </div>
       ) : (
+
+        <div className="w-full h-full rounded-3xl overflow-hidden bg-purple-900">
         <video
           ref={videoRef}
           autoPlay
@@ -52,6 +54,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
           muted
           className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
         />
+           </div>
       )}
 
       {/* Solo Toggle Overlay */}

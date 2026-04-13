@@ -20,7 +20,10 @@ export default function RemoteVideoTile({
   /** Show + for any in-call peer (not only discovery match); server enforces same room. */
   showAddFriend,
   isAlreadyFriend,
-  isFriendRequestSent
+  isFriendRequestSent,
+  showLeaveNextButton,
+  onLeaveOrNext,
+  isRainchecking
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
@@ -50,7 +53,9 @@ export default function RemoteVideoTile({
   }, [stream, screenShareStream]);
 
   return (
-    <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative',  'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
+    <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative',  'overflow-hidden',  'border', 'border-white/5', 'shadow-2xl')}>
+
+      
       {screenShareStream ? (
         <>
           <video
@@ -67,19 +72,36 @@ export default function RemoteVideoTile({
           />
         </>
       ) : (
+        
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className="h-full w-full min-h-0 object-cover"
+          className="h-full w-full min-h-0 object-cover rounded-[60px] " 
         />
       )}
 
-      <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
+      {/* Next/Leave button — top right */}
+      {showLeaveNextButton && onLeaveOrNext && (
+  <button
+  type="button"
+  onClick={onLeaveOrNext}
+  disabled={isRainchecking}
+  className="absolute top-10 right-10 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
+>
+  <img 
+    src="/arrowright.png" 
+    className="w-6 h-6 object-contain pointer-events-none" 
+    alt="Next" 
+  />
+</button>
+      )}
+
+      <div className="absolute top-10 left-10 right-5 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 bg-[#C7BCB1]/80 backdrop-blur-2xl px-3 py-2 rounded-[2.5rem] border border-white/30 shadow-xl">
+          <div className="flex items-center gap-4 bg-[#C7BCB1]/30 backdrop-blur-2xl px-3 py-2 rounded-[2.5rem] border border-white/30 shadow-xl">
             <div className="relative">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
                 <img 
                   src={displayPictureUrl || "/assets/ico.png"} 
                   className="w-full h-full object-cover" 
@@ -89,7 +111,7 @@ export default function RemoteVideoTile({
               <div className="absolute -bottom-1.5 -left-1 text-2xl filter drop-shadow-md">🐒</div>
             </div>
             <div className="flex flex-col pr-4">
-              <span className="text-white text-base font-extrabold tracking-tight leading-tight whitespace-nowrap">
+              <span className="text-white text-sm font-extrabold tracking-tight leading-tight whitespace-nowrap">
                 {name || 'Matched!'}{age && age !== '?' ? `, ${age}` : ''}
               </span>
               {(city && city !== 'Unknown') && (
@@ -126,6 +148,11 @@ export default function RemoteVideoTile({
               )}
             </button>
           )}
+
+
+
+
+     
         </div>
 
         <div className="flex flex-col gap-4 hidden">
@@ -158,7 +185,7 @@ export default function RemoteVideoTile({
         </div>
       </div>
       {/* 🔲 HUD BORDER FRAME */}
-      <div className="absolute inset-4 border border-white/30 rounded-[30px] pointer-events-none z-20" />
+      <div className="absolute top-4 left-4 right-4 bottom-24 border border-white/30 rounded-[60px] pointer-events-none z-20" />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import FacecardEditor from "../facecard/FacecardEditor";
 
 export default function ProfileMobile() {
   const [activeTab, setActiveTab] = useState("getmoney");
@@ -102,10 +103,15 @@ export default function ProfileMobile() {
 
           <div className="border border-white/30 rounded-3xl p-16 text-center">
             <p className="mb-2">Invite you gang and win</p>
-            <p className="text-xl mb-6">🪙 100</p>
+            <p className="text-xl mb-6 flex items-center justify-center">
+              <span>
+                <img src="/Coins/coin1.png" alt="" className="w-8 h-8" />
+              </span>
+              100
+            </p>
 
-            <div className="w-40 h-40 bg-white rounded-xl mx-auto mb-6 flex items-center justify-center text-black">
-              <img src="/qrcode.png" alt="" />
+            <div className="w-40 h-40 rounded-xl mx-auto mb-6 flex items-center justify-center text-black">
+              <img src="/profile/code.png" alt="" />
             </div>
 
             <div className="bg-black/20 rounded-full py-3">
@@ -123,6 +129,10 @@ export default function ProfileMobile() {
             </div>
           </div>
         </div>
+      ) : activeTab === "account" ? (
+        <>
+          <FacecardEditor />
+        </>
       ) : (
         <>
           {/* ================= PROFILE ================= */}
@@ -135,10 +145,10 @@ export default function ProfileMobile() {
               <p>My Profile</p>
             </div>
 
-            <Image src="/setting.png" width={24} height={24} alt="" />
+            <Image src="/setting.png" width={34} height={4} alt="" />
           </div>
 
-          <div className="w-full border border-white/30 rounded-[2.5rem] p-6 flex flex-col items-center">
+          <div className="w-full h-[80vh] border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center">
             {/* PROFILE */}
             <div className="relative">
               <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white">
@@ -165,30 +175,60 @@ export default function ProfileMobile() {
 
             {/* MENU */}
             <div className="w-full mt-8 space-y-5">
-              <div className="flex justify-between border-b pb-3">
-                <p>My account</p>
-                <span>›</span>
+              <div
+                onClick={() => setActiveTab("account")}
+                className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer"
+              >
+                <div>
+                  <p className="text-sm">My account</p>
+                  <p className="text-[10px] text-white/60">
+                    Fill account details
+                  </p>
+                </div>
+                <span className="text-[9px] border border-white/40 px-2 py-1 rounded-full">
+                  60% complete
+                </span>
+                <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+                  ›
+                </span>
               </div>
 
               <div
                 onClick={() => setActiveTab("prompts")}
-                className="flex justify-between border-b pb-3 cursor-pointer"
+                className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer"
               >
-                <p>My Prompts</p>
-                <span>›</span>
+                <p className="text-sm">My Prompts</p>
+                <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+                  ›
+                </span>
               </div>
 
-              <div className="flex justify-between border-b pb-3">
-                <p>Get money</p>
-                <span>›</span>
+              <div
+                onClick={() => setActiveTab("getmoney")}
+                className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer"
+              >
+                <div>
+                  <p className="text-sm">Get money</p>
+                  <p className="text-[10px] text-white/60">
+                    40 left to withdraw
+                  </p>
+                </div>
+                <span className="text-[9px] border border-white/40 px-3 py-1 rounded-full">
+                  💎 60
+                </span>
+                <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+                  ›
+                </span>
               </div>
 
               <div
                 onClick={() => setActiveTab("rewards")}
-                className="flex justify-between cursor-pointer"
+                className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer"
               >
                 <p>Rewards & Referrals</p>
-                <span>›</span>
+                <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+                  ›
+                </span>
               </div>
             </div>
           </div>
@@ -200,38 +240,75 @@ export default function ProfileMobile() {
       {activeTab === "stickers" && (
         <div
           onClick={() => setActiveTab("getmoney")}
-          className="fixed inset-0 bg-black/40 z-40"
+          className="fixed inset-0  z-40"
         />
       )}
 
       <div
-        className={`fixed bottom-0 w-full h-[60vh] bg-purple-900 rounded-t-[2rem] p-5 transition-transform duration-500 z-50 ${
+        className={`fixed bottom-0 w-full h-[62vh] bg-[#3D0075] rounded-t-[2.5rem] px-5 pt-5 pb-6 transition-transform duration-500 z-50 ${
           activeTab === "stickers" ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="w-12 h-1 bg-white/40 mx-auto mb-4 rounded-full" />
+        {/* DRAG HANDLE */}
+        {/* <div className="w-12 h-1.5 bg-white/40 mx-auto mb-6 rounded-full" /> */}
 
-        <p className="mb-4">Your Stickers</p>
+        {/* TITLE */}
+        <div className="text-left mb-4">
+          <p className="text-md font-semibold">Your Stickers</p>
+          <p className="text-xs text-white/70 mt-1 leading-snug">
+            Apply a sticker next to your profile photo.
+            <br />
+            Stickers expire 7 days after you receive them
+          </p>
+        </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              onClick={() => setSelectedSticker(i)}
-              className={`aspect-square rounded-full flex items-center justify-center ${
-                selectedSticker === i
-                  ? "border-yellow-400 border-2"
-                  : "border-white/30"
-              }`}
-            >
-              <Image
-                src={`/stickers/s${(i % 6) + 1}.png`}
-                width={70}
-                height={70}
-                alt=""
-              />
+        {/* INNER CARD */}
+        <div className="bg-white/5 border border-white/20 rounded-[2rem] p-5">
+          {/* GRID */}
+          <div className="grid grid-cols-4 gap-5 mb-6">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                onClick={() => setSelectedSticker(i)}
+                className={`relative flex items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
+                  selectedSticker === i
+                    ? "border-[3px] border-yellow-400 shadow-[0_0_15px_rgba(255,200,0,0.6)]"
+                    : "border border-white/30"
+                }`}
+              >
+                <Image
+                  src={`/stickers/s${(i % 6) + 1}.png`}
+                  width={60}
+                  height={60}
+                  alt=""
+                  className="object-contain"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* PAGINATION DOTS */}
+          <div className="flex justify-center gap-2 mb-6">
+            <div className="w-2 h-2 bg-white rounded-full" />
+            <div className="w-2 h-2 bg-white/40 rounded-full" />
+            <div className="w-2 h-2 bg-white/40 rounded-full" />
+          </div>
+
+          {/* ACTIONS */}
+          <div className="flex items-center justify-between">
+            {/* REMOVE */}
+            <div className="flex items-center gap-3 text-white/90 cursor-pointer">
+              <div className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center">
+                −
+              </div>
+              <p className="text-sm">Remove sticker</p>
             </div>
-          ))}
+
+            {/* SAVE BUTTON */}
+            <button className="px-8 py-3 border border-white/40 rounded-full text-white font-semibold hover:bg-white/10 transition">
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

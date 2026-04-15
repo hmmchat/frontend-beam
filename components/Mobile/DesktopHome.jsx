@@ -188,7 +188,7 @@ export default function DesktopHome() {
               {/* BOTTOM SECTION */}
               <div className="mb-10 flex justify-between items-center">
                 <Link href="/beam-tv">
-                  <button className="h-14 w-14 rounded-full p-3 border border-white shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2">
+                  <button className="h-14 w-14 rounded-full p-3 border border-b-4 border-white shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2">
                     <img src="/assets/Frame.png" />
                   </button>
                 </Link>

@@ -39,7 +39,7 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard = ({
+const FaceCard3 = ({
   user,
   hideArrows,
   currentIndex,
@@ -228,7 +228,7 @@ const FaceCard = ({
           )}
 
           {/* Inner chrome */}
-          <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/45">
+          <div className="absolute bottom-12 left-1 right-1 top-[1.75rem] rounded-[26px] border border-white/45">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-1 z-20 px-2 ">
               <div className="rounded-[22px] border border-white/35 md:py-10 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
@@ -361,4 +361,4 @@ const FaceCard = ({
   );
 };
 
-export default FaceCard;
+export default FaceCard3;

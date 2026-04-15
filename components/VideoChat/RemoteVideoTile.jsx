@@ -103,7 +103,7 @@ export default function RemoteVideoTile({
             <div className="relative">
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
                 <img 
-                  src={displayPictureUrl || "/assets/ico.png"} 
+                  src={displayPictureUrl } 
                   className="w-full h-full object-cover" 
                   alt="" 
                 />

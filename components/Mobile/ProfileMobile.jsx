@@ -10,7 +10,7 @@ export default function ProfileMobile() {
   const [selectedSticker, setSelectedSticker] = useState(3);
 
   return (
-    <div className="min-h-screen w-full text-white flex flex-col items-center pt-6 px-4 relative overflow-hidden">
+    <div className="h-[100dvh] w-full text-white flex flex-col items-center pt-6 px-4 relative overflow-y-auto custom-scroll">
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-10">
         <Image
@@ -23,7 +23,7 @@ export default function ProfileMobile() {
 
       {/* ================= PROMPTS SCREEN ================= */}
       {activeTab === "prompts" ? (
-        <div className="w-full flex flex-col">
+        <div className="w-full flex flex-col min-h-[90dvh] pb-10">
           {/* TOP */}
           <div className="flex items-center gap-3 mb-6">
             <div
@@ -36,7 +36,7 @@ export default function ProfileMobile() {
           </div>
 
           {/* CARD */}
-          <div className="border border-white/30 rounded-[2.5rem] p-5">
+          <div className="border border-white/30 rounded-[2.5rem] p-10">
             {/* CURRENT PROMPT */}
             <div className="border border-white/30 rounded-2xl p-6 text-center text-sm mb-6">
               Full-time trash-talker, part-time sniper. Full-time tras Full-time
@@ -90,7 +90,7 @@ export default function ProfileMobile() {
         </div>
       ) : activeTab === "rewards" ? (
         /* ================= REWARDS ================= */
-        <div className="w-full flex flex-col">
+        <div className="w-full flex flex-col min-h-[90dvh] pb-10">
           <div className="flex items-center gap-3 mb-6">
             <div
               onClick={() => setActiveTab("getmoney")}
@@ -101,7 +101,7 @@ export default function ProfileMobile() {
             <p>Rewards and Referrals</p>
           </div>
 
-          <div className="border border-white/30 rounded-3xl p-16 text-center">
+          <div className="border border-white/30 rounded-[2.5rem] p-10 text-center">
             <p className="mb-2">Invite you gang and win</p>
             <p className="text-xl mb-6 flex items-center justify-center">
               <span>
@@ -119,7 +119,7 @@ export default function ProfileMobile() {
             </div>
           </div>
 
-          <div className="border border-white/30 rounded-3xl p-16 mt-6 text-center">
+          <div className="border border-white/30 rounded-[2.5rem] p-10 mt-6 text-center">
             <p className="mb-4">Share to</p>
             <div className="flex justify-center gap-6">
               <img src="/shareicon4.png" className="w-8 h-8" />
@@ -148,7 +148,7 @@ export default function ProfileMobile() {
             <Image src="/setting.png" width={34} height={4} alt="" />
           </div>
 
-          <div className="w-full h-[80vh] border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center">
+          <div className="w-full min-h-[85vh] border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center mb-10">
             {/* PROFILE */}
             <div className="relative">
               <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white">

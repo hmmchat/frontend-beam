@@ -43,7 +43,7 @@ export default function FacecardEditor({
 
   return (
     <div
-      className="relative flex w-full h-full flex-col items-center justify-start md:justify-center overflow-y-auto md:overflow-hidden p-0 text-white outfit-font md:p-2"
+      className="relative flex w-full h-full flex-col items-center justify-start md:justify-center overflow-visible md:overflow-hidden p-0 text-white outfit-font md:p-2"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -53,7 +53,7 @@ export default function FacecardEditor({
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
 
       <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-        <div className="flex border border-white/30 rounded-[60px] w-full min-h-[90dvh] flex-col  gap-5 px-4 py-4 relative z-10">
+        <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 p-10 relative z-10">
           {/* TOP ROW: Close, Name Box, Progress */}
           <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
             {/* Close Button */}

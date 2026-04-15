@@ -1000,8 +1000,8 @@ export default function MeetSomeoneDynamic() {
 >
   {myProfile ? (
     <img 
-      src={myProfile.displayPictureUrl || "/assets/ico.png"} 
-      onError={(e) => e.currentTarget.src = "/assets/ico.png"}
+      src={myProfile.displayPictureUrl} 
+      onError={(e) => e.currentTarget.src }
       className="w-full h-full object-cover"
     />
   ) : (
@@ -1267,7 +1267,7 @@ export default function MeetSomeoneDynamic() {
                     <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
                       <div className={clsx('relative', 'w-20', 'h-20', 'rounded-full', 'border', 'border-white/30', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-white/5')}>
                         {label === 'Me' ? (
-                          <img src={myProfile?.displayPictureUrl || "/assets/ico.png"} alt="me" className="w-full h-full object-cover" />
+                          <img src={myProfile?.displayPictureUrl} alt="me" className="w-full h-full object-cover" />
                         ) : (
                           <span className={clsx('text-2xl', 'text-white/50')}>?</span>
                         )}

@@ -182,7 +182,7 @@ export default function FriendWall() {
                         className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group cursor-pointer hover:border-white/80 transition-all shadow-lg shadow-black/20"
                       >
                         <Image
-                          src={friend.photoUrl || "/assets/ico.png"}
+                          src={friend.photoUrl}
                           alt="friend"
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"

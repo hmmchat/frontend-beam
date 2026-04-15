@@ -53,7 +53,7 @@ export default function FacecardEditor({
       {/* --- MOBILE VIEW (Matches Screenshot) --- */}
 
       <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-        <div className="flex border border-white/60 rounded-[2rem] w-full min-h-[90dvh] flex-col  gap-5 px-4 py-4 relative z-10">
+        <div className="flex border border-white/30 rounded-[60px] w-full min-h-[90dvh] flex-col  gap-5 px-4 py-4 relative z-10">
           {/* TOP ROW: Close, Name Box, Progress */}
           <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
             {/* Close Button */}
@@ -414,7 +414,7 @@ export default function FacecardEditor({
         <div className="relative hidden md:flex w-full max-w-[1100px] flex-col md:flex-row gap-4 md:gap-6 overflow-visible rounded-[2rem] md:rounded-[3rem] border border-white/60 p-4 md:p-6">
           {/* Main Editor UI */}
 
-          <div className="flex-1 border border-2 border-white/40 rounded-[3.5rem] p-8 relative flex flex-col gap-10">
+          <div className="flex-1 border border-2 border-white/30 rounded-[40px] p-8 relative flex flex-col gap-10">
             {/* Top Header Row */}
             <div className="flex items-start gap-6 ">
               {/* Left: Back + Vertical Name */}

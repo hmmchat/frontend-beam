@@ -213,12 +213,12 @@ export default function ProfileDesktop({
               <h2 className="text-3xl font-bold mt-4 mb-10">₹7000</h2>
 
               <div className="w-full max-w-lg mb-12">
-                <div className="h-5 border border-white rounded-full p-[3px] shadow-[0_4px_0_0_rgba(255,255,255,1)]">
+                <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
                   <div className="h-full w-[10%] bg-white rounded-full" />
                 </div>
               </div>
 
-              <button className="flex items-center gap-3 border border-white px-6 py-3 rounded-[10.986px] text-lg shadow-[0_4px_0_0_rgba(255,255,255,1)] hover:bg-white hover:text-black transition">
+              <button className="flex items-center gap-3 border border-white px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
                 <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
                   +
                 </span>
@@ -272,7 +272,7 @@ export default function ProfileDesktop({
                     <div
                       key={i}
                       className="px-4 py-4 border border-white/30 rounded-xl text-xs 
-      shadow-[0_3px_0_0_rgba(255,255,255,0.4)]
+      border-b-4
       hover:bg-white hover:text-black transition cursor-pointer"
                     >
                       {text}
@@ -329,14 +329,14 @@ export default function ProfileDesktop({
                           {/* Glow */}
 
                           {/* Outer ring */}
-                          <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 shadow-[0_0_15px_rgba(236,72,153,0.7),inset_0_0_10px_rgba(236,72,153,0.5)]" />
+                          <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 border-b-4" />
 
                           <div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-white" />
 
                           <div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-pink-500/60" />
 
                           {/* Main yellow ring with pink glow */}
-                          <div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]">
+                          <div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center border-b-4">
                             {/* Inner thin ring */}
                             <div className="absolute w-[75px] h-[75px] rounded-full border-[3px] border-[#FFBC2B]" />
 
@@ -784,7 +784,7 @@ export default function ProfileDesktop({
                   Remove sticker
                 </button>
 
-                <button className="px-6 py-2 border border-white rounded-full shadow-[0_4px_0_0_rgba(255,255,255,0.6)] hover:bg-white hover:text-black transition">
+                <button className="px-6 py-2 border border-white rounded-full border-b-4 hover:bg-white hover:text-black transition">
                   Save
                 </button>
               </div>

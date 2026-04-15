@@ -64,7 +64,7 @@ export default function ProfileMobile() {
               ].map((t, i) => (
                 <div
                   key={i}
-                  className="px-4 py-2 border border-white/30 rounded-full text-xs shadow-[0_4px_0_0_rgba(255,255,255,0.5)]"
+                  className="px-4 py-2 border border-white/30 rounded-full text-xs border-b-4"
                 >
                   {t}
                 </div>
@@ -94,7 +94,7 @@ export default function ProfileMobile() {
           <div className="flex items-center gap-3 mb-6">
             <div
               onClick={() => setActiveTab("getmoney")}
-              className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
+              className="w-10 h-10 border custom-corner flex items-center justify-center"
             >
               <ArrowLeft size={18} />
             </div>
@@ -272,7 +272,7 @@ export default function ProfileMobile() {
                 onClick={() => setSelectedSticker(i)}
                 className={`relative flex items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
                   selectedSticker === i
-                    ? "border-[3px] border-yellow-400 shadow-[0_0_15px_rgba(255,200,0,0.6)]"
+                    ? "border-[3px] border-yellow-400 border-b-4"
                     : "border border-white/30"
                 }`}
               >

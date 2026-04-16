@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
-import clsx from 'clsx';
-import GiftOverlay from './GiftOverlay';
-
+import { useCallback, useState } from "react";
+import clsx from "clsx";
+import GiftOverlay from "./GiftOverlay";
+import DareOverlay from "./DareOverlay";
 export default function LocalVideoSection({
   localVideoRef,
   localStreamRef,
@@ -21,8 +21,9 @@ export default function LocalVideoSection({
   toggleCam,
   isGiftModalOpen,
   setIsGiftModalOpen,
-  setIsCoinModalOpen
+  setIsCoinModalOpen,
 }) {
+  const [isDareOpen, setIsDareOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const setLocalVideoEl = useCallback(
     (el) => {
@@ -31,32 +32,57 @@ export default function LocalVideoSection({
         el.srcObject = localStreamRef.current;
       }
     },
-    [localVideoRef, localStreamRef]
+    [localVideoRef, localStreamRef],
   );
 
   return (
     <div className="w-full h-full flex flex-col   overflow-hidden relative">
-              <div
-                        className="absolute inset-0 z-0 "
-                        style={{
-                            backgroundImage: 'url(/assets/mb.jpg)',
-                            backgroundRepeat: 'repeat',
-                            backgroundSize: 'cover',
-                        }}
-                    />
-       
+      <div
+        className="absolute inset-0 z-0 "
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "cover",
+        }}
+      />
+
       {/* 📹 Video Area */}
-      <div className={clsx("relative flex-1 min-h-0 min-w-0 transition-all duration-500 rounded-[60px] overflow-hidden", (isGiftModalOpen && selectedGiftId) && "shadow-2xl mb-2")}>
+      <div
+        className={clsx(
+          "relative flex-1 min-h-0 min-w-0 transition-all duration-500 rounded-[60px] overflow-hidden",
+          (isGiftModalOpen || isDareOpen) &&
+            selectedGiftId &&
+            "shadow-2xl mb-2",
+        )}
+      >
         <video
           ref={setLocalVideoEl}
           autoPlay
           muted
           playsInline
-          className={clsx('absolute inset-0 w-full object-cover scale-x-[-1] rounded-[60px]', isGiftModalOpen ? 'h-[87vh]' : 'h-full')}
+          className={clsx(
+            "absolute inset-0 w-full object-cover scale-x-[-1] rounded-[60px]",
+            isGiftModalOpen || isDareOpen ? "h-[87vh]" : "h-full",
+          )}
         />
-        
+
         {isCamOff && (
-          <div className={clsx('absolute', 'inset-0', 'bg-gray-900/90', 'flex', 'items-center', 'justify-center', 'text-white/20', 'font-bold', 'uppercase', 'tracking-widest', 'italic', 'z-10')}>
+          <div
+            className={clsx(
+              "absolute",
+              "inset-0",
+              "bg-gray-900/90",
+              "flex",
+              "items-center",
+              "justify-center",
+              "text-white/20",
+              "font-bold",
+              "uppercase",
+              "tracking-widest",
+              "italic",
+              "z-10",
+            )}
+          >
             Camera is off
           </div>
         )}
@@ -64,30 +90,43 @@ export default function LocalVideoSection({
         {/* Chat Messages Overlay */}
         <div
           className={clsx(
-            'absolute',
-            'left-1',
-            'flex',
-            'flex-col',
-            'gap-1',
-            'max-w-[70%]',
-            'max-h-[36vh]',
-            'overflow-y-auto',
-            'pr-1',
-            'z-10',
-            showChatInput ? 'bottom-44' : 'bottom-28'
+            "absolute",
+            "left-1",
+            "flex",
+            "flex-col",
+            "gap-1",
+            "max-w-[70%]",
+            "max-h-[36vh]",
+            "overflow-y-auto",
+            "pr-1",
+            "z-10",
+            showChatInput ? "bottom-44" : "bottom-28",
           )}
         >
           {chatMessages.map((msg) => (
-            <div key={msg.id} className={clsx('px-4', 'py-1', 'text-white', 'text-xs', 'font-thin', 'animate-in', 'fade-in')}>
-              <span className="text-white/70 mr-2 text-[10px] font-semibold">{msg.name}:</span>
+            <div
+              key={msg.id}
+              className={clsx(
+                "px-4",
+                "py-1",
+                "text-white",
+                "text-xs",
+                "font-thin",
+                "animate-in",
+                "fade-in",
+              )}
+            >
+              <span className="text-white/70 mr-2 text-[10px] font-semibold">
+                {msg.name}:
+              </span>
               {msg.message}
             </div>
           ))}
         </div>
 
         {/* Gift Selection Grid Overlay */}
-        <GiftOverlay 
-          isOpen={isGiftModalOpen} 
+        <GiftOverlay
+          isOpen={isGiftModalOpen}
           onClose={() => {
             setIsGiftModalOpen(false);
             setSelectedGiftId(null);
@@ -97,12 +136,44 @@ export default function LocalVideoSection({
           selectedGiftId={selectedGiftId}
         />
 
-        {/* Call Controls (only if gift is not open) */}
-        {!isGiftModalOpen && (
-          <div className={clsx('absolute', 'bottom-6', 'left-5', 'right-6', 'flex', 'items-end', 'justify-between', 'z-20')}>
-            <div className={clsx('flex', 'flex-col', 'gap-4', 'w-full', 'max-w-[240px]')}>
+        <DareOverlay
+          isOpen={isDareOpen}
+          onClose={() => {
+            setIsDareOpen(false);
+            setSelectedGiftId(null);
+          }}
+          selectedGiftId={selectedGiftId}
+          onSelectGift={(giftId) => setSelectedGiftId(giftId)}
+        />
+
+        {/* Call Controls (only if gift or dare is not open) */}
+        {!isGiftModalOpen && !isDareOpen && (
+          <div
+            className={clsx(
+              "absolute",
+              "bottom-6",
+              "left-5",
+              "right-6",
+              "flex",
+              "items-end",
+              "justify-between",
+              "z-20",
+            )}
+          >
+            <div
+              className={clsx(
+                "flex",
+                "flex-col",
+                "gap-4",
+                "w-full",
+                "max-w-[240px]",
+              )}
+            >
               {showChatInput && (
-                <form onSubmit={sendChatMessage} className="animate-in slide-in-from-bottom-4">
+                <form
+                  onSubmit={sendChatMessage}
+                  className="animate-in slide-in-from-bottom-4"
+                >
                   <input
                     autoFocus
                     value={chatInput}
@@ -113,69 +184,125 @@ export default function LocalVideoSection({
                 </form>
               )}
               <div className="flex flex-wrap gap-4">
-                {typeof onToggleScreenShare === 'function' && (
+                {typeof onToggleScreenShare === "function" && (
                   <button
                     type="button"
                     onClick={onToggleScreenShare}
-                    title={isScreenSharing ? 'Stop sharing screen' : 'Share screen or window'}
+                    title={
+                      isScreenSharing
+                        ? "Stop sharing screen"
+                        : "Share screen or window"
+                    }
                     className={clsx(
-                      'w-12 h-12 rounded-full border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95',
-                      isScreenSharing ? 'border-emerald-400/80 bg-emerald-500/20' : 'border-white/40'
+                      "w-12 h-12 rounded-full border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
+                      isScreenSharing
+                        ? "border-emerald-400/80 bg-emerald-500/20"
+                        : "border-white/40",
                     )}
                   >
-                    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <svg
+                      className="h-5 w-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden
+                    >
                       <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
                     </svg>
                   </button>
                 )}
-                <button 
-                  type="button" 
-                  onClick={toggleCam} 
+                <button
+                  type="button"
+                  onClick={toggleCam}
                   className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
                 >
-                  <img src="/video.png" className={`w-5 h-5 object-contain ${isCamOff ? 'opacity-30' : 'opacity-100'}`} alt="Video" />
+                  <img
+                    src="/video.png"
+                    className={`w-5 h-5 object-contain ${isCamOff ? "opacity-30" : "opacity-100"}`}
+                    alt="Video"
+                  />
                 </button>
-                <button 
-                  type="button" 
-                  onClick={onChatButtonClick || (() => setShowChatInput(!showChatInput))} 
+                <button
+                  type="button"
+                  onClick={
+                    onChatButtonClick ||
+                    (() => setShowChatInput(!showChatInput))
+                  }
                   className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
                 >
-                  <img src="/msg.png" className="w-5 h-5 object-contain" alt="Message" />
+                  <img
+                    src="/msg.png"
+                    className="w-5 h-5 object-contain"
+                    alt="Message"
+                  />
                 </button>
               </div>
             </div>
 
             <div className="flex gap-4">
-              <button type="button" className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-                <img src="/circle.png" className="absolute inset-0 w-full h-full bg-red-900 rounded-full" alt="" />
-                <img src="/dare.png" className="relative w-8 h-auto" alt="DARE" />
+              <button
+                type="button"
+                onClick={() => setIsDareOpen(true)}
+                className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+              >
+                <img
+                  src="/circle.png"
+                  className="absolute inset-0 w-full h-full bg-red-900 rounded-full"
+                  alt=""
+                />
+                <img
+                  src="/dare.png"
+                  className="relative w-8 h-auto"
+                  alt="DARE"
+                />
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
                 className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
               >
-                <img src="/circle.png" className={clsx('absolute inset-0 w-full h-full rounded-full', isGiftModalOpen ? 'active' : 'bg-pink-800')} alt="" />
-                <img src="/giftboc.png" className="relative w-8 h-8 object-contain" alt="GIFT" />
+                <img
+                  src="/circle.png"
+                  className={clsx(
+                    "absolute inset-0 w-full h-full rounded-full",
+                    isGiftModalOpen ? "active" : "bg-pink-800",
+                  )}
+                  alt=""
+                />
+                <img
+                  src="/giftboc.png"
+                  className="relative w-8 h-8 object-contain"
+                  alt="GIFT"
+                />
               </button>
             </div>
           </div>
         )}
 
         {/* 🔲 HUD BORDER FRAME */}
-        <div className={clsx('absolute top-4 left-4 right-4   border rounded-[60px] pointer-events-none z-20 transition-colors', isGiftModalOpen ? 'border-purple-400/50  bottom-28' : 'border-white/30 bottom-24')} />
+        <div
+          className={clsx(
+            "absolute top-4 left-4 right-4   border rounded-[60px] pointer-events-none z-20 transition-colors",
+            isGiftModalOpen || isDareOpen
+              ? "border-white/50  bottom-28"
+              : "border-white/30 bottom-24",
+          )}
+        />
       </div>
 
-      {/* 💰 Bottom Balance Footer (Only when gift is selected) */}
-      {isGiftModalOpen && selectedGiftId && (
+      {/* 💰 Bottom Balance Footer (Only when gift or dare is selected) */}
+      {(isGiftModalOpen || isDareOpen) && selectedGiftId && (
         <div className="h-28 bg-[#1A1033] flex items-center justify-between px-10 animate-in slide-in-from-bottom-full z-10">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-yellow-400">
               <span className="text-xs">⚠️</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Insufficient balance</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                Insufficient balance
+              </span>
             </div>
             <div className="flex items-center gap-2 text-white">
-              <span className="text-xs font-medium opacity-60">Spend coins:</span>
+              <span className="text-xs font-medium opacity-60">
+                Spend coins:
+              </span>
               <div className="flex items-center gap-1.5">
                 <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
                 <span className="text-lg font-bold">10,00,000</span>

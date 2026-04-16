@@ -186,13 +186,27 @@ export default function DesktopHome() {
               </div>
 
               {/* BOTTOM SECTION */}
-              <div className="mb-10 flex justify-between items-center">
-                <Link href="/beam-tv">
-                  <button className="h-14 w-14 rounded-full p-3 border border-b-4 border-white shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2">
-                    <img src="/assets/Frame.png" />
-                  </button>
-                </Link>
+              <div className="mb-10 flex justify-between items-center ">
 
+                <div className="border p-3 rounded-full flex items-center justify-center border-b-4">
+                <Link href="/beam-tv">
+                <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
+  
+  {/* TV Frame (background) */}
+  <img 
+    src="/tvfame.png" 
+    className="absolute inset-0 w-full h-full object-contain  "
+  />
+
+  {/* Beam TV inside frame */}
+  <img 
+    src="/beamtv.png" 
+    className="absolute inset-0 m-auto w-6 h-6 object-contain ml-1 mt-3"
+  />
+
+</button>
+                </Link>
+</div>
                 <button
                   className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2"
                   onClick={() => setIsSignUpOpen(true)}

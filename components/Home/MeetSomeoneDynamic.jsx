@@ -1351,21 +1351,25 @@ export default function MeetSomeoneDynamic() {
             {mode === 'solo' ? (
 
               <div className='flex gap-2'>
-              <div className='border rounded-full  border-b-4 p-1 border-white/40'>
-            <Link href="/beam-tv">
-  <button className="h-14 w-14 rounded-full p-3   shadow-md transition-all duration-200">
-    <img src="/assets/Frame.png" alt="beam-tv" />
-  </button>
+                <div className="border p-3 rounded-full flex items-center justify-center border-b-4 border-white/40">
+                <Link href="/beam-tv">
+                <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
+  
+  {/* TV Frame (background) */}
+  <img 
+    src="/tvfame.png" 
+    className="absolute inset-0 w-full h-full object-contain  "
+  />
 
+  {/* Beam TV inside frame */}
+  <img 
+    src="/beamtv.png" 
+    className="absolute inset-0 m-auto w-6 h-6 object-contain ml-1 mt-3"
+  />
 
-
-
- 
-</Link>
-
-
-
-              </div>
+</button>
+                </Link>
+</div>
 
 
 

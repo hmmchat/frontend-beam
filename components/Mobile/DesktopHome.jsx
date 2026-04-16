@@ -63,7 +63,16 @@ export default function DesktopHome() {
               </p>
 
               <div className="inline-flex gap-2 mt-3">
-                <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />
+                <img
+                  src="/assets/video-on.svg"
+                  alt=""
+                  className="w-4 h-4 opacity-0 hover:opacity-100"
+                />
+                <img
+                  src="/assets/video-off.svg"
+                  alt=""
+                  className="w-4 h-4 opacity-100 hover:opacity-0"
+                />
 
                 <p className="text-sm font-outfit ">
                   {activeMeetingCount !== null
@@ -187,26 +196,23 @@ export default function DesktopHome() {
 
               {/* BOTTOM SECTION */}
               <div className="mb-10 flex justify-between items-center ">
-
                 <div className="border p-3 rounded-full flex items-center justify-center border-b-4">
-                <Link href="/beam-tv">
-                <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
-  
-  {/* TV Frame (background) */}
-  <img 
-    src="/tvfame.png" 
-    className="absolute inset-0 w-full h-full object-contain  "
-  />
+                  <Link href="/beam-tv">
+                    <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
+                      {/* TV Frame (background) */}
+                      <img
+                        src="/tvfame.png"
+                        className="absolute inset-0 w-full h-full object-contain  "
+                      />
 
-  {/* Beam TV inside frame */}
-  <img 
-    src="/beamtv.png" 
-    className="absolute inset-0 m-auto w-6 h-6 object-contain ml-1 mt-3"
-  />
-
-</button>
-                </Link>
-</div>
+                      {/* Beam TV inside frame */}
+                      <img
+                        src="/beamtv.png"
+                        className="absolute inset-0 m-auto w-6 h-6 object-contain ml-1 mt-3"
+                      />
+                    </button>
+                  </Link>
+                </div>
                 <button
                   className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2"
                   onClick={() => setIsSignUpOpen(true)}

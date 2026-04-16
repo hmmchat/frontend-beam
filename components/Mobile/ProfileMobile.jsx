@@ -6,7 +6,7 @@ import { useState } from "react";
 import FacecardEditor from "../facecard/FacecardEditor";
 
 export default function ProfileMobile() {
-  const [activeTab, setActiveTab] = useState("getmoney");
+  const [activeTab, setActiveTab] = useState("main");
   const [selectedSticker, setSelectedSticker] = useState(3);
 
   return (
@@ -27,7 +27,7 @@ export default function ProfileMobile() {
           {/* TOP */}
           <div className="flex items-center gap-3 mb-6">
             <div
-              onClick={() => setActiveTab("getmoney")}
+              onClick={() => setActiveTab("main")}
               className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
             >
               <ArrowLeft size={18} />
@@ -93,8 +93,8 @@ export default function ProfileMobile() {
         <div className="w-full flex flex-col min-h-[90dvh] pb-10">
           <div className="flex items-center gap-3 mb-6">
             <div
-              onClick={() => setActiveTab("getmoney")}
-              className="w-10 h-10 border custom-corner flex items-center justify-center"
+              onClick={() => setActiveTab("main")}
+              className="w-10 h-10 border rounded-full flex items-center justify-center"
             >
               <ArrowLeft size={18} />
             </div>
@@ -126,6 +126,69 @@ export default function ProfileMobile() {
               <img src="/shareicon2.png" className="w-8 h-8" />
               <img src="/shareicon1.png" className="w-8 h-8" />
               <img src="/shareicon3.png" className="w-8 h-8" />
+            </div>
+          </div>
+        </div>
+      ) : activeTab === "getmoney" ? (
+        /* ================= GET MONEY ================= */
+        <div className="w-full flex flex-col min-h-[90dvh] pb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div
+              onClick={() => setActiveTab("main")}
+              className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
+            >
+              <ArrowLeft size={18} />
+            </div>
+            <p>Get money</p>
+          </div>
+
+          <div className="border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center text-center">
+            <p className="text-sm text-white/80">
+              Hmm. You being nice is paying back!!
+            </p>
+
+            <p className="text-sm text-white/60 mt-1">
+              Just 💎 40 left to unlock
+            </p>
+
+            <h2 className="text-3xl font-bold mt-4 mb-10">₹7000</h2>
+
+            <div className="w-full max-w-lg mb-12">
+              <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
+                <div className="h-full w-[10%] bg-white rounded-full" />
+              </div>
+            </div>
+
+            <button className="flex items-center gap-3 border border-white/40 px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
+              <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
+                +
+              </span>
+              Add withdrawal method
+            </button>
+
+            <div className="mt-12 text-sm text-white/70 space-y-6 text-left w-full pt-6">
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 flex items-center justify-center border border-white rounded-full">
+                  ?
+                </span>
+                <div>
+                  <p className="font-medium text-white">
+                    Learn How to earn diamonds?
+                  </p>
+                  <p className="text-white/80 text-xs">
+                    You literally need to do nothing, it’s that simple
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src="/call.png"
+                  alt=""
+                  className="w-7 h-7 object-contain"
+                />
+                <p>Reach Support</p>
+              </div>
             </div>
           </div>
         </div>
@@ -239,7 +302,7 @@ export default function ProfileMobile() {
 
       {activeTab === "stickers" && (
         <div
-          onClick={() => setActiveTab("getmoney")}
+          onClick={() => setActiveTab("main")}
           className="fixed inset-0  z-40"
         />
       )}

@@ -140,3 +140,43 @@
   background: rgba(255, 255, 255, 0.4);
   border-radius: 100px;
 }
+
+
+
+@keyframes trianglePath {
+  0% {
+    transform: translate(-320px, -320px) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(-320px, 120px) scale(1) rotate(120deg);
+  }
+  66% {
+    transform: translate(320px, 320px) scale(1) rotate(240deg);
+  }
+  100% {
+    transform: translate(-320px, -320px) scale(1) rotate(360deg);
+  }
+}
+
+/* Bigger + slower triangle movement */
+.triangle-wrapper {
+  animation: trianglePath 80s ease-in-out infinite;
+}
+
+/* VERY slow axis rotation */
+.triangle-item {
+  display: inline-block;
+  animation: spinSelf 52s linear infinite;
+}
+
+@keyframes spinSelf {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.triangle-wrapper {
+  animation: trianglePath 24s linear infinite;
+}

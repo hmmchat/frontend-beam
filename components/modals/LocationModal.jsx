@@ -91,103 +91,119 @@ export default function LocationModal({ isOpen, onClose }) {
   };
 
 
+  if (!isOpen) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="600px" bottom='0' left='0' right='0'>
-      <div className="relative font-[family-name:var(--font-otomanopee)] rounded-xl flex flex-col h-full">
-        {/* Background */}
-        <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage: 'url(/assets/1.png)',
-            backgroundSize: '120px 120px',
-            backgroundRepeat: 'repeat',
-          }}
-        />
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6"
+      onClick={onClose}
+    >
+      {/* Backdrop (Full screen) */}
 
-        <div className="relative z-10 px-6 py-6 flex flex-col h-full">
-
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <button onClick={onClose} className="text-white text-2xl">
-              <IoMdArrowBack />
-            </button>
-            <h2 className="text-sm font-bold text-white">
-              Select Location
-            </h2>
-          </div>
-
-          {/* Search */}
-          <div className="mb-2 relative">
-            <IoSearchOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-xl outfit-font" />
-            <input
-              type="text"
-              placeholder="Search City"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[#ffffff1a] border border-[#ffffff1a] rounded-2xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/80 text-sm outfit-font"
-            />
-          </div>
-
-          {/* Locate Me */}
-          <button 
-            onClick={handleLocateMe}
-            disabled={loading}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition text-sm mb-6 ml-1 w-fit disabled:opacity-50"
-          >
-            <IoLocationOutline className="text-lg" />
-            <span className="underline decoration-white/50 underline-offset-4">
-              {loading ? 'Locating...' : 'Locate me'}
-            </span>
-          </button>
+      {/* Modal Content */}
+      <div
+        className="relative z-10 w-full max-w-[850px] h-full max-h-[85vh] border-2 border-white/30 rounded-[40px] bg-purple-950/40 backdrop-blur-xl p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
 
 
-          {/* Info */}
-          <p className="text-white/70 text-sm mb-3 outfit-font">
-            Cites having most fun. Hmmm... Safe Fun ofc!
-          </p>
+              <div
+        className="absolute inset-0 bg-[#02004A]/60 backdrop-blur-md"
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
 
-          {/* City List */}
-          <div className="grid grid-cols-2 gap-3 mb-6 overflow-y-auto pr-1 flex-1 content-start min-h-[200px]">
-            {cities.map((city) => (
-              <button
-                key={city.name}
-                onClick={() => setSelectedCity(city.name)}
-                className={`p-4 rounded-2xl border-2 text-left transition relative overflow-hidden ${selectedCity === city.name
-                  ? 'border-yellow-400 bg-[#2C0058]'
-                  : 'border-white/20 bg-[#ffffff1a] hover:bg-white/10'
-                  }`}
-              >
-                <div className="text-white text-sm mb-0.5">
-                  {city.name}
-                </div>
-                <div className="text-white/60 text-xs outfit-font">
-                  {city.availableCount ? `${city.availableCount} online` : 'Active city'}
-                </div>
-              </button>
-            ))}
+        <div className="relative font-[family-name:var(--font-otomanopee)] rounded-[36px] flex flex-col h-full border-2 border-white/20 overflow-hidden ">
+          {/* Background Pattern */}
+          <div
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: 'url(/assets/1.png)',
+              backgroundSize: '120px 120px',
+              backgroundRepeat: 'repeat',
+            }}
+          />
+
+          <div className="relative z-10 px-6 py-8 flex flex-col h-full  w-[70%] mx-auto">
+            {/* Header */}
+            <h2 className="text-lg font-bold text-white text-left w-full tracking-wide mx-auto mb-3 ">
+                Select City
+              </h2>
+
+            {/* Search */}
+            <div className="mb-8 relative mx-auto w-full">
+              <IoSearchOutline className="absolute left-5 top-1/2 -translate-y-1/2 text-white/50 text-xl  " />
+              <input
+                type="text"
+                placeholder="Search City"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-14 pr-6 py-3 border border-white/20 rounded-full text-white placeholder:text-white/50 focus:outline-none focus:border-purple-400 text-base shadow-inner transition-all"
+              />
+            </div>
+
+
+
+            {/* Info */}
+            <p className="text-white/90 text-sm  text-left font-sans tracking-wide">
+              Cities having most fun
+            </p>
+
+            {/* City List */}
+            <div className="flex-1 overflow-y-auto px-2 custom-scrollbar flex justify-center pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[750px] w-full content-start">
+                {cities.map((city) => (
+                  <button
+                    key={city.name}
+                    onClick={() => setSelectedCity(city.name)}
+                    className={`px-6 py-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden backdrop-blur-md group ${
+                      selectedCity === city.name
+                        ? 'border-yellow-400 bg-purple-900/40 shadow-[0_0_20px_rgba(255,200,0,0.3)]'
+                        : 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40'
+                    }`}
+                  >
+                    <div className="text-white text-base font-semibold group-hover:translate-x-1 transition-transform">
+                      {city.name}
+                    </div>
+                    <div className="text-white/60 text-xs mt-1.5 font-sans">
+                      {city.availableCount
+                        ? `${city.availableCount.toLocaleString()} online`
+                        : 'Active city'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Empty State */}
             {cities.length === 0 && !loading && (
-              <div className="col-span-2 text-white/40 text-center py-8">No cities found</div>
+              <div className="flex-1 flex items-center justify-center text-white/40 italic">
+                No cities found
+              </div>
             )}
-          </div>
 
-          {/* Divider */}
-          <div className="border-t border-white/20 -mx-6 mb-4" />
+            {/* Divider */}
 
-          {/* CTA */}
-          <div className="flex justify-end">
-            <Button
-              variant="outline2"
-              width="auto"
-              onClick={handleSave}
-              disabled={loading}
-              position='none'
-              className="px-8 py-3 rounded-xl text-sm bg-[#2a0060] border border-white/20"
-            >
-              {loading ? 'Saving...' : 'Start Matching'}
-            </Button>
+
+            {/* CTA */}
+            
           </div>
+          
         </div>
+   <div className="flex pb-2 pt-2 mt-3 mb-4 justify-end px-10">
+              <button
+                onClick={handleSave}
+                disabled={loading || !selectedCity}
+                className="px-12 py-4 rounded-2xl text-white font-bold border-2 border-white/30  disabled:opacity-90 disabled:hover:scale-100 "
+              >
+                {loading ? 'Saving...' : 'Start Beaming'}
+              </button>
+            </div>
       </div>
-    </Modal>
+    </div>
   );
 }

@@ -60,8 +60,7 @@ export default function ProfileDesktop({
     user?.values?.map((v) => v.value?.name || v.name).filter(Boolean) || [];
 
   const age =
-    initialAge ??
-    (user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null);
+    initialAge ?? (user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null);
   const firstName = initialFirstName ?? user?.username?.split(" ")[0] ?? "User";
   const zodiac = initialZodiac ?? user?.zodiac;
   const progress = initialProgress ?? 60;
@@ -81,7 +80,7 @@ export default function ProfileDesktop({
   }, [interests.length]);
 
   return (
-<div className="h-screen w-full overflow-hidden flex flex-col items-center justify-start py-10 px-6 relative">
+    <div className="h-screen w-full overflow-hidden flex flex-col items-center justify-start py-10 px-6 relative">
       {/* stars bg */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <Image
@@ -95,7 +94,7 @@ export default function ProfileDesktop({
 
       <ProfileHeader icons={["/edit.png", "/setting.png", "/bandage.png"]} />
 
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 border border-white/20 rounded-[3rem] p-3 z-10">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 border border-white/30 rounded-[3rem] p-3 z-10">
         <ProfileSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -105,7 +104,7 @@ export default function ProfileDesktop({
         />
 
         {activeTab === "default" ? (
-          <div className="col-span-2 flex items-center justify-center ">
+          <div className="col-span-2 flex items-center justify-center border rounded-[60px] border-white/20">
             <FaceCard3
               user={{
                 ...user,

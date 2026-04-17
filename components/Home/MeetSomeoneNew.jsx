@@ -11,7 +11,7 @@ import FilterButtons from '@/components/ui/FilterButtons';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import OverlayLayer from '@/components/ui/OverlayLayer';
-import Button from '@/components/ui/Button';
+
 
 export default function MeetSomeoneNew({ 
   onMeetNow, 
@@ -212,16 +212,16 @@ export default function MeetSomeoneNew({
                 </div>
 
   
-                <div className="w-full px-2">
+                <div className="w-full mt-10 ">
                     <button 
                         onClick={handleMeetNow}
-                        className="group relative w-full h-20  border border-white border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl"
+                        className="group relative w-full h-20  border border-white border-b-[3px] rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl bg-black/20"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 opacity-50" />
-                        <div className="w-11 h-11 rounded-full border border-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <IoVideocam className="text-white text-2xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+                        <div className="w-10 h-10 rounded-full border border-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <IoVideocam className="text-white text-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
                         </div>
-                        <span className="text-white text-xl font-bold tracking-tight">Meet Someone now</span>
+                        <span className="text-white text-md  tracking-tight">Meet Someone now</span>
                     </button>
                 </div>
 
@@ -240,8 +240,8 @@ export default function MeetSomeoneNew({
       </div>
 
       {/* Bottom Navigation */}
-      <div className="relative z-10 w-full max-w-sm px-6 pb-10 mt-auto mx-auto">
-        <div className=" border border-white rounded-full h-18 w-full flex items-center justify-between px-8 shadow-2xl">
+      <div className="relative z-10 w-full max-w-sm px-4 pb-10 mt-auto mx-auto">
+        <div className=" border border-white rounded-full h-[54px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-6 h-6" /></button>
             <button 
                 onClick={() => router.push('/history')}
@@ -260,7 +260,7 @@ export default function MeetSomeoneNew({
                 onClick={() => router.push('/facecard?view=editor')}
                 className="flex items-center justify-center hover:scale-110 transition-transform"
             >
-                <div className="w-11 h-11 rounded-full border-2 border-white overflow-hidden  shadow-lg">
+                <div className="w-[30px] h-[30px] rounded-full   overflow-hidden  shadow-lg">
                     {myProfile?.displayPictureUrl ? (
                          <img src={myProfile.displayPictureUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (

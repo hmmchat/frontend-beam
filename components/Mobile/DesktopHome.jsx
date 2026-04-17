@@ -89,7 +89,7 @@ export default function DesktopHome() {
         <div className="relative flex items-center justify-center px-6  py-16 md:py-20 overflow-hidden ">
           <div
             onClick={() => setIsInfoOpen(!isInfoOpen)}
-            className="absolute top-10 right-12  meeting now active:scale-90 transition-transform"
+            className="absolute top-10 right-12 z-50  meeting now active:scale-90 transition-transform"
           >
             {isInfoOpen ? (
               <IoMdClose className="w-[3rem] h-[3rem] text-white border rounded-full p-2" />

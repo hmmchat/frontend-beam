@@ -641,7 +641,7 @@ export default function FacecardEditor({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center font-outfit gap-4">
                   <div className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center text-3xl shadow-inner">
                     {user?.gender === "MALE"
                       ? "♂"
@@ -752,9 +752,9 @@ export default function FacecardEditor({
               {user?.musicPreference ? (
                 <div className="absolute -right-16  z-20 -translate-y-1/2">
                   <div className="relative w-20 h-20">
-                    <div className="absolute bottom-10 -left-2 w-16 h-[2px] bg-white/40  origin-left"></div>
-                    <div className="absolute  -left-13  rotate-45 w-[2px] h-32 z-10  bg-white/40 mt-5"></div>
-                    <div className="absolute -bottom-14 right-[10.8rem] w-3 h-3 bg-white/40 rounded-full"></div>
+                    <div className="absolute bottom-10 -left-4 w-16 h-[2px] bg-white/40  origin-left"></div>
+                    <div className="absolute  -left-8  rotate-25 w-[2px] h-18 z-10  bg-white/40 mt-9"></div>
+                    <div className="absolute -bottom-8 right-[7.5rem] w-3 h-3 bg-white/40 rounded-full"></div>
                   </div>
                 </div>
               ) : (
@@ -815,6 +815,7 @@ export default function FacecardEditor({
           </div>
         </div>
       </div>
+
       <style jsx>{`
         @keyframes fade-in {
           from {

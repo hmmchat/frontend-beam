@@ -754,7 +754,7 @@ function FacecardContent() {
         </div>
 
         {/* --- DESKTOP SKELETON --- */}
-        <div className="hidden md:flex relative h-full w-full max-w-[1150px] origin-center items-center justify-center p-5">
+        <div className="hidden md:flex relative h-screen w-full md:max-w-7xl origin-center items-center justify-center">
           <div className="flex w-full h-[85vh] flex-row gap-6 border-2 border-white/30 rounded-[60px] p-6 bg-black/30 backdrop-blur-md">
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col gap-10 border-2 border-white/10 rounded-[3.5rem] p-8">

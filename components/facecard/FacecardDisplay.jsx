@@ -32,7 +32,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
       }}
     >
       <div
-        className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-3 px-3 py-3 
+        className="mx-auto flex w-full w-full flex-1 flex-col gap-3 px-3 py-3 
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
       >
         {/* LEFT */}
@@ -41,8 +41,8 @@ export default function FacecardDisplay({ user, age, setView, router }) {
 min-h-[100dvh] md:min-h-0
 overflow-y-auto md:overflow-visible
                         rounded-[2rem] 
-                        md:border md:border-white/30 md:rounded-[2.5rem] 
-                        lg:rounded-[3rem] px-3 py-3 sm:px-4"
+                        md:border md:border-white/30 md:rounded-[60px] 
+                      px-3 py-3 sm:px-4"
         >
           <div
             className="flex w-full flex-col items-center text-center gap-6 
@@ -120,30 +120,30 @@ overflow-y-auto md:overflow-visible
         {/* RIGHT */}
         <div
           className="hidden md:flex flex-1 flex-col items-center justify-center text-center 
-                        rounded-[2rem] border border-white/30 
+                        rounded-[60px] border border-white/30 
                         px-4 py-5 
                         lg:px-6 lg:py-6 xl:px-10"
         >
-          <h1 className="text-center justify-center text-white text-4xl font-normal font-Otomanopee_One">
+          <h1 className="text-center justify-center text-white text-[36px] font-normal font-Otomanopee_One">
             Meet your Facecard
           </h1>
 
-          <p className="mt-3 max-w-md text-xs md:text-sm lg:text-xl text-white/90 font-outfit">
+          <p className="mt-3 max-w-md text-xs md:text-[20px] lg:text-xl text-white/90 font-outfit">
             This is what people see before meeting you. Adding more details
             makes it cooler and gets you better matches & conversations.
           </p>
 
-          <div className="w-full max-w-sm mt-4 space-y-3 lg:space-y-4">
+          <div className="w-full max-w-sm mt-20 space-y-3 lg:space-y-4">
             <button
               onClick={() => setView("editor")}
-              className="w-full rounded-xl border border-white/30 py-3 text-sm md:text-base lg:text-lg font-semibold transition hover:bg-yellow-400 hover:text-black"
+              className="w-full rounded-[18px] border-[2px] border-white/50 border-b-[4px] py-4 px-6 text-sm md:text-[20px] lg:text-[20px] font-semibold transition hover:bg-yellow-400 hover:text-black"
             >
-              Make it cooler 😤
+              Make my Facecard cooler 😤
             </button>
 
             <button
               onClick={() => router.push("/")}
-              className="text-xs md:text-sm text-white/80 hover:text-white"
+              className="text-xs md:text-[20px] text-white/80 hover:text-white"
             >
               I’ll do it later 🥱
             </button>

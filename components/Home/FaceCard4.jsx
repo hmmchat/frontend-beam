@@ -39,7 +39,7 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard = ({
+const FaceCard4 = ({
   user,
   hideArrows,
   currentIndex,
@@ -163,16 +163,13 @@ const FaceCard = ({
         </div>
       )}
 
-<div className="
-  w-[85vw] max-w-[360px] 
-  aspect-[360/670]
-  scale-[0.95]
-  lg:scale-100
-  [@media(max-height:850px)]:scale-[0.9]
-  [@media(max-height:750px)]:scale-[0.85]
-  [@media(max-height:650px)]:scale-[0.8]
-  origin-top
-">
+      <div
+        className="w-[85vw] aspect-[360/670] max-w-[360px] 
+                sm:w-[340px] md:w-[320px] lg:w-[360px] 
+                md:aspect-[350/660] shrink-0 rounded-[30px] 
+                border border-white/40 p-[2px]
+                md:border-0 md:p-0 mt-4 md:scale-90"
+      >
         <div className="relative h-full w-full overflow-hidden rounded-[28px] ">
           {/* HEADER */}
           {!hideHeader && (
@@ -374,4 +371,4 @@ const FaceCard = ({
   );
 };
 
-export default FaceCard;
+export default FaceCard4;

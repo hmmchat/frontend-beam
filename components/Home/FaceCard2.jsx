@@ -39,7 +39,7 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
+const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onShare }) => {
   const [internalIndex, setInternalIndex] = useState(0);
 
   if (!user) return null;
@@ -85,58 +85,24 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
 
   return ( 
     <>
-<div className="w-[85vw] aspect-[360/670] max-w-[360px] 
-                sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[350/660] shrink-0 rounded-[30px] 
-                border border-white/40 p-[2px]
+
+
+<div className="w-[85vw] aspect-[360/670] max-w-[400px] 
+                sm:w-[340px] md:w-[360px] lg:w-[480px] 
+                md:aspect-[376/660] shrink-0 rounded-[30px] 
+                p-[2px]
                  md:p-0">
 
 
 
-<div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
-          <div>
-            <h1 className="text-[18px] font-semibold text-[#FFB800]">
-              {user.username || 'User'}{' '}
-<span
-  className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-  style={{ WebkitTextStroke: "0.7px white" }}
->
-  {age || '—'}
-</span>
-            </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              <IoLocationOutline className="shrink-0" />
-              <span className="truncate">{city}</span>
-            </div>
-          </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            {inSquad && (
-              <button
-                type="button"
-                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-              >
-                Squad
-              </button>
-            )}
-            {isBroadcasting && (
-              <span className="flex h-6 w-6 items-center justify-center text-white" title="Broadcasting">
-                <IoRadio className="h-5 w-5" />
-              </span>
-            )}
-            <span className="flex h-6 w-6 items-center justify-center text-white" title={isVideoOn ? 'Video on' : 'Video off'}>
-              {isVideoOn ? <IoVideocam className="h-5 w-5" /> : <IoVideocamOff className="h-5 w-5" />}
-            </span>
-            <button type="button" className="flex h-6 w-6 items-center justify-center text-white">
-              <IoEllipsisVerticalSharp />
-            </button>
-          </div>
-        </div>
+
+
 
                   
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {/* HEADER */}
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
+        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 ">
           <div>
             <h1 className="text-[18px] font-semibold text-[#FFB800]">
               {user.username || 'User'}{' '}
@@ -147,30 +113,14 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
   {age || '—'}
 </span>
             </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              <IoLocationOutline className="shrink-0" />
-              <span className="truncate">{city}</span>
-            </div>
+           
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            {inSquad && (
-              <button
-                type="button"
-                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-              >
-                Squad
-              </button>
-            )}
-            {isBroadcasting && (
-              <span className="flex h-6 w-6 items-center justify-center text-white" title="Broadcasting">
-                <IoRadio className="h-5 w-5" />
-              </span>
-            )}
-            <span className="flex h-6 w-6 items-center justify-center text-white" title={isVideoOn ? 'Video on' : 'Video off'}>
-              {isVideoOn ? <IoVideocam className="h-5 w-5" /> : <IoVideocamOff className="h-5 w-5" />}
-            </span>
-            <button type="button" className="flex h-6 w-6 items-center justify-center text-white">
+          
+          
+           
+            <button type="button" className="flex h-6 w-6 items-center justify-center text-white md:hidden" >
               <IoEllipsisVerticalSharp />
             </button>
           </div>
@@ -179,17 +129,17 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
         {/* Inner chrome */}
         <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/45">
           {/* Intent */}
-          <div className="absolute left-0 right-0 top-1 z-20 px-2 ">
-            <div className="rounded-[22px] border border-white/35 md:py-10 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
+          <div className="absolute left-0 right-0 top-2 z-20 px-2 ">
+            <div className="rounded-[22px] border border-white/35 md:py-12 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
               {user.intent || 'Here to meet strangers and overthink later.'}
             </div>
           </div>
 
           {/* MAIN BODY — flex row: left sidebar + right image */}
-          <div className="absolute bottom-2 left-2 right-2 top-[5.25rem]  md:top-[7rem] flex gap-2">
+          <div className="absolute bottom-2 left-2 right-2 top-[5.25rem]  md:top-[8rem] flex ">
 
             {/* LEFT SIDEBAR */}
-            <div className="w-[26%] flex flex-col items-center gap-1 z-20">
+            <div className="w-[24%] flex flex-col items-center gap-1 z-20">
               {/* Brands capsule */}
               <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
                 <div className="flex flex-col items-center gap-1">
@@ -251,6 +201,8 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
                   </p>
                 </div>
               </div>
+
+              
             </div>
 
             {/* RIGHT IMAGE */}
@@ -265,21 +217,7 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
           </div>
 
 
-          {/* Pagination */}
-          <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
-            {allPhotos.map((_, idx) => (
-              <div 
-                key={idx}
-                className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? 'w-6 bg-white' : 'w-2 bg-white/35'}`} 
-              />
-            ))}
-            {allPhotos.length === 1 && (
-              <>
-                <div className="h-1 w-2 rounded-full bg-white/35" />
-                <div className="h-1 w-2 rounded-full bg-white/35" />
-              </>
-            )}
-          </div>
+      
         </div>
       </div>
 
@@ -288,26 +226,43 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange }) => {
    
 
 
-   <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
-  
-  {/* Left Button */}
-  <button 
-    onClick={handlePrev}
-    className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
-  >
-<IoIosArrowBack />
-  </button>
+   {(onClose || onDownload || onShare) && (
+     <div className="flex items-center justify-center gap-6 mt-4">
+       {onClose && (
+         <button
+           type="button"
+           className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+           onClick={onClose}
+           aria-label="Close preview"
+         >
+           ✕
+         </button>
+       )}
 
-  {/* Right Button */}
-  <button 
-    onClick={handleNext}
-    className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
-  >
-<IoIosArrowForward />
-  </button>
+       {onDownload && (
+         <button
+           type="button"
+           className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+           onClick={onDownload}
+           aria-label="Download facecard"
+         >
+           <img src="/download.svg" alt="Download" />
+         </button>
+       )}
 
-</div>
-</>
+       {onShare && (
+         <button
+           type="button"
+           className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+           onClick={onShare}
+           aria-label="Share facecard"
+         >
+           <img src="/share-outline.svg" alt="Share" />
+         </button>
+       )}
+     </div>
+   )}
+ </>
 
   );
 };

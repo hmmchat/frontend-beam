@@ -138,7 +138,10 @@ export default function MeetSomeoneNew({
       <FaCrown className="text-yellow-400" />
     </button>
 
-    <button className="h-[45px] p-[14px] w-[45px] border border-white border-b-4 rounded-full flex items-center justify-center text-white shadow-lg">
+    <button 
+      onClick={() => router.push('/onboarding?intent=1')}
+      className="h-[45px] p-[14px] w-[45px] border border-white border-b-4 rounded-full flex items-center justify-center text-white shadow-lg"
+    >
       <FaMobileAlt className='h-[20px] w-[20px]' />
     </button>
   </div>

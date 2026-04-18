@@ -10,12 +10,13 @@ import LocationModal from '@/components/modals/LocationModal';
 import { IoLogOutOutline, IoClose, IoVideocam } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
-import FaceCard from './FaceCard';
+import FaceCard4 from './FaceCard4';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
 import LocationCard from './LocationCard';
 import { getFacecardPhotos } from '@/lib/facecard-utils';
 
+import FaceCard from './FaceCard';
 import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
@@ -25,16 +26,6 @@ import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
 
 
 
-const LocationCardSkeleton = () => (
-  <div className="h-[620px] md:h-[660px] w-[340px] md:w-[360px] shrink-0 aspect-[360/660] rounded-[30px] border border-white/30 p-[2px]">
-    <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-black/20 backdrop-blur-md flex flex-col items-center justify-center p-8">
-      <Skeleton circle className="w-40 h-40 border-4 border-white/5 mb-8" />
-      <Skeleton className="h-6 w-40 mb-4" />
-      <Skeleton className="h-3 w-56 mb-8 opacity-50" />
-      <Skeleton className="h-14 w-full border border-white/10 rounded-2xl" />
-    </div>
-  </div>
-);
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
@@ -826,7 +817,7 @@ export default function MeetSomeoneDynamic() {
   />
 
   {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
-  <div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[40px] pointer-events-none z-30" />
+  <div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[60px] pointer-events-none z-30" />
         
           {isSearching ? (
             <div
@@ -854,57 +845,47 @@ export default function MeetSomeoneDynamic() {
                   onSkip={handleRaincheck}
                 />
               ) : (
-                <div
-                  className={clsx(
-                    'relative',
-                    'flex',
-                    'h-full',
-                    'min-h-0',
-                    'w-full',
-                    'flex-1',
-                    'flex-col',
-                    'items-center',
-                    'justify-center',
-                    'overflow-hidden',
-                    'py-0'
-                  )}
-                >
-                  <div className="flex w-full flex-col items-center gap-2 
-                max-h-[80vh] justify-center
-                [@media(max-height:800px)]:scale-[0.9]
-                [@media(max-height:700px)]:scale-[0.8]">
+             <div className="relative flex h-full w-full flex-col overflow-hidden">
 
-  <FaceCard 
-    user={currentCard} 
-    hideArrows={true} 
-    currentIndex={currentImageIndex}
-    onIndexChange={setCurrentImageIndex}
-  />
-
-  {/* BUTTONS */}
-  <div className="flex w-full items-center justify-between gap-3 px-2 mt-4 md:mt-6">
-
-    <button onClick={handlePrevImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
-      <IoIosArrowBack />
-    </button>
-
-    <div className="flex flex-1 items-center gap-3">
-      <button onClick={handleRaincheck} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
-        Raincheck!
-      </button>
-
-      <button onClick={handleProceed} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
-        Meet rn
-      </button>
-    </div>
-
-    <button onClick={handleNextImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
-      <IoIosArrowForward />
-    </button>
-
+  {/* CENTER CONTENT */}
+<div className="flex w-full flex-col items-center justify-center
+  
+  px-4
+">
+    <FaceCard4
+      user={currentCard} 
+      hideArrows={true} 
+      currentIndex={currentImageIndex}
+      onIndexChange={setCurrentImageIndex}
+    />
   </div>
+
+  {/* 🔥 FIXED BOTTOM BUTTONS */}
+  <div className="absolute bottom-1 left-0 w-full px-4 z-50">
+    <div className="flex items-center justify-between gap-3  mx-auto">
+
+      <button onClick={handlePrevImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
+        <IoIosArrowBack />
+      </button>
+
+      <div className="flex flex-1 items-center gap-3">
+        <button onClick={handleRaincheck} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
+          Raincheck!
+        </button>
+
+        <button onClick={handleProceed} className="flex-1 py-3 rounded-full border border-white/30 text-white text-sm backdrop-blur-md hover:bg-white/10 transition active:scale-95">
+          Meet rn
+        </button>
+      </div>
+
+      <button onClick={handleNextImage} className="w-12 h-12 flex items-center justify-center rounded-full border border-white/30 text-white text-2xl backdrop-blur-md hover:bg-white/10 transition active:scale-90">
+        <IoIosArrowForward />
+      </button>
+
+    </div>
+  </div>
+
 </div>
-                </div>
               )}
 
                 </div>
@@ -934,7 +915,7 @@ export default function MeetSomeoneDynamic() {
 <div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
 {/* 🔲 HUD BORDER FRAME (Desktop Right) */}
-<div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[40px] pointer-events-none z-30" />
+<div className="hidden md:block absolute inset-4 border-2 border-white/30 rounded-[60px] pointer-events-none z-30" />
 
 <div
   className="absolute inset-0 z-[1] opacity-70 mix-blend-hard-light md:animate-zoom-slow"
@@ -953,8 +934,8 @@ export default function MeetSomeoneDynamic() {
 
 
           {/* Coins pill (restore original placement) */}
-          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-8', 'z-50', isSearching && 'hidden')}>
-            <button className=' inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-full text-base font-semibold border border-b-4 border-white/50 transition-all duration-300 ease-out relative overflow-hidden' onClick={() => setIsCoinModalOpen(true)}>
+          <div className={clsx('absolute', 'top-2', 'md:top-12', 'left-16', 'z-50', isSearching && 'hidden')}>
+            <button className=' inline-flex  items-center justify-center gap-3 px-[22.8px] py-[16px] rounded-full text-base font-semibold border border-b-4 border-white/50 transition-all duration-300 ease-out relative overflow-hidden' onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
               <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
@@ -962,7 +943,24 @@ export default function MeetSomeoneDynamic() {
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-10', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-12', 'py-1', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-12', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[31px]', 'md:py-[12px]', isSearching && 'hidden')}>
+
+
+
+             <button 
+              onClick={() => {
+                if (isSearching) {
+                  setOverlay({ open: true, url: '/history', title: 'History' });
+                } else {
+                  router.push('/history');
+                }
+              }}
+              className="w-10 md:w-[35.6px] h-10 md:h-[35.6px] flex items-center justify-center hover:bg-white/20 rounded-full"
+            >
+              <img src="/assets/history.svg" className="w-8 h-8" alt="History" />
+            </button>
+
+            
             <button 
               onClick={() => {
                 if (isSearching) {
@@ -971,22 +969,11 @@ export default function MeetSomeoneDynamic() {
                   router.push('/inbox');
                 }
               }}
-              className="w-10 md:w-12 h-10 md:h-12 flex items-center justify-center hover:bg-white/20 rounded-full"
+              className="w-10 md:w-[35.6px] h-10 md:h-[35.6px] flex items-center justify-center hover:bg-white/20 rounded-full"
             >
               <img src="/assets/chat-with-indicator.svg" className="w-8 h-8" alt="Messages" />
             </button>
-            <button 
-              onClick={() => {
-                if (isSearching) {
-                  setOverlay({ open: true, url: '/history', title: 'History' });
-                } else {
-                  router.push('/history');
-                }
-              }}
-              className="w-10 md:w-12 h-10 md:h-12 flex items-center justify-center hover:bg-white/20 rounded-full"
-            >
-              <img src="/assets/history.svg" className="w-8 h-8" alt="History" />
-            </button>
+         
                {/* Profile */}
 <button 
   onClick={() => {
@@ -996,7 +983,7 @@ export default function MeetSomeoneDynamic() {
       router.push('/facecard?view=editor');
     }
   }}
-  className="w-10 md:w-10 h-10 md:h-10 flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden my-auto"
+  className="w-10 md:w-[35.6px] h-10 md:h-[35.6px] flex items-center justify-center hover:bg-white/20 rounded-full overflow-hidden my-auto"
 >
   {myProfile ? (
     <img 
@@ -1009,13 +996,13 @@ export default function MeetSomeoneDynamic() {
   )}
 </button>
     
-    <button 
+    {/* <button 
       onClick={handleLogout}
       className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-red-500/20', 'rounded-full', 'transition-colors')}
       title="Logout"
     >
       <IoLogOutOutline className={clsx('text-white', 'text-2xl')} />
-    </button>
+    </button> */}
 
 
 
@@ -1025,24 +1012,25 @@ export default function MeetSomeoneDynamic() {
           </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-11', 'right-8', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-12', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
   <Link href="/beam-tv">
-  <button className="h-12 w-12 rounded-full p-2 border-2 border-white/60 shadow-md transition-all duration-200 items-center justify-center flex">
-    <img src="/crown.png" alt="crown" />
+  <button className="md:h-[61px] md:w-[61px] h-10 w-10 rounded-full   border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-200 items-center justify-center flex">
+    <img src="/crown.png" alt="crown" className='h-7 w-7' />
   </button>
 </Link>
 
 
 
-  <button
-    type="button"
-    onClick={() => setOverlay({ open: true, url: '/onboarding?intent=1&overlay=1', title: 'Intent' })}
-    className="w-10 md:w-12 h-10 md:h-12 rounded-full hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
-    title="Intent"
-  >
-    <img src="/icons1.png" alt="Intent" className={clsx('w-12', 'h-12')} />
-  </button>
+          <Link href="/onboarding?intent=1">
+            <button 
+              className="md:h-[61px] md:w-[61px] h-10 w-10 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-200 items-center justify-center flex">
+              <img src="/icon1.svg" alt="Prompt" className='h-7 w-7' />
+            </button>
+          </Link>
+
+
+
 </div>
 
 
@@ -1096,7 +1084,7 @@ export default function MeetSomeoneDynamic() {
     await fetchCard(null, true);
   }}
   className={clsx(
-    'group relative z-20 mt-48 w-[75%] h-24 border-2 border-b-4 rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl',
+    'group relative z-20 mt-48 w-[75%] h-24 border-2 border-b-4  rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl',
     isSearching
       ? 'bg-yellow-500 text-black border-black animate-pulse'
       : 'bg-black/30 text-white border-white hover:bg-black/40'
@@ -1109,10 +1097,14 @@ export default function MeetSomeoneDynamic() {
     "w-11 h-11 rounded-full border flex items-center justify-center group-hover:scale-110 transition-transform z-10",
     isSearching ? "border-black" : "border-white/60"
   )}>
-    <IoVideocam className={clsx(
-      "text-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]",
+      <img
+                    src="/assets/video-on.svg"className={clsx(
+      "text-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] h-7 w-7",
       isSearching ? "text-black" : "text-white"
     )} />
+
+
+   
   </div>
   <span className={clsx(
     "text-xl font-bold tracking-tight z-10 text-[20px]",
@@ -1173,15 +1165,17 @@ export default function MeetSomeoneDynamic() {
                                   onNext={() => fetchCard(null)}
                                 />
                               ) : (
+
+                                
                                 <div className="relative group/card cursor-grab active:cursor-grabbing">
-                                  <FaceCard 
+                                  <FaceCard
                                     user={currentCard} 
                                     hideArrows={true} 
                                     currentIndex={currentImageIndex}
                                     onIndexChange={setCurrentImageIndex}
                                   />
 
-                                  <div className="flex gap-2 mt-4 items-center justify-center gap-6 ">
+                        <div className="absolute bottom-6 left-0 w-full flex items-center justify-between gap-3 px-4">
                                     <button
                                       onClick={handlePrevImage}
                                       className="relative z-[110] w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-75 cursor-pointer backdrop-blur-sm"
@@ -1201,7 +1195,7 @@ export default function MeetSomeoneDynamic() {
                                       onClick={handleProceed}
                                       className="px-4 py-2 rounded-full border border-white/30 text-white text-xs whitespace-nowrap hover:bg-white/10 transition active:scale-95"
                                     >
-                                      Meet rn
+                                      Meet rn.  
                                     </button>
 
                                     <button
@@ -1220,7 +1214,7 @@ export default function MeetSomeoneDynamic() {
                           {/* BOTTOM HALF (CAM PREVIEW) - Hidden when FaceCard is shown on mobile */}
                           {!isFaceCardState && (
                             <div className="flex md:hidden h-1/2 w-full relative z-[1] min-h-0">
-                                <div className="absolute inset-2 border border-white/40 rounded-[2rem] pointer-events-none z-10" />
+                                <div className="absolute inset-2 pointer-events-none z-10" />
                                 <LocalVideo 
                                     showSoloCheckbox={false} 
                                     onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
@@ -1239,10 +1233,10 @@ export default function MeetSomeoneDynamic() {
                     />
                     
                     {/* 🌫 LIGHT OVERLAY (Desktop only) */}
-                    <div className="hidden md:block absolute inset-0 bg-black/10" />
+           
 
                     {/* 🔲 BORDER FRAME (Desktop only) */}
-                    <div className="hidden md:block absolute inset-4 border border-white/30 rounded-[40px] pointer-events-none" />
+                    <div className="hidden md:block absolute inset-4 pointer-events-none" />
                   </div>
                 </div>
               )}
@@ -1252,10 +1246,10 @@ export default function MeetSomeoneDynamic() {
             <div className={clsx('relative', 'z-10', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}>
 
               {/* Video background for squad mode */}
-              <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl border-2 border-white/20">
+              <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl">
                 
 
-                <div className="absolute inset-4 border border-white/40 rounded-[40px] pointer-events-none" />
+
               </div>
 
               {/* Squad UI overlay */}
@@ -1375,8 +1369,8 @@ export default function MeetSomeoneDynamic() {
 
  <div className='border rounded-full  border-b-4 p-1 border-white/40'>
             <Link href="/cards">
-  <button className="h-14 w-14 rounded-full p-3   shadow-md transition-all duration-200">
-    <img src="/hugeiconscards.svg" alt="cards" />
+  <button className="h-16 w-16 rounded-full p-3   shadow-md transition-all duration-200">
+    <img src="/hugeiconscards.svg" alt="cards"  />
   </button>
 </Link>
 

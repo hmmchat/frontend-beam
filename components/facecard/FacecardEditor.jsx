@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function FacecardEditor({
   className,
@@ -411,10 +412,10 @@ export default function FacecardEditor({
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
 
       <div className="scale-[0.95] lg:scale-100 [@media(max-height:800px)]:scale-[0.9] [@media(max-height:700px)]:scale-[0.8] [@media(max-height:600px)]:scale-[0.7] transition-all duration-300">
-        <div className="relative hidden md:flex w-full max-w-[1100px] flex-col md:flex-row gap-4 md:gap-6 overflow-visible rounded-[2rem] md:rounded-[3rem] border border-white/60 p-4 md:p-6">
+        <div className="relative hidden md:flex w-full max-w-[1100px] flex-col md:flex-row gap-4 md:gap-6 overflow-visible rounded-[60px] md:rounded-[60px] border border-white/60 p-4 md:p-4">
           {/* Main Editor UI */}
 
-          <div className="flex-1 border border-2 border-white/30 rounded-[40px] p-8 relative flex flex-col gap-10">
+          <div className="flex-1 border border-2 border-white/30 rounded-[54px] p-8 relative flex flex-col gap-10">
             {/* Top Header Row */}
             <div className="flex items-start gap-6 ">
               {/* Left: Back + Vertical Name */}
@@ -424,7 +425,7 @@ export default function FacecardEditor({
                   onClick={() => setView("success")}
                   className="w-14 h-14 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
                 >
-                  <span className="text-2xl mb-1">←</span>
+                  <span className="text-2xl "><FaArrowLeft /></span>
                 </button>
 
                 {/* Vertical Name Wrapper */}
@@ -462,7 +463,7 @@ export default function FacecardEditor({
                 {/* Slot 1 */}
                 <div
                   onClick={() => handleSlotClick(0)}
-                  className={`w-[160px] sm:w-[180px] md:w-[200px] aspect-[2/3] border-b-6 rounded-[2.5rem] border border-2 border-white/50 overflow-hidden relative ${
+                  className={`w-[160px] sm:w-[180px] md:w-[200px] aspect-[2/3] border-b-6 rounded-[36px] border border-2 border-white/50 overflow-visible relative ${
                     photoUploading
                       ? "pointer-events-none opacity-60"
                       : "0  meeting now"
@@ -470,49 +471,56 @@ export default function FacecardEditor({
                 >
                   <img
                     src={user?.displayPictureUrl || "/imageprofile.png"}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
                     alt="Photo 1"
                   />
-                  <button className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
-                    ✎
-                  </button>
+                   <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">✎</button>
+
                 </div>
 
                 {/* Slot 2 (Photo Order 0) */}
                 <div
                   onClick={() => handleSlotClick(1)}
-                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${
+                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[36px] border-2 border-white/20 flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
                     photoUploading
                       ? "pointer-events-none opacity-60"
                       : "0  meeting now hover:bg-white/10"
                   }`}
                 >
+                               <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">x</button>
                   {user?.photos?.find((p) => p.order === 0)?.url ? (
+              
                     <img
                       src={user.photos.find((p) => p.order === 0).url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
                       alt="Photo 2"
                     />
+       
+
+                    
                   ) : (
                     <span className="text-5xl opacity-60 border border-4 border-white/80 rounded-full px-3">
                       +
                     </span>
+
+                    
                   )}
                 </div>
 
                 {/* Slot 3 (Photo Order 1) */}
                 <div
                   onClick={() => handleSlotClick(2)}
-                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[2.5rem] border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 transition-colors ${
+                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[36px] border-2 border-white/20 flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
                     photoUploading
                       ? "pointer-events-none opacity-60"
                       : "0  meeting now hover:bg-white/10"
                   }`}
                 >
+                                                 <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">x</button>
                   {user?.photos?.find((p) => p.order === 1)?.url ? (
                     <img
                       src={user.photos.find((p) => p.order === 1).url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
                       alt="Photo 3"
                     />
                   ) : (
@@ -590,7 +598,7 @@ export default function FacecardEditor({
               </div>
 
               {/* Icon Pills & Brand Grid */}
-              <div className="col-span-7 space-y-12 mb-2">
+              <div className="col-span-7 space-y-12 ">
                 <div className="flex items-center gap-4">
                   <button
                     type="button"
@@ -598,7 +606,7 @@ export default function FacecardEditor({
                       if (typeof onPickZodiac === "function") onPickZodiac();
                       else setShowSelector("zodiacs");
                     }}
-                    className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
+                    className="w-18 h-18 rounded-2xl border border-2 border-white/60 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
                     aria-label="Change zodiac"
                   >
                     {user?.zodiac?.imageUrl ? (
@@ -616,7 +624,7 @@ export default function FacecardEditor({
 
                   <div
                     onClick={() => setShowSelector("interests")}
-                    className="flex-1 h-16 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
+                    className="flex-1 h-18 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                   >
                     <span className="text-sm tracking-wide">Interests:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
@@ -642,7 +650,7 @@ export default function FacecardEditor({
                 </div>
 
                 <div className="flex items-center font-outfit gap-4">
-                  <div className="w-20 h-20 rounded-2xl border border-white/80 flex items-center justify-center text-3xl shadow-inner">
+                  <div className="w-18 h-18 rounded-2xl border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
                     {user?.gender === "MALE"
                       ? "♂"
                       : user?.gender === "FEMALE"
@@ -652,7 +660,7 @@ export default function FacecardEditor({
 
                   <div
                     onClick={() => setShowSelector("values")}
-                    className="flex-1 h-16 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
+                    className="flex-1 h-18 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                   >
                     <span className="text-sm  tracking-wide">Causes:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
@@ -786,19 +794,21 @@ export default function FacecardEditor({
                   <div className="w-2 h-2 rounded-full bg-white/40"></div>
                 </div>
               </div>
+
+              
               <div className="relative w-full py-6 flex justify-center">
-                <div className="relative px-16 py-4 text-center text-white">
+                <div className="relative px-1 w-48 py-4 text-center text-white">
                   <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60" />
                   <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/60" />
                   <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60" />
                   <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60" />
 
-                  <p className="text-sm  text-start font-outfit">
+                  <p className="text-[12px]  text-center font-outfit items-center justify-center">
                     {user?.musicPreference?.name ||
                       user?.musicPreference?.songName ||
                       "Select Song"}
                   </p>
-                  <p className="text-xs  font-outfit">
+                  <p className="text-[12px] text-center   font-outfit">
                     {user?.musicPreference?.artist ||
                       user?.musicPreference?.artistName ||
                       "Spotify"}

@@ -18,7 +18,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
-  // form state
+const [city, setCity] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState({ day: "", month: "", year: "" });
   const [gender, setGender] = useState(null); // 'female' | 'male' | 'nonbinary'
@@ -36,7 +36,12 @@ export default function Onboarding() {
   const [isShuffleLoading, setIsShuffleLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isOverlayMode, setIsOverlayMode] = useState(false);
+  const [showCityModal, setShowCityModal] = useState(false);
+const [tempCity, setTempCity] = useState(city || "Anywhere");
 
+
+  const [showGenderModal, setShowGenderModal] = useState(false);
+const [tempGender, setTempGender] = useState(gender || "");
   // Get userId from token on mount
   useEffect(() => {
     // Overlay deep link: /onboarding?intent=1&overlay=1 should land directly on step 2.
@@ -494,7 +499,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen px-4 py-3 overflow-hidden">
+<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen overflow-y-auto px-4 py-3">
 
             {step === 1 && (
     <>
@@ -544,14 +549,7 @@ if (prompt.trim() && accessToken) {
 
   <div
     className="
-      scale-[0.95]
-
-      lg:scale-100
-
-      [@media(max-height:800px)]:scale-[0.9]
-      [@media(max-height:700px)]:scale-[0.85]
-      [@media(max-height:600px)]:scale-[0.75]
-
+ 
       origin-top
       transition-all
     "
@@ -677,55 +675,184 @@ className="
                 </div>
 
                 {/* 5️⃣ Gender identity */}
-                <div className="md:px-4 font-outfit">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-white text-sm">Gender Identity
-                      <br/>  
-                      <span className="text-white/60 text-xs italic mt-1">   Gender is not visible on your profile</span>
- 
+{/* 5️⃣ Gender + City (Row UI) */}
+<div className="md:px-4 font-outfit grid grid-cols-2 gap-3">
 
-                    </label>
-                     
-                    <label className="text-white/60 text-xs flex items-center gap-2 0  meeting now">
-                      <input 
-                        type="checkbox" 
-                        checked={preferNotToSay}
-                        onChange={(e) => {
-                          setPreferNotToSay(e.target.checked);
-                          if (e.target.checked) setGender(null);
-                        }}
-                      />
-                      Prefer not to say
-                    </label>
-                    
-                  </div>
+  {/* Gender */}
+  <div>
+    <label className="text-white text-sm mb-2 block">
+      Gender Identity
+    </label>
+<div onClick={() => setShowGenderModal(true)}
+  className="w-full border border-white/40  border-b-[3px]
+  rounded-[1rem] px-5 py-4 text-white text-lg 
+  flex justify-between items-center cursor-pointer"
+>
+  <span className="flex items-center gap-2">
+    ⚧ {gender ? gender : "Select"}
+  </span>
+  <span>▼</span>
+</div>
 
-                  <div className="flex gap-1">
-                    {[
-                      { label: "Female", value: "female", icon: "♀" },
-                      { label: "Male", value: "male", icon: "♂" },
-                      { label: "Nonbinary", value: "nonbinary", icon: "⚧" },
-                    ].map((g) => (
-                      <button
-                        key={g.value}
-                        type="button"
-                        onClick={() => setGender(g.value)}
-                        disabled={preferNotToSay}
-                        className={`flex-1 flex items-center justify-center  gap-2 rounded-xl border-2 px-5 py-3  md:px-2 md:py-3 text-white transition border border-b-4
-                        ${
-                          gender === g.value
-                            ? "border-yellow-400 bg-yellow-400/10"
-                            : "border-white/30"
-                        } ${preferNotToSay ? 'opacity-30 cursor-not-allowed' : ''}`}
-                      >
-                        <span>{g.icon}</span>
-                        <span className="text-xs md:text-sm lg:text-base">{g.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {errors.gender && !preferNotToSay && <div className="text-xs text-rose-400 mt-1">{errors.gender}</div>}
-                </div>
-  
+
+{showGenderModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-end pr-80 ">
+
+    <div
+      className="w-[90%] max-w-xs text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden "
+      style={{
+        backgroundImage: "url('/assets/mb.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+
+  <div className="absolute inset-0 bg-black/20"></div>
+
+          <div 
+      className=" w-full relative outfit-font text-white" 
+      style={{
+        backgroundImage: "url('/assets/mb.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    />
+
+      <h2 className="text-xl font-semibold">Select Gender</h2>
+      <p className="text-sm text-white/60 mb-4">
+        Gender is not visible on your profile
+      </p>
+
+      <div className="space-y-5">
+
+        {[
+          { label: "Male", value: "male", icon: "♂" },
+          { label: "Female", value: "female", icon: "♀" },
+          { label: "Non Binary", value: "nonbinary", icon: "⚧" },
+          { label: "Prefer not to say", value: "none", icon: "🙂" },
+        ].map((g) => (
+          <div
+            key={g.value}
+            onClick={() => setTempGender(g.value)}
+            className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <span>{g.icon}</span>
+              <span>{g.label}</span>
+            </div>
+
+            <div className={`w-5 h-5 rounded-full border-2 
+              ${tempGender === g.value ? "border-white bg-white" : "border-white/50"}
+            `}></div>
+          </div>
+        ))}
+
+      </div>
+
+      {/* Apply Button */}
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => {
+            setGender(tempGender);
+            setShowGenderModal(false);
+          }}
+          className="border border-white/40 px-6 py-2 rounded-full"
+        >
+          Apply
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+  </div>
+
+  {/* Preferred City */}
+  <div>
+    <label className="text-white text-sm mb-2 block">
+      Preferred City
+    </label>
+
+  <div
+  onClick={() => setShowCityModal(true)}
+  className="w-full border border-white/40 border-b-[3px] 
+  rounded-[1rem] px-5 py-4 text-white text-lg 
+  flex justify-between items-center cursor-pointer"
+>
+  <span>{city || "Anywhere"}</span>
+  <span>▼</span>
+</div>
+  </div>
+
+
+  {showCityModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-end pr-28 pb-20 ">
+
+    <div
+      className="w-[90%] max-w-md text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
+      style={{
+        backgroundImage: "url('/assets/mb.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+
+      {/* overlay */}
+      <div className="absolute inset-0 bg-black/20"></div>
+
+      <div className="relative z-10">
+
+        <h2 className="text-xl font-semibold">Select city</h2>
+        <p className="text-sm text-white/60 mb-4">
+          We do not track your location
+        </p>
+
+        {/* Search (UI only) */}
+        <div className="border border-white/30 rounded-full px-4 py-3 mb-4 flex items-center gap-2">
+          🔍 <input
+            placeholder="Search city"
+            className="bg-transparent outline-none text-white placeholder-white/50 w-full"
+          />
+        </div>
+
+        {/* List */}
+        <div className="space-y-4 max-h-[300px] overflow-y-auto">
+
+          {["Anywhere","Delhi","Bengaluru","Kolkata","Ahmedabad","Assam"].map((c) => (
+            <div
+              key={c}
+              onClick={() => setTempCity(c)}
+              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer"
+            >
+              <span>{c}</span>
+
+              <div className={`w-5 h-5 rounded-full border-2 
+                ${tempCity === c ? "border-white bg-white" : "border-white/50"}
+              `}></div>
+            </div>
+          ))}
+
+        </div>
+
+        {/* Apply */}
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => {
+              setCity(tempCity);
+              setShowCityModal(false);
+            }}
+            className="border border-white/40 px-6 py-2 rounded-full"
+          >
+            Apply
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
+</div>
 
                 {/* Error Message */}
                 {apiError && (
@@ -781,9 +908,12 @@ className="
         </div>
       </div>
 
+
+
+          <div className="flex flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
       {/* Right */}
-      <div className="flex justify-center h-full md:border md:border-white/30 rounded-[3rem] md:p-6">
-<div className="w-full max-w-lg h-full flex flex-col  p-4">
+
+<div className="w-full max-w-lg  flex flex-col  p-4">
 
 
 
@@ -847,7 +977,12 @@ className="
               </button>
             </div>
 
-        <div className="flex flex-wrap gap-2 content-start flex-1 items-start mt-4">
+<div
+  className="flex flex-wrap gap-2 content-start items-start mt-4 overflow-hidden"
+  style={{
+    maxHeight: "310px" // 👈 tweak this once, don’t overthink
+  }}
+>
               {suggestions.map((text, i) => {
                 const isLong = text.length > 25;
                 const isSelected = selectedPrompts.includes(text);

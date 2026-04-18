@@ -699,6 +699,43 @@ function FacecardContent() {
     }
   };
 
+  const handleShareFacecard = async () => {
+    if (!user) return;
+    const shareData = {
+      title: `${firstName}'s Facecard`,
+      text: `Check out ${firstName}'s Facecard on HMM!`,
+      url: `${window.location.origin}/facecard?userId=${user.id}`,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== "AbortError") console.error("Error sharing:", err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        alert("Link copied to clipboard!");
+      } catch (err) {
+        console.error("Clipboard error:", err);
+      }
+    }
+  };
+
+  const handleDownloadFacecard = () => {
+    if (user?.displayPictureUrl) {
+      const link = document.createElement("a");
+      link.href = user.displayPictureUrl;
+      link.download = `${firstName}_facecard.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      alert("No image available to download.");
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -880,39 +917,24 @@ function FacecardContent() {
             aria-modal="true"
             aria-label="Facecard preview"
           >
-            {/* Corner Brackets */}
-            <span className="absolute hidden md:block top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/40 m-4 rounded-tl-xl"></span>
-            <span className="absolute hidden md:block top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white/40 m-4 rounded-tr-xl"></span>
-            <span className="absolute hidden md:block bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white/40 m-4 rounded-bl-xl"></span>
-            <span className="absolute hidden md:block bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/40 m-4 rounded-br-xl"></span>
 
-            <button
-              type="button"
-              className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
-              onClick={() => setFacecardPreviewOpen(false)}
-              aria-label="Close preview"
-            >
-              ✕
-            </button>
 
-            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[90vh] ">
-              <div className="text-center space-y-1 -mb-14 ">
-                <h3 className="text-xl font-black uppercase tracking-widest text-white">
-                  Facecard Preview
-                </h3>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-mono">
-                  What others see before a call
-                </p>
-              </div>
+      
 
-              <div className="w-full flex justify-center py-4">
-                <div className="origin-center origin-center scale-[0.8] sm:scale-[0.8] md:scale-[0.8] lg:scale-[0.9] transition-transform">
+            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[96vh]  border-0  md:border md:border-white/40   rounded-[60px] w-[960px] ">
+        
+
+              <div className=" flex justify-center  h-[90%]    " >
+                <div className="origin-center origin-center sm:scale-[0.7] md:scale-[0.8] lg:scale-[0.9] transition-transform">
                   <FaceCard2
                     user={{
                       ...user,
                       age,
                       city: user?.preferredCity || user?.city,
                     }}
+                    onClose={() => setFacecardPreviewOpen(false)}
+                    onDownload={handleDownloadFacecard}
+                    onShare={handleShareFacecard}
                   />
                 </div>
               </div>

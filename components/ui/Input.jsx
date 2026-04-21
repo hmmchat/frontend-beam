@@ -32,7 +32,7 @@ export default function Input({
           onChange={onChange}
           className={`
             w-full px-5 py-4 
-            bg-[#1D024D] backdrop-blur-md
+            bg-indigo-950/30 backdrop-blur-md
             border-2 ${error ? 'border-red-500' : 'border-[#9C81BE]'}
             rounded-[14px] text-white text-base
             placeholder:text-white/40

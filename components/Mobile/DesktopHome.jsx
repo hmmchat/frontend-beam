@@ -184,8 +184,10 @@ const [isVideoOn, setIsVideoOn] = useState(false);
               {/* CENTER CTA */}
               <div className="flex-1 flex items-center justify-center mt-40">
                 <MeetNowButton
-                  className="w-[85%] py-7"
+                  className="w-[90%] py-7"
                   onClick={() => setIsSignUpOpen(true)}
+                  isVideoOn={isVideoOn}
+                  onVideoClick={() => setIsVideoOn(!isVideoOn)}
                 />
               </div>
 
@@ -193,7 +195,7 @@ const [isVideoOn, setIsVideoOn] = useState(false);
               <div className="mb-10 flex justify-between items-center px-2 ">
                 <div className="border-2 border-white/50 p-3 rounded-full flex items-center justify-center border-b-4">
                   <Link href="/beam-tv">
-                    <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
+                    <button className="relative h-10 w-10 l p-3 shadow-md hover:border-white hover:scale-110 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 active:border-b-2 transition-all duration-300">
                       {/* TV Frame (background) */}
                       <img
                         src="/tvfame.png"
@@ -209,7 +211,7 @@ const [isVideoOn, setIsVideoOn] = useState(false);
                   </Link>
                 </div>
                 <button
-                  className="rounded-full border-2 border-b-4 border-white/50 py-4 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2"
+                  className="rounded-full border-2 border-b-4 border-white/50 py-4 px-10 hover:border-white hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] active:scale-95 active:border-b-2 transition-all duration-300"
                   onClick={() => setIsSignUpOpen(true)}
                 >
                   Sign Up

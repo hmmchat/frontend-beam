@@ -12,6 +12,7 @@ import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 
 import { IoIosArrowForward } from "react-icons/io";
+
 function brandLogoUrl(entry) {
   if (!entry) return null;
   if (typeof entry === "string") return entry;
@@ -75,21 +76,9 @@ const FaceCard = ({
 
   const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
 
-  console.log("FaceCard Debug:", {
-    username: user.username,
-    photosCount: allPhotos.length,
-    activeIndex,
-    allPhotos,
-  });
-
   const handlePrev = (e) => {
     e?.stopPropagation();
     const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
-    console.log("FaceCard handlePrev:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
     if (onIndexChange) onIndexChange(newIdx);
     else setInternalIndex(newIdx);
   };
@@ -97,152 +86,169 @@ const FaceCard = ({
   const handleNext = (e) => {
     e?.stopPropagation();
     const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
-    console.log("FaceCard handleNext:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
     if (onIndexChange) onIndexChange(newIdx);
     else setInternalIndex(newIdx);
   };
 
   return (
     <>
-      {!hideHeader && (
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
-          <div>
-            <h1 className="text-[18px] font-semibold text-[#FFB800] text-start">
-              {user.username || "User"}{" "}
-              <span
-                className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-                style={{ WebkitTextStroke: "0.7px white" }}
-              >
-                {age || "—"}
-              </span>
-            </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              {/* <IoLocationOutline className="shrink-0" /> */}
-              <span className="truncate">{city}</span>
-            </div>
-          </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            {inSquad && (
-              <button
-                type="button"
-                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-              >
-                Squad
-              </button>
-            )}
-            {isBroadcasting && (
-              <span
-                className="flex h-6 w-6 items-center justify-center text-white"
-                title="Broadcasting"
-              >
-                <IoRadio className="h-5 w-5" />
-              </span>
-            )}
-            <span
-              className="flex h-6 w-6 items-center justify-center text-white"
-              title={isVideoOn ? "Video on" : "Video off"}
-            >
-              {isVideoOn ? (
-                <IoVideocam className="h-5 w-5" />
-              ) : (
-                <IoVideocamOff className="h-5 w-5" />
-              )}
-            </span>
-            <button
-              type="button"
-              className="flex h-6 w-6 items-center justify-center text-white"
-            >
-              <IoEllipsisVerticalSharp />
-            </button>
-          </div>
-        </div>
-      )}
+     <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+                <div>
+                  <h1 className="text-[18px] font-extrabold text-[#FFB800] text-start">
+                    {user.username || "User"}{" "}
+                    <span
+                      className="font-sm text-transparent px-2 py-0.5 rounded-full"
+                      style={{ WebkitTextStroke: "0.7px white" }}
+                    >
+                      {age || "—"}
+                    </span>
+                  </h1>
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+                    <span className="font-outfit">{city}</span>
+                  </div>
+                </div>
 
-<div className="
-  w-[85vw] max-w-[360px] 
-  aspect-[360/670]
-  scale-[0.95]
-  lg:scale-100
-  [@media(max-height:850px)]:scale-[0.9]
-  [@media(max-height:750px)]:scale-[0.85]
-  [@media(max-height:650px)]:scale-[0.8]
-  origin-top
-">
-        <div className="relative h-full w-full overflow-hidden rounded-[28px] ">
-          {/* HEADER */}
-          {!hideHeader && (
-            <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
-              <div>
-                <h1 className="text-[18px] font-semibold text-[#FFB800]">
-                  {user.username || "User"}{" "}
-                  <span
-                    className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-                    style={{ WebkitTextStroke: "0.7px white" }}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {inSquad && (
+                    <button
+                      type="button"
+                      className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                    >
+                      Squad
+                    </button>
+                  )}
+                  {isBroadcasting && (
+                    <span
+                      className="flex h-6 w-6 items-center justify-center text-white"
+                      title="Broadcasting"
+                    >
+                      <IoRadio className="h-5 w-5" />
+                    </span>
+                  )}
+                  {/* <span
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                    title={isVideoOn ? "Video on" : "Video off"}
                   >
-                    {age || "—"}
-                  </span>
-                </h1>
-                <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-                  <IoLocationOutline className="shrink-0" />
-                  <span className="truncate">{city}</span>
+                    {isVideoOn ? (
+                      <IoVideocam className="h-5 w-5" />
+                    ) : (
+                      <IoVideocamOff className="h-5 w-5" />
+                    )}
+                  </span> */}
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                  >
+                    <IoEllipsisVerticalSharp />
+                  </button>
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1.5">
-                {inSquad && (
-                  <button
-                    type="button"
-                    className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-                  >
-                    Squad
-                  </button>
-                )}
-                {isBroadcasting && (
+
+
+
+
+      <div
+        className="
+          w-[85vw] max-w-[360px] 
+          aspect-[356/670]
+          mx-auto
+          scale-100
+          [@media(max-height:950px)]:scale-[0.95]
+          [@media(max-height:850px)]:scale-[0.9]
+          [@media(max-height:750px)]:scale-[0.85]
+          [@media(max-height:650px)]:scale-[0.8]
+          [@media(max-height:550px)]:scale-[0.75]
+          origin-top
+        "
+      >
+        <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/40 md:border-none ">
+          {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
+          {!hideHeader && (
+            <>
+              {/* Desktop header (larger laptops) */}
+         
+
+
+
+
+
+
+
+
+
+              
+
+              {/* Mobile header (phones + very small tablets) */}
+              <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
+                <div>
+                  <h1 className="text-[18px] font-semibold text-[#FFB800]">
+                    {user.username || "User"}{" "}
+                    <span
+                      className="font-sm text-transparent px-2 py-0.5 rounded-full"
+                      style={{ WebkitTextStroke: "0.7px white" }}
+                    >
+                      {age || "—"}
+                    </span>
+                  </h1>
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+                    <IoLocationOutline className="shrink-0" />
+                    <span className="truncate">{city}</span>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {inSquad && (
+                    <button
+                      type="button"
+                      className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                    >
+                      Squad
+                    </button>
+                  )}
+                  {isBroadcasting && (
+                    <span
+                      className="flex h-6 w-6 items-center justify-center text-white"
+                      title="Broadcasting"
+                    >
+                      <IoRadio className="h-5 w-5" />
+                    </span>
+                  )}
                   <span
                     className="flex h-6 w-6 items-center justify-center text-white"
-                    title="Broadcasting"
+                    title={isVideoOn ? "Video on" : "Video off"}
                   >
-                    <IoRadio className="h-5 w-5" />
+                    {isVideoOn ? (
+                      <IoVideocam className="h-5 w-5" />
+                    ) : (
+                      <IoVideocamOff className="h-5 w-5" />
+                    )}
                   </span>
-                )}
-                <span
-                  className="flex h-6 w-6 items-center justify-center text-white"
-                  title={isVideoOn ? "Video on" : "Video off"}
-                >
-                  {isVideoOn ? (
-                    <IoVideocam className="h-5 w-5" />
-                  ) : (
-                    <IoVideocamOff className="h-5 w-5" />
-                  )}
-                </span>
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center text-white"
-                >
-                  <IoEllipsisVerticalSharp />
-                </button>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                  >
+                    <IoEllipsisVerticalSharp />
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* Inner chrome */}
-          <div className="absolute bottom-0 left-1 right-1 top-[4.25rem] rounded-[34.46px] border border-white/45">
+          <div className="absolute bottom-[6px] left-1 right-1 top-[4.25rem] rounded-[34.46px] border border-white/45 ">
             {/* Intent */}
-            <div className="absolute left-0 right-0 top-2 z-20 px-2 ">
+            <div className="absolute left-0 right-0 top-2 z-20 px-2">
               <div className="rounded-[29.1px] border border-white/35 md:py-10 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
                 {user.intent || "Here to meet strangers and overthink later."}
               </div>
             </div>
 
             {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute bottom-2 left-2 right-2 top-[5.25rem]  md:top-[7rem] flex gap-2">
+            <div className="absolute bottom-2 left-2 right-2 top-[5.25rem] md:top-[7rem] flex gap-2">
               {/* LEFT SIDEBAR */}
-              <div className="w-[26%] flex flex-col items-center gap-[6px] z-20">
+              <div className="w-[23%] flex flex-col items-center gap-[6px] z-20">
                 {/* Brands capsule */}
                 <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
                   <div className="flex flex-col items-center gap-1">
@@ -268,7 +274,7 @@ const FaceCard = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
+                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[20.2px] border border-white/45 px-2 py-2 shadow-inner">
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
@@ -287,13 +293,14 @@ const FaceCard = ({
                   </span>
                 </div>
 
-                {/* Music */}
+                {/* Music — FIXED: added "relative" so the musicline.svg stays inside the music capsule on ALL screen sizes */}
+                <div className="relative flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[600px] border border-white/40 px-1 pb-2 pt-2">
+                  <img
+                    src="/musicline.svg"
+                    alt=""
+                    className="absolute left-1 bottom-14 z-50"
+                  />
 
-                
-                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[600px] border border-white/40 px-1 pb-2 pt-2 ">
-
-
-<img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
                   <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
@@ -306,20 +313,16 @@ const FaceCard = ({
                     )}
                   </div>
 
-                  
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
                   <div className="mt-1.5 w-full px-0.5 text-center text-white">
-
-                    <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">
-                      {user.musicPreference ? songTitle : "Music Vacant"}
+                    <p className="text-[9px] font-medium leading-tight tracking-wide truncate whitespace-nowrap overflow-hidden">
+                      {user.musicPreference ? songTitle : "\u00a0"}
                     </p>
-                    <p className="mt-0.5 line-clamp-2 text-[7px] font-extralight leading-tight text-white/70">
+                    <p className="mt-0.5 text-[7px] font-extralight leading-tight text-white/70 truncate whitespace-nowrap overflow-hidden">
                       {user.musicPreference ? artist : "\u00a0"}
                     </p>
                   </div>
                 </div>
-
-
               </div>
 
               {/* RIGHT IMAGE */}
@@ -331,6 +334,9 @@ const FaceCard = ({
                 />
               </div>
             </div>
+
+
+
 
             {/* Pagination */}
             <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
@@ -352,7 +358,7 @@ const FaceCard = ({
       </div>
 
       {!hideArrows && (
-        <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
+        <div className="flex items-center justify-center gap-2 mt-4 hidden md:flex">
           {/* Left Button */}
           <button
             onClick={handlePrev}

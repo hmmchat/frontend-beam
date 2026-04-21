@@ -52,6 +52,7 @@ export default function MeetSomeoneDynamic() {
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isVideoOn, setIsVideoOn] = useState(true);
 
 
   useEffect(() => {
@@ -916,11 +917,11 @@ export default function MeetSomeoneDynamic() {
       </button>
 
       <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
-        <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-95')}>
+        <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
           Raincheck!
         </button>
 
-        <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-95')}>
+        <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
           Meet rn
         </button>
       </div>
@@ -943,9 +944,9 @@ export default function MeetSomeoneDynamic() {
                   <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
                   <p className={clsx('text-white', 'text-xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>
                   <div className={clsx('inline-flex', 'gap-1', 'mt-3', 'font-[family-name:var(--font-otomanopee)]')}>
-                    <img src="/assets/video-on.svg" alt="" className={clsx('w-4', 'h-4' )} />
-                    <p className='text-xs font-outfit'>
-                      {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} meeting now
+                    <img src="/assets/video-on.svg" alt="" className={clsx('w-5', 'h-5' )} />
+                    <p className='text-[14px] font-thin font-outfit '>
+                      {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} beaming now
                     </p>
                   </div>
                 </div>
@@ -982,7 +983,7 @@ export default function MeetSomeoneDynamic() {
 
           {/* Coins pill (restore original placement) */}
           <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-16', 'z-50', isSearching && 'hidden')}>
-            <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[22.8px]', 'py-[16px]', 'rounded-full', 'text-base', 'font-semibold', 'border', 'border-b-4', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden')} onClick={() => setIsCoinModalOpen(true)}>
+            <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[22.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border', 'border-b-4', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
               <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
@@ -990,7 +991,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-5', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[31px]', 'md:py-[12px]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[36px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[31px]', 'md:py-[11px]', isSearching && 'hidden')}>
 
 
 
@@ -1002,7 +1003,7 @@ export default function MeetSomeoneDynamic() {
                   router.push('/history');
                 }
               }}
-              className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full')}
+              className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
             >
               <img src="/assets/history.svg" className={clsx('w-8', 'h-8')} alt="History" />
             </button>
@@ -1025,8 +1026,12 @@ export default function MeetSomeoneDynamic() {
     'items-center',
     'justify-center',
     'hover:bg-white/20',
+    'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]',
+    'hover:scale-110',
     'rounded-full',
-    'relative'
+    'relative',
+    'transition-all',
+    'duration-300'
   )}
 >
   <img
@@ -1063,7 +1068,7 @@ export default function MeetSomeoneDynamic() {
       router.push('/facecard?view=editor');
     }
   }}
-  className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'rounded-full', 'overflow-hidden', 'my-auto')}
+  className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}
 >
   {myProfile ? (
     <img 
@@ -1076,13 +1081,13 @@ export default function MeetSomeoneDynamic() {
   )}
 </button>
     
-    <button 
+    {/* <button 
       onClick={handleLogout}
       className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-red-500/20', 'rounded-full', 'transition-colors')}
       title="Logout"
     >
       <IoLogOutOutline className={clsx('text-white', 'text-2xl')} />
-    </button>
+    </button> */}
 
 
 
@@ -1095,7 +1100,7 @@ export default function MeetSomeoneDynamic() {
           <div className={clsx('absolute', 'top-4', 'md:top-14', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
   <Link href="/beam-tv">
-  <button className={clsx('md:h-[61px]', 'md:w-[61px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-200', 'items-center', 'justify-center', 'flex')}>
+  <button className={clsx('md:h-[56px]', 'md:w-[56px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
     <img src="/crown.svg" alt="crown" className={clsx('h-7', 'w-7')} />
   </button>
 </Link>
@@ -1104,7 +1109,7 @@ export default function MeetSomeoneDynamic() {
 
           <Link href="/onboarding?intent=1">
             <button 
-              className={clsx('md:h-[61px]', 'md:w-[61px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-200', 'items-center', 'justify-center', 'flex')}>
+              className={clsx('md:h-[56px]', 'md:w-[56px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
               <img src="/icon1.svg" alt="Prompt" className={clsx('h-7', 'w-7')} />
             </button>
           </Link>
@@ -1162,7 +1167,9 @@ export default function MeetSomeoneDynamic() {
                   await fetchCard(null, true);
                 }}
                 isSearching={isSearching}
-                className="mt-48 w-[75%] h-24"
+                className="mt-40 w-[80%] h-26"
+                isVideoOn={isVideoOn}
+                onVideoClick={() => setIsVideoOn(!isVideoOn)}
               />
 
 
@@ -1359,14 +1366,14 @@ export default function MeetSomeoneDynamic() {
           )}
 
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
-          <div className={clsx('absolute', 'px-5', 'bottom-12', 'left-10', 'right-10', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'px-5', 'bottom-12', 'left-11', 'right-11', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
             {/* Left side — fixed height so toggle position never shifts */}
             <div className={clsx('flex', 'items-center', 'h-[72px]')}>
             {mode === 'solo' ? (
               <div className={clsx('flex', 'gap-2', 'items-center')}>
                 <div className={clsx('border', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'border-white/40')}>
                 <Link href="/beam-tv">
-                <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-105', 'hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]', 'active:scale-95', 'active:border-b-2')}>
+                <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
   
   {/* TV Frame (background) */}
   <img 
@@ -1388,7 +1395,7 @@ export default function MeetSomeoneDynamic() {
 
  <div className={clsx('border', 'rounded-full', 'border-b-4', '', 'border-white/40')}>
             <Link href="/cards">
-  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'shadow-md', 'transition-all', 'duration-200')}>
+  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
     <img src="/hugeiconscards.svg" alt="cards"  />
   </button>
 </Link>
@@ -1403,27 +1410,33 @@ export default function MeetSomeoneDynamic() {
             )}
             </div>
 
-            <div className={clsx('w-fit', 'flex', 'gap-2', 'border-white/40', 'border-1', 'rounded-full', 'p-1')}>
+            <div className={clsx('relative', 'w-fit', 'flex', 'gap-2', 'border-white/60', 'border', 'rounded-full', 'p-1', 'bg-black/10')}>
+              {/* Sliding Pill */}
+              <div 
+                className={clsx(
+                  "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) border-[1.5px] border-white/70 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
+                  mode === 'solo' ? "left-1 bg-black/20" : "left-[calc(50%+2px)] bg-black/40"
+                )}
+              />
+              
               <button
                 onClick={() => setMode('solo')}
-                className={`px-6 py-1 rounded-full transition ${
-                  mode === 'solo'
-                    ? 'text-white bg-black/20 border-[1.5px] border-white/40'
-                    : 'text-white hover:bg-white/20'
-                }`}
+                className={clsx(
+                  'px-8 py-2 rounded-full transition-all duration-300 hover:scale-105 z-10 relative',
+                  mode === 'solo' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                )}
               >
-                solo
+                Solo
               </button>
 
               <button
                 onClick={() => setMode('squad')}
-                className={`px-6 py-1 rounded-full transition ${
-                  mode === 'squad'
-                    ? 'bg-black/40 border-[1.5px] border-white/40 text-white'
-                    : 'text-white hover:bg-white/10'
-                }`}
+                className={clsx(
+                  'px-8 py-2 rounded-full transition-all duration-300 hover:scale-105 z-10 relative',
+                  mode === 'squad' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                )}
               >
-                squad
+                Squad
               </button>
             </div>
           </div>

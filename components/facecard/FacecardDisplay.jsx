@@ -22,6 +22,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
       prev < allPhotos.length - 1 ? prev + 1 : 0,
     );
   };
+
   return (
     <div
       className="flex min-h-screen w-full flex-col bg-purple-950 text-white outfit-font"
@@ -32,66 +33,56 @@ export default function FacecardDisplay({ user, age, setView, router }) {
       }}
     >
       <div
-        className="mx-auto flex w-full w-full flex-1 flex-col gap-3 px-3 py-3 
+        className="mx-auto flex w-full flex-1 flex-col gap-3 px-3 py-3 
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
       >
-        {/* LEFT */}
+        {/* LEFT — phone preview area */}
         <div
           className="flex flex-1 flex-col items-center justify-center md:justify-center
-min-h-[100dvh] md:min-h-0
-overflow-y-auto md:overflow-visible
-                        rounded-[2rem] 
-                        md:border md:border-white/30 md:rounded-[60px] 
+                      min-h-[100dvh] md:min-h-0
+                      overflow-y-auto md:overflow-visible
+                      rounded-[2rem] 
+                      md:border md:border-white/30 md:rounded-[60px] 
                       px-3 py-3 sm:px-4"
         >
           <div
             className="flex w-full flex-col items-center text-center gap-6 
-                flex-1 justify-center 
-                -mt-28 md:mt-0
-                scale-[0.85] sm:scale-90 md:scale-100"
+                       flex-1 justify-center 
+                       -mt-28 md:mt-0
+                       scale-[0.85] sm:scale-90 md:scale-100"
           >
-            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base  md:hidden -mb-5">
+            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden -mb-5">
               This is Your FaceCard
             </p>
 
-            <p className="text-[10px] sm:text-xs md:text-[11px]  font-thin mb-4 md:hidden">
+            <p className="text-[10px] sm:text-xs md:text-[11px] font-thin mb-4 md:hidden">
               People will see this before meeting you <br />
               You can add more info to get better matches
             </p>
 
             {/* CARD */}
-            <div
-              className="
-    transition-all duration-300 ease-in-out
-
-    
-  "
-            >
-              <div className="flex justify-center w-full ">
-                <div className="w-full    ">
-                  <FaceCard
-                    user={{
-                      ...user,
-                      age,
-                      city: user?.preferredCity || user?.city,
-                    }}
-                    currentIndex={currentImageIndex}
-                    onIndexChange={setCurrentImageIndex}
-                  />
-                </div>
+            <div className="flex justify-center w-full">
+              <div className="w-full">
+                <FaceCard
+                  user={{
+                    ...user,
+                    age,
+                    city: user?.preferredCity || user?.city,
+                  }}
+                  currentIndex={currentImageIndex}
+                  onIndexChange={setCurrentImageIndex}
+                />
               </div>
             </div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full justify-center gap-4 px-2  md:hidden">
+            <div className="flex w-full justify-center gap-4 px-2 md:hidden">
               <button
                 onClick={handlePrev}
                 className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
               >
                 <IoIosArrowBack />
               </button>
-
-              {/* Right Button */}
 
               <button
                 onClick={() => router.push("/")}
@@ -117,7 +108,7 @@ overflow-y-auto md:overflow-visible
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — desktop info panel */}
         <div
           className="hidden md:flex flex-1 flex-col items-center justify-center text-center 
                         rounded-[60px] border border-white/30 
@@ -128,22 +119,22 @@ overflow-y-auto md:overflow-visible
             Meet your Facecard
           </h1>
 
-          <p className="mt-3 max-w-md text-xs md:text-[20px] lg:text-xl text-white/90 font-outfit">
+          <p className="mt-3 max-w-md font-thin text-xs md:text-[20px] lg:text-xl text-white/90 font-outfit">
             This is what people see before meeting you. Adding more details
-            makes it cooler and gets you better matches & conversations.
+            makes it cooler and gets you better matches &amp; conversations.
           </p>
 
-          <div className="w-full max-w-sm mt-20 space-y-3 lg:space-y-4">
+          <div className="w-full max-w-[400px] mt-20 space-y-3 md:space-y-7">
             <button
               onClick={() => setView("editor")}
-              className="w-full rounded-[18px] border-[2px] border-white/50 border-b-[4px] py-4 px-6 text-sm md:text-[20px] lg:text-[20px] font-semibold transition hover:bg-yellow-400 hover:text-black"
+              className="w-full rounded-[18px] border-[2px] border-white/50 border-b-[4px] md:py-5 py-3 md:px-2 px-6 text-sm md:text-[18px] lg:text-[20px] font-semibold transition hover:bg-yellow-400 hover:text-black"
             >
               Make my Facecard cooler 😤
             </button>
 
             <button
               onClick={() => router.push("/")}
-              className="text-xs md:text-[20px] text-white/80 hover:text-white"
+              className="text-xs md:text-[18px] text-white/90 hover:text-white"
             >
               I’ll do it later 🥱
             </button>

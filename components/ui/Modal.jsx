@@ -57,7 +57,7 @@ export default function Modal({
 
    
 
-    md:border md:border-white/30
+    md:border-[2px] md:border-white/30
 
     ${className}
   `}

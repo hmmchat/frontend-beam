@@ -327,17 +327,22 @@ export default function Inbox() {
     }
   }, []);
 
+  const userCacheRef = useRef({});
+
   const enrichUser = useCallback(async (userId) => {
+    if (userCacheRef.current[userId]) return userCacheRef.current[userId];
     try {
       const data = await apiRequest(API.USERS.GET_USER(userId));
       const u = data?.user || {};
-      return {
+      const result = {
         id: userId,
         username: u.username || "User",
         displayPictureUrl: u.displayPictureUrl || null,
         preferredCity: u.preferredCity || "",
         dateOfBirth: u.dateOfBirth,
       };
+      userCacheRef.current[userId] = result;
+      return result;
     } catch {
       return {
         id: userId,
@@ -400,7 +405,7 @@ export default function Inbox() {
   const notifBadgeTimerRef = useRef(null);
 
   const scheduleNotificationBadge = useCallback(() => {
-    const minGapMs = 5000;
+    const minGapMs = 12000;
     const backoff429Ms = 60000;
     const fire = async () => {
       notifBadgeTimerRef.current = null;
@@ -467,7 +472,9 @@ export default function Inbox() {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
-      if (!quiet) setLoading(true);
+      if (!quiet && inboxList.length === 0 && requestsList.length === 0 && sentList.length === 0) {
+        setLoading(true);
+      }
       try {
         setListLoadError(null);
         if (activeTab === "inbox") {
@@ -806,14 +813,15 @@ export default function Inbox() {
   );
 
   const loadThreadMessages = useCallback(
-    async (chat) => {
+    async (chat, opts = {}) => {
+      const quiet = opts.quiet === true;
       if (!chat) {
         setMessages([]);
         setThreadNextCursor(undefined);
         setThreadHasMore(false);
         return;
       }
-      setLoadingThread(true);
+      if (!quiet) setLoadingThread(true);
       const cid = chat.conversationId;
       const reqId =
         chat.followRequestId ||
@@ -881,7 +889,7 @@ export default function Inbox() {
         setThreadNextCursor(undefined);
         setThreadHasMore(false);
       } finally {
-        setLoadingThread(false);
+        if (!quiet) setLoadingThread(false);
       }
     },
     [markReadForPeer],
@@ -1237,19 +1245,19 @@ export default function Inbox() {
     }
     const tick = async () => {
       try {
-        await loadThreadMessages(activeChat);
+        await loadThreadMessages(activeChat, { quiet: true });
         await loadLists({ quiet: true, skipNotificationBadge: true });
       } catch {}
     };
     tick();
-    threadPollRef.current = setInterval(tick, 5000);
+    threadPollRef.current = setInterval(tick, 15000);
     return () => {
       if (threadPollRef.current) {
         clearInterval(threadPollRef.current);
         threadPollRef.current = null;
       }
     };
-  }, [activeChat?.rowKey, loadThreadMessages, loadLists]);
+  }, [activeChat?.rowKey]); // Reduced dependencies to avoid frequent interval resets
 
   useEffect(() => {
     const onVis = () => {

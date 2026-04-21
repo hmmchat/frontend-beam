@@ -142,7 +142,7 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
             <div className="w-[24%] flex flex-col items-center gap-1 z-20">
               {/* Brands capsule */}
               <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-[7.5px]">
                   {[0, 1, 2, 3, 4].map((idx) => {
                     const src = brandLogos[idx];
                     return (
@@ -178,7 +178,7 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
                   </div>
                 )}
                 <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                  {user?.zodiac?.name || 'Vacant'}
+                  {user?.zodiac?.name }
                 </span>
               </div>
 
@@ -193,12 +193,12 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
                 </div>
                 <div className="mt-2 h-px w-[90%] bg-white/30" />
                 <div className="mt-1.5 w-full px-0.5 text-center text-white">
-                  <p className="line-clamp-2 text-[9px] font-medium leading-tight tracking-wide">
-                    {user.musicPreference ? songTitle : 'Music Vacant'}
-                  </p>
-                  <p className="mt-0.5 line-clamp-2 text-[7px] font-extralight leading-tight text-white/70">
-                    {user.musicPreference ? artist : '\u00a0'}
-                  </p>
+                 <p className="text-[9px] font-medium leading-tight tracking-wide truncate whitespace-nowrap overflow-hidden">
+  {user.musicPreference ? songTitle : '\u00a0'}
+</p>
+                 <p className="mt-0.5 text-[7px] font-extralight leading-tight text-white/70 truncate">
+  {user.musicPreference ? artist : '\u00a0'}
+</p>
                 </div>
               </div>
 

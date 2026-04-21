@@ -12,6 +12,7 @@ export default function LocationModal({ isOpen, onClose }) {
   const [selectedCity, setSelectedCity] = useState('');
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -22,19 +23,41 @@ export default function LocationModal({ isOpen, onClose }) {
 
   const fetchCities = async (q = '') => {
     try {
-      const url = q ? API.DISCOVERY.SEARCH_CITIES(q) : API.DISCOVERY.GET_CITIES;
-      const data = await apiRequest(url);
-      setCities(data.cities || []);
+      setSearchLoading(true);
+      if (q) {
+        const url = API.DISCOVERY.SEARCH_CITIES(q);
+        const data = await apiRequest(url);
+        // Ensure both label and value are handled if available
+        setCities(data.cities?.map(c => ({
+          name: c.name || c.label,
+          value: c.value || c.name || c.label,
+          availableCount: c.availableCount || c.count || 0
+        })) || []);
+      } else {
+        const data = await apiRequest(API.DISCOVERY.GET_ACTIVE_CITY_OPTIONS);
+        const options = data.options?.map(c => ({ 
+          name: c.label || c.name, 
+          value: c.value,
+          availableCount: c.count || 0 
+        })) || [];
+        setCities(options);
+      }
     } catch (error) {
       console.error('Error fetching cities:', error);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
   const fetchPreference = async () => {
     try {
-      // GET /location/preference — authenticated via JWT
-      const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE);
-      setSelectedCity(data.city || '');
+      const userData = await apiRequest(API.USERS.GET_ME).catch(() => null);
+      if (userData?.user?.preferredCity) {
+        setSelectedCity(userData.user.preferredCity);
+        return;
+      }
+      const data = await apiRequest(API.DISCOVERY.LOCATION_PREFERENCE).catch(() => null);
+      setSelectedCity(data?.city || '');
     } catch (error) {
       console.error('Error fetching preference:', error);
     }
@@ -42,8 +65,7 @@ export default function LocationModal({ isOpen, onClose }) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery) fetchCities(searchQuery);
-      else fetchCities();
+      fetchCities(searchQuery);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -62,7 +84,8 @@ export default function LocationModal({ isOpen, onClose }) {
           })
         });
         if (data.city) {
-          setSelectedCity(data.city);
+          // Note: LOCATE_ME might return a label, but we should ideally have a value
+          setSelectedCity(data.value || data.city);
         }
       } catch (error) {
         console.error('Error locating:', error);
@@ -75,13 +98,16 @@ export default function LocationModal({ isOpen, onClose }) {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // PATCH /location/preference — authenticated via JWT
-      await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          city: selectedCity || null
-        })
-      });
+      await Promise.all([
+        apiRequest(API.USERS.UPDATE_PREFERRED_CITY, {
+          method: 'PATCH',
+          body: JSON.stringify({ preferredCity: selectedCity || null })
+        }).catch(() => null),
+        apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
+          method: 'PATCH',
+          body: JSON.stringify({ city: selectedCity || null })
+        }).catch(() => null)
+      ]);
       onClose();
     } catch (error) {
       console.error('Error saving preference:', error);
@@ -102,7 +128,7 @@ export default function LocationModal({ isOpen, onClose }) {
 
       {/* Modal Content */}
       <div
-        className="relative z-10 w-full max-w-[850px] h-full max-h-[85vh] border-2 border-white/30 rounded-[40px] bg-purple-950/40 backdrop-blur-xl p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
+        className="relative z-10 w-full max-w-[1000px] h-full max-h-[85vh] border-2 border-white/30 rounded-[40px] bg-purple-950/40 backdrop-blur-xl p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
 
@@ -154,22 +180,33 @@ export default function LocationModal({ isOpen, onClose }) {
             </p>
 
             {/* City List */}
-            <div className="flex-1 overflow-y-auto px-2 custom-scrollbar flex justify-center pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[750px] w-full content-start">
-                {cities.map((city) => (
+            <div className="flex-1 overflow-y-auto  custom-scrollbar flex justify-center pb-6 mt-4">
+              <div className="grid grid-cols-6 gap-5 max-w-[750px] w-full content-start">
+                {(searchLoading && cities.length === 0) ? (
+                  Array(6).fill(0).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`rounded-2xl border-2 border-white  animate-pulse h-24 col-span-6 ${
+                        i < 2 ? 'sm:col-span-3' : 'sm:col-span-2'
+                      }`} 
+                    />
+                  ))
+                ) : cities.map((city, index) => (
                   <button
-                    key={city.name}
-                    onClick={() => setSelectedCity(city.name)}
-                    className={`px-6 py-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden backdrop-blur-md group ${
-                      selectedCity === city.name
-                        ? 'border-yellow-400 bg-purple-900/40 shadow-[0_0_20px_rgba(255,200,0,0.3)]'
-                        : 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40'
+                    key={city.value + city.name}
+                    onClick={() => setSelectedCity(city.value)}
+                    className={`px-6 py-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden  group col-span-6 ${
+                      index < 2 ? 'sm:col-span-3' : 'sm:col-span-2'
+                    } ${
+                      selectedCity === city.value
+                        ? 'border-yellow-400 border-b-[3px] border-[1px] '
+                        : 'border-white/40 border-b-[3px] border-[1px]  hover:bg-white/10 hover:border-white/50'
                     }`}
                   >
-                    <div className="text-white text-base font-semibold group-hover:translate-x-1 transition-transform">
+                    <div className="text-white text-sm group-hover:translate-x-1 transition-transform">
                       {city.name}
                     </div>
-                    <div className="text-white/60 text-xs mt-1.5 font-sans">
+                    <div className="text-white text-xs font-sans">
                       {city.availableCount
                         ? `${city.availableCount.toLocaleString()} online`
                         : 'Active city'}
@@ -180,7 +217,7 @@ export default function LocationModal({ isOpen, onClose }) {
             </div>
 
             {/* Empty State */}
-            {cities.length === 0 && !loading && (
+            {cities.length === 0 && !searchLoading && (
               <div className="flex-1 flex items-center justify-center text-white/40 italic">
                 No cities found
               </div>
@@ -194,11 +231,11 @@ export default function LocationModal({ isOpen, onClose }) {
           </div>
           
         </div>
-   <div className="flex pb-2 pt-2 mt-3 mb-4 justify-end px-10">
+   <div className="flex pb-2 pt-2 mt-3 mb-4 justify-end px-10 z-10">
               <button
                 onClick={handleSave}
                 disabled={loading || !selectedCity}
-                className="px-12 py-4 rounded-2xl text-white font-bold border-2 border-white/30  disabled:opacity-90 disabled:hover:scale-100 "
+                className="px-12 py-4 border-[1px] border-b-[3px] border-white/40 rounded-2xl text-white font-bold  disabled:opacity-90 disabled:hover:scale-100 "
               >
                 {loading ? 'Saving...' : 'Start Beaming'}
               </button>

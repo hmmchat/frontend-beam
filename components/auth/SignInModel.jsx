@@ -89,8 +89,9 @@ const correctOTP = "1234"; // Replace with backend verification
         </div>
 
         {/* Content based on step */}
-        {step === 'options' && (
-          <div className="flex flex-col gap-4 mb-8 px-60">
+        <div className="min-h-[400px] w-full max-w-[400px] mx-auto flex flex-col justify-center px-4">
+          {step === 'options' && (
+            <div className="flex flex-col gap-4 mb-8 w-full">
             <Button
               variant="secondary"
               fullWidth
@@ -120,8 +121,8 @@ const correctOTP = "1234"; // Replace with backend verification
           </div>
         )}
 
-{step === 'mobile' && (
-  <div className="mb-8 text-left px-40" >
+          {step === 'mobile' && (
+            <div className="mb-8 text-left w-full">
     <Input
       type="tel"
       placeholder="+91- 879-7967-858"
@@ -144,8 +145,8 @@ const correctOTP = "1234"; // Replace with backend verification
   </div>
 )}
 
-{step === 'otp' && (
- <div className="mb-8 text-left px-20">
+          {step === 'otp' && (
+            <div className="mb-8 text-left w-full">
   <p className="text-white/90 text-sm font-medium mb-4 ">
     Enter OTP
   </p>
@@ -185,7 +186,8 @@ const correctOTP = "1234"; // Replace with backend verification
   </div>
 </div>
 
-)}
+        )}
+        </div>
 
         {/* Terms and Conditions */}
         <div className="mt-8 pt-6 border-t border-white/10">

@@ -9,7 +9,7 @@ import ProfileHeader from "./Desktop/ProfileHeader";
 import ProfileSidebar from "./Desktop/ProfileSidebar";
 import GetMoneyTab from "./Desktop/GetMoneyTab";
 import PromptsTab from "./Desktop/PromptsTab";
-import AccountTab from "./Desktop/AccountTab";
+
 import RewardsTab from "./Desktop/RewardsTab";
 import StickersTab from "./Desktop/StickersTab";
 
@@ -103,43 +103,28 @@ export default function ProfileDesktop({
           progress={progress}
         />
 
-        {activeTab === "default" ? (
-          <div className="col-span-2 flex items-center justify-center border rounded-[60px] border-white/20">
-            <FaceCard3
-              user={{
-                ...user,
-                age,
-                city: user?.preferredCity || user?.city,
-              }}
-              currentIndex={currentImageIndex}
-              onIndexChange={setCurrentImageIndex}
-              hideArrows={true}
-              hideHeader={true}
-            />
+        {activeTab === "account" || activeTab === "default" ? (
+          <div className="col-span-2 border border-white/20 rounded-[3rem] flex items-center justify-center min-h-[80vh]">
+            <div className="scale-75 lg:scale-90 transition-transform">
+              <FaceCard3
+                user={{
+                  ...user,
+                  age,
+                  city: user?.preferredCity || user?.city,
+                }}
+                currentIndex={currentImageIndex}
+                onIndexChange={setCurrentImageIndex}
+                hideArrows={true}
+                hideHeader={true}
+              />
+            </div>
           </div>
         ) : (
-          <div className="col-span-2 border border-white/20 rounded-[3rem] px-8 py-10 flex flex-col min-h-[75vh]">
+          <div className="col-span-2 border border-white/20 rounded-[3rem] px-8 py-10 flex flex-col min-h-[80vh]">
             {activeTab === "getmoney" ? (
               <GetMoneyTab />
             ) : activeTab === "prompts" ? (
-              <PromptsTab />
-            ) : activeTab === "account" ? (
-              <AccountTab
-                user={user}
-                firstName={firstName}
-                progress={progress}
-                zodiac={zodiac}
-                interestIndex={interestIndex}
-                causeIndex={causeIndex}
-                interests={interests}
-                causes={causes}
-                photoUploading={photoUploading}
-                handleSlotClick={handleSlotClick}
-                setShowSelector={setShowSelector}
-                onPickZodiac={onPickZodiac}
-                onOpenFacecardPreview={onOpenFacecardPreview}
-                setView={setView}
-              />
+              <PromptsTab user={user} setUser={setUser} />
             ) : activeTab === "rewards" ? (
               <RewardsTab onBack={() => setActiveTab("getmoney")} />
             ) : (

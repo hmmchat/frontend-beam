@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
-import { API } from "@/lib/api";
+import { API, apiRequest } from "@/lib/api";
 import Skeleton from '@/components/ui/Skeleton';
 
 
@@ -41,7 +41,40 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
 
 
   const [showGenderModal, setShowGenderModal] = useState(false);
-const [tempGender, setTempGender] = useState(gender || "");
+  const [tempGender, setTempGender] = useState(gender || "");
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [cities, setCities] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const fetchCities = async (q = '') => {
+    try {
+      setSearchLoading(true);
+      if (q) {
+        // Search API
+        const data = await apiRequest(API.DISCOVERY.SEARCH_CITIES(q));
+        setCities(data.cities || []);
+      } else {
+        // Catalog API (Active Options)
+        const data = await apiRequest(API.DISCOVERY.GET_ACTIVE_CITY_OPTIONS);
+        // data is { options: [...] }
+        setCities(data.options?.map(c => ({ name: c.label, value: c.value })) || []);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showCityModal) {
+      const timer = setTimeout(() => {
+        fetchCities(searchQuery);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, showCityModal]);
   // Get userId from token on mount
   useEffect(() => {
     // Overlay deep link: /onboarding?intent=1&overlay=1 should land directly on step 2.
@@ -117,6 +150,10 @@ const [tempGender, setTempGender] = useState(gender || "");
             }
             if (u.intent) {
               setPrompt(u.intent);
+            }
+            if (u.preferredCity) {
+              setCity(u.preferredCity);
+              setTempCity(u.preferredCity);
             }
             setIsEditing(true);
           }
@@ -256,6 +293,7 @@ const [tempGender, setTempGender] = useState(gender || "");
     }
     
     if (!gender && !preferNotToSay) e.gender = "Select gender";
+    if (!city || city === "Anywhere" || city === "ANYWHERE_IN_INDIA") e.city = "Please select a city";
     
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -312,7 +350,8 @@ const [tempGender, setTempGender] = useState(gender || "");
         dateOfBirth: dobDate.toISOString(),
         gender: backendGender,
         displayPictureUrl,
-        intent: prompt.trim() || undefined
+        intent: prompt.trim() || undefined,
+        preferredCity: city
       };
 
       // If editing, skip the create profile step entirely and only update intent/photos
@@ -340,8 +379,21 @@ const [tempGender, setTempGender] = useState(gender || "");
         }
       }
 
+      // 2.5 Save City Preference
+      const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (city && city !== "Anywhere" && city !== "ANYWHERE_IN_INDIA" && accessToken) {
+        await apiRequest(API.USERS.UPDATE_PREFERRED_CITY, {
+          method: 'PATCH',
+          body: JSON.stringify({ city })  // user-service expects { city }, not { preferredCity }
+        });
+        // Also update discovery service location preference (same city, different store)
+        await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
+          method: 'PATCH',
+          body: JSON.stringify({ city })
+        }).catch(() => {}); // non-critical
+      }
+
       // 3. Add extra photos if any
-      const accessToken = localStorage.getItem('accessToken');
       if (uploadedUrls.length > 1 && accessToken) {
         for (let i = 1; i < uploadedUrls.length; i++) {
           await fetch(API.USERS.ADD_PHOTO, {
@@ -689,10 +741,11 @@ className="
   flex justify-between items-center cursor-pointer"
 >
   <span className="flex items-center gap-2">
-    ⚧ {gender ? gender : "Select"}
+    {gender === 'male' ? '♂ Male' : gender === 'female' ? '♀ Female' : gender === 'nonbinary' ? '⚧ Non Binary' : preferNotToSay ? '🙂 Prefer not to say' : 'Select'}
   </span>
   <span>▼</span>
 </div>
+{errors.gender && <div className="text-xs text-rose-400 mt-1">{errors.gender}</div>}
 
 
 {showGenderModal && (
@@ -707,7 +760,7 @@ className="
       }}
     >
 
-  <div className="absolute inset-0 bg-black/20"></div>
+<div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
 
           <div 
       className=" w-full relative outfit-font text-white" 
@@ -723,7 +776,7 @@ className="
         Gender is not visible on your profile
       </p>
 
-      <div className="space-y-5">
+      <div className="space-y-5 z-50">
 
         {[
           { label: "Male", value: "male", icon: "♂" },
@@ -753,10 +806,16 @@ className="
       <div className="flex justify-end mt-6">
         <button
           onClick={() => {
-            setGender(tempGender);
+            if (tempGender === 'none') {
+              setGender(null);
+              setPreferNotToSay(true);
+            } else {
+              setGender(tempGender);
+              setPreferNotToSay(false);
+            }
             setShowGenderModal(false);
           }}
-          className="border border-white/40 px-6 py-2 rounded-full"
+          className="border border-white/40 px-6 py-2 rounded-full hover:bg-white/5 transition-colors"
         >
           Apply
         </button>
@@ -779,9 +838,13 @@ className="
   rounded-[1rem] px-5 py-4 text-white text-lg 
   flex justify-between items-center cursor-pointer"
 >
-  <span>{city || "Anywhere"}</span>
+  <span>{
+    city === 'ANYWHERE_IN_INDIA' ? 'Anywhere in India' : 
+    (cities.find(c => c.value === city)?.name || city || "Anywhere")
+  }</span>
   <span>▼</span>
 </div>
+{errors.city && <div className="text-xs text-rose-400 mt-1">{errors.city}</div>}
   </div>
 
 
@@ -808,30 +871,36 @@ className="
         </p>
 
         {/* Search (UI only) */}
-        <div className="border border-white/30 rounded-full px-4 py-3 mb-4 flex items-center gap-2">
+        <div className="border border-white/30 rounded-full px-4 py-3 mb-4 flex items-center gap-2 focus-within:border-white/60 transition-colors">
           🔍 <input
             placeholder="Search city"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-transparent outline-none text-white placeholder-white/50 w-full"
           />
         </div>
 
         {/* List */}
-        <div className="space-y-4 max-h-[300px] overflow-y-auto">
+        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+          {searchLoading && <div className="text-white/50 text-center py-4">Searching...</div>}
+          
+          {!searchLoading && cities.length === 0 && (
+            <div className="text-white/50 text-center py-4 italic">No cities found</div>
+          )}
 
-          {["Anywhere","Delhi","Bengaluru","Kolkata","Ahmedabad","Assam"].map((c) => (
+          {!searchLoading && cities.map((c) => (
             <div
-              key={c}
-              onClick={() => setTempCity(c)}
-              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer"
+              key={c.id || c.value}
+              onClick={() => setTempCity(c.value)}
+              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer hover:bg-white/5 transition-colors px-2"
             >
-              <span>{c}</span>
+              <span>{c.name || c.label}</span>
 
-              <div className={`w-5 h-5 rounded-full border-2 
-                ${tempCity === c ? "border-white bg-white" : "border-white/50"}
+              <div className={`w-5 h-5 rounded-full border-2 transition-all
+                ${tempCity === c.value ? "border-white bg-white" : "border-white/50"}
               `}></div>
             </div>
           ))}
-
         </div>
 
         {/* Apply */}

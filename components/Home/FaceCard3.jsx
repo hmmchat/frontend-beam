@@ -166,7 +166,7 @@ const FaceCard3 = ({
       <div
         className="w-[85vw] aspect-[360/670] max-w-[360px] 
                 sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[350/660] shrink-0 rounded-[30px] 
+                md:aspect-[346/660] shrink-0 rounded-[30px] 
                 border border-white/40 p-[2px]
                 md:border-0 md:p-0"
       >

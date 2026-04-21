@@ -147,12 +147,15 @@
   0% {
     transform: translate(-320px, -320px) scale(1) rotate(0deg);
   }
+
   33% {
     transform: translate(-320px, 120px) scale(1) rotate(120deg);
   }
+
   66% {
     transform: translate(320px, 320px) scale(1) rotate(240deg);
   }
+
   100% {
     transform: translate(-320px, -320px) scale(1) rotate(360deg);
   }
@@ -173,10 +176,31 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
+
 .triangle-wrapper {
   animation: trianglePath 24s linear infinite;
+}
+
+
+
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  min-width: 100%;
+  animation: marquee 6s linear infinite;
 }

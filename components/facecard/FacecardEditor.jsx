@@ -544,7 +544,7 @@ export default function FacecardEditor({
             {/* Info Sections Area */}
             <div className="grid grid-cols-10 gap-10 items-center">
               {/* DOB & Gender Text Labels */}
-              <div className="col-span-3 space-y-16">
+              <div className="col-span-3 flex flex-col gap-16 ">
                 {/* DOB + Zodiac */}
                 <div className="relative px-5 py-3 flex justify-center">
                   <div className="flex flex-col items-start text-left">
@@ -557,7 +557,7 @@ export default function FacecardEditor({
                       DOB :{" "}
                       {user?.dateOfBirth
                         ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                        : "22/08/1998"}
+                        : ""}
                     </p>
 
                     <p className="text-[12px]  mt-1 font-outfit">
@@ -613,7 +613,7 @@ export default function FacecardEditor({
                       <img
                         src={user.zodiac.imageUrl}
                         alt={user.zodiac.name || "Zodiac"}
-                        className="h-full w-full object-contain p-2"
+                        className="h-full w-full object-contain p-2 font-outfit text-sm"
                       />
                     ) : (
                       zodiac?.symbol || (
@@ -626,7 +626,7 @@ export default function FacecardEditor({
                     onClick={() => setShowSelector("interests")}
                     className="flex-1 h-18 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                   >
-                    <span className="text-sm tracking-wide">Interests:</span>
+                    <span className="text-sm font-thin tracking-wide font-outfit">Interests:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
                       {interests.length > 0 ? (
                         <span
@@ -643,14 +643,25 @@ export default function FacecardEditor({
 
                   <button
                     onClick={() => setShowSelector("interests")}
-                    className="w-18 h-18 rounded-2xl border border-white/70  border border-b-[3px] flex items-center justify-center text-3xl transition hover:bg-white/10"
+                    className="w-18 h-18 rounded-2xl border border-white/70  border border-b-[3px] flex items-center justify-center text-3xl font-outfit font-thin transition text-white/70 hover:bg-white/10"
                   >
                     +
                   </button>
                 </div>
 
-                <div className="flex items-center font-outfit gap-4">
-                  <div className="w-18 h-18 rounded-2xl border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
+
+
+
+
+
+
+
+
+
+                
+
+                <div className="flex items-center font-outfit gap-4 ">
+                  <div className="w-18 h-18 mt-2 rounded-2xl border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
                     {user?.gender === "MALE"
                       ? "♂"
                       : user?.gender === "FEMALE"
@@ -660,7 +671,7 @@ export default function FacecardEditor({
 
                   <div
                     onClick={() => setShowSelector("values")}
-                    className="flex-1 h-18 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
+                    className="flex-1 mt-2  h-18 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
                   >
                     <span className="text-sm  tracking-wide">Causes:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
@@ -679,7 +690,7 @@ export default function FacecardEditor({
 
                   <button
                     onClick={() => setShowSelector("values")}
-                    className="w-18 h-18 rounded-2xl border border-b-[3px] border-white/70 flex items-center justify-center text-3xl transition hover:bg-white/10"
+                    className="w-18 mt-1 h-18 rounded-2xl border border-b-[3px] border-white/70 flex items-center justify-center text-3xl font-thin transition text-white/70 hover:bg-white/10"
                   >
                     +
                   </button>

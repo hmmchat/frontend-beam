@@ -8,10 +8,10 @@ export default function FilterButtons({
   className = ""
 }) {
   return (
-    <div className={`font-[family-name:var(--font-otomanopee)] border border-white/90 flex flex-row items-center justify-center gap-0  md:w-[50%] mx-auto border border-white/30 rounded-[16px] overflow-hidden  py-1 ${className}`}>
+    <div className={`font-[family-name:var(--font-otomanopee)] border border-white/90 flex flex-row items-center justify-center gap-0  md:w-[50%] mx-auto border border-white/30 border-b-4 md:border-b-1 rounded-[16px] overflow-hidden  py-1 ${className}`}>
       <button
         onClick={onGenderClick}
-        className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white font-medium hover:bg-white/10 transition"
+        className="flex-1 flex text-[14px] items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white font-medium hover:bg-white/10 transition"
       >
         <img src="/assets/gender-intersex.svg" alt="" className='w-6 h-6 0' />
         {genderLabel}
@@ -21,7 +21,7 @@ export default function FilterButtons({
 
       <button
         onClick={onLocationClick}
-        className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white font-medium hover:bg-white/10 transition"
+        className="flex-1 flex items-center justify-center w-full gap-2 px-6 py-4 bg-transparent text-white text-[14px]  hover:bg-white/10 transition"
       >
         {locationLabel}
         <img src="/assets/location-pin.svg" alt="" className='w-6 h-6' />

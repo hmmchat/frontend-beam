@@ -10,6 +10,7 @@ import Image from 'next/image';
 import FilterButtons from '@/components/ui/FilterButtons';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
+import MeetNowButton from '@/components/ui/MeetNowButton';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 
 
@@ -154,13 +155,13 @@ export default function MeetSomeoneNew({
     <div className="text-center flex flex-col items-center justify-center mx-auto">
   <img src="./LOGO.png" className="w-40 mx-auto" />
   
-  <p className="text-white text-xl font-medium mt-1">
+  <p className="text-white text-sm font-medium mt-1">
     Meet Someone here
   </p>
 
-  <div className="flex items-center justify-center gap-2 mt-3 opacity-90">
-    <IoVideocam className="text-white/70" size={18} />
-    <p className="text-white/80 text-sm font-semibold">
+  <div className="flex items-center justify-center gap-2 mt-3 ">
+    <IoVideocam className="text-white/90" size={18} />
+    <p className="text-white/90 text-sm font-thin font-outfit">
       {activeUsers.toLocaleString()} beaming now
     </p>
   </div>
@@ -216,16 +217,10 @@ export default function MeetSomeoneNew({
 
   
                 <div className="w-full mt-10 ">
-                    <button 
+                    <MeetNowButton
                         onClick={handleMeetNow}
-                        className="group relative w-full h-20  border border-white border-b-[3px] rounded-[20px] flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-2xl bg-black/20"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 opacity-50" />
-                        <div className="w-10 h-10 rounded-full border border-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <IoVideocam className="text-white text-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
-                        </div>
-                        <span className="text-white text-md  tracking-tight">Meet Someone now</span>
-                    </button>
+                        className="w-full h-20"
+                    />
                 </div>
 
  
@@ -245,18 +240,18 @@ export default function MeetSomeoneNew({
       {/* Bottom Navigation */}
       <div className="relative z-10 w-full max-w-sm px-4 pb-10 mt-auto mx-auto">
         <div className=" border border-white rounded-full h-[54px] w-full flex items-center justify-between px-8 ">
-            <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-6 h-6" /></button>
+            <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 
                 onClick={() => router.push('/history')}
                 className="text-white/70 text-2xl hover:text-white/60 transition-colors"
             >
-                   <img src="./mobhistory.svg" alt="chat" className="w-6 h-6" />
+                   <img src="./mobhistory.svg" alt="chat" className="w-[30px] h-[30px]" />
             </button>
             <button 
                 onClick={() => router.push('/inbox')}
                 className="relative text-white/70 text-2xl hover:text-white/60 transition-colors"
             >
-                 <img src="./mobmessage.svg" alt="chat" className="w-6 h-6" />
+                 <img src="./mobmessage.svg" alt="chat" className="w-[30px] h-[30px]" />
                 <div className="absolute top-0 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#201035] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </button>
             <button 

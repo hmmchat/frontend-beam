@@ -118,7 +118,7 @@ function SignUpModalContent({ isOpen, onClose }) {
   // Phone OTP - Send OTP
   const handleGetOTP = async () => {
     if (!mobileNumber || mobileNumber.length < 10) {
-      setError("Please enter a valid mobile number");
+      setError("Hmm! where’s your mind at, you’ve entered a wrong number.");
       return;
     }
 
@@ -257,7 +257,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
-      <div className="h-full sm:rounded-2xl rounded-none ">
+    <div className="h-full min-h-[550px] sm:rounded-2xl rounded-none flex flex-col">
         <div
           className="flex flex-col
           flex-col h-full
@@ -270,14 +270,14 @@ function SignUpModalContent({ isOpen, onClose }) {
           <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
             <img src="./LOGO.png" className="w-40 mx-auto" />
             <p className="text-white text-lg font-medium mt-1">
-              Meet someone here
+              Meet someone here <br/> immediately after Signing in
             </p>
           </div>
 
           <div className=" flex-1 flex flex-col justify-center px-4 ">
             {/* OPTIONS */}
             {step === "options" && (
-              <div className="flex flex-col gap-3 mb-8 md:px-4  ">
+              <div className="flex flex-col gap-3 mb-8 md:px-4  font-otomanopee ">
                 {/* Google Login */}
                 <Button
                   variant="outline2"
@@ -320,7 +320,7 @@ function SignUpModalContent({ isOpen, onClose }) {
             {/* MOBILE NUMBER */}
 
             {step === "mobile" && (
-              <div className="text-left py-8 flex w-72 md:w-96 sm:w-80  flex-col outfit-font mx-auto">
+              <div className="text-left py-8 flex w-72 md:w-96 sm:w-80  flex-col outfit-font mx-auto font-outfit">
                 <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto">
                   <Input
                     type="tel"
@@ -334,7 +334,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                   />
                 </div>
 
-                <ErrorAlert message={error} />
+                <ErrorAlert className="text-[11px]" message={error} />
 
                 <div className="mt-6 flex ">
                   <button
@@ -351,7 +351,7 @@ function SignUpModalContent({ isOpen, onClose }) {
             {step === "otp" && (
               <div className="mb-8 text-left px-4 py-8 outfit-font flex justify-center">
                 <div className="w-full max-w-md">
-                  <p className="text-white/90 text-sm font-medium max-w-[200px] mb-4">
+                  <p className="text-white/90  font-outfit text-sm font-medium max-w-[200px] mb-4">
                     Enter OTP
                   </p>
 
@@ -377,10 +377,9 @@ function SignUpModalContent({ isOpen, onClose }) {
 
                   <div className="mt-6 flex justify-center lg:justify-start">
                     <button
-                      variant="outline2"
-                      width="quarter"
-                      className="w-[120px] lg:w-[210px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80 "
-                      position="left"
+      
+
+                      className="w-[120px] lg:w-[160px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90  bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[2px] border-b-4 inline-flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
                       onClick={handleEnterOTP}
                       disabled={loading}
                     >
@@ -394,9 +393,11 @@ function SignUpModalContent({ isOpen, onClose }) {
             {/* TERMS */}
           </div>
 
-          <div className="mt-auto w-full flex justify-center items-center outfit-font pb-6 px-4">
+         
+        </div>
+         <div className="mt-auto w-full flex justify-center items-center outfit-font  bottom-2 px-4">
             <div className=" pt-8 lg:px-0 font-outfit">
-              <label className="flex items-center gap-6 0  meeting now max-w-[450px]">
+              <label className="flex items-center gap-6 0  meeting now max-w-[550px]  items-center justify-center text-center">
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
@@ -405,18 +406,18 @@ function SignUpModalContent({ isOpen, onClose }) {
                 />
                 <span className="min-w-[16px] h-4 bg-white/10 border-2 border-white/35 rounded-sm relative peer-checked:bg-green-600 peer-checked:border-white peer-checked:shadow-[0_0_20px_8px_rgba(34,197,94,0.4),0_0_40px_15px_rgba(34,197,94,0.2),0_0_60px_25px_rgba(34,197,94,0.1)] after:content-['✓'] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:text-white after:text-sm after:font-bold after:opacity-0 peer-checked:after:opacity-100 flex-shrink-0 transition-all duration-300"></span>
 
-                <span className="text-white/70 md:text-md text-[12.2px] leading-relaxed ">
-                  I certify I have read and agree to the{" "}
+                <span className="text-white/60 md:text-md text-[12.2px] leading-relaxed ">
+         By clicking continue you certify I have read and agree to the {" "}
                   <a
                     href="#"
-                    className="text-purple-500 underline font-semibold hover:underline"
+                    className="text-white/60  "
                   >
                     Terms of Service
                   </a>{" "}
                   confirm that you have read{" "}
                   <a
                     href="#"
-                    className="text-purple-500 underline font-semibold hover:underline"
+                    className="text-white/60   "
                   >
                     Privacy Policy.
                   </a>{" "}
@@ -426,11 +427,12 @@ function SignUpModalContent({ isOpen, onClose }) {
               </label>
             </div>
           </div>
-        </div>
       </div>
     </Modal>
   );
 }
+
+
 
 // Wrap with GoogleOAuthProvider
 export default function SignUpModal({ isOpen, onClose }) {

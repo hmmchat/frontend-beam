@@ -1,7 +1,4 @@
-'use client';
-
-import { useState } from 'react';
-import Modal from '../ui/Modal';
+import { useState, useEffect } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 
 const coinPackages = [
@@ -19,105 +16,129 @@ const coinPackages = [
   { coins: 2500, price: 1000, img: '/Coins/coin5.png' },
   { coins: 12600, price: 5000, img: '/Coins/coin6.png' },
   { coins: 25500, price: 10000, img: '/Coins/coin7.png' },
-  { coins: 33000, price: 12500, img: '/Coins/coin9.png' }, // Using 9 for chest
-  { coins: 53000, price: 20000, img: '/Coins/coin9.png' }, // Using 9 for chest
+  { coins: 33000, price: 12500, img: '/Coins/coin9.png' }, 
+  { coins: 53000, price: 20000, img: '/Coins/coin9.png' }, 
 ];
 
 export default function CoinModal({ isOpen, onClose }) {
   const [selectedPackage, setSelectedPackage] = useState(coinPackages[2]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      maxWidth="1000px" 
-      className="!p-0 overflow-hidden"
+    <div 
+      className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6"
+      onClick={onClose}
     >
-      <div className="relative w-full h-full backdrop-blur-xl rounded-[32px] overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)]">
+      {/* Backdrop */}
+  
+
+      {/* Modal Container */}
+      <div 
+        className="relative  w-full max-w-[900px] max-h-[90vh] bg-purple-950/40 backdrop-blur-xl rounded-[40px] border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+
+            <div 
+        className="absolute inset-0 bg-[#02004A]/60 backdrop-blur-md"
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
         
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 z-20 text-white/60 hover:text-white transition-colors"
+          className="absolute top-10 right-10 z-20 text-white/60 hover:text-white transition-colors z-10"
         >
           <IoCloseOutline size={32} />
         </button>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-10 md:pt-8 custom-scrollbar z-10">
           {/* Header Message */}
-          <div className="flex items-center gap-2 mb-6">
-            <img src="/assets/Coin-token.svg" alt="coin" className="w-5 h-5" />
-            <p className="text-white text-sm font-medium">
-              Hmmm! Insufficient coin balance
-            </p>
-          </div>
+       
 
-          <h2 className="text-3xl font-bold text-white mb-8">Buy Coins</h2>
+          <h2 className="text-3xl font-bold text-white mb-4 -mt-2">Buy Coins</h2>
 
           {/* Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {coinPackages.map((pkg, index) => (
               <div 
                 key={index}
                 onClick={() => setSelectedPackage(pkg)}
-                className={`relative group 0  meeting now rounded-xl border-2 transition-all p-3 flex flex-col items-center justify-center gap-1 ${
+                className={`relative group cursor-pointer rounded-2xl border-2 transition-all p-4 py-6 flex flex-col items-center justify-center gap-1 ${
                   selectedPackage === pkg 
-                    ? 'border-[#7D40FF] bg-[#7D40FF]/20 shadow-[0_0_20px_rgba(125,64,255,0.3)]' 
-                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    ? 'border-[#7D40FF] ' 
+                    : 'border-white/40'
                 }`}
               >
                 {/* Popular Tag */}
                 {pkg.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FFD700] text-[#300569] text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap z-10">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FFD700] text-[#300569] text-[10px] font-bold px-4 py-1.5 rounded-full whitespace-nowrap z-10">
                     Most Popular
                   </div>
                 )}
 
                 {/* Coin Image */}
-                <div className="relative w-16 h-16 mb-1">
+                <div className="relative w-12 h-12 mb-1">
                   <img 
                     src={pkg.img} 
                     alt={`${pkg.coins} coins`}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain drop-shadow-lg"
                   />
                 </div>
 
-                {/* Price */}
-                <div className="flex flex-col items-center">
-                   {pkg.originalPrice && (
-                      <span className="text-white/40 text-[10px] line-through">
-                        ₹ {pkg.originalPrice}
-                      </span>
-                   )}
-                  <span className="text-white text-lg font-bold">
-                    ₹ {pkg.price}
-                  </span>
-                </div>
-
-                {/* Discount Info */}
-                {pkg.discount && (
-                  <p className="text-green-400 text-[10px] font-medium text-center">
-                    {pkg.discount}
-                  </p>
-                )}
-
-                {/* Coin Reward */}
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-6 h-6 rounded-full bg-[#FFD700] flex items-center justify-center p-1 shadow-[0_0_10px_rgba(255,215,0,0.4)]">
-                    <img src="/assets/Coin-token.svg" alt="token" className="w-full h-full" />
+                {/* Grouped Info for tighter spacing */}
+                <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
+                  {/* Price */}
+                  <div className="flex items-center gap-2">
+                     {pkg.originalPrice && (
+                        <span className="text-white/40 text-base line-through font-outfit">
+                          ₹ {pkg.originalPrice}
+                        </span>
+                     )}
+                    <span className="text-white text-lg font-outfit">
+                      ₹ {pkg.price}
+                    </span>
                   </div>
-                  <span className="text-white text-2xl font-bold">
-                    {pkg.coins.toLocaleString()}
-                  </span>
+
+                  {/* Discount Info */}
+                  {pkg.discount && (
+                    <p className="text-green-400 text-[10px] font-medium text-center leading-tight">
+                      {pkg.discount}
+                    </p>
+                  )}
+
+                  {/* Coin Reward */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-5 h-5 rounded-full bg-[#FFD700] flex items-center justify-center p-1 shadow-[0_0_10px_rgba(255,215,0,0.4)]">
+                      <img src="/assets/Coin-token.svg" alt="token" className="w-full h-full" />
+                    </div>
+                    <span className="text-white text-2xl font-light ">
+                      {pkg.coins.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }

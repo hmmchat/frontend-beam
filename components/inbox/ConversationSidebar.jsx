@@ -36,7 +36,7 @@ export default function ConversationSidebar({
     <button
       type="button"
       onClick={() => setMsgFilter((f) => (f === key ? MsgFilter.ALL : key))}
-      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${msgFilter === key ? "bg-white/25 border-white" : "border-white/30 bg-white/5"
+      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${msgFilter === key ? "bg-white/25 border-white" : "border-white/30 "
         }`}
       title={
         key === MsgFilter.WITH_GIFT
@@ -54,15 +54,15 @@ export default function ConversationSidebar({
             : "Filter friend requests and follows"
       }
     >
-      {key === MsgFilter.WITH_GIFT && <FaGift className="text-lg sm:text-xl" aria-hidden />}
-      {key === MsgFilter.TEXT_ONLY && <FaEnvelope className="text-lg sm:text-xl" aria-hidden />}
-      {key === MsgFilter.ONLY_FOLLOWS && <FaHeart className="text-lg sm:text-xl" aria-hidden />}
+      {key === MsgFilter.WITH_GIFT && <img src="/inbox/useradd.svg" alt="" className="text-lg sm:text-xl" aria-hidden />}
+      {key === MsgFilter.TEXT_ONLY && <img src="/inbox/sendmail.svg" alt="" className="text-lg sm:text-xl" aria-hidden />}
+      {key === MsgFilter.ONLY_FOLLOWS && <img src="/inbox/heart.svg" alt="" className="text-lg sm:text-xl" aria-hidden />}
     </button>
   );
 
   return (
     <div
-      className={`min-h-0 md:w-[40%] w-full md:p-6 p-4
+      className={`min-h-0 md:w-[40%] w-full md:p-2 md:py-3 p-4
       ${activeChat ? "hidden md:flex" : "flex"} flex flex-col`}
     >
       <div className="w-full py-2 text-white space-y-4">
@@ -90,7 +90,7 @@ export default function ConversationSidebar({
       }}
       className={`flex-1 py-2 text-sm rounded-full transition ${
         activeTab === "inbox"
-          ? "border border-white/40 bg-transparent text-white"
+          ? "border border-white/90 bg-transparent text-white"
           : "text-white/70"
       }`}
     >
@@ -111,8 +111,8 @@ export default function ConversationSidebar({
     >
       <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
       Requests
-      <span className="text-xs font-light">
-        {notif ? requestsTabCount : ""}
+      <span className="text-xs font-light font-outfit">
+       ({notif ? requestsTabCount : ""})
       </span>
     </button>
 
@@ -122,25 +122,28 @@ export default function ConversationSidebar({
   </div>
 </div>
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => { setActiveTab("sent"); setActiveChat(null); }}
-            className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
-              }`}
-          >
-            <FaEye className="text-lg" />
-            <p className="text-[10px] font-thin text-white">Sent Requests</p>
-          </button>
-          <div className="flex gap-2 items-center shrink-0">
-            {filterToggle(MsgFilter.WITH_GIFT)}
-            {filterToggle(MsgFilter.TEXT_ONLY)}
-            {filterToggle(MsgFilter.ONLY_FOLLOWS)}
+        {activeTab !== "inbox" && (
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => { setActiveTab("sent"); setActiveChat(null); }}
+              className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
+                }`}
+            >
+              <img src="/inbox/eye.svg" alt="" className="text-lg" />
+              <p className="text-[10px] font-thin text-white">Sent Requests</p>
+            </button>
+            
+            <div className="flex gap-2 items-center shrink-0">
+              {filterToggle(MsgFilter.WITH_GIFT)}
+              {filterToggle(MsgFilter.TEXT_ONLY)}
+              {filterToggle(MsgFilter.ONLY_FOLLOWS)}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/50 p-6">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-[46px] rounded-[25px]  border border-white/50 p-6">
         {loading ? (
           <InboxSkeleton />
         ) : listLoadError ? (

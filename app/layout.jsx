@@ -12,7 +12,7 @@ const otomanopeeOne = localFont({
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
-  weight: ['400', '500', '600', '700'],
+  weight: [  '300', '400', '500', '600'],
   display: 'swap',
 });
 

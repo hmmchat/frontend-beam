@@ -9,6 +9,7 @@ import { IoIosInformationCircleOutline, IoMdClose } from "react-icons/io";
 import Button from "@/components/ui/Button";
 import { API, apiRequest } from "@/lib/api";
 import Link from "next/link";
+import MeetNowButton from "@/components/ui/MeetNowButton";
 
 export default function DesktopHome() {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -16,7 +17,7 @@ export default function DesktopHome() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-
+const [isVideoOn, setIsVideoOn] = useState(false);
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -42,7 +43,7 @@ export default function DesktopHome() {
       {/* Main Layout */}
       <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
         {/* LEFT SIDE */}
-        <div className="relative flex items-center justify-center px-6 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark  ">
+        <div className="relative flex items-center justify-center px-4 py-16 md:py-20 lg:py-0 overflow-hidden bg-gradient-purple-dark  ">
           {/* Background Image with Opacity */}
 
           <div
@@ -63,33 +64,33 @@ export default function DesktopHome() {
               </p>
 
               <div className="inline-flex gap-2 mt-3">
-                <img
-                  src="/assets/video-on.svg"
-                  alt=""
-                  className="w-4 h-4 opacity-0 hover:opacity-100"
-                />
-                <img
-                  src="/assets/video-off.svg"
-                  alt=""
-                  className="w-4 h-4 opacity-100 hover:opacity-0"
-                />
+               <div
+  onClick={() => setIsVideoOn(!isVideoOn)}
+  className="flex items-center gap-2 mt-3 cursor-pointer select-none"
+>
+  <img
+    src={isVideoOn ? "/assets/video-on.svg" : "/assets/video-off.svg"}
+    alt="video toggle"
+    className="w-5 h-5 transition-transform duration-200 active:scale-90"
+  />
 
-                <p className="text-sm font-outfit ">
-                  {activeMeetingCount !== null
-                    ? activeMeetingCount.toLocaleString()
-                    : "0"}{" "}
-                  meeting now
-                </p>
+  <p className="text-sm font-outfit">
+    {activeMeetingCount !== null
+      ? activeMeetingCount.toLocaleString()
+      : "0"}{" "}
+    meeting now
+  </p>
+</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="relative flex items-center justify-center px-6  py-16 md:py-20 overflow-hidden ">
+        <div className="relative flex items-center justify-center px-4  py-16 md:py-20 overflow-hidden ">
           <div
             onClick={() => setIsInfoOpen(!isInfoOpen)}
-            className="absolute top-10 right-12 z-50  meeting now active:scale-90 transition-transform"
+            className="absolute top-[54px] right-14 z-50  meeting now active:scale-90 transition-transform"
           >
             {isInfoOpen ? (
               <IoMdClose className="w-[3rem] h-[3rem] text-white border rounded-full p-2" />
@@ -182,21 +183,15 @@ export default function DesktopHome() {
             <div className="relative z-[2] w-full flex flex-col h-full px-8">
               {/* CENTER CTA */}
               <div className="flex-1 flex items-center justify-center mt-40">
-                <button
-                  className=" w-[85%] border-2 py-7 bg-black/30 text-white border-white/80 rounded-[1.3rem] border-b-4 flex items-center justify-center gap-3"
+                <MeetNowButton
+                  className="w-[85%] py-7"
                   onClick={() => setIsSignUpOpen(true)}
-                >
-                  <img
-                    src="/assets/video-on.svg"
-                    className="w-8 h-8 opacity-70"
-                  />
-                  Meet that someone
-                </button>
+                />
               </div>
 
               {/* BOTTOM SECTION */}
-              <div className="mb-10 flex justify-between items-center ">
-                <div className="border p-3 rounded-full flex items-center justify-center border-b-4">
+              <div className="mb-10 flex justify-between items-center px-2 ">
+                <div className="border-2 border-white/50 p-3 rounded-full flex items-center justify-center border-b-4">
                   <Link href="/beam-tv">
                     <button className="relative h-10 w-10 l p-3  shadow-md hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2 ">
                       {/* TV Frame (background) */}
@@ -214,7 +209,7 @@ export default function DesktopHome() {
                   </Link>
                 </div>
                 <button
-                  className="rounded-full border-2 border-b-4 border-white/80 py-3 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2"
+                  className="rounded-full border-2 border-b-4 border-white/50 py-4 px-10  hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95 active:border-b-2"
                   onClick={() => setIsSignUpOpen(true)}
                 >
                   Sign Up

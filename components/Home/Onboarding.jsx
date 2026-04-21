@@ -7,7 +7,12 @@ import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API, apiRequest } from "@/lib/api";
 import Skeleton from '@/components/ui/Skeleton';
 
+/** Match user-service DisplayNameSchema: map unicode spaces to ASCII (keeps intentional double spaces). */
+function normalizeDisplayNameWhitespace(s) {
+  return s.replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, " ");
+}
 
+const DISPLAY_NAME_MAX_LEN = 50;
 
 
 
@@ -272,11 +277,13 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
   const validate = () => {
     const e = {};
     
-    const username = name.trim();
+    const username = normalizeDisplayNameWhitespace(name).trim();
     if (!username) {
       e.name = "Please enter your name.";
     } else if (username.length < 3) {
       e.name = "Name must be at least 3 characters.";
+    } else if (username.length > DISPLAY_NAME_MAX_LEN) {
+      e.name = `Name must be at most ${DISPLAY_NAME_MAX_LEN} characters.`;
     }
     
     const { day, month, year } = dob;
@@ -346,7 +353,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
       const backendGender = preferNotToSay ? 'PREFER_NOT_TO_SAY' : (genderMap[gender] || 'PREFER_NOT_TO_SAY');
 
       const profileData = {
-        username: name.trim(),
+        username: normalizeDisplayNameWhitespace(name).trim(),
         dateOfBirth: dobDate.toISOString(),
         gender: backendGender,
         displayPictureUrl,
@@ -679,6 +686,7 @@ className="
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    maxLength={DISPLAY_NAME_MAX_LEN}
                     className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-3 md:px-4 md:py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
                     placeholder="Your name"
                   />

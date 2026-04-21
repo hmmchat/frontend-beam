@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import FacecardEditor from "../facecard/FacecardEditor";
 
 export default function ProfileMobile() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("main");
   const [selectedSticker, setSelectedSticker] = useState(3);
 
@@ -201,12 +203,17 @@ export default function ProfileMobile() {
           {/* ================= PROFILE ================= */}
 
           <div className="w-full flex justify-between mb-6">
-            <div className="flex gap-3 items-center">
-              <div className="w-10 h-10 border rounded-full flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="flex gap-3 items-center rounded-xl py-1 pr-2 text-left text-white hover:bg-white/10 transition-colors"
+              aria-label="Back to home"
+            >
+              <span className="w-10 h-10 border rounded-full flex items-center justify-center shrink-0">
                 <ArrowLeft size={18} />
-              </div>
+              </span>
               <p>My Profile</p>
-            </div>
+            </button>
 
             <Image src="/setting.png" width={34} height={4} alt="" />
           </div>

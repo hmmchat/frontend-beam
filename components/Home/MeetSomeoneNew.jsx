@@ -255,7 +255,9 @@ export default function MeetSomeoneNew({
                 <div className="absolute top-0 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#201035] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </button>
             <button 
-                onClick={() => router.push('/facecard?view=editor')}
+                type="button"
+                title="My profile"
+                onClick={() => router.push('/profile/')}
                 className="flex items-center justify-center hover:scale-110 transition-transform"
             >
                 <div className="w-[30px] h-[30px] rounded-full   overflow-hidden  shadow-lg">

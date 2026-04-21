@@ -1059,13 +1059,15 @@ export default function MeetSomeoneDynamic() {
 </button>
 
          
-               {/* Profile */}
+               {/* Profile — opens My Profile (/profile) */}
 <button 
+  type="button"
+  title="My profile"
   onClick={() => {
     if (isSearching) {
-      setOverlay({ open: true, url: '/facecard?view=editor', title: 'Profile' });
+      setOverlay({ open: true, url: '/profile/', title: 'My Profile' });
     } else {
-      router.push('/facecard?view=editor');
+      router.push('/profile/');
     }
   }}
   className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}

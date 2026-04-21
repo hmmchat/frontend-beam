@@ -2,14 +2,39 @@
 
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import FacecardEditor from "../facecard/FacecardEditor";
+import FaceCard2 from "../Home/FaceCard2";
+import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
+import { API, apiRequest } from "@/lib/api";
+import RewardsReferralsPanel from "../Profile/RewardsReferralsPanel";
 
 export default function ProfileMobile() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("main");
   const [selectedSticker, setSelectedSticker] = useState(3);
+  const [user, setUser] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+        const fields =
+          "username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden";
+        const data = await apiRequest(`${API.USERS.GET_ME}?fields=${fields}`);
+        setUser(data.user || data);
+      } catch (e) {
+        console.error("[ProfileMobile] Failed to load user:", e);
+      }
+    };
+    load();
+  }, []);
+
+  const progress = user ? calculateProgress(user) : 0;
+  const displayName = user?.username?.trim() || "Profile";
+  const age = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
 
   return (
     <div className="h-[100dvh] w-full text-white flex flex-col items-center pt-6 px-4 relative overflow-y-auto custom-scroll">
@@ -92,44 +117,21 @@ export default function ProfileMobile() {
         </div>
       ) : activeTab === "rewards" ? (
         /* ================= REWARDS ================= */
-        <div className="w-full flex flex-col min-h-[90dvh] pb-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div
+        <div className="flex w-full flex-1 flex-col gap-3 pb-6">
+          <div className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
               onClick={() => setActiveTab("main")}
-              className="w-10 h-10 border rounded-full flex items-center justify-center"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/40"
+              aria-label="Back to profile"
             >
               <ArrowLeft size={18} />
-            </div>
-            <p>Rewards and Referrals</p>
-          </div>
-
-          <div className="border border-white/30 rounded-[2.5rem] p-10 text-center">
-            <p className="mb-2">Invite you gang and win</p>
-            <p className="text-xl mb-6 flex items-center justify-center">
-              <span>
-                <img src="/Coins/coin1.png" alt="" className="w-8 h-8" />
-              </span>
-              100
+            </button>
+            <p className="font-[family-name:var(--font-outfit),sans-serif] text-base font-medium">
+              Rewards and Referrals
             </p>
-
-            <div className="w-40 h-40 rounded-xl mx-auto mb-6 flex items-center justify-center text-black">
-              <img src="/profile/code.png" alt="" />
-            </div>
-
-            <div className="bg-black/20 rounded-full py-3">
-              Ref- eral- code-12
-            </div>
           </div>
-
-          <div className="border border-white/30 rounded-[2.5rem] p-10 mt-6 text-center">
-            <p className="mb-4">Share to</p>
-            <div className="flex justify-center gap-6">
-              <img src="/shareicon4.png" className="w-8 h-8" />
-              <img src="/shareicon2.png" className="w-8 h-8" />
-              <img src="/shareicon1.png" className="w-8 h-8" />
-              <img src="/shareicon3.png" className="w-8 h-8" />
-            </div>
-          </div>
+          <RewardsReferralsPanel />
         </div>
       ) : activeTab === "getmoney" ? (
         /* ================= GET MONEY ================= */
@@ -194,10 +196,38 @@ export default function ProfileMobile() {
             </div>
           </div>
         </div>
-      ) : activeTab === "account" ? (
-        <>
-          <FacecardEditor />
-        </>
+      ) : activeTab === "facePreview" ? (
+        <div className="w-full flex flex-col min-h-[90dvh] pb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab("main")}
+              className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
+              aria-label="Back to profile"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <p className="text-base">My account</p>
+          </div>
+          {user ? (
+            <div className="flex justify-center w-full">
+              <div className="scale-[0.85] origin-top">
+                <FaceCard2
+                  user={{
+                    ...user,
+                    age,
+                    city: user?.preferredCity || user?.city,
+                  }}
+                  currentIndex={currentImageIndex}
+                  onIndexChange={setCurrentImageIndex}
+                  onClose={() => setActiveTab("main")}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-white/60 text-sm">Loading…</p>
+          )}
+        </div>
       ) : (
         <>
           {/* ================= PROFILE ================= */}
@@ -221,8 +251,18 @@ export default function ProfileMobile() {
           <div className="w-full min-h-[85vh] border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center mb-10">
             {/* PROFILE */}
             <div className="relative">
-              <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white">
-                <Image src="/loadingpage.png" width={120} height={120} alt="" />
+              <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white relative">
+                {user?.displayPictureUrl ? (
+                  <Image
+                    src={user.displayPictureUrl}
+                    width={120}
+                    height={120}
+                    alt=""
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <Image src="/loadingpage.png" width={120} height={120} alt="" />
+                )}
               </div>
 
               <div className="absolute bottom-0 right-[-10px] w-14 h-14 border rounded-full flex items-center justify-center">
@@ -240,14 +280,15 @@ export default function ProfileMobile() {
             </div>
 
             <h2 className="mt-4 text-yellow-400 text-xl font-bold">
-              Eldzhey 29
+              {displayName}
+              {age != null ? ` ${age}` : ""}
             </h2>
 
             {/* MENU */}
             <div className="w-full mt-8 space-y-5">
               <div
-                onClick={() => setActiveTab("account")}
-                className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer"
+                onClick={() => setActiveTab("facePreview")}
+                className="flex cursor-pointer items-center justify-between gap-2 border-b border-white/20 pb-3"
               >
                 <div>
                   <p className="text-sm">My account</p>
@@ -255,10 +296,13 @@ export default function ProfileMobile() {
                     Fill account details
                   </p>
                 </div>
-                <span className="text-[9px] border border-white/40 px-2 py-1 rounded-full">
-                  60% complete
+                <span className="shrink-0 rounded-full border border-white/40 px-2 py-1 text-[9px]">
+                  {progress}% complete
                 </span>
-                <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white"
+                  aria-hidden
+                >
                   ›
                 </span>
               </div>

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export default function ProfileHeader({ icons }) {
   const router = useRouter();
   return (
-    <div className="w-full max-w-5xl flex items-center justify-between mb-8 z-10 px-4">
+    <div className="z-10 mb-8 flex w-full max-w-5xl items-center justify-between px-4">
       <button
         type="button"
         onClick={() => router.push("/")}

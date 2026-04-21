@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { IoVideocam, IoNavigate, IoTimeOutline, IoChatbubbleOutline, IoPersonOutline, IoHomeOutline, IoLayersOutline } from 'react-icons/io5';
 import { FaCrown, FaMobileAlt } from 'react-icons/fa';
 import { API, apiRequest } from '@/lib/api';
+import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 import clsx from 'clsx';
 import Image from 'next/image';
 import FilterButtons from '@/components/ui/FilterButtons';
@@ -88,6 +89,7 @@ export default function MeetSomeoneNew({
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userId');
+    clearPendingReferralCode();
     window.location.href = '/';
   };
 

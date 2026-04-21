@@ -7,6 +7,7 @@ import { API, apiRequest } from "@/lib/api";
 import MobileHome from "@/components/Mobile/MobileHome";
 import DesktopHome from "@/components/Mobile/DesktopHome";
 import HomeSkeleton from "@/components/Home/HomeSkeleton";
+import { clearPendingReferralCode } from "@/components/CaptureReferralFromUrl";
 
 const MeetSomeoneDynamic = dynamic(
   () => import("@/components/Home/MeetSomeoneDynamic"),
@@ -63,6 +64,7 @@ const MyComponent = () => {
           } else if (err.status === 401) {
             setIsLoggedIn(false);
             localStorage.removeItem("accessToken");
+            clearPendingReferralCode();
           }
         } finally {
           setProfileChecked(true);

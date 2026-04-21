@@ -9,6 +9,10 @@ import Button from "../ui/Button";
 import Input from "../ui/Input";
 import ErrorAlert from "../ui/ErrorAlert";
 import { API } from "@/lib/api";
+import {
+  clearPendingReferralCode,
+  getPendingReferralCodeIfAnonymous,
+} from "@/components/CaptureReferralFromUrl";
 
 function SignUpModalContent({ isOpen, onClose }) {
   const [step, setStep] = useState("options");
@@ -48,6 +52,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
         // Create a simple JWT-like structure for the backend
         // The backend will verify this with Google's API
+        const referralCode = getPendingReferralCodeIfAnonymous();
         const response = await fetch(API.AUTH.GOOGLE, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -55,6 +60,7 @@ function SignUpModalContent({ isOpen, onClose }) {
             idToken: tokenResponse.access_token,
             acceptedTerms: true,
             acceptedTermsVer: "v1.0",
+            ...(referralCode ? { referralCode } : {}),
           }),
         });
 
@@ -65,6 +71,7 @@ function SignUpModalContent({ isOpen, onClose }) {
         }
 
         const data = await response.json();
+        clearPendingReferralCode();
 
         // Store tokens
         localStorage.setItem("accessToken", data.accessToken);
@@ -201,6 +208,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
       console.log("Verifying OTP for:", formattedNumber);
 
+      const referralCode = getPendingReferralCodeIfAnonymous();
       const response = await fetch(API.AUTH.PHONE_VERIFY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -209,6 +217,7 @@ function SignUpModalContent({ isOpen, onClose }) {
           code: otpValue,
           acceptedTerms: true,
           acceptedTermsVer: "v1.0",
+          ...(referralCode ? { referralCode } : {}),
         }),
       });
 
@@ -223,6 +232,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
+      clearPendingReferralCode();
 
       router.push("/onboarding");
       onClose();

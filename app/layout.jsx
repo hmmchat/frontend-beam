@@ -1,6 +1,7 @@
 import "./globals.css";
 import localFont from 'next/font/local';
 import { Outfit } from 'next/font/google';
+import CaptureReferralFromUrl from '@/components/CaptureReferralFromUrl';
 
 const otomanopeeOne = localFont({
   src: '../public/fonnts.com-OtomanopeeOne-Regular.ttf',
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${otomanopeeOne.variable} ${outfit.variable}`}>
+        <CaptureReferralFromUrl />
         {children}
       </body>
     </html>

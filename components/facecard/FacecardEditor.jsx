@@ -9,6 +9,8 @@ export default function FacecardEditor({
   firstName,
   zodiac,
   setView,
+  /** When set (e.g. opened from /profile), back/close uses this instead of setView("success"). */
+  onExitEditor,
   handleSlotClick,
   setShowSelector,
   onPickZodiac,
@@ -18,6 +20,10 @@ export default function FacecardEditor({
   onOpenFacecardPreview,
   photoUploading = false,
 }) {
+  const leaveEditor = () => {
+    if (onExitEditor) onExitEditor();
+    else setView?.("success");
+  };
   const [interestIndex, setInterestIndex] = useState(0);
   const [causeIndex, setCauseIndex] = useState(0);
   const interests =
@@ -61,7 +67,7 @@ export default function FacecardEditor({
 
             <div className="col-span-2">
               <button
-                onClick={() => setView("success")}
+                onClick={leaveEditor}
                 className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
               >
                 ✕
@@ -422,7 +428,7 @@ export default function FacecardEditor({
               <div className="relative flex flex-col items-start ">
                 {/* Back Button */}
                 <button
-                  onClick={() => setView("success")}
+                  onClick={leaveEditor}
                   className="w-14 h-14 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
                 >
                   <span className="text-2xl "><FaArrowLeft /></span>

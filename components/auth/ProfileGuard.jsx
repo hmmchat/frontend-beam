@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 
 export default function ProfileGuard({ children }) {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function ProfileGuard({ children }) {
           // Token expired possibly
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          clearPendingReferralCode();
           router.push('/');
           return;
         }

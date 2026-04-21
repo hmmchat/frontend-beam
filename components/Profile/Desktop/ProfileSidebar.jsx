@@ -11,20 +11,20 @@ export default function ProfileSidebar({
   progress,
 }) {
   return (
-    <div className="col-span-1 border border-white/20 rounded-[3rem] p-6 flex flex-col items-center text-center justify-center">
+    <div className="col-span-1 flex flex-col items-center justify-center rounded-[3rem] border border-white/20 p-6 text-center">
       <div className="relative">
-        <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
+        <div className="h-full w-full overflow-hidden rounded-full border-2 border-white">
           <Image
             src={user?.displayPictureUrl || "/loadingpage.png"}
             alt="profile"
             width={120}
             height={120}
-            className="rounded-full object-cover h-30 w-30"
+            className="h-30 w-30 rounded-full object-cover"
           />
         </div>
 
-        <div className="absolute bottom-0 right-[-10] w-14 h-14 rounded-full border border-white/40 flex items-center justify-center">
-          <div className="relative w-10 h-10 rounded-full flex items-center justify-center">
+        <div className="absolute bottom-0 right-[-10] flex h-14 w-14 items-center justify-center rounded-full border border-white/40">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-full">
             <Image
               src="/gift/gift8.png"
               alt="gift"
@@ -34,9 +34,9 @@ export default function ProfileSidebar({
 
             <div
               onClick={() => setActiveTab("stickers")}
-              className="absolute -bottom-1 -right-4 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+              className="absolute -bottom-1 -right-4 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full"
             >
-              <img src="/edit.png" alt="edit" className="w-3 h-3" />
+              <img src="/edit.png" alt="edit" className="h-3 w-3" />
             </div>
           </div>
         </div>
@@ -45,55 +45,55 @@ export default function ProfileSidebar({
         {firstName} {user?.age || calculateAge(user?.dateOfBirth) || ""}
       </h2>
 
-      <div className="w-full mt-10 space-y-4 text-left px-4">
+      <div className="mt-10 w-full space-y-4 px-4 text-left">
         <div
           onClick={() => setActiveTab("account")}
-          className={`flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer ${activeTab === "account" ? "opacity-100" : "opacity-70"}`}
+          className={`flex cursor-pointer items-center justify-between gap-2 border-b border-white/20 pb-3 ${activeTab === "account" || activeTab === "default" ? "opacity-100" : "opacity-70"}`}
         >
           <div>
             <p className="text-sm">My account</p>
             <p className="text-[10px] text-white/60">Fill account details</p>
           </div>
-          <span className="text-[9px] border border-white/40 px-2 py-1 rounded-full">
+          <span className="shrink-0 rounded-full border border-white/40 px-2 py-1 text-[9px]">
             {progress}% complete
           </span>
-          <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+          <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white">
             ›
           </span>
         </div>
 
         <div
           onClick={() => setActiveTab("prompts")}
-          className={`flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer ${activeTab === "prompts" ? "opacity-100" : "opacity-70"}`}
+          className={`flex cursor-pointer items-center justify-between border-b border-white/20 pb-3 ${activeTab === "prompts" ? "opacity-100" : "opacity-70"}`}
         >
           <p className="text-sm">My Prompts</p>
-          <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
             ›
           </span>
         </div>
 
         <div
           onClick={() => setActiveTab("getmoney")}
-          className={`flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer ${activeTab === "getmoney" ? "opacity-100" : "opacity-70"}`}
+          className={`flex cursor-pointer items-center justify-between border-b border-white/20 pb-3 ${activeTab === "getmoney" ? "opacity-100" : "opacity-70"}`}
         >
           <div>
             <p className="text-sm">Get money</p>
             <p className="text-[10px] text-white/60">40 left to withdraw</p>
           </div>
-          <span className="text-[9px] border border-white/40 px-3 py-1 rounded-full">
+          <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
             💎 60
           </span>
-          <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
             ›
           </span>
         </div>
 
         <div
           onClick={() => setActiveTab("rewards")}
-          className={`flex items-center justify-between cursor-pointer ${activeTab === "rewards" ? "opacity-100" : "opacity-70"}`}
+          className={`flex cursor-pointer items-center justify-between ${activeTab === "rewards" ? "opacity-100" : "opacity-70"}`}
         >
           <p className="text-sm">Rewards & Referrals</p>
-          <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
             ›
           </span>
         </div>

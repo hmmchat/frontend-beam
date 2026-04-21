@@ -1,45 +1,26 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import RewardsReferralsPanel from "../RewardsReferralsPanel";
 
 export default function RewardsTab({ onBack }) {
   return (
-    <div className="w-full  flex flex-col">
-      <div className="flex items-center gap-3 mb-6">
-        <div
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <div className="flex shrink-0 items-center gap-3">
+        <button
+          type="button"
           onClick={onBack}
-          className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center cursor-pointer"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/40 text-white transition-colors hover:bg-white/10"
+          aria-label="Back to profile"
         >
           <ArrowLeft size={18} />
-        </div>
-        <p>Rewards and Referrals</p>
-      </div>
-
-      <div className="border border-white/30 rounded-[2.5rem] p-10 text-center">
-        <p className="mb-2">Invite you gang and win</p>
-        <p className="text-xl mb-6 flex items-center justify-center">
-          <span>
-            <img src="/Coins/coin1.png" alt="" className="w-8 h-8" />
-          </span>
-          100
+        </button>
+        <p className="font-[family-name:var(--font-outfit),sans-serif] text-base font-medium text-white">
+          Rewards and Referrals
         </p>
-
-        <div className="w-20 h-20 rounded-xl mx-auto mb-6 flex items-center justify-center text-black">
-          <img src="/profile/code.png" alt="" />
-        </div>
-
-        <div className="bg-black/20 rounded-full py-3">Ref- eral- code-12</div>
       </div>
 
-      <div className="border border-white/30 rounded-[2.5rem] p-10 mt-6 text-center">
-        <p className="mb-4">Share to</p>
-        <div className="flex justify-center gap-6">
-          <img src="/shareicon4.png" className="w-8 h-8" />
-          <img src="/shareicon2.png" className="w-8 h-8" />
-          <img src="/shareicon1.png" className="w-8 h-8" />
-          <img src="/shareicon3.png" className="w-8 h-8" />
-        </div>
-      </div>
+      <RewardsReferralsPanel />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import FaceCard3 from "../Home/FaceCard3";
-import { getFacecardPhotos } from "@/lib/facecard-utils";
+import { calculateProgress } from "@/lib/facecard-utils";
 
 import ProfileHeader from "./Desktop/ProfileHeader";
 import ProfileSidebar from "./Desktop/ProfileSidebar";
@@ -19,7 +19,6 @@ export default function ProfileDesktop({
   user: initialUser,
   age: initialAge,
   setView,
-  router,
   firstName: initialFirstName,
   zodiac: initialZodiac,
   handleSlotClick,
@@ -63,7 +62,12 @@ export default function ProfileDesktop({
     initialAge ?? (user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null);
   const firstName = initialFirstName ?? user?.username?.split(" ")[0] ?? "User";
   const zodiac = initialZodiac ?? user?.zodiac;
-  const progress = initialProgress ?? 60;
+  const progress =
+    user != null
+      ? calculateProgress(user)
+      : initialProgress != null
+        ? initialProgress
+        : 0;
 
   function calculateAge(birthday) {
     const ageDifMs = Date.now() - new Date(birthday).getTime();
@@ -80,7 +84,7 @@ export default function ProfileDesktop({
   }, [interests.length]);
 
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col items-center justify-start py-10 px-6 relative">
+    <div className="relative flex h-screen w-full flex-col items-center justify-start overflow-hidden px-6 py-10">
       {/* stars bg */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <Image
@@ -94,7 +98,7 @@ export default function ProfileDesktop({
 
       <ProfileHeader icons={["/edit.png", "/setting.png", "/bandage.png"]} />
 
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 border border-white/30 rounded-[3rem] p-3 z-10">
+      <div className="z-10 grid w-full max-w-5xl grid-cols-1 gap-6 rounded-[3rem] border border-white/30 p-3 md:grid-cols-3">
         <ProfileSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -120,13 +124,13 @@ export default function ProfileDesktop({
             </div>
           </div>
         ) : (
-          <div className="col-span-2 border border-white/20 rounded-[3rem] px-8 py-10 flex flex-col min-h-[80vh]">
+          <div className="col-span-2 flex min-h-[80vh] flex-col rounded-[3rem] border border-white/20 px-8 py-10">
             {activeTab === "getmoney" ? (
               <GetMoneyTab />
             ) : activeTab === "prompts" ? (
               <PromptsTab user={user} setUser={setUser} />
             ) : activeTab === "rewards" ? (
-              <RewardsTab onBack={() => setActiveTab("getmoney")} />
+              <RewardsTab onBack={() => setActiveTab("default")} />
             ) : (
               <StickersTab />
             )}

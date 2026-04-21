@@ -16,6 +16,7 @@ import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
 import LocationCard from './LocationCard';
 import { getFacecardPhotos } from '@/lib/facecard-utils';
+import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 
 import FaceCard from './FaceCard';
 import CoinModal from '@/components/modals/CoinModal';
@@ -126,8 +127,8 @@ export default function MeetSomeoneDynamic() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userId');
-    // Clear any other session data if needed
-    window.location.href = '/'; // Using href for a full reload to reset all states
+    clearPendingReferralCode();
+    window.location.href = '/';
   };
 
   useEffect(() => {

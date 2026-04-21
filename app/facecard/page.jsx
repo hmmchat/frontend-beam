@@ -85,6 +85,7 @@ function FacecardContent() {
   const [facecardPreviewOpen, setFacecardPreviewOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [musicSavingKey, setMusicSavingKey] = useState(null);
+  const [exitEditorToProfile, setExitEditorToProfile] = useState(false);
 
   const progress = calculateProgress(user);
 
@@ -99,6 +100,10 @@ function FacecardContent() {
     if (requestedView === "success" || requestedView === "editor") {
       setView(requestedView);
     }
+    const from = String(sp.get("from") || "")
+      .trim()
+      .toLowerCase();
+    setExitEditorToProfile(from === "profile");
   }, []);
 
   useEffect(() => {
@@ -249,6 +254,14 @@ function FacecardContent() {
   const safeSetView = (nextView) => {
     if (targetUserId) return;
     setView(nextView);
+  };
+
+  const handleExitEditor = () => {
+    if (exitEditorToProfile) {
+      router.replace("/profile");
+      return;
+    }
+    safeSetView("success");
   };
 
   useEffect(() => {
@@ -862,6 +875,7 @@ function FacecardContent() {
             firstName={firstName}
             zodiac={user?.zodiac}
             setView={safeSetView}
+            onExitEditor={handleExitEditor}
             handleSlotClick={handleSlotClick}
             setShowSelector={setShowSelector}
             progress={progress}

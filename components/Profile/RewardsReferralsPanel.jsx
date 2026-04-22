@@ -182,6 +182,7 @@ export default function RewardsReferralsPanel() {
     try {
       await trackShareEvent("copy", { target: "invite_message" });
       await navigator.clipboard.writeText(text);
+      showHint("Copied invite to clipboard");
     } catch {
       showHint("Could not copy — try again");
     }
@@ -195,50 +196,45 @@ export default function RewardsReferralsPanel() {
 
   const shareInstagram = async () => {
     await trackShareEvent("instagram");
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: "Beam",
-          text: messageText || shareUrl,
-          url: shareUrl || undefined,
-        });
-        return;
-      } catch (e) {
-        if (e?.name === "AbortError") return;
-      }
-    }
+    const text = messageText || shareUrl;
     try {
-      await navigator.clipboard.writeText(messageText || shareUrl);
-      showHint("Copied — paste in Instagram");
+      if (text) await navigator.clipboard.writeText(text);
+      showHint("Copied invite — paste in Instagram");
+      // Instagram web does not support direct prefilled text share; open app/site and let user paste.
+      const appIntent = window.open("instagram://app", "_self");
+      if (!appIntent) {
+        window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      } else {
+        setTimeout(() => {
+          window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+        }, 500);
+      }
     } catch {
-      showHint("Could not share or copy");
+      window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      showHint("Opened Instagram");
     }
   };
 
   const shareSnapchat = async () => {
     await trackShareEvent("snapchat");
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: "Beam",
-          text: messageText || shareUrl,
-          url: shareUrl || undefined,
-        });
-        return;
-      } catch (e) {
-        if (e?.name === "AbortError") return;
-      }
-    }
+    const text = messageText || shareUrl;
     try {
-      await navigator.clipboard.writeText(messageText || shareUrl);
-      showHint("Copied — paste in Snapchat");
+      if (text) await navigator.clipboard.writeText(text);
+      const attachment = encodeURIComponent(shareUrl || window.location.origin);
+      window.open(
+        `https://www.snapchat.com/scan?attachmentUrl=${attachment}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      showHint("Copied invite — opened Snapchat");
     } catch {
-      showHint("Could not share or copy");
+      window.open("https://www.snapchat.com/", "_blank", "noopener,noreferrer");
+      showHint("Opened Snapchat");
     }
   };
 
   const box =
-    "w-full max-w-[min(100%,22rem)] rounded-[2rem] border border-[rgba(200,180,255,0.4)] bg-black/15 text-center md:max-w-[24rem] md:rounded-[2.5rem]";
+    "w-full max-w-[min(100%,22rem)] rounded-[2rem] border border-[rgba(200,180,255,0.4)] bg-black/15 text-center md:max-w-none md:rounded-[2.5rem]";
 
   if (loading) {
     return (
@@ -269,19 +265,19 @@ export default function RewardsReferralsPanel() {
       : 0;
 
   return (
-    <div className="flex w-full min-h-0 flex-col items-center gap-2 md:gap-3">
-      <div className={`${box} mx-auto px-6 py-5 md:px-8 md:py-6`}>
-        <p className="mb-2 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white">
+    <div className="flex w-full min-h-0 flex-col items-center gap-2 md:gap-4">
+      <div className={`${box} mx-auto px-6 py-5 md:px-12 md:py-7`}>
+        <p className="mb-2 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
           Invite your gang and win
         </p>
-        <p className="mb-4 flex items-center justify-center gap-2 text-2xl font-bold text-white">
-          <img src="/Coins/coin1.png" alt="" className="h-9 w-9" />
+        <p className="mb-4 flex items-center justify-center gap-2 text-2xl font-bold text-white md:mb-5 md:text-[44px] md:leading-none">
+          <img src="/Coins/coin1.png" alt="" className="h-9 w-9 md:h-10 md:w-10" />
           {referralRewardCoins}
         </p>
 
-        <div className="mx-auto mb-4 flex w-max justify-center">
+        <div className="mx-auto mb-4 flex w-max justify-center md:mb-5">
           <div
-            className="relative h-[116px] w-[116px] p-[6px]"
+            className="relative h-[116px] w-[116px] p-[6px] md:h-[142px] md:w-[142px]"
             role="img"
             aria-label="Scan QR code to open your referral link"
           >
@@ -292,10 +288,10 @@ export default function RewardsReferralsPanel() {
         <button
           type="button"
           onClick={copyInviteMessage}
-          className="mx-auto w-full max-w-[17.5rem] rounded-full bg-[#2a1548] py-2.5 text-white transition hover:bg-[#351a5a] md:max-w-xs"
+          className="mx-auto w-full max-w-[17.5rem] rounded-full bg-[#2a1548] py-2.5 text-white transition hover:bg-[#351a5a] md:max-w-[32rem] md:py-3"
         >
           {referralCode ? (
-            <span className="font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold">
+            <span className="font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold md:text-[22px]">
               {referralCode}
             </span>
           ) : (
@@ -304,11 +300,11 @@ export default function RewardsReferralsPanel() {
         </button>
       </div>
 
-      <div className={`${box} mx-auto px-6 py-5 md:px-8 md:py-6`}>
-        <p className="mb-4 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white">
+      <div className={`${box} mx-auto px-6 py-5 md:px-12 md:py-7`}>
+        <p className="mb-4 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
           Share to
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-7">
+        <div className="flex flex-wrap items-center justify-center gap-7 md:gap-10">
           <button
             type="button"
             onClick={shareSnapchat}

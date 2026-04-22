@@ -447,7 +447,14 @@ export default function ProfileMobile() {
               <p>My Profile</p>
             </button>
 
-            <Image src="/setting.png" width={34} height={4} alt="" />
+            <button
+              type="button"
+              onClick={() => router.push("/settings")}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white transition-colors hover:bg-white/10"
+              aria-label="Settings"
+            >
+              <Image src="/setting.png" width={20} height={20} alt="" />
+            </button>
           </div>
 
           <div className="w-full min-h-[85vh] border border-white/30 rounded-[2.5rem] p-10 flex flex-col items-center mb-10">

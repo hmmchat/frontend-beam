@@ -4,7 +4,8 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ProfileHeader({ icons }) {
+/** @param {{ icons: string[]; settingsIconIndex?: number }} props */
+export default function ProfileHeader({ icons, settingsIconIndex = 1 }) {
   const router = useRouter();
   return (
     <div className="z-10 mb-8 flex w-full max-w-5xl items-center justify-between px-4">
@@ -25,20 +26,41 @@ export default function ProfileHeader({ icons }) {
       </h1>
 
       <div className="flex items-center gap-3">
-        {icons.map((src, i) => (
-          <div
-            key={i}
-            className="w-10 h-10 border border-white rounded-full flex items-center justify-center"
-          >
-            <Image
-              src={src}
-              alt="icon"
-              width={20}
-              height={20}
-              className="object-contain text-white"
-            />
-          </div>
-        ))}
+        {icons.map((src, i) => {
+          const isSettings = i === settingsIconIndex;
+          const shellClass =
+            "w-10 h-10 border border-white rounded-full flex items-center justify-center shrink-0";
+          if (isSettings) {
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => router.push("/settings")}
+                className={`${shellClass} transition-colors hover:bg-white/10`}
+                aria-label="Settings"
+              >
+                <Image
+                  src={src}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
+              </button>
+            );
+          }
+          return (
+            <div key={i} className={shellClass}>
+              <Image
+                src={src}
+                alt=""
+                width={20}
+                height={20}
+                className="object-contain"
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

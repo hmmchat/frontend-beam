@@ -54,36 +54,49 @@ function SettingsContent() {
   const router = useRouter();
   const [busy, setBusy] = useState(null);
 
-  const signOut = async () => {
-    setBusy("logout");
-    try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        await apiRequest(API.AUTH.LOGOUT, {
-          method: "POST",
-          body: JSON.stringify({ refreshToken }),
-        });
-      }
-    } catch (e) {
-      console.warn("[Settings] Logout request failed:", e);
-    } finally {
-      clearClientSession();
-      router.push("/");
-    }
+  /**
+   * Sign out: clear local session and go home immediately so the UI never
+   * blocks on auth-service. Revoke refresh in the background (keepalive helps
+   * if the tab navigates away during the request).
+   */
+  const signOut = () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    clearClientSession();
+    router.replace("/");
+    if (!refreshToken) return;
+    fetch(API.AUTH.LOGOUT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+      keepalive: true,
+    }).catch((e) => {
+      console.warn("[Settings] Background logout failed:", e);
+    });
   };
 
   const deleteAccount = async () => {
     const ok = window.confirm(
-      "Delete your account? Your data will be permanently removed within 30 days. You will be signed out."
+      "Delete your account permanently?\n\n" +
+        "This action cannot be undone. Your account will not be restored if you continue. " +
+        "Your profile and associated data will be removed according to our retention policy.\n\n" +
+        "Are you sure you want to delete your account?"
     );
     if (!ok) return;
     setBusy("delete");
     try {
-      await apiRequest(API.AUTH.DELETE_ACCOUNT, { method: "DELETE" });
+      const signal =
+        typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+          ? AbortSignal.timeout(12000)
+          : undefined;
+      await apiRequest(API.AUTH.DELETE_ACCOUNT, { method: "DELETE", signal });
       clearClientSession();
-      router.push("/");
+      router.replace("/");
     } catch (e) {
-      alert(e?.message || "Could not delete account. Please try again.");
+      const msg =
+        e?.name === "AbortError"
+          ? "That request timed out. Your account may or may not have been deleted—please try signing in again or contact support."
+          : e?.message || "Could not delete account. Please try again.";
+      alert(msg);
       setBusy(null);
     }
   };
@@ -148,7 +161,7 @@ function SettingsContent() {
             <ActionRow
               label="Sign out"
               onClick={signOut}
-              disabled={busy !== null}
+              disabled={busy === "delete"}
             />
             <ActionRow
               label="Delete my account"

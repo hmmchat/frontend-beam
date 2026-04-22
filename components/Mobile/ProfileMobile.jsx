@@ -10,6 +10,7 @@ import FaceCard2 from "../Home/FaceCard2";
 import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
 import { API, apiRequest } from "@/lib/api";
 import RewardsReferralsPanel from "../Profile/RewardsReferralsPanel";
+import { buildGetMoneyModel, formatInrValue } from "@/lib/getMoney";
 
 export default function ProfileMobile() {
   const router = useRouter();
@@ -17,6 +18,11 @@ export default function ProfileMobile() {
   const [selectedSticker, setSelectedSticker] = useState(3);
   const [user, setUser] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [walletSnapshot, setWalletSnapshot] = useState({
+    diamonds: 0,
+    coins: 0,
+    loading: true,
+  });
   const facecardExportRef = useRef(null);
 
   useEffect(() => {
@@ -35,10 +41,31 @@ export default function ProfileMobile() {
     load();
   }, []);
 
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        const balance = await apiRequest(API.WALLET.GET_BALANCE);
+        setWalletSnapshot({
+          diamonds: Number(balance?.diamonds) || 0,
+          coins: Number(balance?.balance) || 0,
+          loading: false,
+        });
+      } catch (e) {
+        console.error("[ProfileMobile] Failed to load wallet:", e);
+        setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+      }
+    };
+    loadWallet();
+  }, []);
+
   const progress = user ? calculateProgress(user) : 0;
   const displayName = user?.username?.trim() || "Profile";
   const firstName = user?.username?.split(" ")[0] || "User";
   const age = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
+  const moneyModel = buildGetMoneyModel({
+    diamonds: walletSnapshot.diamonds,
+    coins: walletSnapshot.coins,
+  });
 
   const handleShareFacecard = async () => {
     if (!user?.id || typeof window === "undefined") return;
@@ -317,14 +344,23 @@ export default function ProfileMobile() {
             </p>
 
             <p className="text-sm text-white/60 mt-1">
-              Just 💎 40 left to unlock
+              {walletSnapshot.loading
+                ? "Loading wallet details..."
+                : moneyModel.isUnlocked
+                  ? "Unlocked! You can withdraw now"
+                  : `Just 💎 ${moneyModel.diamondsLeft} left to unlock`}
             </p>
 
-            <h2 className="text-3xl font-bold mt-4 mb-10">₹7000</h2>
+            <h2 className="text-3xl font-bold mt-4 mb-10">
+              ₹{formatInrValue(moneyModel.currentInrValue)}
+            </h2>
 
             <div className="w-full max-w-lg mb-12">
               <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
-                <div className="h-full w-[10%] bg-white rounded-full" />
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-300"
+                  style={{ width: `${moneyModel.unlockProgress}%` }}
+                />
               </div>
             </div>
 
@@ -345,7 +381,7 @@ export default function ProfileMobile() {
                     Learn How to earn diamonds?
                   </p>
                   <p className="text-white/80 text-xs">
-                    You literally need to do nothing, it’s that simple
+                    Your current balance: 💎 {moneyModel.diamonds}
                   </p>
                 </div>
               </div>
@@ -498,11 +534,13 @@ export default function ProfileMobile() {
                 <div>
                   <p className="text-sm">Get money</p>
                   <p className="text-[10px] text-white/60">
-                    40 left to withdraw
+                    {moneyModel.isUnlocked
+                      ? "Ready to withdraw"
+                      : `${moneyModel.diamondsLeft} left to withdraw`}
                   </p>
                 </div>
                 <span className="text-[9px] border border-white/40 px-3 py-1 rounded-full">
-                  💎 60
+                  💎 {moneyModel.diamonds}
                 </span>
                 <span className="w-6 h-6 flex items-center justify-center border border-white rounded-full">
                   ›

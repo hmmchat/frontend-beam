@@ -16,6 +16,7 @@ import RewardsTab from "./Desktop/RewardsTab";
 import StickersTab from "./Desktop/StickersTab";
 
 import { API, apiRequest } from "@/lib/api";
+import { buildGetMoneyModel } from "@/lib/getMoney";
 
 export default function ProfileDesktop({
   user: initialUser,
@@ -37,6 +38,11 @@ export default function ProfileDesktop({
   const [interestIndex, setInterestIndex] = useState(0);
   const [causeIndex, setCauseIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [walletSnapshot, setWalletSnapshot] = useState({
+    diamonds: 0,
+    coins: 0,
+    loading: true,
+  });
   const facecardExportRef = useRef(null);
 
   useEffect(() => {
@@ -85,6 +91,28 @@ export default function ProfileDesktop({
     }, 2500);
     return () => clearInterval(interval);
   }, [interests.length]);
+
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        const balance = await apiRequest(API.WALLET.GET_BALANCE);
+        setWalletSnapshot({
+          diamonds: Number(balance?.diamonds) || 0,
+          coins: Number(balance?.balance) || 0,
+          loading: false,
+        });
+      } catch (err) {
+        console.error("Failed to fetch wallet balance:", err);
+        setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+      }
+    };
+    loadWallet();
+  }, []);
+
+  const moneyModel = buildGetMoneyModel({
+    diamonds: walletSnapshot.diamonds,
+    coins: walletSnapshot.coins,
+  });
 
   const handleShareFacecard = async () => {
     if (!user?.id || typeof window === "undefined") return;
@@ -284,6 +312,7 @@ export default function ProfileDesktop({
           user={user}
           firstName={firstName}
           progress={progress}
+          moneyModel={moneyModel}
         />
 
         <div
@@ -340,7 +369,7 @@ export default function ProfileDesktop({
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto">
             {activeTab === "getmoney" ? (
-              <GetMoneyTab />
+              <GetMoneyTab moneyModel={moneyModel} loading={walletSnapshot.loading} />
             ) : activeTab === "prompts" ? (
               <PromptsTab user={user} setUser={setUser} />
             ) : activeTab === "rewards" ? (

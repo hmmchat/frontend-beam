@@ -1,19 +1,36 @@
 "use client";
 
-export default function GetMoneyTab() {
+import { formatInrValue } from "@/lib/getMoney";
+
+export default function GetMoneyTab({ moneyModel, loading = false }) {
+  const diamondsLeft = moneyModel?.diamondsLeft ?? 0;
+  const diamonds = moneyModel?.diamonds ?? 0;
+  const progress = moneyModel?.unlockProgress ?? 0;
+  const isUnlocked = Boolean(moneyModel?.isUnlocked);
+  const currentInr = moneyModel?.currentInrValue ?? 0;
+
   return (
     <div className="flex flex-col items-center text-center h-full">
       <p className="text-sm text-white/80">
         Hmm. You being nice is paying back!!
       </p>
 
-      <p className="text-sm text-white/60 mt-1">Just 💎 40 left to unlock</p>
+      <p className="text-sm text-white/60 mt-1">
+        {loading
+          ? "Loading wallet details..."
+          : isUnlocked
+            ? "Unlocked! You can withdraw now"
+            : `Just 💎 ${diamondsLeft} left to unlock`}
+      </p>
 
-      <h2 className="text-3xl font-bold mt-4 mb-10">₹7000</h2>
+      <h2 className="text-3xl font-bold mt-4 mb-10">₹{formatInrValue(currentInr)}</h2>
 
       <div className="w-full max-w-lg mb-12">
         <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
-          <div className="h-full w-[10%] bg-white rounded-full" />
+          <div
+            className="h-full bg-white rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
@@ -34,7 +51,7 @@ export default function GetMoneyTab() {
               Learn How to earn diamonds?
             </p>
             <p className="text-white/80 text-xs">
-              You literally need to do nothing, it’s that simple
+              Your current balance: 💎 {diamonds}
             </p>
           </div>
         </div>

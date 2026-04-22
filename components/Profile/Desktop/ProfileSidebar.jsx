@@ -10,6 +10,7 @@ export default function ProfileSidebar({
   user,
   firstName,
   progress,
+  moneyModel,
 }) {
   const router = useRouter();
   return (
@@ -88,10 +89,14 @@ export default function ProfileSidebar({
         >
           <div>
             <p className="text-sm">Get money</p>
-            <p className="text-[10px] text-white/60">40 left to withdraw</p>
+            <p className="text-[10px] text-white/60">
+              {moneyModel?.isUnlocked
+                ? "Ready to withdraw"
+                : `${moneyModel?.diamondsLeft ?? 0} left to withdraw`}
+            </p>
           </div>
           <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
-            💎 60
+            💎 {moneyModel?.diamonds ?? 0}
           </span>
           <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
             ›

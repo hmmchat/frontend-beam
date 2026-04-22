@@ -55,7 +55,7 @@ export default function PromptsTab({ user, setUser }) {
   };
 
   return (
-    <div className="flex flex-col px-14">
+    <div className="flex min-w-0 flex-1 flex-col px-14">
       <div className="border border-white/30  rounded-[2rem] p-5 py-8 text-center text-sm text-white/90">
       <textarea
   rows={4}
@@ -68,8 +68,22 @@ export default function PromptsTab({ user, setUser }) {
 />
       </div>
 
-      <div className="text-left mt-3">
-        <p className="text-sm mb-4 text-white/70">Suggestions</p>
+      <div className="mt-3 text-left">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-white/70">Suggestions</p>
+          <button
+            type="button"
+            onClick={fetchSuggestions}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white transition hover:bg-white/10"
+            aria-label="Refresh suggestions"
+          >
+            <img
+              src="/refresh.png"
+              alt=""
+              className={`p-2 ${loading ? "animate-spin" : ""}`}
+            />
+          </button>
+        </div>
 
 <div
   className="flex flex-wrap gap-3 overflow-hidden"
@@ -86,7 +100,7 @@ export default function PromptsTab({ user, setUser }) {
               <div
                 key={i}
                 onClick={() => handleUpdateIntent(text)}
-                className={`px-4 py-4 border-[2px] border-white/30 rounded-xl text-[14px] border-b-4 hover:bg-white hover:text-black transition cursor-pointer font-outfit ${user?.intent === text ? 'bg-white text-black' : ''}`}
+                className={`max-w-full break-words px-4 py-4 border-[2px] border-white/30 rounded-xl text-[14px] border-b-4 hover:bg-white hover:text-black transition cursor-pointer font-outfit ${user?.intent === text ? 'bg-white text-black' : ''}`}
               >
                 {text}
               </div>
@@ -95,14 +109,6 @@ export default function PromptsTab({ user, setUser }) {
         </div>
       </div>
 
-      <div className="mt-auto -mr-10 flex bottom-9 justify-end">
-        <div 
-          onClick={fetchSuggestions}
-          className="w-10 h-10 border border-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition"
-        >
-          <img src="/refresh.png" alt="refresh" className={`p-2 ${loading ? 'animate-spin' : ''}`} />
-        </div>
-      </div>
     </div>
   );
 }

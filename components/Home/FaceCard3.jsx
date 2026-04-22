@@ -164,6 +164,7 @@ const FaceCard3 = ({
       )}
 
       <div
+        data-facecard-boundary="true"
         className="w-[85vw] aspect-[360/670] max-w-[360px] 
                 sm:w-[340px] md:w-[320px] lg:w-[360px] 
                 md:aspect-[346/660] shrink-0 rounded-[30px] 
@@ -320,7 +321,10 @@ const FaceCard3 = ({
             </div>
 
             {/* Pagination */}
-            <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
+            <div
+              data-facecard-pagination="true"
+              className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2"
+            >
               {allPhotos.map((_, idx) => (
                 <div
                   key={idx}

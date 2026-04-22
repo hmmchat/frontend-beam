@@ -87,11 +87,14 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
     <>
 
 
-<div className="w-[85vw] aspect-[360/670] max-w-[400px] 
+<div
+  data-facecard-boundary="true"
+  className="w-[85vw] aspect-[360/670] max-w-[400px] 
                 sm:w-[340px] md:w-[360px] lg:w-[480px] 
                 md:aspect-[376/660] shrink-0 rounded-[30px] 
                 p-[2px]
-                 md:p-0">
+                 md:p-0"
+>
 
 
 
@@ -104,15 +107,21 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
         {/* HEADER */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 ">
           <div>
-            <h1 className="text-[18px] font-semibold text-[#FFB800]">
-              {user.username || 'User'}{' '}
-<span
-  className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-  style={{ WebkitTextStroke: "0.7px white" }}
->
-  {age || '—'}
-</span>
+            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[18px] font-bold leading-none text-[#FFB800]">
+              <span>{user.username || 'User'}</span>
+              <span
+                className="inline-block text-[18px] font-bold leading-none text-[#FFB800]"
+                style={{
+                  WebkitTextStroke: "0.8px #4f0b99",
+                }}
+              >
+                {age || '—'}
+              </span>
             </h1>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+              <IoLocationOutline className="shrink-0" />
+              <span className="truncate">{city}</span>
+            </div>
            
           </div>
 

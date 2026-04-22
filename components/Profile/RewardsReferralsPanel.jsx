@@ -16,10 +16,34 @@ function getQrEncodedUrl(deepLink, referralCode) {
     const u = new URL(deepLink);
     const ref = u.searchParams.get("ref") || referralCode || "";
     if (!ref) return deepLink;
-    const lean = new URL(`${u.origin}${u.pathname}`);
-    lean.searchParams.set("ref", ref);
-    if (u.hash) lean.hash = u.hash;
-    return lean.toString();
+
+    // If backend already returns a compact short-link (/r/<code>), keep it.
+    const compactPath = u.pathname.replace(/\/+$/, "");
+    if (/\/r\/[A-Za-z0-9]+$/i.test(compactPath)) {
+      return deepLink;
+    }
+
+    // Fallback to canonical query shape for compatibility.
+    const leanQueryLink = new URL(`${u.origin}${u.pathname}`);
+    leanQueryLink.searchParams.set("ref", ref);
+    if (u.hash) leanQueryLink.hash = u.hash;
+
+    // Prefer gateway short-link when available (auth-service exposes /v1/r/:referralCode).
+    let gatewayShortLink = "";
+    try {
+      const overviewUrl = new URL(API.REFERRALS.GET_OVERVIEW);
+      gatewayShortLink = `${overviewUrl.origin}/v1/r/${encodeURIComponent(ref)}`;
+    } catch {
+      gatewayShortLink = "";
+    }
+
+    // Choose shortest valid candidate to reduce matrix density.
+    const candidates = [deepLink, leanQueryLink.toString(), gatewayShortLink].filter(
+      Boolean,
+    );
+    return candidates.reduce((shortest, cur) =>
+      cur.length < shortest.length ? cur : shortest,
+    );
   } catch {
     return deepLink;
   }
@@ -41,12 +65,9 @@ async function trackShareEvent(channel, opts = {}) {
   }
 }
 
-const QR_PURPLE = "#4c1484";
-
 /**
- * Styled, scannable QR (qr-code-styling): white rounded modules on purple,
- * soft corner eyes, small center beam asset. ECC M + lean URL → sparser matrix
- * than long URLs at level H (still not identical to static Figma art).
+ * Styled, scannable QR (qr-code-styling): white rounded modules over transparent
+ * background, with a centered Beam mark. Parent surface provides the purple fill.
  */
 function MinimalStyledReferralQr({ encodeData }) {
   const hostRef = useRef(null);
@@ -58,26 +79,13 @@ function MinimalStyledReferralQr({ encodeData }) {
       return;
     }
 
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
-    const beamSrc = origin ? `${origin}/code.png` : "/code.png";
-
     const qr = new QRCodeStyling({
       width: 220,
       height: 220,
       type: "svg",
       data: encodeData,
-      margin: 0,
-      qrOptions: {
-        errorCorrectionLevel: "M",
-      },
-      image: beamSrc,
-      imageOptions: {
-        hideBackgroundDots: true,
-        imageSize: 0.22,
-        margin: 0,
-        crossOrigin: "anonymous",
-      },
+      margin: 2,
+      qrOptions: { errorCorrectionLevel: "H" },
       dotsOptions: {
         type: "rounded",
         color: "#ffffff",
@@ -89,10 +97,10 @@ function MinimalStyledReferralQr({ encodeData }) {
       },
       cornersDotOptions: {
         type: "dot",
-        color: QR_PURPLE,
+        color: "#ffffff",
       },
       backgroundOptions: {
-        color: QR_PURPLE,
+        color: "transparent",
       },
     });
 
@@ -114,9 +122,19 @@ function MinimalStyledReferralQr({ encodeData }) {
 
   return (
     <div
-      ref={hostRef}
-      className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
-    />
+      className="relative flex h-full w-full items-center justify-center"
+    >
+      <div
+        ref={hostRef}
+        className="h-full w-full [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
+      />
+      <img
+        src="/beam-logo-center.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[24px] w-auto -translate-x-1/2 -translate-y-1/2"
+      />
+    </div>
   );
 }
 
@@ -147,7 +165,6 @@ export default function RewardsReferralsPanel() {
     overview?.share?.deepLink || overview?.share?.copyText || "";
   const messageText = overview?.share?.messageTemplate || shareUrl || "";
   const referralCode = overview?.referralCode || "";
-  const stats = overview?.stats;
 
   const qrEncodedUrl = useMemo(
     () => getQrEncodedUrl(shareUrl, referralCode),
@@ -246,8 +263,10 @@ export default function RewardsReferralsPanel() {
     );
   }
 
-  const coinsEarned =
-    stats?.totalCoinsEarned != null ? stats.totalCoinsEarned : 0;
+  const referralRewardCoins =
+    overview?.rewardConfig?.referrerCoins != null
+      ? overview.rewardConfig.referrerCoins
+      : 0;
 
   return (
     <div className="flex w-full min-h-0 flex-col items-center gap-2 md:gap-3">
@@ -257,18 +276,16 @@ export default function RewardsReferralsPanel() {
         </p>
         <p className="mb-4 flex items-center justify-center gap-2 text-2xl font-bold text-white">
           <img src="/Coins/coin1.png" alt="" className="h-9 w-9" />
-          {coinsEarned}
+          {referralRewardCoins}
         </p>
 
         <div className="mx-auto mb-4 flex w-max justify-center">
-          <div className="rounded-2xl bg-white p-1 shadow-sm">
-            <div
-              className="relative h-[88px] w-[88px] overflow-hidden rounded-xl bg-[#4c1484]"
-              role="img"
-              aria-label="Scan QR code to open your referral link"
-            >
-              <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
-            </div>
+          <div
+            className="relative h-[116px] w-[116px] p-[6px]"
+            role="img"
+            aria-label="Scan QR code to open your referral link"
+          >
+            <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
           </div>
         </div>
 
@@ -278,7 +295,7 @@ export default function RewardsReferralsPanel() {
           className="mx-auto w-full max-w-[17.5rem] rounded-full bg-[#2a1548] py-2.5 text-white transition hover:bg-[#351a5a] md:max-w-xs"
         >
           {referralCode ? (
-            <span className="font-mono text-[15px] tracking-wide">
+            <span className="font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold">
               {referralCode}
             </span>
           ) : (

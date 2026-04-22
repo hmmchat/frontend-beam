@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { calculateAge } from "@/lib/facecard-utils";
+import { useRouter } from "next/navigation";
 
 export default function ProfileSidebar({
   activeTab,
@@ -10,6 +11,7 @@ export default function ProfileSidebar({
   firstName,
   progress,
 }) {
+  const router = useRouter();
   return (
     <div className="col-span-1 flex flex-col items-center justify-center rounded-[3rem] border border-white/20 p-6 text-center">
       <div className="relative">
@@ -54,9 +56,17 @@ export default function ProfileSidebar({
             <p className="text-sm">My account</p>
             <p className="text-[10px] text-white/60">Fill account details</p>
           </div>
-          <span className="shrink-0 rounded-full border border-white/40 px-2 py-1 text-[9px]">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push("/facecard?view=editor&from=profile");
+            }}
+            className="shrink-0 rounded-full border border-white/40 px-2 py-1 text-[9px] transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
+            aria-label="Open profile completion"
+          >
             {progress}% complete
-          </span>
+          </button>
           <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white">
             ›
           </span>

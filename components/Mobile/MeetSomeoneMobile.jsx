@@ -13,10 +13,10 @@ export default function MeetSomeoneMobile() {
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [activeMeetingCount, setActiveMeetingCount] = useState(0);
-
     const [coins] = useState(25500);
     const [mode, setMode] = useState('solo'); // solo | squad
     const [invited, setInvited] = useState(['Austin']);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         const fetchMetrics = async () => {
@@ -29,9 +29,29 @@ export default function MeetSomeoneMobile() {
                 // silent failure
             }
         };
+
+        const fetchNotifications = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                if (!token) return;
+                const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
+                if (notifRes) {
+                    const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
+                    setUnreadCount(count);
+                }
+            } catch (e) {
+                // silent failure
+            }
+        };
+
         fetchMetrics();
-        const interval = setInterval(fetchMetrics, 15000);
-        return () => clearInterval(interval);
+        fetchNotifications();
+        const metricsInterval = setInterval(fetchMetrics, 15000);
+        const notifInterval = setInterval(fetchNotifications, 10000);
+        return () => {
+            clearInterval(metricsInterval);
+            clearInterval(notifInterval);
+        };
     }, []);
 
     const toggleInvite = (name) =>
@@ -271,9 +291,16 @@ export default function MeetSomeoneMobile() {
                 <button className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition">
                     <IoTimeOutline className="text-2xl" />
                 </button>
-                <button className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition relative">
+                <button
+                    onClick={() => window.location.href = '/inbox'}
+                    className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition relative"
+                >
                     <IoChatbubbleEllipsesOutline className="text-2xl" />
-                    <span className="absolute top-0 right-[-2px] w-2 h-2 bg-yellow-400 rounded-full"></span>
+                    {unreadCount > 0 && (
+                        <span
+                            className="absolute top-0 right-[-2px] w-2.5 h-2.5 bg-[#ACE723] border-2 border-[#1ECB00] rounded-full shadow-[0_0_12px_rgba(172,231,35,0.6)]"
+                        />
+                    )}
                 </button>
                 <button className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition">
                     <div className="w-7 h-7 rounded-full border border-white/50 bg-white/10"></div>

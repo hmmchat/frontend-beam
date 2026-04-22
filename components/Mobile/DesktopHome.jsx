@@ -56,17 +56,17 @@ const [isVideoOn, setIsVideoOn] = useState(false);
           />
 
           <div className="rounded-[60px] border-2 border-white/30 z-10 w-full h-[96vh] justify-center items-center flex">
-            <div className="z-10 text-center max-w-lg p-2">
+            <div className="z-10 text-center max-w-lg">
               <img src="/LOGO.png" className="md:w-64 mx-auto w-44 sm:w-5" />
 
-              <p className="text-white text-xl font-otomanopee">
-                Meet someone here,
+              <p className="text-white text-[22px] font-otomanopee -mt-2">
+                Meet someone here
               </p>
 
               <div className="inline-flex gap-2 mt-3">
                <div
   onClick={() => setIsVideoOn(!isVideoOn)}
-  className="flex items-center gap-2 mt-3 cursor-pointer select-none"
+  className="flex items-center gap-2 mt-2 cursor-pointer select-none"
 >
   <img
     src={isVideoOn ? "/assets/video-on.svg" : "/assets/video-off.svg"}
@@ -95,7 +95,7 @@ const [isVideoOn, setIsVideoOn] = useState(false);
             {isInfoOpen ? (
               <IoMdClose className="w-[3rem] h-[3rem] text-white border rounded-full p-2" />
             ) : (
-              <IoIosInformationCircleOutline className="w-[3rem] h-[3rem] text-white opacity-70 border rounded-full p-2 stroke-[10px]" />
+              <IoIosInformationCircleOutline className="w-[3rem] h-[3rem] text-white  border border-white/50 rounded-full p-2 stroke-[10px]" />
             )}
           </div>
 
@@ -182,9 +182,9 @@ const [isVideoOn, setIsVideoOn] = useState(false);
             {/* Action Card */}
             <div className="relative z-[2] w-full flex flex-col h-full px-8">
               {/* CENTER CTA */}
-              <div className="flex-1 flex items-center justify-center mt-40">
+              <div className="flex-1 flex items-center justify-center mt-44">
                 <MeetNowButton
-                  className="w-[90%] py-7"
+                  className="w-[90%] py-8"
                   onClick={() => setIsSignUpOpen(true)}
                   isVideoOn={isVideoOn}
                   onVideoClick={() => setIsVideoOn(!isVideoOn)}
@@ -211,7 +211,7 @@ const [isVideoOn, setIsVideoOn] = useState(false);
                   </Link>
                 </div>
                 <button
-                  className="rounded-full border-2 border-b-4 border-white/50 py-4 px-10 hover:border-white hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] active:scale-95 active:border-b-2 transition-all duration-300"
+                  className="rounded-full border-2 text-sm border-b-4 border-white/40 py-4 px-10 hover:border-white hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] active:scale-95 active:border-b-2 transition-all duration-300"
                   onClick={() => setIsSignUpOpen(true)}
                 >
                   Sign Up

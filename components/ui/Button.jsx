@@ -34,6 +34,13 @@ if (fullWidth || width === 'full') {
   else if (width === 'quarter') {
     widthClass = "w-1/4";
   }
+  else if (width === 'quarterto') {
+    widthClass = "sm:w-[60%] w-full";
+  }
+
+else if (width === 'twoThirds') {
+  widthClass = "w-2/3";
+}
   else if (width === 'hex') {
     widthClass = "w-[150px]";
   }

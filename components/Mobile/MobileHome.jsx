@@ -204,7 +204,7 @@ export default function Home() {
           </Link>
 
           <button
-            className="border border-white/60 border-b-4 text-white px-6 py-2 rounded-full"
+            className="border border-white/60 border-b-4 text-white px-6 py-3 rounded-full"
             onClick={() => setIsSignUpOpen(true)}
           >
             Sign Up

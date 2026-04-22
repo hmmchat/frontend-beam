@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 
-import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import ErrorAlert from "../ui/ErrorAlert";
@@ -24,9 +23,14 @@ function SignUpModalContent({ isOpen, onClose }) {
 
   const router = useRouter();
 
+  // Scroll lock when modal is open
   useEffect(() => {
-    // Facebook SDK removed
-  }, []);
+    document.body.style.overflow = isOpen ? "hidden" : "unset";
+    return () => (document.body.style.overflow = "unset");
+  }, [isOpen]);
+
+  // Facebook SDK removed
+  useEffect(() => {}, []);
 
   // Google Login Handler
   const handleGoogleLogin = useGoogleLogin({
@@ -125,7 +129,7 @@ function SignUpModalContent({ isOpen, onClose }) {
   // Phone OTP - Send OTP
   const handleGetOTP = async () => {
     if (!mobileNumber || mobileNumber.length < 10) {
-      setError("Hmm! where’s your mind at, you’ve entered a wrong number.");
+      setError("Hmm! where's your mind at, you've entered a wrong number.");
       return;
     }
 
@@ -272,176 +276,193 @@ function SignUpModalContent({ isOpen, onClose }) {
     onClose();
   };
 
+  // Don't render if not open
+  if (!isOpen) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
-    <div className="h-full min-h-[550px] sm:rounded-2xl rounded-none flex flex-col">
-        <div
-          className="flex flex-col
-          flex-col h-full
-         
-          text-center
-    
-          md:block "
-        >
-          {/* Header */}
-          <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
-            <img src="./LOGO.png" className="w-40 mx-auto" />
-            <p className="text-white text-lg font-medium ">
-              Meet someone here <br/> immediately after Signing in
-            </p>
-          </div>
+    /* ── Fullscreen backdrop overlay ── */
+    <div
+      className="fixed inset-0 z-[50] md:p-5 md:animate-fade-in flex items-center justify-center"
+      onClick={handleClose}
+    >
+      {/* ── Background image / colour layer ── */}
+      <div
+        className="absolute inset-0 bg-[#02004A] -z-50 pointer-events-none"
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "cover",
+        }}
+      />
 
-          <div className=" flex-1 flex flex-col justify-center px-4 ">
-            {/* OPTIONS */}
-            {step === "options" && (
-              <div className="flex flex-col gap-3 mb-8 md:px-4  font-otomanopee ">
-                {/* Google Login */}
-                <Button
-                  variant="outline2"
-                  fullWidth
-                  icon={
-                    <img
-                      src="/assets/devicon_google.png"
-                      alt=""
-                      className="w-6 h-6"
-                    />
-                  }
-                  className="whitespace-nowrap sm:whitespace-normal text-white text-sm sm:text-md py-6 font-[family-name:var(--font-otomanopee)]"
-                  onClick={handleGoogleLogin}
-                  disabled={loading || !agreedToTerms}
-                >
-                  {loading ? "Connecting..." : "Connect with Google"}
-                </Button>
+      {/* ── Modal card ── */}
+   <div
+  className="
+    relative overflow-hidden animate-slide-up z-12
+    p-3 rounded-none absolute inset-0 h-screen
+    w-full
+    md:h-auto md:inset-auto
+    md:p-12 md:rounded-[60px]
+    md:border-[2px] md:border-white/20
+    md:max-w-[70vw]
+  "
+  style={{ maxHeight: "94vh" }}
+  onClick={(e) => e.stopPropagation()}
+>
+        <div className="h-full min-h-[700px] sm:rounded-2xl rounded-none flex flex-col">
+          <div className="flex flex-col flex-col h-full text-center md:block">
+            {/* Header */}
+            <div className="pt-12 px-4 flex flex-col items-center text-center md:mb-10">
+              <img src="./LOGO.png" className="md:w-56 w-44 mx-auto" />
+              <p className="text-white md:text-[20px] text-[16px] font-medium -mt-1">
+                Meet someone here <br /> <span className="hidden md:block">immediately after Signing in</span>
+              </p>
+            </div>
 
-                {/* Mobile Login */}
-                <Button
-                  variant="outline2"
-                  fullWidth
-                  icon={
-                    <img
-                      src="/assets/meteor-icons_mobile.png"
-                      alt=""
-                      className="w-6 h-6"
-                    />
-                  }
-                  onClick={() => goToNextStep("mobile")}
-                  className="whitespace-nowrap sm:whitespace-normal text-sm sm:text-sm py-6 font-[family-name:var(--font-otomanopee)]"
-                  disabled={loading || !agreedToTerms}
-                >
-                  Connect with Mobile
-                </Button>
-                {error && <ErrorAlert message={error} />}
-              </div>
-            )}
-
-            {/* MOBILE NUMBER */}
-
-            {step === "mobile" && (
-              <div className="text-left py-8 flex w-72 md:w-96 sm:w-80  flex-col outfit-font mx-auto font-outfit">
-                <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto">
-                  <Input
-                    type="tel"
-                    placeholder="+91-9876543210"
-                    value={mobileNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      setMobileNumber(value);
-                      if (error) setError("");
-                    }}
-                    label="Enter Mobile Number"
-                    error={error}
-                  />
-                </div>
-
-                <div className="mt-6 flex ">
-                  <button
-                    className="text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/80  bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1.3rem] border-[1px] border-b-4 inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
-                    onClick={handleGetOTP}
-                    disabled={loading}
-                  >
-                    {loading ? "Sending..." : "Get OTP"}
-                  </button>
-                </div>
-              </div>
-            )}
-            {/* OTP */}
-            {step === "otp" && (
-              <div className="mb-8 text-left px-4 py-8 outfit-font flex justify-center">
-                <div className="w-full max-w-md">
-                  <p className="text-white/90  font-outfit text-sm font-medium max-w-[200px] mb-4">
-                    Enter OTP
-                  </p>
-
-                  <div className="flex gap-2 lg:gap-3 justify-center lg:justify-start mb-4">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        maxLength="1"
-                        value={digit}
-                        onChange={(e) => handleOTPChange(index, e.target.value)}
-                        className={`w-10 h-12 lg:w-14 lg:h-14
-                             border-2 ${error ? "border-red-500" : "border-white/60"}
-                             rounded-xl lg:rounded-[14px]
-                             text-white text-lg lg:text-2xl font-semibold text-center
-                             focus:outline-none bg-[#0A032D]/70 font-[family-name:var(--font-otomanopee)] transition-all`}
+            <div className="flex-1 flex flex-col justify-center px-4 md:mt-20">
+              {/* OPTIONS */}
+              {step === "options" && (
+                <div className="flex flex-col gap-3  md:px-4 font-otomanopee">
+                  {/* Google Login */}
+                  <Button
+                    variant="outline2"
+                    width="quarterto"
+                    icon={
+                      <img
+                        src="/assets/devicon_google.png"
+                        alt=""
+                        className="w-8 h-8"
                       />
-                    ))}
+                    }
+                    className="whitespace-nowrap sm:whitespace-normal text-white text-sm sm:text-[16px] py-7 font-[family-name:var(--font-otomanopee)]"
+                    onClick={handleGoogleLogin}
+                    disabled={loading || !agreedToTerms}
+                  >
+                    {loading ? "Connecting..." : "Connect with Google"}
+                  </Button>
+
+                  {/* Mobile Login */}
+                  <Button
+                    variant="outline2"
+                    width="quarterto"
+                    icon={
+                      <img
+                        src="/assets/meteor-icons_mobile.png"
+                        alt=""
+                        className="w-8 h-8"
+                      />
+                    }
+                    onClick={() => goToNextStep("mobile")}
+                    className="whitespace-nowrap sm:whitespace-normal text-sm sm:text-[16px] py-7 font-[family-name:var(--font-otomanopee)]"
+                    disabled={loading || !agreedToTerms}
+                  >
+                    Connect with Mobile
+                  </Button>
+                  {error && <ErrorAlert message={error} />}
+                </div>
+              )}
+
+              {/* MOBILE NUMBER */}
+              {step === "mobile" && (
+                <div className="text-left py-8 flex w-72 md:w-[380px] lg:w-[480px] sm:w-80 w-[320px] flex-col outfit-font mx-auto font-outfit">
+                  <div className="w-full max-w-[320px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[480px] mx-auto">
+                    <Input
+                      type="tel"
+                      placeholder="+91-9876543210"
+                      value={mobileNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setMobileNumber(value);
+                        if (error) setError("");
+                      }}
+                      label="Enter Mobile Number"
+                      error={error}
+                    />
                   </div>
 
-                  <ErrorAlert message={error} />
-
-                  <div className="mt-6 flex justify-center lg:justify-start">
+                  <div className="mt-6 flex">
                     <button
-      
-
-                      className="w-[120px] lg:w-[160px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90  bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[2px] border-b-4 inline-flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
-                      onClick={handleEnterOTP}
+                      className="text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1.3rem] border-[1px] border-b-4 inline-flex items-center justify-center gap-3 px-12 py-5.5 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
+                      onClick={handleGetOTP}
                       disabled={loading}
                     >
-                      {loading ? "Verifying..." : "Enter OTP"}
+                      {loading ? "Sending..." : "Get OTP"}
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TERMS */}
+              {/* OTP */}
+              {step === "otp" && (
+                <div className="mb-8 text-left py-8 outfit-font flex justify-center">
+                  <div className="w-full max-w-md ">
+                    <p className="text-white/90 font-outfit text-sm font-medium max-w-[200px] mb-4">
+                      Enter OTP
+                    </p>
+
+                    <div className="flex gap-[10px] lg:gap-3 justify-center lg:justify-start mb-4">
+                      {otp.map((digit, index) => (
+                        <input
+                          key={index}
+                          id={`otp-${index}`}
+                          type="text"
+                          maxLength="1"
+                          value={digit}
+                          onChange={(e) =>
+                            handleOTPChange(index, e.target.value)
+                          }
+                          className={`w-12 h-14 lg:w-14 lg:h-14
+                               border-[1px] ${error ? "border-red-500" : "border-white/40"}
+                               rounded-xl lg:rounded-[14px]
+                               text-white text-lg lg:text-2xl font-semibold text-center
+                               focus:outline-none bg-[#0A032D]/20 font-[family-name:var(--font-otomanopee)] transition-all`}
+                        />
+                      ))}
+                    </div>
+
+                    <ErrorAlert message={error} />
+
+                    <div className="mt-6 flex ">
+                      <button
+                        className="w-[120px] lg:w-[160px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[2px] border-b-4 inline-flex items-center justify-center gap-3 px-4 py-4 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
+                        onClick={handleEnterOTP}
+                        disabled={loading}
+                      >
+                        {loading ? "Verifying..." : "Enter OTP"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TERMS */}
+            </div>
           </div>
 
-         
-        </div>
-         <div className="mt-auto w-full flex justify-center items-center outfit-font  bottom-2 px-4">
-            <div className=" pt-8 lg:px-0 font-outfit">
-            <div className="flex flex-col items-center max-w-[500px] justify-center text-center">
-                <span className="text-white/60 md:text-md text-[12.2px] leading-relaxed ">
-                  By clicking continue you certify I have read and agree to the {" "}
-                  <a
-                    href="#"
-                    className="text-white/60  "
-                  >
+          {/* Footer – Terms text */}
+          <div className="mt-auto w-full flex justify-center items-center outfit-font bottom-2 px-4">
+            <div className="pt-8 lg:px-0 font-outfit">
+              <div className="flex flex-col items-center max-w-[320px] md:max-w-[500px] justify-center text-center">
+                <span className="text-white/60 md:text-md text-[12.2px] leading-relaxed">
+                  By clicking continue you certify I have read and agree to the{" "}
+                  <a href="#" className="text-white/60">
                     Terms of Service
                   </a>{" "}
                   confirm that you have read{" "}
-                  <a
-                    href="#"
-                    className="text-white/60   "
-                  >
+                  <a href="#" className="text-white/60">
                     Privacy Policy.
                   </a>{" "}
                   I certify i am at least 18-years old and have reached the age
-                  of majority where i live.
+                  of majority where I live.
                 </span>
-            </div>
+              </div>
             </div>
           </div>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
-
-
 
 // Wrap with GoogleOAuthProvider
 export default function SignUpModal({ isOpen, onClose }) {

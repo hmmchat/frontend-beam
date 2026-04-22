@@ -78,32 +78,16 @@ export default function MeetSomeoneDynamic() {
         const token = localStorage.getItem('accessToken');
         if (!token) return;
 
-        // GET_NOTIFICATIONS_COUNT resets to 0 after visiting /inbox (backend marks seen on load).
-        // Instead, check inbox conversations directly for unread messages.
-        const [notifRes, inboxRes] = await Promise.all([
-          apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null),
-          apiRequest(API.FRIENDS.GET_INBOX_CONVERSATIONS).catch(() => null),
-        ]);
+        // GET_NOTIFICATIONS_COUNT returns counts for INBOX, RECEIVED_REQUESTS, SENT_REQUESTS, and FRIEND_REQUESTS.
+        // It accounts for lastSeenAt, so visiting /inbox reduces the count appropriately.
+        const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
 
-        let count = 0;
-
-        // Pending friend requests (not reset by visiting inbox)
         if (notifRes) {
-          count += (notifRes.pendingFriendRequests || 0);
-          count += (notifRes.breakdown?.friendRequests || 0);
+          // unreadCount reflects anything "new" (unread messages or pending requests)
+          // We sum totalUnreadMessages (inbox + requests) and pendingFriendRequests.
+          const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
+          setUnreadCount(count);
         }
-
-        // Unread messages — check conversations directly
-        if (inboxRes) {
-          const convs = inboxRes.conversations || inboxRes.items || inboxRes || [];
-          if (Array.isArray(convs)) {
-            for (const c of convs) {
-              if ((c.unreadCount || 0) > 0) count++;
-            }
-          }
-        }
-
-        setUnreadCount(count);
       } catch (e) {
         // fail silently
       }
@@ -984,15 +968,15 @@ export default function MeetSomeoneDynamic() {
 
           {/* Coins pill (restore original placement) */}
           <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-16', 'z-50', isSearching && 'hidden')}>
-            <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[22.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border', 'border-b-4', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
-              <img src="/assets/Coin-token.svg" className={clsx('w-6', 'h-6')} alt="" />
+            <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[20.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border-[2px]', 'border-b-[3px]', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
+              <img src="/assets/Coin-token.svg" className={clsx('w-5', 'h-5')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
               <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
             </button>
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[36px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[31px]', 'md:py-[11px]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[28px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[26px]', 'md:py-[10px]', isSearching && 'hidden')}>
 
 
 
@@ -1006,7 +990,7 @@ export default function MeetSomeoneDynamic() {
               }}
               className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
             >
-              <img src="/assets/history.svg" className={clsx('w-8', 'h-8')} alt="History" />
+              <img src="/assets/history.svg" className={clsx('w-7', 'h-7')} alt="History" />
             </button>
 
             
@@ -1037,7 +1021,7 @@ export default function MeetSomeoneDynamic() {
 >
   <img
     src="/assets/chattopicon.svg"
-    className={clsx('w-7', 'h-7')}
+    className={clsx('w-6', 'h-6')}
     alt="Messages"
   />
 
@@ -1077,14 +1061,14 @@ export default function MeetSomeoneDynamic() {
     <img 
       src={myProfile.displayPictureUrl} 
       onError={(e) => e.currentTarget.src }
-      className={clsx('w-full', 'h-full', 'object-cover')}
+      className={clsx('w-8', 'h-8', 'object-cover' , 'rounded-full')}
     />
   ) : (
     <div className={clsx('w-full', 'h-full', 'bg-white/20', 'animate-pulse', 'rounded-full')} />
   )}
 </button>
-    
-    {/* <button 
+{/*     
+    <button 
       onClick={handleLogout}
       className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-red-500/20', 'rounded-full', 'transition-colors')}
       title="Logout"
@@ -1103,8 +1087,8 @@ export default function MeetSomeoneDynamic() {
           <div className={clsx('absolute', 'top-4', 'md:top-14', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
   <Link href="/beam-tv">
-  <button className={clsx('md:h-[56px]', 'md:w-[56px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-    <img src="/crown.svg" alt="crown" className={clsx('h-7', 'w-7')} />
+  <button className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+    <img src="/crown.svg" alt="crown" className={clsx('h-6', 'w-6')} />
   </button>
 </Link>
 
@@ -1112,8 +1096,8 @@ export default function MeetSomeoneDynamic() {
 
           <Link href="/onboarding?intent=1">
             <button 
-              className={clsx('md:h-[56px]', 'md:w-[56px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-              <img src="/icon1.svg" alt="Prompt" className={clsx('h-7', 'w-7')} />
+              className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+              <img src="/icon1.svg" alt="Prompt" className={clsx('h-6', 'w-6')} />
             </button>
           </Link>
 

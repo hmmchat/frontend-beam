@@ -429,22 +429,22 @@ export default function FacecardEditor({
                 {/* Back Button */}
                 <button
                   onClick={leaveEditor}
-                  className="w-14 h-14 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
+                  className="w-12 h-12 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
                 >
-                  <span className="text-2xl "><FaArrowLeft /></span>
+                  <span className="text-xl "><FaArrowLeft /></span>
                 </button>
 
                 {/* Vertical Name Wrapper */}
                 <div className="relative  w-[70px]  flex items-center justify-center">
                   {/* Rotated content */}
-                  <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-2  mt-24 relative">
+                  <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-3  mt-24 relative">
                     {/* Corner brackets */}
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/60"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60"></span>
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/50"></span>
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/50"></span>
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/50"></span>
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/50"></span>
 
-                    <h2 className="text-2xl  tracking-wide  leading-none text-center">
+                    <h2 className="text-2xl  tracking-wide  leading-none text-start">
                       {firstName}
                     </h2>
 
@@ -554,10 +554,10 @@ export default function FacecardEditor({
                 {/* DOB + Zodiac */}
                 <div className="relative px-5 py-3 flex justify-center">
                   <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
 
                     <p className="text-[12px] uppercase opacity-80 font-outfit">
                       DOB :{" "}
@@ -575,10 +575,10 @@ export default function FacecardEditor({
                 {/* Gender */}
                 <div className="relative px-5 py-3 flex justify-center">
                   <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
 
                     <p className="text-[12px] font-outfit  ">Gender Identity</p>
                     <p className="text-[12px] font-outfit   mt-1">
@@ -590,10 +590,10 @@ export default function FacecardEditor({
                 {/* Brands */}
                 <div className="relative px-5 py-3 flex justify-center">
                   <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/40"></span>
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
 
                     <p className="text-[12px]   ">Brands</p>
                     <p className="text-[12px] font-outfit  ">

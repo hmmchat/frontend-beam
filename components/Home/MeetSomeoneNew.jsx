@@ -30,6 +30,7 @@ export default function MeetSomeoneNew({
   const [internalMyProfile, setInternalMyProfile] = useState(null);
   const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
 
   // Sync or use local state
@@ -42,13 +43,34 @@ export default function MeetSomeoneNew({
   useEffect(() => {
     if (!externalMyProfile) fetchMyProfile();
     if (externalCoins === undefined) fetchWalletBalance();
-    
+
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
+        if (notifRes) {
+          const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
+          setUnreadCount(count);
+        }
+      } catch (e) {
+        // silent failure
+      }
+    };
+
+    fetchNotifications();
+    const notifInterval = setInterval(fetchNotifications, 10000);
+
     if (externalActiveUsers === undefined) {
-        const interval = setInterval(() => {
+        const activeUsersInterval = setInterval(() => {
             setInternalActiveUsers(prev => prev + Math.floor(Math.random() * 10) - 5);
         }, 10000);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(notifInterval);
+            clearInterval(activeUsersInterval);
+        };
     }
+    return () => clearInterval(notifInterval);
   }, [externalMyProfile, externalCoins, externalActiveUsers]);
 
   const fetchMyProfile = async () => {
@@ -254,7 +276,9 @@ export default function MeetSomeoneNew({
                 className="relative text-white/70 text-2xl hover:text-white/60 transition-colors"
             >
                  <img src="./mobmessage.svg" alt="chat" className="w-[30px] h-[30px]" />
-                <div className="absolute top-0 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#201035] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                 {unreadCount > 0 && (
+                   <div className="absolute top-0 -right-1 w-3 h-3 bg-[#ACE723] border-2 border-[#1ECB00] rounded-full shadow-[0_0_8px_rgba(172,231,35,0.6)]" />
+                 )}
             </button>
             <button 
                 type="button"

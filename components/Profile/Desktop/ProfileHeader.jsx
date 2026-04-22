@@ -4,8 +4,14 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-/** @param {{ icons: string[]; settingsIconIndex?: number }} props */
-export default function ProfileHeader({ icons, settingsIconIndex = 1 }) {
+const FACECARD_EDITOR_FROM_PROFILE = "/facecard?view=editor&from=profile";
+
+/** @param {{ icons: string[]; editIconIndex?: number; settingsIconIndex?: number }} props */
+export default function ProfileHeader({
+  icons,
+  editIconIndex = 0,
+  settingsIconIndex = 1,
+}) {
   const router = useRouter();
   return (
     <div className="z-10 mb-8 flex w-full max-w-5xl items-center justify-between px-4">
@@ -27,9 +33,29 @@ export default function ProfileHeader({ icons, settingsIconIndex = 1 }) {
 
       <div className="flex items-center gap-3">
         {icons.map((src, i) => {
+          const isEdit = i === editIconIndex;
           const isSettings = i === settingsIconIndex;
           const shellClass =
             "w-10 h-10 border border-white rounded-full flex items-center justify-center shrink-0";
+          if (isEdit) {
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => router.push(FACECARD_EDITOR_FROM_PROFILE)}
+                className={`${shellClass} transition-colors hover:bg-white/10`}
+                aria-label="Edit facecard"
+              >
+                <Image
+                  src={src}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
+              </button>
+            );
+          }
           if (isSettings) {
             return (
               <button

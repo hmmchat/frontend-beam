@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 const PRESET_GIFT_IMAGES = [
   "/gift/gift1.png",
@@ -28,6 +29,16 @@ function isSyntheticConversationId(cid) {
   return s.startsWith("follow_") || s.startsWith("pending_fr_") || s.startsWith("outgoing_fr_");
 }
 
+function parseSquadMeta(raw) {
+  if (raw == null || raw === "") return null;
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(String(raw));
+  } catch {
+    return null;
+  }
+}
+
 import MessageSkeleton from "./MessageSkeleton";
 
 export default function ThreadMessages({
@@ -40,7 +51,24 @@ export default function ThreadMessages({
   loadingThreadOlder,
   loading,
   loadOlderThreadMessages,
+  onSquadInviteResponse,
 }) {
+  const [squadBusyId, setSquadBusyId] = useState(null);
+
+  const terminalSquadInvitationIds = useMemo(() => {
+    const ids = new Set();
+    for (const m of messages || []) {
+      if (m?.messageType !== "SQUAD_INVITE_OUTCOME") continue;
+      const meta = parseSquadMeta(m.squadMeta);
+      const invId = meta?.invitationId;
+      if (!invId) continue;
+      if (meta?.kind === "notice" || meta?.kind === "outcome" || meta?.outcome) {
+        ids.add(String(invId));
+      }
+    }
+    return ids;
+  }, [messages]);
+
   return (
     <div
       ref={messagesScrollRef}
@@ -72,6 +100,12 @@ export default function ThreadMessages({
             const isMe = message.fromUserId === currentUserId;
             const unreadBubble = !isMe && message.isRead === false;
             const hasText = Boolean(message.message && String(message.message).trim());
+            const isSquadInvite = message.messageType === "SQUAD_INVITE";
+            const isSquadOutcome = message.messageType === "SQUAD_INVITE_OUTCOME";
+            const squadMeta = parseSquadMeta(message.squadMeta);
+            const squadInviteResolved =
+              squadMeta?.invitationId &&
+              terminalSquadInvitationIds.has(String(squadMeta.invitationId));
             const isGif =
               message.messageType === "GIF" ||
               message.messageType === "GIF_WITH_MESSAGE" ||
@@ -150,7 +184,65 @@ export default function ThreadMessages({
                       </div>
                     </div>
                   )}
-                  {message.message && (!isGif || message.messageType === "GIF_WITH_MESSAGE") && (
+                  {(isSquadInvite || isSquadOutcome) && (
+                    <div className="px-4 py-3 space-y-3">
+                      <p className="text-[15px] text-white/95 whitespace-pre-wrap break-words">
+                        {message.message}
+                      </p>
+                      {isSquadInvite &&
+                        !isMe &&
+                        squadMeta?.invitationId &&
+                        typeof onSquadInviteResponse === "function" &&
+                        (squadInviteResolved ? (
+                          <p className="text-[12px] text-white/50 font-medium">
+                            This invite isn&apos;t active anymore.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={squadBusyId === message.id}
+                              onClick={async () => {
+                                setSquadBusyId(message.id);
+                                try {
+                                  await onSquadInviteResponse(
+                                    squadMeta.invitationId,
+                                    "accept",
+                                  );
+                                } finally {
+                                  setSquadBusyId(null);
+                                }
+                              }}
+                              className="rounded-full bg-emerald-500/90 hover:bg-emerald-500 text-black text-xs font-bold px-4 py-2 disabled:opacity-40"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              disabled={squadBusyId === message.id}
+                              onClick={async () => {
+                                setSquadBusyId(message.id);
+                                try {
+                                  await onSquadInviteResponse(
+                                    squadMeta.invitationId,
+                                    "reject",
+                                  );
+                                } finally {
+                                  setSquadBusyId(null);
+                                }
+                              }}
+                              className="rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-xs font-bold px-4 py-2 disabled:opacity-40"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  {message.message &&
+                    (!isGif || message.messageType === "GIF_WITH_MESSAGE") &&
+                    !isSquadInvite &&
+                    !isSquadOutcome && (
                     <div
                       className={`px-4 py-2 whitespace-pre-wrap break-words text-[15px] ${
                         unreadBubble ? "font-bold" : ""

@@ -6,6 +6,7 @@ import SignUpModal from "@/components/auth/SignUpModal";
 import Button from "@/components/ui/Button";
 import { API, apiRequest } from "@/lib/api";
 import Link from "next/link";
+
 import { IoIosInformationCircleOutline, IoMdClose } from "react-icons/io";
 
 export default function Home() {
@@ -49,17 +50,17 @@ export default function Home() {
       <div className="relative z-10 flex flex-col h-full">
         {/* 🔥 MAIN BOX (ROUNDED BORDER) */}
         <div
-          className={`w-[95vw] mt-2 mx-auto flex-1 rounded-4xl overflow-hidden flex items-center justify-center transition-all duration-300 ${!isInfoOpen ? "border border-[1px] border-white/30" : "border-none"}`}
+          className={`w-[96vw] mt-3 mx-auto flex-1 rounded-4xl overflow-hidden flex items-center justify-center transition-all duration-300 ${!isInfoOpen ? "border border-[1px] border-white/30" : "border-none"}`}
         >
           <div className="flex w-full flex-col items-center justify-center h-full text-center px-4 relative">
             <div
               onClick={() => setIsInfoOpen(!isInfoOpen)}
-              className="absolute top-6 right-6 z-[60] 0  meeting now active:scale-90 transition-transform"
+              className="absolute top-6 right-6 z-[60]   meeting now active:scale-90 transition-transform"
             >
               {isInfoOpen ? (
-                <IoMdClose className="w-[3rem] h-[3rem] text-white border rounded-full p-2" />
+                <IoMdClose className="w-[2.5rem] h-[2.5rem] text-white border rounded-full p-2" />
               ) : (
-                <IoIosInformationCircleOutline className="w-[3rem] h-[3rem] text-white opacity-70 border rounded-full p-2 stroke-[10px]" />
+                <IoIosInformationCircleOutline className="w-[2.5rem] h-[2.5rem] text-white  border border-white/50  rounded-full p-2 stroke-[10px]" />
               )}
             </div>
 
@@ -161,20 +162,20 @@ export default function Home() {
             <div
               className={`flex flex-col items-center justify-center mb-52 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
             >
-              <img src="/LOGO.png" className="w-[129px] h[55px] " />
+              <img src="/LOGO.png" className="w-[115px] h[55px] " />
 
-              <p className="text-white text-[12px] font-medium font font-[family-name:var(--font-otomanopee)] ">
-                Meet someone here,
+              <p className="text-white text-[10.8px] font-medium font font-[family-name:var(--font-otomanopee)]  -mt-1">
+                Meet someone here
               </p>
 
-              <div className="flex items-center gap-2 mt-4 text-white text-[12px] font-[family-name:var(--font-otomanopee)]">
+              <div className="flex font-outfit items-center gap-1 mt-2 text-white text-[12px] font-[family-name:var(--font-otomanopee)]">
                 <img src="/assets/video-on.svg" className="w-4 h-4" />
                 {activeMeetingCount} beaming now
               </div>
             </div>
 
             <div
-              className={`w-full mb-20 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
+              className={`w-full mb-10 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
             >
               <Button
                 fullWidth
@@ -197,14 +198,28 @@ export default function Home() {
 
         {/* 🔥 BOTTOM BAR (NOW HAS BG BEHIND IT) */}
         <div className="w-full flex items-center justify-between px-4 py-4">
+
+                          <div className="border border-white/50 p-3 rounded-full flex items-center justify-center border-b-[3px]  hover:scale-110 active:scale-95 active:border-b-2 transition-all duration-300">
           <Link href="/beam-tv">
-            <button className="h-14 w-14 rounded-full p-3 border border-white/60 border-b-4  transition-all duration-200">
-              <img src="/assets/Frame.png" alt="beam-tv" />
-            </button>
-          </Link>
+                    <button className="relative h-8 w-8 l p-3 shadow-md hover:border-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                      {/* TV Frame (background) */}
+                      <img
+                        src="/tvfame.png"
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+
+                      {/* Beam TV inside frame */}
+                      <img
+                        src="/beamtv.png"
+                        className="absolute inset-0 m-auto w-5 h-5 object-contain ml-1 mt-2"
+                      />
+                    </button>
+                  </Link>
+
+                  </div>
 
           <button
-            className="border border-white/60 border-b-4 text-white px-6 py-3 rounded-full"
+            className="border border-white/60 border-b-4 text-white px-6 py-4 rounded-full"
             onClick={() => setIsSignUpOpen(true)}
           >
             Sign Up

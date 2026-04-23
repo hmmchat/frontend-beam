@@ -13,6 +13,7 @@ import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import OverlayLayer from '@/components/ui/OverlayLayer';
+import Link from 'next/link';
 
 
 export default function MeetSomeoneNew({ 
@@ -138,9 +139,9 @@ export default function MeetSomeoneNew({
 
       
 
-
+<div className="border border-white/30 absolute top-4 left-1/2 -translate-x-1/2  h-[39vh] w-[96vw] rounded-t-3xl rounded-b-2xl" />
       {/* Overlay Glow */}
-
+<div className='border border-white/30 bottom-28 h-[38vh] absolute  left-1/2 -translate-x-1/2 w-[96vw] rounded-b-3xl  rounded-t-2xl'/>
 
       {/* Top Bar */}
     <div className="relative z-10 w-full px-6 pt-10 flex justify-between items-center">
@@ -148,7 +149,7 @@ export default function MeetSomeoneNew({
   {/* LEFT BUTTON (COINS) */}
   <div>
     <button
-      className="h-11 px-8 py-7 flex items-center gap-2 border border-white border-b-4 rounded-full"
+      className="h-12 px-5 py-7 flex items-center gap-2 border-[1px] border-b-[3px] border-white/50 rounded-full"
       onClick={() => setIsCoinModalOpen(true)}
     >
       <img src="/assets/Coin-token.svg" className="w-5 h-5" />
@@ -158,33 +159,41 @@ export default function MeetSomeoneNew({
   </div>
 
   {/* RIGHT BUTTONS */}
-  <div className="flex gap-3">
-    <button className="h-[45px] w-[45px] border border-white rounded-full border-b-4 flex items-center justify-center text-white shadow-lg">
-      <FaCrown className="text-yellow-400" />
-    </button>
+          <div className='absolute     right-8 z-50 flex gap-2'>
 
-    <button 
-      onClick={() => router.push('/onboarding?intent=1')}
-      className="h-[45px] p-[14px] w-[45px] border border-white border-b-4 rounded-full flex items-center justify-center text-white shadow-lg"
-    >
-      <FaMobileAlt className='h-[20px] w-[20px]' />
-    </button>
-  </div>
+  <Link href="/beam-tv">
+  <button className=' h-14 w-14 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] items-center justify-center flex'>
+    <img src="/crown.svg" alt="crown" className={clsx('h-[24px]', 'w-[24px]')} />
+  </button>
+</Link>
+
+
+
+          <Link href="/onboarding?intent=1">
+            <button 
+              className=' h-14 w-14 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] items-center justify-center flex'>
+              <img src="/icon1.svg" alt="Prompt" className={clsx('h-[24px]', 'w-[24px]')} />
+            </button>
+          </Link>
+
+
+
+</div>
 
 </div>
 
       {/* Main Content Area */}
       <div className="relative z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-10">
 
-    <div className="text-center flex flex-col items-center justify-center mx-auto">
-  <img src="./LOGO.png" className="w-40 mx-auto" />
+    <div className="text-center flex flex-col items-center justify-center mx-auto mt-10">
+  <img src="./LOGO.png" className="w-34 mx-auto" />
   
-  <p className="text-white text-sm font-medium mt-1">
+  <p className="text-white text-[13px] font-medium ">
     Meet Someone here
   </p>
 
   <div className="flex items-center justify-center gap-2 mt-3 ">
-    <IoVideocam className="text-white/90" size={18} />
+<img src="/assets/video-on.svg" className="w-4 h-4" />
     <p className="text-white/90 text-sm font-thin font-outfit">
       {activeUsers.toLocaleString()} beaming now
     </p>
@@ -198,61 +207,86 @@ export default function MeetSomeoneNew({
             
             <div className="flex flex-col gap-10 items-center py-6 px-4">
         
-                <div className="flex items-center justify-between w-full">
-                     <button className="w-12 h-12  brounded-2xl flex items-center justify-center text-white shadow-inner group">
-                        <div className="flex flex-col items-center justify-center">
-                              <Image
-                                   src="/assets/Frame.png"
-                                   alt="User"
-                                   width={42}
-                                   height={42}
-                                 />
-                           
-                        </div>
-                    </button>
+             <div className="relative w-full flex items-center justify-center">
+  
+  {/* LEFT BUTTON */}
+  <button className="absolute left-0 w-12 h-12 flex items-center justify-center text-white shadow-inner">
+             <Link href="/beam-tv">
+                <button className={clsx('relative', 'h-11', 'w-11', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
+  
+  {/* TV Frame (background) */}
+  <img 
+    src="/tvfame.png" 
+    className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')}
+  />
 
-                    <div className="flex   border border-white p-1 rounded-full w-48 relative shadow-inner h-11">
-                        <div 
-                            className={clsx(
-                                "absolute top-1 bottom-1 w-[calc(50%-4px)] border border-white rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)",
-                                mode === 'solo' ? "left-1" : "left-[calc(50%+2px)]"
-                            )}
-                        />
-                        <button 
-                            onClick={() => setMode('solo')}
-                            className={clsx("flex-1 rounded-full text-sm font-bold z-10 transition-all", 
-                                mode === 'solo' ? "text-white scale-105" : "text-white/40 hover:text-white/60")}
-                        >
-                            Solo
-                        </button>
-                        <button 
-                            onClick={() => setMode('squad')}
-                            className={clsx("flex-1 rounded-full text-sm font-bold z-10 transition-all", 
-                                mode === 'squad' ? "text-white scale-105" : "text-white/40 hover:text-white/60")}
-                        >
-                            Squad
-                        </button>
-                    </div>
+  {/* Beam TV inside frame */}
+  <img 
+    src="/beamtv.png" 
+    className={clsx('absolute', 'inset-0', 'm-auto', 'w-[27px]', 'h-[27px]', 'object-contain', 'ml-1', 'mt-3')}
+  />
 
-                    <button className="w-12 h-12  rounded-2xl flex items-center justify-center text-white shadow-inner group">
-                        <Image src="/Group.png" alt="User" width={42} height={42} className="opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-                    </button>
-                </div>
+</button>
+                </Link>
+  </button>
+
+
+
+
+      
+
+  {/* CENTER TOGGLE */}
+  <div className="flex border-[1px] border-white/50 p-1 rounded-full w-46 relative shadow-inner h-[44px] ">
+    <div
+      className={clsx(
+        "absolute top-1 bottom-1 w-[calc(50%-4px)] border border-white/60 rounded-full transition-all duration-500 ",
+        mode === 'solo' ? "left-1" : "left-[calc(50%+2px)]"
+      )}
+    />
+    <button
+      onClick={() => setMode('solo')}
+      className={clsx(
+        "flex-1 rounded-full text-xs  z-10 ",
+        mode === 'solo' ? "text-white scale-105" : "text-white/70"
+      )}
+    >
+      Solo
+    </button>
+    <button
+      onClick={() => setMode('squad')}
+      className={clsx(
+        "flex-1 rounded-full text-sm z-10",
+        mode === 'squad' ? "text-white scale-105" : "text-white/70"
+      )}
+    >
+      Squad
+    </button>
+  </div>
+
+  {/* RIGHT BUTTON */}
+  <button className="absolute right-0 w-12 h-12  flex items-center justify-center text-white ">
+             <Link href="/cards">
+  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
+    <img src="/hugeiconscards.svg" alt="cards"  />
+  </button>
+</Link>
+  </button>
+
+</div>
 
   
-                <div className="w-full mt-10 ">
-                    <MeetNowButton
-                        onClick={handleMeetNow}
-                        className="w-full h-20"
-                    />
-                </div>
+             <div className="w-full mt-8">
+  <MeetNowButton
+    onClick={handleMeetNow}
+    className="w-full h-20"
+  />
+</div>
 
- 
-                <FilterButtons 
-                    onGenderClick={() => setIsGenderModalOpen(true)}
-                    onLocationClick={() => setIsLocationModalOpen(true)}
-                    className="w-[80%] mt-4"
-                />
+<FilterButtons 
+  onGenderClick={() => setIsGenderModalOpen(true)}
+  onLocationClick={() => setIsLocationModalOpen(true)}
+  className="mt-6"
+/>
             </div>
         </div>
 
@@ -263,7 +297,7 @@ export default function MeetSomeoneNew({
 
       {/* Bottom Navigation */}
       <div className="relative z-10 w-full max-w-sm px-4 pb-10 mt-auto mx-auto">
-        <div className=" border border-white rounded-full h-[54px] w-full flex items-center justify-between px-8 ">
+        <div className=" border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 
                 onClick={() => router.push('/history')}

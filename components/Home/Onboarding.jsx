@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API, apiRequest } from "@/lib/api";
 import Skeleton from '@/components/ui/Skeleton';
+import { CiCirclePlus } from "react-icons/ci";
 
 /** Match user-service DisplayNameSchema: map unicode spaces to ASCII (keeps intentional double spaces). */
 function normalizeDisplayNameWhitespace(s) {
@@ -558,7 +559,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen overflow-y-auto px-4 py-3">
+<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen overflow-y-auto p-6">
 
             {step === 1 && (
     <>
@@ -574,7 +575,7 @@ if (prompt.trim() && accessToken) {
           <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-[3rem] py-10 md:py-16 hidden md:flex ">
             <div className="mx-auto ">
 
-            <h3 className="text-4xl font-bold ">Welcome onboard,</h3>
+            <h3 className="text-3xl font-bold ">Welcome onboard,</h3>
               <p className="md:text-lg text-sm md:mt-3  opacity-95 font-outfit">Okeeyy! Let's get you started,</p>
               <p className="md:text-lg text-sm  opacity-95 font-outfit">Just get done with the itsy bitsy stuff first</p>
             </div>
@@ -585,10 +586,10 @@ if (prompt.trim() && accessToken) {
 
           {/* Right - Form */}
 
+<div className="justify-center items-center">
 
-
-          <div className="flex flex-col justify-between items-center justify-center h-full overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
-            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
+          <div className="flex flex-col items-center justify-center min-h-screen md:min-h-full overflow-y-auto md:border md:border-white/30 md:rounded-[60px] ">
+            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto  ">
 
 
 
@@ -603,7 +604,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<div className="flex flex-col justify-between h-full mt-10 md:mt-0">
+<div className="flex flex-col justify-center h-full mt-0">
 
 
   <div
@@ -613,10 +614,13 @@ if (prompt.trim() && accessToken) {
       transition-all
     "
   >
-              <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6 md:border md:border-white/30 md:p-3 md:py-6  md:rounded-[3rem]  mt-4">
+
+    <div className="flex items-center justify-center ">
+  <div className="w-full md:border md:border-white/30 md:p-2   md:pb-6  md:rounded-[60px] ">
+<form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  p-2">
                 
                 {/* 2️⃣ Photo upload UI */}
-                <div className="mb-8 border border-white/30 p-3 md:py-5 rounded-[2rem] ">
+                <div className=" border border-white/30 p-3 md:p-5 rounded-[44px] ">
                 
 
                   <div className="flex justify-center md:gap-4 gap-2">
@@ -631,7 +635,7 @@ if (prompt.trim() && accessToken) {
 className="
   relative 
   w-[90px] sm:w-[110px] md:w-32 
-  aspect-[2/3] md:aspect-[3/4] 
+  aspect-[2/3] md:aspect-[2/3] 
   rounded-[1rem] md:rounded-[1.5rem]
   border border-b-[3px] md:border-2 md:border-b-4 
   border-white/40 overflow-hidden 
@@ -648,14 +652,14 @@ className="
                                   e.stopPropagation();
                                   removePhoto(i);
                                 }}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white text-black text-sm flex items-center justify-center font-bold"
+                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-whitetext-sm flex items-center justify-center "
                               >
                                 ✕
                               </button>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-white text-3xl">
-                              <span className="text-4xl text-white/50 md:border-4 border-[3px] border-white/40 rounded-full px-2">+</span>
+                            <div className="flex flex-col items-center justify-center h-full text-white">
+                       <CiCirclePlus className="text-[50px] opacity-60  rounded-full "/>
 
                             </div>
                           )}
@@ -687,7 +691,7 @@ className="
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     maxLength={DISPLAY_NAME_MAX_LEN}
-                    className="w-full bg-black/20 border-2 border-white/30 rounded-xl px-5 py-3 md:px-4 md:py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                    className="w-full bg-black/20 border-2 border-white/30 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
                     placeholder="Your name"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
@@ -696,7 +700,7 @@ className="
                 {/* 4️⃣ DOB inputs */}
                 <div className="md:px-4 font-outfit">
                   <label className="text-white text-sm mb-1 block">Date of birth</label>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-3 gap-4">
                     <input
                       name="day"
                       value={dob.day}
@@ -704,7 +708,7 @@ className="
                       placeholder="Day"
                       maxLength={2}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="month"
@@ -714,7 +718,7 @@ className="
                       placeholder="Month"
                       maxLength={2}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
                     />
                     <input
                       name="year"
@@ -724,7 +728,7 @@ className="
                       placeholder="Year"
                       maxLength={4}
                       inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-2 md:py-3 text-white text-start focus:outline-none focus:border-white/60"
+                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
                     />
                   </div>
                   {(errors.day || errors.month || errors.year) && (
@@ -947,7 +951,7 @@ className="
   onClick={() => {
     if (validate()) setStep(2);
   }}
-  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-5 border border-b-4 border-white/80 rounded-2xl py-3 text-white text-lg opacity-70 hover:opacity-100 transition hover:bg-white/5"
+  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-8 border border-b-[3px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
 >
   Step 2/2: Add Prompt
 </button>
@@ -955,7 +959,8 @@ className="
               </form>
 
 
-
+  </div>
+</div>
 
 
 </div>
@@ -966,7 +971,7 @@ className="
           </div>
 
 
-
+</div>
                         </>
   )}
 
@@ -976,11 +981,11 @@ className="
       {/* Left */}
       <div className="flex items-center justify-center text-left border border-white/30 rounded-[3rem] px-12 hidden md:flex h-full]">
         <div>
-          <h2 className="text-4xl font-bold mb-4 text-center">Add Prompt</h2>
+          <h2 className="text-3xl font-bold mb-4 text-center">Add Prompt</h2>
           <p className="text-md opacity-90 text-center font-outfit">
-            Okeeyy! Let’s get you started,
+        Promts Show Up as your opener
             <br />
-            Just get done with the itsy bitsy stuff first
+            Say literally anything, it can be changed anytime
           </p>
         </div>
       </div>
@@ -1007,10 +1012,10 @@ className="
 
             
           {/* Bordered wrapper — matches step 1 form border */}
-<div className="md:border md:border-white/30 md:block rounded-[3rem] py-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-hidden">
+<div className="md:border md:border-white/30 md:block rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
 
           {/* Prompt box */}
-    <div className="border border-white/30 rounded-3xl p-10 text-white">
+    <div className="border border-white/30 rounded-[36px] p-10 text-white">
   <textarea
     value={prompt}
     onChange={(e) => {
@@ -1018,7 +1023,7 @@ className="
       setSelectedPrompts([]);
     }}
     placeholder="Type your own"
-    rows={3}
+    rows={4}
     className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60"
   />
   <div className="text-[10px] text-right opacity-40 mt-1">
@@ -1028,8 +1033,8 @@ className="
 
 
           {/* Suggestions */}
-          <div className="border border-white/30 rounded-2xl p-4 flex flex-col mt-3 font-outfit flex-1 min-h-0 overflow-y-auto">
-            <div className="flex justify-between items-center text-white text-sm px-1">
+          <div className="border border-white/30 mt-3 rounded-[40px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
+            <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
               <span className="opacity-90 text-[12px]">Suggestions</span>
               <button 
                 type="button" 
@@ -1055,9 +1060,9 @@ className="
             </div>
 
 <div
-  className="flex flex-wrap gap-2 content-start items-start mt-4 overflow-hidden"
+  className="flex flex-wrap gap-2 content-start items-start mt-6 overflow-hidden"
   style={{
-    maxHeight: "310px" // 👈 tweak this once, don’t overthink
+    maxHeight: "300px" // 👈 tweak this once, don’t overthink
   }}
 >
               {suggestions.map((text, i) => {
@@ -1077,7 +1082,7 @@ className="
     });
   }}
   className={`
-    border border-[2px]  border-white/30 border-b-[4px] rounded-xl px-4 md:py-4 py-3  text-xs transition
+    border border-[2px]  border-white/40 border-b-[3px] rounded-xl px-4 md:py-4 py-3  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
@@ -1093,23 +1098,23 @@ className="
               })}
             </div>
 
- <div className="flex items-center gap-2  mt-6 hidden md:flex">
+ {/* <div className="flex items-center gap-2  mt-6 hidden md:flex">
               <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">i</div>
               <p className="text-[10px] text-white/50 leading-tight">
                 Prompts show up as your opener<br/>
                 Say Literally anything, it can be changed anytime
               </p>
-            </div>
+            </div> */}
            
           </div>
 
           {/* Bottom actions */}
-  <div className="mt-auto pt-3">
+  <div className="mt-auto  md:pt-8  mb-4 w-[90%]  mx-auto flex ">
             
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-2 w-full border-2 border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50"
+              className="flex-2  mx-auto border-2 border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
             >
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>

@@ -853,7 +853,7 @@ export default function MeetSomeoneDynamic() {
   />
 
   {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
-  <div className={clsx('hidden', 'md:block', 'absolute', 'inset-4', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
+  <div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
         
           {isSearching ? (
             <div
@@ -926,9 +926,9 @@ export default function MeetSomeoneDynamic() {
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
               <div className={clsx( 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
                 <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-                  <img src="/LOGO.png" className={clsx('md:w-64', 'mx-auto', 'w-44')} />
-                  <p className={clsx('text-white', 'text-xl', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here,</p>
-                  <div className={clsx('inline-flex', 'gap-1', 'mt-3', 'font-[family-name:var(--font-otomanopee)]')}>
+                  <img src="/LOGO.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
+                  <p className={clsx('text-white', 'text-[21px]', '-mt-2', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here</p>
+                  <div className={clsx('inline-flex', 'gap-1', 'mt-5', 'font-[family-name:var(--font-otomanopee)]')}>
                     <img src="/assets/video-on.svg" alt="" className={clsx('w-5', 'h-5' )} />
                     <p className='text-[14px] font-thin font-outfit '>
                       {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} beaming now
@@ -948,15 +948,15 @@ export default function MeetSomeoneDynamic() {
 <div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
 {/* 🔲 HUD BORDER FRAME (Desktop Right) */}
-<div className={clsx('hidden', 'md:block', 'absolute', 'inset-4', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
+<div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
 
 <div
-  className={clsx('absolute', 'inset-0', 'z-[1]', 'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
+  className={clsx('absolute', 'inset-0',  'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
   style={{
     backgroundImage: 'url(/bg.jpg)',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    backgroundRepeat: 'repeat',
+
   }}
 />    
 
@@ -967,7 +967,7 @@ export default function MeetSomeoneDynamic() {
 
 
           {/* Coins pill (restore original placement) */}
-          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-16', 'z-50', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-16', 'z-50', isSearching && 'hidden')}>
             <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[20.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border-[2px]', 'border-b-[3px]', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
               <img src="/assets/Coin-token.svg" className={clsx('w-5', 'h-5')} alt="" />
               <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
@@ -976,7 +976,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
           {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-14', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[28px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[26px]', 'md:py-[10px]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[28px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[26px]', 'md:py-[9px]', isSearching && 'hidden')}>
 
 
 
@@ -988,7 +988,7 @@ export default function MeetSomeoneDynamic() {
                   router.push('/history');
                 }
               }}
-              className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
+              className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
             >
               <img src="/assets/history.svg" className={clsx('w-7', 'h-7')} alt="History" />
             </button>
@@ -1067,15 +1067,15 @@ export default function MeetSomeoneDynamic() {
     <div className={clsx('w-full', 'h-full', 'bg-white/20', 'animate-pulse', 'rounded-full')} />
   )}
 </button>
-{/*     
-    <button 
+    
+    {/* <button 
       onClick={handleLogout}
       className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-red-500/20', 'rounded-full', 'transition-colors')}
       title="Logout"
     >
       <IoLogOutOutline className={clsx('text-white', 'text-2xl')} />
-    </button> */}
-
+    </button>
+ */}
 
 
 
@@ -1084,7 +1084,7 @@ export default function MeetSomeoneDynamic() {
           </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-14', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'top-4', 'md:top-18', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
   <Link href="/beam-tv">
   <button className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
@@ -1154,7 +1154,7 @@ export default function MeetSomeoneDynamic() {
                   await fetchCard(null, true);
                 }}
                 isSearching={isSearching}
-                className="mt-40 w-[80%] h-26"
+                className="mt-40 w-[79%] h-30"
                 isVideoOn={isVideoOn}
                 onVideoClick={() => setIsVideoOn(!isVideoOn)}
               />
@@ -1166,7 +1166,7 @@ export default function MeetSomeoneDynamic() {
                     onGenderClick={() => setIsGenderModalOpen(true)}
                     onLocationClick={() => setIsLocationModalOpen(true)}
                     locationLabel={myProfile?.preferredCity === 'ANYWHERE_IN_INDIA' ? 'Anywhere' : (myProfile?.preferredCity || 'Anywhere')}
-                    className={clsx('mt-2', 'text-white')}
+                    className={clsx( 'text-white')}
                   />
                 </>
               ) : (
@@ -1353,12 +1353,12 @@ export default function MeetSomeoneDynamic() {
           )}
 
           {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
-          <div className={clsx('absolute', 'px-5', 'bottom-12', 'left-11', 'right-11', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
+          <div className={clsx('absolute', 'px-5', 'bottom-16', 'left-11', 'right-11', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
             {/* Left side — fixed height so toggle position never shifts */}
             <div className={clsx('flex', 'items-center', 'h-[72px]')}>
             {mode === 'solo' ? (
               <div className={clsx('flex', 'gap-2', 'items-center')}>
-                <div className={clsx('border', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'border-white/40')}>
+                <div className={clsx('border-2', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'border-white/40')}>
                 <Link href="/beam-tv">
                 <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
   
@@ -1380,7 +1380,7 @@ export default function MeetSomeoneDynamic() {
 
 
 
- <div className={clsx('border', 'rounded-full', 'border-b-4', '', 'border-white/40')}>
+ <div className={clsx('border-2', 'rounded-full', 'border-b-4', '', 'border-white/40')}>
             <Link href="/cards">
   <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
     <img src="/hugeiconscards.svg" alt="cards"  />
@@ -1409,7 +1409,7 @@ export default function MeetSomeoneDynamic() {
               <button
                 onClick={() => setMode('solo')}
                 className={clsx(
-                  'px-8 py-2 rounded-full transition-all duration-300 hover:scale-105 z-10 relative',
+                  'px-7 py-2 rounded-full text-[14px] transition-all duration-300 hover:scale-105 z-10 relative',
                   mode === 'solo' ? 'text-white' : 'text-white/40 hover:text-white/60'
                 )}
               >
@@ -1419,7 +1419,7 @@ export default function MeetSomeoneDynamic() {
               <button
                 onClick={() => setMode('squad')}
                 className={clsx(
-                  'px-8 py-2 rounded-full transition-all duration-300 hover:scale-105 z-10 relative',
+                  'px-7 py-2 rounded-full text-[14px]  transition-all duration-300 hover:scale-105 z-10 relative',
                   mode === 'squad' ? 'text-white' : 'text-white/40 hover:text-white/60'
                 )}
               >

@@ -302,7 +302,7 @@ function SignUpModalContent({ isOpen, onClose }) {
     p-3 rounded-none absolute inset-0 h-screen
     w-full
     md:h-auto md:inset-auto
-    md:p-12 md:rounded-[60px]
+    md:p-8 md:rounded-[60px]
     md:border-[2px] md:border-white/20
     md:max-w-[70vw]
   "
@@ -319,10 +319,10 @@ function SignUpModalContent({ isOpen, onClose }) {
               </p>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center px-4 md:mt-20">
+            <div className="flex-1 flex flex-col justify-center px-4  ">
               {/* OPTIONS */}
               {step === "options" && (
-                <div className="flex flex-col gap-3  md:px-4 font-otomanopee">
+                <div className="flex flex-col gap-3  md:px-4 font-otomanopee mt-10" >
                   {/* Google Login */}
                   <Button
                     variant="outline2"
@@ -331,10 +331,10 @@ function SignUpModalContent({ isOpen, onClose }) {
                       <img
                         src="/assets/devicon_google.png"
                         alt=""
-                        className="w-8 h-8"
+                        className="md:w-8 w-6 md:h-8 h-6"
                       />
                     }
-                    className="whitespace-nowrap sm:whitespace-normal text-white text-sm sm:text-[16px] py-7 font-[family-name:var(--font-otomanopee)]"
+                    className="whitespace-nowrap sm:whitespace-normal text-white text-sm sm:text-[16px] md:py-7 py-5 font-[family-name:var(--font-otomanopee)]"
                     onClick={handleGoogleLogin}
                     disabled={loading || !agreedToTerms}
                   >
@@ -349,11 +349,11 @@ function SignUpModalContent({ isOpen, onClose }) {
                       <img
                         src="/assets/meteor-icons_mobile.png"
                         alt=""
-                        className="w-8 h-8"
+                        className="md:w-8 w-6 md:h-8 h-6"
                       />
                     }
                     onClick={() => goToNextStep("mobile")}
-                    className="whitespace-nowrap sm:whitespace-normal text-sm sm:text-[16px] py-7 font-[family-name:var(--font-otomanopee)]"
+                    className="whitespace-nowrap sm:whitespace-normal text-sm sm:text-[16px] md:py-7 py-5 font-[family-name:var(--font-otomanopee)]"
                     disabled={loading || !agreedToTerms}
                   >
                     Connect with Mobile
@@ -376,7 +376,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                         if (error) setError("");
                       }}
                       label="Enter Mobile Number"
-                      error={error}
+                      error={error} 
                     />
                   </div>
 
@@ -394,9 +394,9 @@ function SignUpModalContent({ isOpen, onClose }) {
 
               {/* OTP */}
               {step === "otp" && (
-                <div className="mb-8 text-left py-8 outfit-font flex justify-center">
+                <div className=" text-left py-8 outfit-font flex justify-center">
                   <div className="w-full max-w-md ">
-                    <p className="text-white/90 font-outfit text-sm font-medium max-w-[200px] mb-4">
+                    <p className="text-white/90 font-outfit text-sm font-medium max-w-[200px] mb-1">
                       Enter OTP
                     </p>
 
@@ -411,8 +411,8 @@ function SignUpModalContent({ isOpen, onClose }) {
                           onChange={(e) =>
                             handleOTPChange(index, e.target.value)
                           }
-                          className={`w-12 h-14 lg:w-14 lg:h-14
-                               border-[1px] ${error ? "border-red-500" : "border-white/40"}
+                          className={`w-12 h-14 lg:w-16 lg:h-16
+                               border-[2px] ${error ? "border-red-500" : "border-white/40"}
                                rounded-xl lg:rounded-[14px]
                                text-white text-lg lg:text-2xl font-semibold text-center
                                focus:outline-none bg-[#0A032D]/20 font-[family-name:var(--font-otomanopee)] transition-all`}
@@ -422,15 +422,19 @@ function SignUpModalContent({ isOpen, onClose }) {
 
                     <ErrorAlert message={error} />
 
+ 
+
                     <div className="mt-6 flex ">
                       <button
-                        className="w-[120px] lg:w-[160px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[2px] border-b-4 inline-flex items-center justify-center gap-3 px-4 py-4 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
+                        className="w-[120px] lg:w-[160px] text-xs lg:text-[15px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-transparent text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[2px] border-b-4 inline-flex items-center justify-center gap-3 px-4 py-4 md:py-5 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
                         onClick={handleEnterOTP}
                         disabled={loading}
                       >
                         {loading ? "Verifying..." : "Enter OTP"}
                       </button>
                     </div>
+
+                                     <p className="font-outfit mt-6 text-xs"> Didn’t receive OTP?  <span className="text-yellow-500 font-otomanopee ml-1">  Resend OTP</span></p>  
                   </div>
                 </div>
               )}
@@ -441,7 +445,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
           {/* Footer – Terms text */}
           <div className="mt-auto w-full flex justify-center items-center outfit-font bottom-2 px-4">
-            <div className="pt-8 lg:px-0 font-outfit">
+            <div className="pt-2 lg:px-0 font-outfit">
               <div className="flex flex-col items-center max-w-[320px] md:max-w-[500px] justify-center text-center">
                 <span className="text-white/60 md:text-md text-[12.2px] leading-relaxed">
                   By clicking continue you certify I have read and agree to the{" "}

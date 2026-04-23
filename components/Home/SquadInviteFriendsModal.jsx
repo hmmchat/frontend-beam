@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { FaArrowLeftLong } from 'react-icons/fa6';
 import { API, apiRequest } from '@/lib/api';
 
-export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, onLobbySync }) {
+export default function SquadInviteFriendsModal({ open, onClose, onInviteSent }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState('');
@@ -53,8 +53,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, o
     if (!open) return;
     setInviteProductMessage('');
     loadFriends();
-    onLobbySync?.();
-  }, [open, loadFriends, onLobbySync]);
+  }, [open, loadFriends]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -80,7 +79,6 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, o
       setInviteProductMessage(e?.message || 'Could not send invite');
     } finally {
       setBusyId(null);
-      onLobbySync?.();
     }
   };
 

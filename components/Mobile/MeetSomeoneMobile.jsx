@@ -28,6 +28,7 @@ export default function MeetSomeoneMobile() {
     const [guestProfiles, setGuestProfiles] = useState({});
     const prevModeSquadRef = useRef(mode);
     const squadPollRef = useRef(null);
+    const squadVideoRoomNavKeyRef = useRef('');
 
     const myUserId = myProfile?.id;
 
@@ -37,11 +38,15 @@ export default function MeetSomeoneMobile() {
         return [0, 1, 2].map((i) => others[i] || null);
     }, [squadLobby, myUserId]);
 
-    const isSquadHost = Boolean(squadLobby && myUserId && squadLobby.inviterId === myUserId);
+    const isInSquadLobby = Boolean(
+        squadLobby &&
+            myUserId &&
+            Array.isArray(squadLobby?.memberIds) &&
+            squadLobby.memberIds.includes(myUserId),
+    );
     const canSquadMeet =
-        isSquadHost &&
+        isInSquadLobby &&
         squadLobby?.status !== 'IN_CALL' &&
-        Array.isArray(squadLobby?.memberIds) &&
         squadLobby.memberIds.length >= 2;
 
     const refreshSquadLobby = useCallback(async () => {
@@ -158,12 +163,18 @@ export default function MeetSomeoneMobile() {
         };
     }, [squadGuestIds]);
 
-    const handleSquadEnterCall = async () => {
-        if (!canSquadMeet || squadMeetBusy) return;
-        setSquadProductMessage('');
-        setSquadMeetBusy(true);
-        try {
-            const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+    useEffect(() => {
+        if (mode !== 'squad' || !squadLobby) {
+            squadVideoRoomNavKeyRef.current = '';
+        }
+    }, [mode, squadLobby]);
+
+    const applySquadEnterResponse = useCallback(
+        async (data) => {
+            const roomKey = data?.roomId || '';
+            if (!roomKey) return;
+            if (squadVideoRoomNavKeyRef.current === roomKey) return;
+
             const memberIds = data.memberIds || [];
             const others = memberIds.filter((id) => id && id !== myUserId);
             let partner = {
@@ -196,9 +207,42 @@ export default function MeetSomeoneMobile() {
                     callType: 'squad',
                     memberIds,
                     partner,
-                })
+                }),
             );
+            squadVideoRoomNavKeyRef.current = roomKey;
             router.push('/video-chat');
+        },
+        [myUserId, router],
+    );
+
+    useEffect(() => {
+        if (mode !== 'squad' || squadLobby?.status !== 'IN_CALL') return;
+        if (squadMeetBusy) return;
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) return;
+        if (myUserId && squadLobby?.inviterId && String(squadLobby.inviterId) === String(myUserId)) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+                if (cancelled) return;
+                await applySquadEnterResponse(data);
+            } catch {
+                // Retry on next poll
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [mode, squadLobby?.status, squadLobby?.inviterId, myUserId, squadMeetBusy, applySquadEnterResponse]);
+
+    const handleSquadEnterCall = async () => {
+        if (!canSquadMeet || squadMeetBusy) return;
+        setSquadProductMessage('');
+        setSquadMeetBusy(true);
+        try {
+            const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+            await applySquadEnterResponse(data);
         } catch (e) {
             setSquadProductMessage(e?.message || 'Could not start squad call');
         } finally {
@@ -470,7 +514,6 @@ export default function MeetSomeoneMobile() {
                 open={squadInviteOpen}
                 onClose={() => setSquadInviteOpen(false)}
                 onInviteSent={() => void refreshSquadLobby()}
-                onLobbySync={() => void refreshSquadLobby()}
             />
         </div>
     );

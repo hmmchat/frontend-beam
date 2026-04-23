@@ -315,6 +315,7 @@ export default function Inbox() {
   const loadNotificationBadgeRef = useRef(null);
   const markReadForPeerRef = useRef(null);
   const wsListSyncTimerRef = useRef(null);
+  const markReadWsDebounceRef = useRef(null);
   const typingTimerRef = useRef(null);
   const lastTypingSentAtRef = useRef(0);
   const pendingThreadScrollRestoreRef = useRef(null);
@@ -1158,7 +1159,16 @@ export default function Inbox() {
           clearForConv(setInboxList);
           clearForConv(setRequestsList);
           clearForConv(setSentList);
-          void markReadFn?.(ac2?.otherUserId || ac2?.otherUser?.id);
+          const peerId = ac2?.otherUserId || ac2?.otherUser?.id;
+          if (peerId && markReadFn) {
+            if (markReadWsDebounceRef.current) {
+              clearTimeout(markReadWsDebounceRef.current);
+            }
+            markReadWsDebounceRef.current = setTimeout(() => {
+              markReadWsDebounceRef.current = null;
+              void markReadFn(peerId);
+            }, 500);
+          }
         }
       }
 
@@ -1236,6 +1246,10 @@ export default function Inbox() {
       if (wsHeartbeatRef.current) {
         clearInterval(wsHeartbeatRef.current);
         wsHeartbeatRef.current = null;
+      }
+      if (markReadWsDebounceRef.current) {
+        clearTimeout(markReadWsDebounceRef.current);
+        markReadWsDebounceRef.current = null;
       }
       try {
         wsRef.current?.close();

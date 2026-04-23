@@ -164,6 +164,21 @@ export default function MeetSomeoneMobile() {
     }, [squadGuestIds]);
 
     useEffect(() => {
+        if (!squadLobby?.memberIds?.length) {
+            setGuestProfiles({});
+            return;
+        }
+        const keep = new Set(squadLobby.memberIds.filter(Boolean));
+        setGuestProfiles((prev) => {
+            const next = {};
+            for (const id of keep) {
+                if (prev[id]) next[id] = prev[id];
+            }
+            return next;
+        });
+    }, [squadLobby]);
+
+    useEffect(() => {
         if (mode !== 'squad' || !squadLobby) {
             squadVideoRoomNavKeyRef.current = '';
         }

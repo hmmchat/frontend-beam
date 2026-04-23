@@ -1663,6 +1663,7 @@ export default function MeetSomeoneDynamic() {
         open={squadInviteOpen}
         onClose={() => setSquadInviteOpen(false)}
         onInviteSent={() => void refreshSquadLobby()}
+        onLobbySync={() => void refreshSquadLobby()}
       />
     </div>
   );

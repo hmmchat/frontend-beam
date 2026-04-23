@@ -470,6 +470,7 @@ export default function MeetSomeoneMobile() {
                 open={squadInviteOpen}
                 onClose={() => setSquadInviteOpen(false)}
                 onInviteSent={() => void refreshSquadLobby()}
+                onLobbySync={() => void refreshSquadLobby()}
             />
         </div>
     );

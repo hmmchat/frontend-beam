@@ -464,14 +464,25 @@ export default function MeetSomeoneDynamic() {
         const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
         if (cancelled) return;
         await applySquadEnterResponse(data);
-      } catch {
+      } catch (e) {
+        if (e?.status === 410) {
+          await refreshSquadLobby();
+        }
         // Host may still be creating the room; next membership poll will retry.
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [mode, squadLobby?.status, squadLobby?.inviterId, myUserId, squadMeetBusy, applySquadEnterResponse]);
+  }, [
+    mode,
+    squadLobby?.status,
+    squadLobby?.inviterId,
+    myUserId,
+    squadMeetBusy,
+    applySquadEnterResponse,
+    refreshSquadLobby,
+  ]);
 
   const handleSquadEnterCall = async () => {
     if (!canSquadMeet || squadMeetBusy) return;
@@ -481,7 +492,12 @@ export default function MeetSomeoneDynamic() {
       const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
       await applySquadEnterResponse(data);
     } catch (e) {
-      setSquadProductMessage(e?.message || 'Could not start squad call');
+      if (e?.status === 410) {
+        await refreshSquadLobby();
+        setSquadProductMessage('');
+      } else {
+        setSquadProductMessage(e?.message || 'Could not start squad call');
+      }
     } finally {
       setSquadMeetBusy(false);
     }

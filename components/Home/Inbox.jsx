@@ -292,6 +292,8 @@ export default function Inbox() {
   const [giftsCatalogLoading, setGiftsCatalogLoading] = useState(false);
   const [conversationSearch, setConversationSearch] = useState("");
   const [listLoadError, setListLoadError] = useState(null);
+  /** In-thread product copy (replaces window.alert for errors / warnings). */
+  const [threadProductMessage, setThreadProductMessage] = useState(null);
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [threadActionBusy, setThreadActionBusy] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
@@ -317,6 +319,16 @@ export default function Inbox() {
   const lastTypingSentAtRef = useRef(0);
   const pendingThreadScrollRestoreRef = useRef(null);
   const skipScrollToBottomRef = useRef(false);
+
+  useEffect(() => {
+    if (!threadProductMessage) return undefined;
+    const t = setTimeout(() => setThreadProductMessage(null), 12000);
+    return () => clearTimeout(t);
+  }, [threadProductMessage]);
+
+  useEffect(() => {
+    setThreadProductMessage(null);
+  }, [activeChat?.rowKey]);
 
   const resolveUserIdFromToken = useCallback(() => {
     const token = localStorage.getItem("accessToken");
@@ -899,6 +911,7 @@ export default function Inbox() {
   const handleSquadInviteResponse = useCallback(
     async (invitationId, action) => {
       if (!invitationId) return;
+      setThreadProductMessage(null);
       try {
         if (action === "accept") {
           await apiRequest(API.SQUAD.ACCEPT_INVITATION(invitationId), {
@@ -915,7 +928,10 @@ export default function Inbox() {
           await loadLists({ quiet: true });
         }
       } catch (e) {
-        alert(e?.message || "Something went wrong");
+        const msg = e?.message || "Something went wrong";
+        setThreadProductMessage({ variant: "error", text: msg });
+        if (activeChat) void loadThreadMessages(activeChat, { quiet: true });
+        await loadLists({ quiet: true });
       }
     },
     [activeChat, loadThreadMessages, loadLists, router],
@@ -1369,7 +1385,10 @@ export default function Inbox() {
       await loadLists();
     } catch (e) {
       console.error(e);
-      alert(e.message || "Failed to accept");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Failed to accept",
+      });
     }
   };
 
@@ -1385,7 +1404,10 @@ export default function Inbox() {
       await loadLists();
     } catch (e) {
       console.error(e);
-      alert(e.message || "Failed to reject");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Failed to reject",
+      });
     }
   };
 
@@ -1399,7 +1421,10 @@ export default function Inbox() {
       });
       await loadLists();
     } catch (e) {
-      alert(e.message || "Could not send friend request");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Could not send friend request",
+      });
     } finally {
       setSendFriendBusy(false);
     }
@@ -1407,6 +1432,7 @@ export default function Inbox() {
 
   const sendMessage = async (giftData = null) => {
     if (!activeChat || sending) return;
+    setThreadProductMessage(null);
     // Backward-compatible: `sendMessage(gift)` still works. We also accept `sendMessage(gif)`
     // where gif looks like { url, previewUrl, ... }.
     const candidate = giftData;
@@ -1435,7 +1461,10 @@ export default function Inbox() {
       resolvedGift ||
       canSendTextOnlyNonFriend(messages, currentUserId);
     if (!textOnlyOk) {
-      alert("Further messages need a gift. Tap the gift button.");
+      setThreadProductMessage({
+        variant: "warning",
+        text: "Further messages need a gift. Tap the gift button.",
+      });
       return;
     }
     let body;
@@ -1447,7 +1476,10 @@ export default function Inbox() {
         resolvedGif,
       });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not send");
+      setThreadProductMessage({
+        variant: "error",
+        text: err instanceof Error ? err.message : "Could not send",
+      });
       return;
     }
     try {
@@ -1468,9 +1500,10 @@ export default function Inbox() {
         if (typeof res?.newBalance === "number") setWalletCoins(res.newBalance);
         else refreshWallet();
       } else {
-        alert(
-          "You can't send a message here yet. Accept the friend request, or open a conversation thread.",
-        );
+        setThreadProductMessage({
+          variant: "warning",
+          text: "You can't send a message here yet. Accept the friend request, or open a conversation thread.",
+        });
         return;
       }
       setNewMessage("");
@@ -1478,7 +1511,10 @@ export default function Inbox() {
       await loadThreadMessages(activeChat);
       await loadLists({ quiet: true });
     } catch (e) {
-      alert(e.message || "Failed to send");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Failed to send",
+      });
     } finally {
       setSending(false);
     }
@@ -1538,6 +1574,7 @@ export default function Inbox() {
         : sentHasMore;
 
   const openRow = (row) => {
+    setThreadProductMessage(null);
     const cid = row.conversationId || row.id;
     const followId =
       row.followRequestId ||
@@ -1625,7 +1662,10 @@ export default function Inbox() {
       await loadLists({ quiet: true, skipNotificationBadge: true });
       scheduleNotificationBadge();
     } catch (e) {
-      alert(e.message || "Could not unfriend");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Could not unfriend",
+      });
     } finally {
       setThreadActionBusy(false);
     }
@@ -1651,7 +1691,10 @@ export default function Inbox() {
       await loadLists();
       scheduleNotificationBadge();
     } catch (e) {
-      alert(e.message || "Could not block user");
+      setThreadProductMessage({
+        variant: "error",
+        text: e.message || "Could not block user",
+      });
     } finally {
       setThreadActionBusy(false);
     }
@@ -1877,6 +1920,60 @@ export default function Inbox() {
                         Low balance: first text costs ~{firstMessageCost} coins.
                       </p>
                     )}
+
+                  {threadProductMessage && (
+                    <div
+                      role="alert"
+                      className={clsx(
+                        "mx-4",
+                        "mb-2",
+                        "mt-1",
+                        "flex",
+                        "items-start",
+                        "gap-3",
+                        "rounded-2xl",
+                        "border",
+                        "px-4",
+                        "py-3",
+                        "text-[13px]",
+                        "leading-snug",
+                        threadProductMessage.variant === "warning"
+                          ? clsx(
+                              "border-amber-400/45",
+                              "bg-amber-950/35",
+                              "text-amber-50",
+                            )
+                          : clsx(
+                              "border-red-400/45",
+                              "bg-red-950/40",
+                              "text-red-50",
+                            ),
+                      )}
+                    >
+                      <p className="min-w-0 flex-1 font-medium">
+                        {threadProductMessage.text}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setThreadProductMessage(null)}
+                        className={clsx(
+                          "shrink-0",
+                          "rounded-full",
+                          "border",
+                          "border-white/25",
+                          "px-3",
+                          "py-1",
+                          "text-[11px]",
+                          "font-bold",
+                          "uppercase",
+                          "tracking-wide",
+                          "hover:bg-white/10",
+                        )}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
 
                   <ThreadMessages
                     messages={messages}

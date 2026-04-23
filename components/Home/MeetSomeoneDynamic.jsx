@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
@@ -22,6 +22,7 @@ import FaceCard from './FaceCard';
 import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
+import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import Link from 'next/link';
 import Skeleton from '@/components/ui/Skeleton';
 import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
@@ -41,8 +42,12 @@ export default function MeetSomeoneDynamic() {
   const [mode, setMode] = useState('solo');
   const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [invited, setInvited] = useState(['Austin']);
   const [myProfile, setMyProfile] = useState(null);
+  const [squadInviteOpen, setSquadInviteOpen] = useState(false);
+  const [squadLobby, setSquadLobby] = useState(null);
+  const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+  const [squadProductMessage, setSquadProductMessage] = useState('');
+  const [guestProfiles, setGuestProfiles] = useState({});
   const [isSearching, setIsSearching] = useState(false);
   const [isResumeLoading, setIsResumeLoading] = useState(false);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
@@ -55,6 +60,15 @@ export default function MeetSomeoneDynamic() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isVideoOn, setIsVideoOn] = useState(true);
 
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('squad') === '1') {
+      setMode('squad');
+      router.replace('/', { scroll: false });
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -104,6 +118,8 @@ export default function MeetSomeoneDynamic() {
   const initDoneRef = useRef(false);
   const isEnteringCallRef = useRef(false);
   const modeInitRef = useRef(false);
+  const prevModeSquadRef = useRef(mode);
+  const squadPollRef = useRef(null);
   const isSearchingRef = useRef(false);
   const latestSilentFetchIdRef = useRef(0);
 
@@ -262,6 +278,153 @@ export default function MeetSomeoneDynamic() {
     if (!isSearching || waitingForMatch || mode !== 'solo') return;
     handleUpdateStatus('AVAILABLE');
   }, [isSearching, waitingForMatch, mode]);
+
+  const myUserId = myProfile?.id;
+
+  const squadGuestIds = useMemo(() => {
+    if (!squadLobby?.memberIds?.length) {
+      return [null, null, null];
+    }
+    const others = squadLobby.memberIds.filter((id) => id && id !== myUserId).slice(0, 3);
+    return [0, 1, 2].map((i) => others[i] || null);
+  }, [squadLobby, myUserId]);
+
+  const isSquadHost = Boolean(squadLobby && myUserId && squadLobby.inviterId === myUserId);
+  const canSquadMeet =
+    isSquadHost &&
+    squadLobby?.status !== 'IN_CALL' &&
+    Array.isArray(squadLobby?.memberIds) &&
+    squadLobby.memberIds.length >= 2;
+
+  const refreshSquadLobby = useCallback(async () => {
+    try {
+      const m = await apiRequest(API.SQUAD.LOBBY_MEMBERSHIP);
+      if (m?.role !== 'none' && m?.lobby) {
+        setSquadLobby({ ...m.lobby, role: m.role });
+      } else {
+        setSquadLobby(null);
+      }
+    } catch {
+      setSquadLobby(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const prev = prevModeSquadRef.current;
+    prevModeSquadRef.current = mode;
+    if (prev === 'squad' && mode === 'solo') {
+      void apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' }).catch(() => {});
+    }
+    if (mode !== 'squad') setSquadProductMessage('');
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== 'squad') {
+      if (squadPollRef.current) {
+        clearInterval(squadPollRef.current);
+        squadPollRef.current = null;
+      }
+      return;
+    }
+    void refreshSquadLobby();
+    squadPollRef.current = setInterval(() => {
+      void refreshSquadLobby();
+    }, 3000);
+    return () => {
+      if (squadPollRef.current) {
+        clearInterval(squadPollRef.current);
+        squadPollRef.current = null;
+      }
+    };
+  }, [mode, refreshSquadLobby]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const ids = squadGuestIds.filter(Boolean);
+      for (const id of ids) {
+        try {
+          const r = await apiRequest(API.USERS.GET_USER(id));
+          if (!cancelled && r?.user) {
+            setGuestProfiles((p) => (p[id] ? p : { ...p, [id]: r.user }));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [squadGuestIds]);
+
+  const handleSquadEnterCall = async () => {
+    if (!canSquadMeet || squadMeetBusy) return;
+    setSquadProductMessage('');
+    setSquadMeetBusy(true);
+    try {
+      const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+      const memberIds = data.memberIds || [];
+      const others = memberIds.filter((id) => id && id !== myUserId);
+      let partner = null;
+      if (others[0]) {
+        try {
+          const pr = await apiRequest(API.USERS.GET_USER(others[0]));
+          const u = pr?.user || {};
+          let age = '';
+          if (u.dateOfBirth) {
+            const dob = new Date(u.dateOfBirth);
+            if (!Number.isNaN(dob.getTime())) {
+              const now = new Date();
+              let years = now.getFullYear() - dob.getFullYear();
+              const monthDiff = now.getMonth() - dob.getMonth();
+              if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) years--;
+              age = years >= 0 ? String(years) : '';
+            }
+          }
+          partner = {
+            id: u.id || others[0],
+            username: u.username || 'Squad',
+            age,
+            city: u.preferredCity || '',
+            displayPictureUrl: u.displayPictureUrl || '/assets/avatar1.png',
+          };
+        } catch {
+          partner = {
+            id: others[0],
+            username: 'Squad',
+            age: '',
+            city: '',
+            displayPictureUrl: '/assets/avatar1.png',
+          };
+        }
+      } else {
+        partner = {
+          id: '',
+          username: 'Squad',
+          age: '',
+          city: '',
+          displayPictureUrl: '/assets/avatar1.png',
+        };
+      }
+      localStorage.setItem(
+        'currentRoom',
+        JSON.stringify({
+          roomId: data.roomId,
+          sessionId: data.sessionId,
+          callType: 'squad',
+          memberIds,
+          partner,
+        })
+      );
+      router.push('/video-chat');
+    } catch (e) {
+      setSquadProductMessage(e?.message || 'Could not start squad call');
+    } finally {
+      setSquadMeetBusy(false);
+    }
+  };
 
   const fetchMyProfile = async () => {
     try {
@@ -445,13 +608,6 @@ export default function MeetSomeoneDynamic() {
     console.log('MeetSomeoneDynamic handlePrevImage:', { currentIndex: currentImageIndex, allPhotosCount: allPhotos.length });
     setCurrentImageIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
   };
-   console.log('MeetSomeoneDynamic Debug (currentCard photos):', {
-    username: currentCard?.username,
-    photosCount: allPhotos?.length,
-    currentImageIndex,
-    allPhotos
-  });
-
   useEffect(() => {
     // Do not reset discovery state on first render.
     // This prevents raincheck-resume flow from being overwritten by initial mode effect.
@@ -483,11 +639,6 @@ export default function MeetSomeoneDynamic() {
       handleUpdateStatus('ONLINE');
     }
   }, [mode]);
-
-  const toggleInvite = (name) =>
-    setInvited((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
 
   const handleRaincheck = async () => {
     if (!currentCard || swiping) return;
@@ -1302,29 +1453,77 @@ export default function MeetSomeoneDynamic() {
               </div>
 
               {/* Squad UI overlay */}
-              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-3xl', 'text-center', 'justify-center', 'mt-20')}>
-             
-              <div className={clsx('flex', 'items-center', 'justify-center', 'gap-4', 'mb-10', 'font-sans')}>
-                {['Me', 'Who', 'Who'].map((label, i, arr) => (
-                  <div key={i} className={clsx('flex', 'items-center', 'gap-4')}>
-                    <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                      <div className={clsx('relative', 'w-20', 'h-20', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                        {label === 'Me' ? (
-                          <img src={myProfile?.displayPictureUrl} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
-                        ) : (
-                          <span className={clsx('text-3xl', 'text-white')}>?</span>
-                        )}
-                      </div>
-                      <span className="text-xs">{label}</span>
-                    </div>
-                    {i < arr.length - 1 && (
-                      <div className="mb-6">
-                        <img src="/assets/plus.png" alt="+" className={clsx('w-4', 'h-4', 'opacity-70')} />
-                      </div>
+              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-4xl', 'text-center', 'justify-center', 'mt-12', 'md:mt-20', 'px-2')}>
+                {squadProductMessage ? (
+                  <div
+                    role="alert"
+                    className={clsx(
+                      'mx-auto',
+                      'mb-4',
+                      'max-w-lg',
+                      'rounded-2xl',
+                      'border',
+                      'border-red-400/40',
+                      'bg-red-950/45',
+                      'px-4',
+                      'py-3',
+                      'text-left',
+                      'text-sm',
+                      'font-medium',
+                      'text-red-50',
                     )}
+                  >
+                    {squadProductMessage}
                   </div>
-                ))}
-              </div>
+                ) : null}
+                <div className={clsx('flex', 'items-center', 'justify-center', 'gap-2', 'md:gap-4', 'mb-8', 'md:mb-10', 'font-sans', 'flex-wrap')}>
+                  {/* Me */}
+                  <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
+                    <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
+                      <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                        <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
+                      </div>
+                      <span className="text-xs">Me</span>
+                    </div>
+                  </div>
+                  {squadGuestIds.map((guestId, i) => (
+                    <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
+                      <div className="mb-6 md:mb-8">
+                        <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
+                      </div>
+                      <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
+                        <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                          {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
+                            <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
+                          ) : guestId ? (
+                            <span className="text-xl md:text-3xl text-white/60">…</span>
+                          ) : (
+                            <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
+                          )}
+                        </div>
+                        <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {canSquadMeet && (
+                  <div className="mb-6 flex justify-center px-4">
+                    <button
+                      type="button"
+                      disabled={squadMeetBusy}
+                      onClick={handleSquadEnterCall}
+                      className={clsx(
+                        'flex items-center justify-center gap-2 rounded-2xl px-6 py-3 md:px-10 md:py-4',
+                        'bg-gradient-to-r from-fuchsia-600 to-violet-700 border border-white/30 text-white font-semibold text-sm md:text-base',
+                        'hover:opacity-95 active:scale-[0.98] transition shadow-lg disabled:opacity-50'
+                      )}
+                    >
+                      <IoVideocam className="text-xl" />
+                      {squadMeetBusy ? 'Starting…' : 'Meet someone rn'}
+                    </button>
+                  </div>
+                )}
 
               {/* Share */}
               <div className={clsx('inline-flex', 'items-center', 'gap-4', 'bg-[#0A032D]/40', 'rounded-full', 'px-10', 'py-3', 'mb-8', 'font-sans')}>
@@ -1391,7 +1590,14 @@ export default function MeetSomeoneDynamic() {
         </div>
             ) : (
               <div className={clsx('flex', 'gap-4', 'items-center')}>
-                <img src="/assets/search-icon.svg" alt="" className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11')} />
+                <button
+                  type="button"
+                  onClick={() => setSquadInviteOpen(true)}
+                  className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11', 'hover:bg-white/10', 'transition')}
+                  title="Invite friends"
+                >
+                  <img src="/assets/search-icon.svg" alt="" className="w-6 h-6 mx-auto" />
+                </button>
                 <img src="/assets/Vector.svg" alt="" className={clsx('border', 'rounded-full', 'p-[10px]', 'border-white/70', 'w-11', 'h-11')} />
               </div>
             )}
@@ -1453,6 +1659,11 @@ export default function MeetSomeoneDynamic() {
         }} 
       />
       <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+      <SquadInviteFriendsModal
+        open={squadInviteOpen}
+        onClose={() => setSquadInviteOpen(false)}
+        onInviteSent={() => void refreshSquadLobby()}
+      />
     </div>
   );
 }

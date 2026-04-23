@@ -1,22 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
-import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
+import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
+import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline, IoVideocam } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
+import clsx from 'clsx';
 
 export default function MeetSomeoneMobile() {
+    const router = useRouter();
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [activeMeetingCount, setActiveMeetingCount] = useState(0);
     const [coins] = useState(25500);
     const [mode, setMode] = useState('solo'); // solo | squad
-    const [invited, setInvited] = useState(['Austin']);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [myProfile, setMyProfile] = useState(null);
+    const [squadInviteOpen, setSquadInviteOpen] = useState(false);
+    const [squadLobby, setSquadLobby] = useState(null);
+    const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+    const [squadProductMessage, setSquadProductMessage] = useState('');
+    const [guestProfiles, setGuestProfiles] = useState({});
+    const prevModeSquadRef = useRef(mode);
+    const squadPollRef = useRef(null);
+
+    const myUserId = myProfile?.id;
+
+    const squadGuestIds = useMemo(() => {
+        if (!squadLobby?.memberIds?.length) return [null, null, null];
+        const others = squadLobby.memberIds.filter((id) => id && id !== myUserId).slice(0, 3);
+        return [0, 1, 2].map((i) => others[i] || null);
+    }, [squadLobby, myUserId]);
+
+    const isSquadHost = Boolean(squadLobby && myUserId && squadLobby.inviterId === myUserId);
+    const canSquadMeet =
+        isSquadHost &&
+        squadLobby?.status !== 'IN_CALL' &&
+        Array.isArray(squadLobby?.memberIds) &&
+        squadLobby.memberIds.length >= 2;
+
+    const refreshSquadLobby = useCallback(async () => {
+        try {
+            const m = await apiRequest(API.SQUAD.LOBBY_MEMBERSHIP);
+            if (m?.role !== 'none' && m?.lobby) {
+                setSquadLobby({ ...m.lobby, role: m.role });
+            } else {
+                setSquadLobby(null);
+            }
+        } catch {
+            setSquadLobby(null);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchMetrics = async () => {
@@ -54,10 +93,118 @@ export default function MeetSomeoneMobile() {
         };
     }, []);
 
-    const toggleInvite = (name) =>
-        setInvited((prev) =>
-            prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-        );
+    useEffect(() => {
+        const loadMe = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                if (!token) return;
+                const res = await fetch(API.USERS.GET_ME, { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    setMyProfile(data.user);
+                }
+            } catch {
+                // ignore
+            }
+        };
+        loadMe();
+    }, []);
+
+    useEffect(() => {
+        const prev = prevModeSquadRef.current;
+        prevModeSquadRef.current = mode;
+        if (prev === 'squad' && mode === 'solo') {
+            void apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' }).catch(() => {});
+        }
+        if (mode !== 'squad') setSquadProductMessage('');
+    }, [mode]);
+
+    useEffect(() => {
+        if (mode !== 'squad') {
+            if (squadPollRef.current) {
+                clearInterval(squadPollRef.current);
+                squadPollRef.current = null;
+            }
+            return;
+        }
+        void refreshSquadLobby();
+        squadPollRef.current = setInterval(() => void refreshSquadLobby(), 3000);
+        return () => {
+            if (squadPollRef.current) {
+                clearInterval(squadPollRef.current);
+                squadPollRef.current = null;
+            }
+        };
+    }, [mode, refreshSquadLobby]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            const ids = squadGuestIds.filter(Boolean);
+            for (const id of ids) {
+                try {
+                    const r = await apiRequest(API.USERS.GET_USER(id));
+                    if (!cancelled && r?.user) {
+                        setGuestProfiles((p) => (p[id] ? p : { ...p, [id]: r.user }));
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+        };
+        void load();
+        return () => {
+            cancelled = true;
+        };
+    }, [squadGuestIds]);
+
+    const handleSquadEnterCall = async () => {
+        if (!canSquadMeet || squadMeetBusy) return;
+        setSquadProductMessage('');
+        setSquadMeetBusy(true);
+        try {
+            const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+            const memberIds = data.memberIds || [];
+            const others = memberIds.filter((id) => id && id !== myUserId);
+            let partner = {
+                id: '',
+                username: 'Squad',
+                age: '',
+                city: '',
+                displayPictureUrl: '/assets/avatar1.png',
+            };
+            if (others[0]) {
+                try {
+                    const pr = await apiRequest(API.USERS.GET_USER(others[0]));
+                    const u = pr?.user || {};
+                    partner = {
+                        id: u.id || others[0],
+                        username: u.username || 'Squad',
+                        age: '',
+                        city: u.preferredCity || '',
+                        displayPictureUrl: u.displayPictureUrl || '/assets/avatar1.png',
+                    };
+                } catch {
+                    partner = { ...partner, id: others[0] };
+                }
+            }
+            localStorage.setItem(
+                'currentRoom',
+                JSON.stringify({
+                    roomId: data.roomId,
+                    sessionId: data.sessionId,
+                    callType: 'squad',
+                    memberIds,
+                    partner,
+                })
+            );
+            router.push('/video-chat');
+        } catch (e) {
+            setSquadProductMessage(e?.message || 'Could not start squad call');
+        } finally {
+            setSquadMeetBusy(false);
+        }
+    };
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden font-sans text-white flex flex-col font-[family-name:var(--font-otomanopee)]">
@@ -198,87 +345,94 @@ export default function MeetSomeoneMobile() {
                 ) : (
                     /* ===== SQUAD VIEW ===== */
                     <div className="relative w-full max-w-3xl text-center mt-auto mb-30 px-6">
-                        {/* Members */}
-                        <div className='flex justify-between items-center mb-6'>
-                            <img src="/assets/search-icon.svg" alt="" className="w-6 h-6" />
+                        {squadProductMessage ? (
+                            <div
+                                role="alert"
+                                className="mb-4 rounded-2xl border border-red-400/40 bg-red-950/45 px-4 py-3 text-left text-[13px] font-medium text-red-50"
+                            >
+                                {squadProductMessage}
+                            </div>
+                        ) : null}
+                        <div className="flex justify-between items-center mb-6">
+                            <button type="button" onClick={() => setSquadInviteOpen(true)} className="p-2 rounded-full border border-white/30 hover:bg-white/10">
+                                <img src="/assets/search-icon.svg" alt="" className="w-6 h-6" />
+                            </button>
                             <img src="/assets/Vector.svg" alt="" className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center justify-center gap-4 mb-10 font-sans">
-                            {['Me', 'Who', 'Who'].map((label, i, arr) => (
-                                <div key={i} className="flex items-center gap-4">
+                        <div className="flex items-center justify-center gap-2 mb-8 font-sans flex-wrap">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="relative w-16 h-16 rounded-full border border-white/30 overflow-hidden bg-white/5">
+                                    <Image
+                                        src={myProfile?.displayPictureUrl || '/assets/ico.png'}
+                                        alt="me"
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                                <span className="text-xs">Me</span>
+                            </div>
+                            {squadGuestIds.map((guestId, i) => (
+                                <div key={`sg-${i}`} className="flex items-center gap-2">
+                                    <div className="mb-4">
+                                        <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-70" />
+                                    </div>
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className="relative w-20 h-20 rounded-full border border-white/30 flex items-center justify-center overflow-hidden bg-white/5">
-                                            {label === 'Me' ? (
-                                                <Image src="/assets/ico.png" alt="me" fill className="object-cover" />
+                                        <div className="relative w-16 h-16 rounded-full border border-white/30 flex items-center justify-center overflow-hidden bg-white/5">
+                                            {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
+                                                <Image src={guestProfiles[guestId].displayPictureUrl} alt="" fill className="object-cover" />
+                                            ) : guestId ? (
+                                                <span className="text-lg text-white/50">…</span>
                                             ) : (
                                                 <span className="text-2xl text-white/50">?</span>
                                             )}
                                         </div>
-                                        <span className="text-xs">{label}</span>
+                                        <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
                                     </div>
-
-                                    {/* Show plus icon if not the last item */}
-                                    {i < arr.length - 1 && (
-                                        <div className="mb-6">
-                                            <img src="/assets/plus.png" alt="+" className="w-4 h-4 opacity-70" />
-                                        </div>
-                                    )}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Share */}
-                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-8 font-sans">
+                        {canSquadMeet && (
+                            <div className="mb-6 flex justify-center">
+                                <button
+                                    type="button"
+                                    disabled={squadMeetBusy}
+                                    onClick={handleSquadEnterCall}
+                                    className={clsx(
+                                        'flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-sm',
+                                        'bg-gradient-to-r from-fuchsia-600 to-violet-700 border border-white/30 text-white',
+                                        'disabled:opacity-50'
+                                    )}
+                                >
+                                    <IoVideocam className="text-xl" />
+                                    {squadMeetBusy ? 'Starting…' : 'Meet someone rn'}
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-6 font-sans">
                             <span className="text-white/80 text-sm font-medium mr-2">Share to</span>
-                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
                                 <IoLogoSnapchat className="text-2xl" />
                             </button>
-                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
                                 <IoLogoInstagram className="text-2xl" />
                             </button>
-                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
                                 <IoLogoWhatsapp className="text-2xl" />
                             </button>
-                            <button className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
                                 <IoCopyOutline className="text-2xl" />
                             </button>
                         </div>
 
-                        {/* Invite */}
-                        <div className="flex justify-center gap-4">
-                            <span className="text-white/80 text-sm font-medium mr-2 border-r-2 border-white/60 pr-2 flex items-center gap-2">Invite</span>
-                            <div className="flex justify-center gap-6">
-                                {[
-                                    { name: 'Austin', img: '/assets/ico.png' },
-                                    { name: 'Rose', img: '/assets/img1.png' },
-                                    { name: 'Peter', img: '/assets/ico.png' }
-                                ].map((person) => (
-                                    <div key={person.name} className="flex flex-col items-center gap-2">
-                                        <button
-                                            onClick={() => toggleInvite(person.name)}
-                                            className={`relative w-12 h-12 rounded-full border-2 ${invited.includes(person.name)
-                                                ? 'border-yellow-400'
-                                                : 'border-white/20'
-                                                }`}
-                                        >
-                                            <Image src={person.img} alt={person.name} fill className='object-cover rounded-full' />
-                                            {invited.includes(person.name) ? (
-                                                <span className="absolute -top-2 -right-2 bg-yellow-400 text-black w-5 h-5 text-xs rounded-full flex items-center justify-center font-bold">
-                                                    ✓
-                                                </span>
-                                            ) : (
-                                                <span className="absolute -top-0 -right-0 bg-white text-black w-3 h-3 text-xs rounded-full flex items-center justify-center font-bold shadow-sm">
-                                                    +
-                                                </span>
-                                            )}    </button>
-                                        <span className="text-white/70 text-xs font-sans">{person.name}</span>
-                                    </div>
-                                ))}
-                                <button className="text-sm underline text-white/70 ml-2 self-center font-sans">
-                                    See all
-                                </button>
-                            </div>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setSquadInviteOpen(true)}
+                            className="text-sm underline text-white/80 font-sans"
+                        >
+                            See all friends to invite
+                        </button>
                     </div>
                 )}
             </div>
@@ -312,6 +466,11 @@ export default function MeetSomeoneMobile() {
             <SignUpModal isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} />
             <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
             <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+            <SquadInviteFriendsModal
+                open={squadInviteOpen}
+                onClose={() => setSquadInviteOpen(false)}
+                onInviteSent={() => void refreshSquadLobby()}
+            />
         </div>
     );
 }

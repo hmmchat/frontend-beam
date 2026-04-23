@@ -159,6 +159,8 @@ function lastMessagePreview(conv) {
     const txt = lm.message?.trim();
     return txt ? `GIF · ${txt}` : "GIF";
   }
+  if (t === "SQUAD_INVITE") return "Squad call invite";
+  if (t === "SQUAD_INVITE_OUTCOME") return lm.message?.trim() || "Squad update";
   return lm.message || "Message";
 }
 
@@ -769,11 +771,10 @@ export default function Inbox() {
     async (otherUserId) => {
       if (!otherUserId) return;
       try {
-        const res = await fetch(API.FRIENDS.MARK_MESSAGES_READ(otherUserId), {
+        await apiRequest(API.FRIENDS.MARK_MESSAGES_READ(otherUserId), {
           method: "POST",
-          headers: getAuthHeaders(),
         });
-        if (res.ok) scheduleNotificationBadge();
+        scheduleNotificationBadge();
       } catch (e) {
         console.warn("[Inbox] markRead", e);
       }
@@ -895,6 +896,31 @@ export default function Inbox() {
     [markReadForPeer],
   );
 
+  const handleSquadInviteResponse = useCallback(
+    async (invitationId, action) => {
+      if (!invitationId) return;
+      try {
+        if (action === "accept") {
+          await apiRequest(API.SQUAD.ACCEPT_INVITATION(invitationId), {
+            method: "POST",
+          });
+          if (activeChat) await loadThreadMessages(activeChat, { quiet: true });
+          await loadLists({ quiet: true });
+          router.push("/?squad=1");
+        } else {
+          await apiRequest(API.SQUAD.REJECT_INVITATION(invitationId), {
+            method: "POST",
+          });
+          if (activeChat) await loadThreadMessages(activeChat, { quiet: true });
+          await loadLists({ quiet: true });
+        }
+      } catch (e) {
+        alert(e?.message || "Something went wrong");
+      }
+    },
+    [activeChat, loadThreadMessages, loadLists, router],
+  );
+
   const loadOlderThreadMessages = useCallback(async () => {
     if (
       !activeChat ||
@@ -1002,7 +1028,7 @@ export default function Inbox() {
         const msgKey =
           m.id != null
             ? `id:${String(m.id)}`
-            : `k:${m.fromUserId}:${m.toUserId}:${m.conversationId}:${m.createdAt}:${m.messageType}:${m.message || ""}:${m.giftId || ""}:${m.giftAmount || ""}:${m.gif?.url || ""}:${m.gif?.previewUrl || ""}`;
+            : `k:${m.fromUserId}:${m.toUserId}:${m.conversationId}:${m.createdAt}:${m.messageType}:${m.message || ""}:${m.giftId || ""}:${m.giftAmount || ""}:${m.gif?.url || ""}:${m.gif?.previewUrl || ""}:${m.squadMeta || ""}`;
         if (seenWsMessageKeysRef.current.has(msgKey)) return;
         seenWsMessageKeysRef.current.add(msgKey);
         const convKey = String(m.conversationId);
@@ -1071,6 +1097,7 @@ export default function Inbox() {
                   giftId: m.giftId,
                   giftAmount: m.giftAmount,
                   gif: m.gif || null,
+                  squadMeta: m.squadMeta ?? null,
                   createdAt: m.createdAt,
                 },
                 lastMessageAt: m.createdAt,
@@ -1861,6 +1888,7 @@ export default function Inbox() {
                     loadingThreadOlder={loadingThreadOlder}
                     loading={loadingThread}
                     loadOlderThreadMessages={loadOlderThreadMessages}
+                    onSquadInviteResponse={handleSquadInviteResponse}
                   />
                 </div>
 

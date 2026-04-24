@@ -12,6 +12,10 @@ import {
   clearPendingReferralCode,
   getPendingReferralCodeIfAnonymous,
 } from "@/components/CaptureReferralFromUrl";
+import {
+  getPendingSquadInviteToken,
+  setPostOnboardingRedirectPath,
+} from "@/lib/squad-invite-link";
 
 function SignUpModalContent({ isOpen, onClose }) {
   const [step, setStep] = useState("options");
@@ -22,6 +26,12 @@ function SignUpModalContent({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+
+  const getPendingSquadJoinPath = () => {
+    const inviteToken = getPendingSquadInviteToken();
+    if (!inviteToken) return "";
+    return `/squad?token=${encodeURIComponent(inviteToken)}`;
+  };
 
   // Scroll lock when modal is open
   useEffect(() => {
@@ -92,18 +102,27 @@ function SignUpModalContent({ isOpen, onClose }) {
             },
           });
 
+          const pendingSquadJoinPath = getPendingSquadJoinPath();
+
           if (profileResponse.ok) {
             // Profile exists - go to dashboard
             console.log("Profile exists, redirecting to dashboard");
-            router.push("/facecard");
+            router.push(pendingSquadJoinPath || "/facecard");
           } else {
             // No profile - go to onboarding
             console.log("No profile, redirecting to onboarding");
+            if (pendingSquadJoinPath) {
+              setPostOnboardingRedirectPath(pendingSquadJoinPath);
+            }
             router.push("/onboarding");
           }
         } catch (error) {
           console.error("Error checking profile:", error);
           // Default to onboarding if check fails
+          const pendingSquadJoinPath = getPendingSquadJoinPath();
+          if (pendingSquadJoinPath) {
+            setPostOnboardingRedirectPath(pendingSquadJoinPath);
+          }
           router.push("/onboarding");
         }
 
@@ -238,6 +257,10 @@ function SignUpModalContent({ isOpen, onClose }) {
       localStorage.setItem("refreshToken", data.refreshToken);
       clearPendingReferralCode();
 
+      const pendingSquadJoinPath = getPendingSquadJoinPath();
+      if (pendingSquadJoinPath) {
+        setPostOnboardingRedirectPath(pendingSquadJoinPath);
+      }
       router.push("/onboarding");
       onClose();
     } catch (error) {

@@ -24,6 +24,7 @@ export default function MeetSomeoneMobile() {
     const [squadInviteOpen, setSquadInviteOpen] = useState(false);
     const [squadLobby, setSquadLobby] = useState(null);
     const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+    const [squadShareBusy, setSquadShareBusy] = useState(false);
     const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
     const [squadProductMessage, setSquadProductMessage] = useState('');
     const [guestProfiles, setGuestProfiles] = useState({});
@@ -331,6 +332,45 @@ export default function MeetSomeoneMobile() {
         }
     };
 
+    const getSquadInviteLink = useCallback(async () => {
+        const res = await apiRequest(API.SQUAD.INVITE_EXTERNAL, { method: 'POST' });
+        const link = String(res?.inviteLink || '').trim();
+        if (!link) {
+            throw new Error('Could not create squad share link');
+        }
+        return link;
+    }, []);
+
+    const shareSquadInvite = useCallback(
+        async (channel = 'generic') => {
+            if (squadShareBusy) return;
+            setSquadShareBusy(true);
+            setSquadProductMessage('');
+            try {
+                const link = await getSquadInviteLink();
+                const shareText = `Join my squad call on HMM: ${link}`;
+                if (channel === 'whatsapp') {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
+                              return;
+                }
+                if (channel === 'copy') {
+                    await navigator.clipboard.writeText(link);
+                              return;
+                }
+                if (navigator.share) {
+                    await navigator.share({ text: shareText, url: link });
+                    return;
+                }
+                await navigator.clipboard.writeText(link);
+                  } catch (e) {
+                setSquadProductMessage(e?.message || 'Could not share squad invite link');
+            } finally {
+                setSquadShareBusy(false);
+            }
+        },
+        [getSquadInviteLink, squadShareBusy]
+    );
+
     return (
         <div className="relative min-h-screen w-full overflow-hidden font-sans text-white flex flex-col font-[family-name:var(--font-otomanopee)]">
 
@@ -543,16 +583,36 @@ export default function MeetSomeoneMobile() {
 
                         <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-2 font-sans">
                             <span className="text-white/80 text-sm font-medium mr-2">Share to</span>
-                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button
+                                type="button"
+                                disabled={squadShareBusy}
+                                onClick={() => void shareSquadInvite('generic')}
+                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                            >
                                 <IoLogoSnapchat className="text-2xl" />
                             </button>
-                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button
+                                type="button"
+                                disabled={squadShareBusy}
+                                onClick={() => void shareSquadInvite('generic')}
+                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                            >
                                 <IoLogoInstagram className="text-2xl" />
                             </button>
-                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button
+                                type="button"
+                                disabled={squadShareBusy}
+                                onClick={() => void shareSquadInvite('whatsapp')}
+                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                            >
                                 <IoLogoWhatsapp className="text-2xl" />
                             </button>
-                            <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
+                            <button
+                                type="button"
+                                disabled={squadShareBusy}
+                                onClick={() => void shareSquadInvite('copy')}
+                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                            >
                                 <IoCopyOutline className="text-2xl" />
                             </button>
                         </div>

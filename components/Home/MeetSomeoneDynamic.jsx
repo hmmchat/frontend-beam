@@ -46,6 +46,7 @@ export default function MeetSomeoneDynamic() {
   const [squadInviteOpen, setSquadInviteOpen] = useState(false);
   const [squadLobby, setSquadLobby] = useState(null);
   const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+  const [squadShareBusy, setSquadShareBusy] = useState(false);
   const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
   const [squadProductMessage, setSquadProductMessage] = useState('');
   const [guestProfiles, setGuestProfiles] = useState({});
@@ -553,6 +554,45 @@ export default function MeetSomeoneDynamic() {
       setSquadMemberActionBusyId(null);
     }
   };
+
+  const getSquadInviteLink = useCallback(async () => {
+    const res = await apiRequest(API.SQUAD.INVITE_EXTERNAL, { method: 'POST' });
+    const link = String(res?.inviteLink || '').trim();
+    if (!link) {
+      throw new Error('Could not create squad share link');
+    }
+    return link;
+  }, []);
+
+  const shareSquadInvite = useCallback(
+    async (channel = 'generic') => {
+      if (squadShareBusy) return;
+      setSquadShareBusy(true);
+      setSquadProductMessage('');
+      try {
+        const link = await getSquadInviteLink();
+        const shareText = `Join my squad call on HMM: ${link}`;
+        if (channel === 'whatsapp') {
+          window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        if (channel === 'copy') {
+          await navigator.clipboard.writeText(link);
+          return;
+        }
+        if (navigator.share) {
+          await navigator.share({ text: shareText, url: link });
+          return;
+        }
+        await navigator.clipboard.writeText(link);
+      } catch (e) {
+        setSquadProductMessage(e?.message || 'Could not share squad invite link');
+      } finally {
+        setSquadShareBusy(false);
+      }
+    },
+    [getSquadInviteLink, squadShareBusy]
+  );
 
   const fetchMyProfile = async () => {
     try {
@@ -1701,17 +1741,37 @@ export default function MeetSomeoneDynamic() {
               <div className={clsx('inline-flex', 'items-center', 'gap-4', 'bg-[#0A032D]/40', 'rounded-full', 'px-10', 'py-3', 'mb-2', 'font-sans')}>
                 <span className={clsx('text-white/80', 'text-sm', 'font-medium', 'mr-2')}>Share to</span>
 
-                 <button className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white')}>
+                 <button
+                  type="button"
+                  disabled={squadShareBusy}
+                  onClick={() => void shareSquadInvite('generic')}
+                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                >
                   <img src="/shareicon4.png" className={clsx('w-6', 'h-6')} />
                 </button>
-                 <button className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white')}>
+                 <button
+                  type="button"
+                  disabled={squadShareBusy}
+                  onClick={() => void shareSquadInvite('generic')}
+                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                >
                   <img src="/shareicon2.png" className={clsx('w-6', 'h-6')} />
                 </button>
-                <button className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white')}>
+                <button
+                  type="button"
+                  disabled={squadShareBusy}
+                  onClick={() => void shareSquadInvite('whatsapp')}
+                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                >
                   <img src="/shareicon1.png" className={clsx('w-6', 'h-6')} />
                 </button>
                
-                <button className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white')}>
+                <button
+                  type="button"
+                  disabled={squadShareBusy}
+                  onClick={() => void shareSquadInvite('copy')}
+                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                >
                   <img src="/shareicon3.png" className={clsx('w-6', 'h-6')} />
                 </button>
                

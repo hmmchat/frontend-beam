@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { IoSearchOutline, IoLocationOutline, IoCheckmarkCircle } from 'react-icons/io5';
+import {
+  getPostOnboardingRedirectPath,
+  clearPostOnboardingRedirectPath,
+} from '@/lib/squad-invite-link';
 
 export default function LocationOnboarding() {
   const router = useRouter();
@@ -68,7 +72,13 @@ export default function LocationOnboarding() {
       }
 
       // Success! Onboarding complete
-      router.push('/facecard');
+      const nextPath = getPostOnboardingRedirectPath();
+      if (nextPath) {
+        clearPostOnboardingRedirectPath();
+        router.push(nextPath);
+      } else {
+        router.push('/facecard');
+      }
     } catch (error) {
       console.error('Error saving location:', error);
       setError(error.message || 'Failed to save your preference');
@@ -78,6 +88,12 @@ export default function LocationOnboarding() {
   };
 
   const handleSkip = () => {
+    const nextPath = getPostOnboardingRedirectPath();
+    if (nextPath) {
+      clearPostOnboardingRedirectPath();
+      router.push(nextPath);
+      return;
+    }
     router.push('/facecard');
   };
 
@@ -106,7 +122,7 @@ export default function LocationOnboarding() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            Where's the <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">vibe?</span> 📍
+            Where&apos;s the <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">vibe?</span> 📍
           </h1>
           <p className="text-white/50 text-xl max-w-2xl mx-auto">
             Choose your city to find people who match your energy nearby.

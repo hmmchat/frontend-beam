@@ -559,7 +559,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen overflow-y-auto p-6">
+<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[100dvh] md:p-6">
 
             {step === 1 && (
     <>
@@ -588,7 +588,7 @@ if (prompt.trim() && accessToken) {
 
 <div className="justify-center items-center">
 
-          <div className="flex flex-col items-center justify-center min-h-screen md:min-h-full overflow-y-auto md:border md:border-white/30 md:rounded-[60px] ">
+<div className="flex flex-col items-center justify-center min-h-[100dvh] md:min-h-full overflow-y-auto md:border md:border-white/30 md:rounded-[60px] ">
             <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto  ">
 
 
@@ -596,15 +596,15 @@ if (prompt.trim() && accessToken) {
  <div className="mx-auto md:hidden  flex flex-col items-center text-center mb-6 ">
   <img src="/LOGO.png" className="w-28 mx-auto" />
 
-            <p className="text-sm font-bold outfit-font">Welcome onboard!</p>
-              <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 outfit-font">getting your started now</p>
+            <p className="text-sm  font-outfit">Welcome onboard!</p>
+              <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 font-outfit">getting your started now</p>
 
             </div>
 
 
 
 
-<div className="flex flex-col justify-center h-full mt-0">
+<div className="flex flex-col justify-center h-full ">
 
 
   <div
@@ -620,10 +620,10 @@ if (prompt.trim() && accessToken) {
 <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  p-2">
                 
                 {/* 2️⃣ Photo upload UI */}
-                <div className=" border border-white/30 p-3 md:p-5 rounded-[44px] ">
+                <div className=" border border-white/30 p-3 md:p-5 md:rounded-[44px] rounded-[20px] ">
                 
 
-                  <div className="flex justify-center md:gap-4 gap-2">
+                  <div className="flex justify-center md:gap-4 gap-2 py-1">
                     {[0, 1, 2].map((i) => {
                       // Only show the slot if it's the first one OR the previous one is filled
                       const isVisible = i === 0 || !!photos[i - 1];
@@ -634,9 +634,9 @@ if (prompt.trim() && accessToken) {
                           key={i}
 className="
   relative 
-  w-[90px] sm:w-[110px] md:w-32 
+  w-[100px] sm:w-[110px] md:w-32 
   aspect-[2/3] md:aspect-[2/3] 
-  rounded-[1rem] md:rounded-[1.5rem]
+  rounded-[16px] md:rounded-[20px]
   border border-b-[3px] md:border-2 md:border-b-4 
   border-white/40 overflow-hidden 
   animate-in fade-in zoom-in duration-300
@@ -675,7 +675,7 @@ className="
                       );
                     })}
                   </div>
-                    <p className="text-white/50 text-sm text-center font-outfit mt-3">
+                    <p className="text-white/50 text-sm text-center font-outfit ">
                     Upload your niceeee pictures
                   </p>
                 </div>
@@ -761,7 +761,7 @@ className="
 
 
 {showGenderModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-end pr-80 ">
+  <div className="fixed inset-0 z-50 flex items-center justify-end pr-80  hidden md:flex">
 
     <div
       className="w-[90%] max-w-xs text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden "
@@ -836,6 +836,77 @@ className="
     </div>
   </div>
 )}
+
+{showGenderModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center md:hidden">
+
+    <div
+      className="w-[92%] max-w-sm text-white rounded-[2rem] p-5 relative overflow-hidden"
+      style={{
+        backgroundImage: "url('/assets/mb.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/15"></div>
+
+      <div className="relative z-10">
+        <h2 className="text-lg font-semibold">Select Gender</h2>
+        <p className="text-sm text-white/60 mb-5">
+          Gender is not visible on your profile
+        </p>
+
+        {/* GRID */}
+        <div className="grid grid-cols-2 gap-4">
+
+          {[
+            { label: "Female", value: "female", icon: "♀" },
+            { label: "Male", value: "male", icon: "♂" },
+            { label: "Non Binary", value: "nonbinary", icon: "⚧" },
+            { label: "Prefer not to say", value: "none", icon: "🙂" },
+          ].map((g) => (
+            <div
+              key={g.value}
+              onClick={() => setTempGender(g.value)}
+              className={`h-28 rounded-2xl flex flex-col items-center justify-center cursor-pointer border transition-all
+                ${
+                  tempGender === g.value
+                    ? "border-yellow-400"
+                    : "border-white/30"
+                }
+              `}
+            >
+              <span className="text-xl mb-2">{g.icon}</span>
+              <span className="text-sm text-center px-2 font-otomanopee">{g.label}</span>
+            </div>
+          ))}
+
+        </div>
+
+        {/* BUTTON */}
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => {
+              if (tempGender === "none") {
+                setGender(null);
+                setPreferNotToSay(true);
+              } else {
+                setGender(tempGender);
+                setPreferNotToSay(false);
+              }
+              setShowGenderModal(false);
+            }}
+            className="px-6 py-2 rounded-full border border-white/40 text-white/60 hover:bg-white/10 transition"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
+
   </div>
 
   {/* Preferred City */}
@@ -861,10 +932,10 @@ className="
 
 
   {showCityModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-end pr-28 pb-20 ">
+  <div className="fixed inset-0 z-50 flex items-center justify-end md:pr-40 md:pb-20 px-5 sm:px-0 ">
 
     <div
-      className="w-[90%] max-w-md text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
+      className="md:w-[90%] w-[100%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -951,7 +1022,7 @@ className="
   onClick={() => {
     if (validate()) setStep(2);
   }}
-  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-8 border border-b-[3px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
+  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-10 md:mt-8 border border-b-[3px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
 >
   Step 2/2: Add Prompt
 </button>
@@ -995,15 +1066,17 @@ className="
           <div className="flex flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
       {/* Right */}
 
-<div className="w-full max-w-lg  flex flex-col  p-4">
+<div className="w-full max-w-lg  flex flex-col  p-4 px-5">
 
 
 
 
-<div className="md:hidden  tetxt-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
- <div className="flex items-center gap-2  md:hidden font-outfit">
 
-       <p className="text-[10px] font-outfit text-white mt-1 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
+
+ <div className="flex flex-col items-center gap-2  md:hidden font-outfit px-3 ">
+  <h1 className="md:hidden  text-[14px] font-[family-name:var(--font-otomanopee)] text-start w-full ">Add Prompt</h1>
+
+       <p className="text-[10px] font-outfit text-white  leading-tight font-light font-[family-name:var(--font-otomanopee)] text-start w-full -mt-1">
   Prompts show up as your opener<br/>
   Say Literally anything, it can be changed anytime
 </p>
@@ -1012,10 +1085,10 @@ className="
 
             
           {/* Bordered wrapper — matches step 1 form border */}
-<div className="md:border md:border-white/30 md:block rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+<div className="md:border md:border-white/30 md:block md:rounded-[50px]  border-0 rounded-none py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden mt-3">
 
           {/* Prompt box */}
-    <div className="border border-white/30 rounded-[36px] p-10 text-white">
+    <div className="border border-white/30 md:rounded-[36px] rounded-[20px] md:p-10 p-6 text-white">
   <textarea
     value={prompt}
     onChange={(e) => {
@@ -1033,8 +1106,8 @@ className="
 
 
           {/* Suggestions */}
-          <div className="border border-white/30 mt-3 rounded-[40px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
-            <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
+          <div className="border border-white/30 mt-3 md:rounded-[40px]  rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
+            <div className="flex justify-between items-center text-white text-sm px-1 md:mt-4">
               <span className="opacity-90 text-[12px]">Suggestions</span>
               <button 
                 type="button" 
@@ -1060,10 +1133,8 @@ className="
             </div>
 
 <div
-  className="flex flex-wrap gap-2 content-start items-start mt-6 overflow-hidden"
-  style={{
-    maxHeight: "300px" // 👈 tweak this once, don’t overthink
-  }}
+  className="flex flex-wrap gap-2 content-start items-start md:mt-6 mt-3 overflow-hidden 
+             max-h-[265px] md:max-h-[300px]"
 >
               {suggestions.map((text, i) => {
                 const isLong = text.length > 25;
@@ -1082,7 +1153,7 @@ className="
     });
   }}
   className={`
-    border border-[2px]  border-white/40 border-b-[3px] rounded-xl px-4 md:py-4 py-3  text-xs transition
+    border md:border-[2px]  border-white/40 md:border-b-[4px] border-b-[3px] border-[1px] rounded-xl px-4 md:py-4 py-[13px]  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
@@ -1109,12 +1180,12 @@ className="
           </div>
 
           {/* Bottom actions */}
-  <div className="mt-auto  md:pt-8  mb-4 w-[90%]  mx-auto flex ">
+  <div className="mt-auto  md:pt-8 pt-6  mb-4 w-[90%]  mx-auto flex ">
             
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-2  mx-auto border-2 border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
+              className="flex-2  mx-auto border-2 border-b-4 border-white/40 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
             >
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>

@@ -210,7 +210,7 @@ export default function MeetSomeoneNew({
              <div className="relative w-full flex items-center justify-center">
   
   {/* LEFT BUTTON */}
-  <button className="absolute left-0 w-12 h-12 flex items-center justify-center text-white shadow-inner">
+  <div className="absolute left-0 w-12 h-12 flex items-center justify-center text-white shadow-inner">
              <Link href="/beam-tv">
                 <button className={clsx('relative', 'h-11', 'w-11', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
   
@@ -228,7 +228,7 @@ export default function MeetSomeoneNew({
 
 </button>
                 </Link>
-  </button>
+  </div>
 
 
 
@@ -264,13 +264,13 @@ export default function MeetSomeoneNew({
   </div>
 
   {/* RIGHT BUTTON */}
-  <button className="absolute right-0 w-12 h-12  flex items-center justify-center text-white ">
+  <div className="absolute right-0 w-12 h-12  flex items-center justify-center text-white ">
              <Link href="/cards">
   <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
     <img src="/hugeiconscards.svg" alt="cards"  />
   </button>
 </Link>
-  </button>
+  </div>
 
 </div>
 

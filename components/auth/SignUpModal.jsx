@@ -345,7 +345,7 @@ function SignUpModalContent({ isOpen, onClose }) {
             <div className="flex-1 flex flex-col justify-center px-4  ">
               {/* OPTIONS */}
               {step === "options" && (
-                <div className="flex flex-col gap-3  md:px-4 font-otomanopee mt-10" >
+                <div className="flex flex-col gap-3  md:px-4 font-otomanopee md:mt-10 mt-4" >
                   {/* Google Login */}
                   <Button
                     variant="outline2"

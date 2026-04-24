@@ -334,7 +334,7 @@ export default function MeetSomeoneDynamic() {
     void refreshSquadLobby();
     squadPollRef.current = setInterval(() => {
       void refreshSquadLobby();
-    }, 3000);
+    }, 1500);
     return () => {
       if (squadPollRef.current) {
         clearInterval(squadPollRef.current);
@@ -455,8 +455,6 @@ export default function MeetSomeoneDynamic() {
     if (mode !== 'squad' || squadLobby?.status !== 'IN_CALL') return;
     if (squadMeetBusy) return;
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) return;
-    // Host starts the call via the primary button; auto-join is for accepted guests (avoids duplicate enter + flicker).
-    if (myUserId && squadLobby?.inviterId && String(squadLobby.inviterId) === String(myUserId)) return;
 
     let cancelled = false;
     (async () => {
@@ -474,15 +472,7 @@ export default function MeetSomeoneDynamic() {
     return () => {
       cancelled = true;
     };
-  }, [
-    mode,
-    squadLobby?.status,
-    squadLobby?.inviterId,
-    myUserId,
-    squadMeetBusy,
-    applySquadEnterResponse,
-    refreshSquadLobby,
-  ]);
+  }, [mode, squadLobby?.status, squadMeetBusy, applySquadEnterResponse, refreshSquadLobby]);
 
   const handleSquadEnterCall = async () => {
     if (!canSquadMeet || squadMeetBusy) return;

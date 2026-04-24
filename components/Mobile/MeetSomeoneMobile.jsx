@@ -133,7 +133,7 @@ export default function MeetSomeoneMobile() {
             return;
         }
         void refreshSquadLobby();
-        squadPollRef.current = setInterval(() => void refreshSquadLobby(), 3000);
+        squadPollRef.current = setInterval(() => void refreshSquadLobby(), 1500);
         return () => {
             if (squadPollRef.current) {
                 clearInterval(squadPollRef.current);
@@ -234,7 +234,6 @@ export default function MeetSomeoneMobile() {
         if (mode !== 'squad' || squadLobby?.status !== 'IN_CALL') return;
         if (squadMeetBusy) return;
         if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) return;
-        if (myUserId && squadLobby?.inviterId && String(squadLobby.inviterId) === String(myUserId)) return;
 
         let cancelled = false;
         (async () => {
@@ -252,15 +251,7 @@ export default function MeetSomeoneMobile() {
         return () => {
             cancelled = true;
         };
-    }, [
-        mode,
-        squadLobby?.status,
-        squadLobby?.inviterId,
-        myUserId,
-        squadMeetBusy,
-        applySquadEnterResponse,
-        refreshSquadLobby,
-    ]);
+    }, [mode, squadLobby?.status, squadMeetBusy, applySquadEnterResponse, refreshSquadLobby]);
 
     const handleSquadEnterCall = async () => {
         if (!canSquadMeet || squadMeetBusy) return;

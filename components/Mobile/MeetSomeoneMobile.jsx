@@ -1,18 +1,20 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
+import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import clsx from 'clsx';
 
 export default function MeetSomeoneMobile() {
     const router = useRouter();
+    const pathname = usePathname();
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -25,6 +27,8 @@ export default function MeetSomeoneMobile() {
     const [squadLobby, setSquadLobby] = useState(null);
     const [squadMeetBusy, setSquadMeetBusy] = useState(false);
     const [squadShareBusy, setSquadShareBusy] = useState(false);
+    const [quickInviteFriends, setQuickInviteFriends] = useState([]);
+    const [quickInviteBusyId, setQuickInviteBusyId] = useState(null);
     const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
     const [squadProductMessage, setSquadProductMessage] = useState('');
     const [guestProfiles, setGuestProfiles] = useState({});
@@ -50,6 +54,10 @@ export default function MeetSomeoneMobile() {
         isInSquadLobby &&
         squadLobby?.status !== 'IN_CALL' &&
         squadLobby.memberIds.length >= 2;
+
+    /** Squad on home: slot under Share to whenever squad mode is on (lobby may still be loading). */
+    const squadHomeInviteMeetSlotActive =
+        mode === 'squad' && squadLobby?.status !== 'IN_CALL';
 
     const refreshSquadLobby = useCallback(async () => {
         try {
@@ -332,6 +340,59 @@ export default function MeetSomeoneMobile() {
         }
     };
 
+    const loadQuickInviteFriends = useCallback(async () => {
+        if (!squadHomeInviteMeetSlotActive || !myUserId) {
+            setQuickInviteFriends([]);
+            return;
+        }
+        try {
+            const data = await apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS);
+            const memberSet = new Set((squadLobby?.memberIds || []).filter(Boolean));
+            const raw = data.suggestions || data.peers || [];
+            const mapped = raw
+                .map((s) => {
+                    const id = s.userId || s.friendId || s.peerUserId || s.id;
+                    if (!id) return null;
+                    return {
+                        friendId: String(id),
+                        photoUrl: s.displayPictureUrl || s.photoUrl || '/assets/avatar1.png',
+                        username: s.username || 'Friend',
+                    };
+                })
+                .filter(Boolean)
+                .filter((x) => x.friendId !== String(myUserId) && !memberSet.has(x.friendId));
+            setQuickInviteFriends(mapped.slice(0, 3));
+        } catch {
+            setQuickInviteFriends([]);
+        }
+    }, [squadHomeInviteMeetSlotActive, myUserId, squadLobby?.memberIds]);
+
+    useEffect(() => {
+        if (mode !== 'squad') {
+            setQuickInviteFriends([]);
+            return;
+        }
+        void loadQuickInviteFriends();
+    }, [mode, pathname, loadQuickInviteFriends]);
+
+    const handleQuickSquadInvite = async (friendId) => {
+        if (!friendId || quickInviteBusyId) return;
+        setQuickInviteBusyId(friendId);
+        setSquadProductMessage('');
+        try {
+            await apiRequest(API.SQUAD.INVITE, {
+                method: 'POST',
+                body: JSON.stringify({ inviteeId: friendId }),
+            });
+            await refreshSquadLobby();
+            await loadQuickInviteFriends();
+        } catch (e) {
+            setSquadProductMessage(e?.message || 'Could not send invite');
+        } finally {
+            setQuickInviteBusyId(null);
+        }
+    };
+
     const getSquadInviteLink = useCallback(async () => {
         const res = await apiRequest(API.SQUAD.INVITE_EXTERNAL, { method: 'POST' });
         const link = String(res?.inviteLink || '').trim();
@@ -351,18 +412,18 @@ export default function MeetSomeoneMobile() {
                 const shareText = `Join my squad call on HMM: ${link}`;
                 if (channel === 'whatsapp') {
                     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
-                              return;
+                    return;
                 }
                 if (channel === 'copy') {
                     await navigator.clipboard.writeText(link);
-                              return;
+                    return;
                 }
                 if (navigator.share) {
                     await navigator.share({ text: shareText, url: link });
                     return;
                 }
                 await navigator.clipboard.writeText(link);
-                  } catch (e) {
+            } catch (e) {
                 setSquadProductMessage(e?.message || 'Could not share squad invite link');
             } finally {
                 setSquadShareBusy(false);
@@ -508,23 +569,28 @@ export default function MeetSomeoneMobile() {
                         </div>
                     </div>
                 ) : (
-                    /* ===== SQUAD VIEW ===== */
-                    <div className="relative w-full max-w-3xl text-center mt-auto mb-36 px-6">
+                    /* ===== SQUAD VIEW — upper: circles + Share (gap-6); bottom strip = same shell as solo "Bottom Controls" (pb-24 gap-6) ===== */
+                    <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-1 flex-col">
                         {squadProductMessage ? (
                             <div
                                 role="alert"
-                                className="mb-4 rounded-2xl border border-red-400/40 bg-red-950/45 px-4 py-3 text-left text-[13px] font-medium text-red-50"
+                                className="mx-6 mb-2 mt-2 shrink-0 rounded-2xl border border-red-400/40 bg-red-950/45 px-4 py-3 text-left text-[13px] font-medium text-red-50"
                             >
                                 {squadProductMessage}
                             </div>
                         ) : null}
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
+                        {/* justify-end: pull (circles+Share) toward Invite; gap-4 = space to Invite row */}
+                        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-end px-6 pb-1">
+                        <div className="flex w-full flex-col items-center gap-2">
+                        <div className="w-full shrink-0 pt-2 text-center">
+                        <div className="mb-3 flex items-center justify-between">
                             <button type="button" onClick={() => setSquadInviteOpen(true)} className="p-2 rounded-full border border-white/30 hover:bg-white/10">
                                 <img src="/assets/search-icon.svg" alt="" className="w-6 h-6" />
                             </button>
                             <img src="/assets/Vector.svg" alt="" className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center justify-center gap-2 mb-6 font-sans flex-wrap">
+                        <div className="flex flex-wrap items-center justify-center gap-2 font-sans">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="relative w-16 h-16 overflow-visible">
                                     <div className="w-full h-full rounded-full border border-white/30 overflow-hidden bg-white/5 relative">
@@ -549,8 +615,8 @@ export default function MeetSomeoneMobile() {
                             </div>
                             {squadGuestIds.map((guestId, i) => (
                                 <div key={`sg-${i}`} className="flex items-center gap-2">
-                                    <div className="mb-4">
-                                        <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-70" />
+                                    <div className="flex shrink-0 items-center self-center">
+                                        <img src="/assets/plus.png" alt="" className="h-4 w-4 opacity-70" />
                                     </div>
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="relative w-16 h-16 overflow-visible">
@@ -580,14 +646,16 @@ export default function MeetSomeoneMobile() {
                                 </div>
                             ))}
                         </div>
+                        </div>
 
-                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-2 font-sans">
-                            <span className="text-white/80 text-sm font-medium mr-2">Share to</span>
+                            <div className="inline-flex w-full shrink-0 flex-col items-center">
+                            <div className="inline-flex shrink-0 items-center gap-5 rounded-full border border-white/15 bg-[#0A032D]/45 px-6 py-3 font-sans backdrop-blur-sm">
+                            <span className="mr-1 text-sm font-medium text-white/80">Share to</span>
                             <button
                                 type="button"
                                 disabled={squadShareBusy}
                                 onClick={() => void shareSquadInvite('generic')}
-                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                                className="rounded-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
                             >
                                 <IoLogoSnapchat className="text-2xl" />
                             </button>
@@ -595,7 +663,7 @@ export default function MeetSomeoneMobile() {
                                 type="button"
                                 disabled={squadShareBusy}
                                 onClick={() => void shareSquadInvite('generic')}
-                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                                className="rounded-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
                             >
                                 <IoLogoInstagram className="text-2xl" />
                             </button>
@@ -603,7 +671,7 @@ export default function MeetSomeoneMobile() {
                                 type="button"
                                 disabled={squadShareBusy}
                                 onClick={() => void shareSquadInvite('whatsapp')}
-                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                                className="rounded-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
                             >
                                 <IoLogoWhatsapp className="text-2xl" />
                             </button>
@@ -611,35 +679,43 @@ export default function MeetSomeoneMobile() {
                                 type="button"
                                 disabled={squadShareBusy}
                                 onClick={() => void shareSquadInvite('copy')}
-                                className="hover:bg-white/10 p-2 rounded-full transition text-white disabled:opacity-50"
+                                className="rounded-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
                             >
                                 <IoCopyOutline className="text-2xl" />
                             </button>
+                            </div>
+                            </div>
+                        </div>
                         </div>
 
-                        {canSquadMeet && (
-                            <div className="mb-8 mt-6 flex justify-center">
-                                <button
-                                    type="button"
-                                    disabled={squadMeetBusy}
-                                    onClick={handleSquadEnterCall}
-                                    className="w-full bg-[#150030] border border-white/30 rounded-2xl py-5 flex items-center justify-center gap-3 active:scale-95 transition-transform disabled:opacity-60"
-                                >
-                                    <img src="/assets/video-off.svg" className="w-6 h-6 invert opacity-80" alt="Camera" />
-                                    <span className="text-lg font-bold tracking-wide">
-                                        {squadMeetBusy ? 'Starting...' : 'Meet Someone now'}
-                                    </span>
-                                </button>
+                        {squadHomeInviteMeetSlotActive && (quickInviteFriends.length > 0 || canSquadMeet) ? (
+                            {/* pb-*: space above tab bar — lower value moves Invite / Meet closer to bottom nav */}
+                            <div className="relative z-10 flex w-full shrink-0 flex-col gap-4 px-6 pb-24">
+                                {quickInviteFriends.length > 0 ? (
+                                    <SquadQuickInviteStrip
+                                        friends={quickInviteFriends}
+                                        busyId={quickInviteBusyId}
+                                        onInvite={(id) => void handleQuickSquadInvite(id)}
+                                        onSeeAll={() => setSquadInviteOpen(true)}
+                                        className="w-full"
+                                    />
+                                ) : null}
+                                {canSquadMeet ? (
+                                    <button
+                                        type="button"
+                                        disabled={squadMeetBusy}
+                                        onClick={handleSquadEnterCall}
+                                        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/30 bg-[#150030] py-5 transition-transform active:scale-95 disabled:opacity-60"
+                                    >
+                                        <img src="/assets/video-off.svg" className="h-6 w-6 invert opacity-80" alt="Camera" />
+                                        <span className="text-lg font-bold tracking-wide">
+                                            {squadMeetBusy ? 'Starting...' : 'Meet Someone now'}
+                                        </span>
+                                    </button>
+                                ) : null}
                             </div>
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={() => setSquadInviteOpen(true)}
-                            className="text-sm underline text-white/80 font-sans"
-                        >
-                            See all friends to invite
-                        </button>
+                        ) : null}
+                        </div>
                     </div>
                 )}
             </div>
@@ -676,7 +752,10 @@ export default function MeetSomeoneMobile() {
             <SquadInviteFriendsModal
                 open={squadInviteOpen}
                 onClose={() => setSquadInviteOpen(false)}
-                onInviteSent={() => void refreshSquadLobby()}
+                onInviteSent={() => {
+                    void refreshSquadLobby();
+                    void loadQuickInviteFriends();
+                }}
                 squadMemberIds={squadLobby?.memberIds || []}
             />
         </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import FilterButtons from '@/components/ui/FilterButtons';
@@ -23,6 +23,7 @@ import CoinModal from '@/components/modals/CoinModal';
 import MeetSomeoneNew from './MeetSomeoneNew';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
+import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import Link from 'next/link';
 import Skeleton from '@/components/ui/Skeleton';
 import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
@@ -32,6 +33,7 @@ import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
 
 export default function MeetSomeoneDynamic() {
   const router = useRouter();
+  const pathname = usePathname();
   const flowLog = (...args) => console.log('[RaincheckFlow][home]', ...args);
   const [currentCard, setCurrentCard] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -47,6 +49,8 @@ export default function MeetSomeoneDynamic() {
   const [squadLobby, setSquadLobby] = useState(null);
   const [squadMeetBusy, setSquadMeetBusy] = useState(false);
   const [squadShareBusy, setSquadShareBusy] = useState(false);
+  const [quickInviteFriends, setQuickInviteFriends] = useState([]);
+  const [quickInviteBusyId, setQuickInviteBusyId] = useState(null);
   const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
   const [squadProductMessage, setSquadProductMessage] = useState('');
   const [guestProfiles, setGuestProfiles] = useState({});
@@ -323,6 +327,13 @@ export default function MeetSomeoneDynamic() {
     squadLobby?.status !== 'IN_CALL' &&
     squadLobby.memberIds.length >= 2;
 
+  /**
+   * Homepage squad UI: show Meet / Invite slot under "Share to" whenever user is in squad mode
+   * on `/` (not only after lobby membership resolves). Meet CTA still requires 2+ members.
+   */
+  const squadHomeInviteMeetSlotActive =
+    mode === 'squad' && squadLobby?.status !== 'IN_CALL';
+
   const refreshSquadLobby = useCallback(async () => {
     try {
       const m = await apiRequest(API.SQUAD.LOBBY_MEMBERSHIP);
@@ -593,6 +604,59 @@ export default function MeetSomeoneDynamic() {
     },
     [getSquadInviteLink, squadShareBusy]
   );
+
+  const loadQuickInviteFriends = useCallback(async () => {
+    if (!squadHomeInviteMeetSlotActive || !myUserId) {
+      setQuickInviteFriends([]);
+      return;
+    }
+    try {
+      const data = await apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS);
+      const memberSet = new Set((squadLobby?.memberIds || []).filter(Boolean));
+      const raw = data.suggestions || data.peers || [];
+      const mapped = raw
+        .map((s) => {
+          const id = s.userId || s.friendId || s.peerUserId || s.id;
+          if (!id) return null;
+          return {
+            friendId: String(id),
+            photoUrl: s.displayPictureUrl || s.photoUrl || '/assets/avatar1.png',
+            username: s.username || 'Friend',
+          };
+        })
+        .filter(Boolean)
+        .filter((x) => x.friendId !== String(myUserId) && !memberSet.has(x.friendId));
+      setQuickInviteFriends(mapped.slice(0, 3));
+    } catch {
+      setQuickInviteFriends([]);
+    }
+  }, [squadHomeInviteMeetSlotActive, myUserId, squadLobby?.memberIds]);
+
+  useEffect(() => {
+    if (mode !== 'squad') {
+      setQuickInviteFriends([]);
+      return;
+    }
+    void loadQuickInviteFriends();
+  }, [mode, pathname, loadQuickInviteFriends]);
+
+  const handleQuickSquadInvite = async (friendId) => {
+    if (!friendId || quickInviteBusyId) return;
+    setQuickInviteBusyId(friendId);
+    setSquadProductMessage('');
+    try {
+      await apiRequest(API.SQUAD.INVITE, {
+        method: 'POST',
+        body: JSON.stringify({ inviteeId: friendId }),
+      });
+      await refreshSquadLobby();
+      await loadQuickInviteFriends();
+    } catch (e) {
+      setSquadProductMessage(e?.message || 'Could not send invite');
+    } finally {
+      setQuickInviteBusyId(null);
+    }
+  };
 
   const fetchMyProfile = async () => {
     try {
@@ -1610,8 +1674,22 @@ export default function MeetSomeoneDynamic() {
               )}
             </div>
           ) : (
-            /* SQUAD VIEW */
-            <div className={clsx('relative', 'z-10', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}>
+            /* SQUAD VIEW — stack gap-6 + justify-end (widgets sit low, near bottom bar); Invite/Meet w-[79%] + mt-40 when sole CTA like solo */
+            <div
+              className={clsx(
+                'relative',
+                'z-10',
+                'flex',
+                'h-full',
+                'min-h-0',
+                'w-full',
+                'flex-col',
+                'items-center',
+                'overflow-y-auto',
+                'overflow-x-hidden',
+                'overscroll-y-contain',
+              )}
+            >
 
               {/* Video background for squad mode */}
               <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl')}>
@@ -1620,15 +1698,32 @@ export default function MeetSomeoneDynamic() {
 
               </div>
 
-              {/* Squad UI overlay */}
-              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-4xl', 'text-center', 'justify-center', 'mt-4', 'md:mt-10', 'px-2')}>
+              <div
+                className={clsx(
+                  'relative',
+                  'z-10',
+                  'flex',
+                  'h-full',
+                  'min-h-0',
+                  'w-full',
+                  'flex-col',
+                  'items-center',
+                  /* Reserve space above fixed bottom bar — increase pb-* to push squad widgets up; decrease to sit lower (avoid overlap) */
+                  'pb-36',
+                  'md:pb-40',
+                  'px-2',
+                )}
+              >
                 {squadProductMessage ? (
                   <div
                     role="alert"
                     className={clsx(
                       'mx-auto',
-                      'mb-4',
+                      'mb-2',
+                      'mt-4',
+                      'w-full',
                       'max-w-lg',
+                      'shrink-0',
                       'rounded-2xl',
                       'border',
                       'border-red-400/40',
@@ -1644,7 +1739,25 @@ export default function MeetSomeoneDynamic() {
                     {squadProductMessage}
                   </div>
                 ) : null}
-                <div className={clsx('flex', 'items-center', 'justify-center', 'gap-2', 'md:gap-4', 'mb-6', 'md:mb-8', 'font-sans', 'flex-wrap')}>
+
+                {/*
+                  Squad stack vertical position:
+                  - justify-end → pack widgets toward the bottom bar (circles + Share sit closer to Invite).
+                  - justify-center → vertically centered in the panel (previous behavior).
+                  - gap-4 → space between the (circles+Share) group and Invite/Meet; tune here vs inner group.
+                  - Inner group: circles + Share use gap-2 (tight) — edit that wrapper to change circles↔Share only.
+                  - Parent pb-36/md:pb-40 → clearance above the fixed Solo/Squad bar.
+                */}
+                <div
+                  className={clsx(
+                    'relative z-10 flex w-full max-w-4xl flex-1 flex-col items-center justify-end gap-4 pb-3 text-center',
+                    'min-h-0',
+                  )}
+                >
+                {/* Circles + Share: one column, small gap so the two stacks read as one unit above Invite */}
+                <div className={clsx('flex w-full shrink-0 flex-col items-center gap-2 text-center md:gap-2.5')}>
+                <div className={clsx('w-full shrink-0 text-center')}>
+                <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-4')}>
                   {/* Me */}
                   <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
                     <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
@@ -1686,7 +1799,7 @@ export default function MeetSomeoneDynamic() {
                   </div>
                   {squadGuestIds.map((guestId, i) => (
                     <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
-                      <div className="mb-6 md:mb-8">
+                      <div className={clsx('flex shrink-0 items-center self-center')}>
                         <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
                       </div>
                       <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
@@ -1736,63 +1849,90 @@ export default function MeetSomeoneDynamic() {
                     </div>
                   ))}
                 </div>
+                </div>
 
-              {/* Share */}
-              <div className={clsx('inline-flex', 'items-center', 'gap-4', 'bg-[#0A032D]/40', 'rounded-full', 'px-10', 'py-3', 'mb-2', 'font-sans')}>
-                <span className={clsx('text-white/80', 'text-sm', 'font-medium', 'mr-2')}>Share to</span>
-
-                 <button
-                  type="button"
-                  disabled={squadShareBusy}
-                  onClick={() => void shareSquadInvite('generic')}
-                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                >
-                  <img src="/shareicon4.png" className={clsx('w-6', 'h-6')} />
-                </button>
-                 <button
-                  type="button"
-                  disabled={squadShareBusy}
-                  onClick={() => void shareSquadInvite('generic')}
-                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                >
-                  <img src="/shareicon2.png" className={clsx('w-6', 'h-6')} />
-                </button>
-                <button
-                  type="button"
-                  disabled={squadShareBusy}
-                  onClick={() => void shareSquadInvite('whatsapp')}
-                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                >
-                  <img src="/shareicon1.png" className={clsx('w-6', 'h-6')} />
-                </button>
-               
-                <button
-                  type="button"
-                  disabled={squadShareBusy}
-                  onClick={() => void shareSquadInvite('copy')}
-                  className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                >
-                  <img src="/shareicon3.png" className={clsx('w-6', 'h-6')} />
-                </button>
-               
-              </div>
-
-                {canSquadMeet && (
-                  <div className="mb-8 mt-8 flex justify-center px-4">
-                    <MeetNowButton
-                      onClick={handleSquadEnterCall}
-                      isSearching={squadMeetBusy}
-                      searchingText="Starting..."
-                      text="Meet Someone now"
-                      className="w-[79%] h-30"
-                      isVideoOn
-                    />
+                <div className={clsx('flex w-full shrink-0 flex-col items-center')}>
+                  <div
+                    className={clsx(
+                      'inline-flex',
+                      'shrink-0',
+                      'items-center',
+                      'gap-5',
+                      'rounded-full',
+                      'border',
+                      'border-white/15',
+                      'bg-[#0A032D]/45',
+                      'px-8',
+                      'py-2.5',
+                      'font-sans',
+                      'backdrop-blur-sm',
+                      'md:gap-6',
+                      'md:px-10',
+                      'md:py-3',
+                    )}
+                  >
+                    <span className={clsx('text-white/80', 'text-sm', 'font-medium', 'mr-1')}>Share to</span>
+                    <button
+                      type="button"
+                      disabled={squadShareBusy}
+                      onClick={() => void shareSquadInvite('generic')}
+                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                    >
+                      <img src="/shareicon4.png" className={clsx('w-6', 'h-6')} alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={squadShareBusy}
+                      onClick={() => void shareSquadInvite('generic')}
+                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                    >
+                      <img src="/shareicon2.png" className={clsx('w-6', 'h-6')} alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={squadShareBusy}
+                      onClick={() => void shareSquadInvite('whatsapp')}
+                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                    >
+                      <img src="/shareicon1.png" className={clsx('w-6', 'h-6')} alt="" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={squadShareBusy}
+                      onClick={() => void shareSquadInvite('copy')}
+                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                    >
+                      <img src="/shareicon3.png" className={clsx('w-6', 'h-6')} alt="" />
+                    </button>
                   </div>
-                )}
+                </div>
+                </div>
 
-           
-
-              </div> {/* end squad UI overlay */}
+                {/* Bottom CTAs: Invite = solo MeetNow row; Meet = solo Filter row. mt-40 only when that widget is the sole CTA (matches solo); both shown → gap-6 only between them. */}
+                {squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
+                  <SquadQuickInviteStrip
+                    friends={quickInviteFriends}
+                    busyId={quickInviteBusyId}
+                    onInvite={(id) => void handleQuickSquadInvite(id)}
+                    onSeeAll={() => setSquadInviteOpen(true)}
+                    className={clsx('w-[79%]', !canSquadMeet && 'mt-40')}
+                  />
+                ) : null}
+                {squadHomeInviteMeetSlotActive && canSquadMeet ? (
+                  <MeetNowButton
+                    onClick={handleSquadEnterCall}
+                    isSearching={squadMeetBusy}
+                    searchingText="Starting..."
+                    text="Meet Someone now"
+                    className={clsx(
+                      'h-30 w-[79%]',
+                      quickInviteFriends.length === 0 ? 'mt-40' : '',
+                    )}
+                    isVideoOn
+                  />
+                ) : null}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1907,7 +2047,10 @@ export default function MeetSomeoneDynamic() {
       <SquadInviteFriendsModal
         open={squadInviteOpen}
         onClose={() => setSquadInviteOpen(false)}
-        onInviteSent={() => void refreshSquadLobby()}
+        onInviteSent={() => {
+          void refreshSquadLobby();
+          void loadQuickInviteFriends();
+        }}
         squadMemberIds={squadLobby?.memberIds || []}
       />
     </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { recordSquadCallPeersAsync, recordSquadCallPeersKeepalive } from '@/lib/squad-quick-invite-backend';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import clsx from 'clsx';
 import FaceCard from '@/components/Home/FaceCard';
@@ -124,6 +125,8 @@ function VideoChatContent() {
   const consumerIdsByUserRef = useRef({});
   const callRoleRefreshTimerRef = useRef(null);
   const roomInfoRef = useRef(null);
+  /** Dedupe POST /squad/me/quick-invite/record-call-peers per roomId on leave (StrictMode / double callbacks). */
+  const squadQuickInvitePeersPostedRoomIdRef = useRef(null);
   const userIdRef = useRef(null);
   const partnerInfoRef = useRef(null);
   const remoteStreamsRef = useRef([]);
@@ -433,6 +436,7 @@ function VideoChatContent() {
       console.log('[Init] Starting media and signaling with room:', info.roomId, 'user:', uid);
       userIdRef.current = uid;
       roomInfoRef.current = info;
+      squadQuickInvitePeersPostedRoomIdRef.current = null;
       setRoomInfo(info);
       if (info.partner) {
         const pInfo = {
@@ -637,6 +641,35 @@ function VideoChatContent() {
     return () => clearInterval(intervalId);
   }, [status]);
 
+  function tryRecordSquadQuickInvitePeersOnLeaveKeepalive() {
+    const info = roomInfoRef.current;
+    const uid = userIdRef.current;
+    if (!info?.roomId || info.callType !== 'squad' || !uid) return;
+    if (squadQuickInvitePeersPostedRoomIdRef.current === info.roomId) return;
+    const ids = Array.isArray(info.memberIds) ? info.memberIds : [];
+    const peers = ids.filter((id) => id && String(id) !== String(uid));
+    if (!peers.length) return;
+    squadQuickInvitePeersPostedRoomIdRef.current = info.roomId;
+    recordSquadCallPeersKeepalive(info, uid);
+  }
+
+  async function tryRecordSquadQuickInvitePeersOnLeaveAsync() {
+    const info = roomInfoRef.current;
+    const uid = userIdRef.current;
+    if (!info?.roomId || info.callType !== 'squad' || !uid) return;
+    if (squadQuickInvitePeersPostedRoomIdRef.current === info.roomId) return;
+    const ids = Array.isArray(info.memberIds) ? info.memberIds : [];
+    const peers = ids.filter((id) => id && String(id) !== String(uid));
+    if (!peers.length) return;
+    squadQuickInvitePeersPostedRoomIdRef.current = info.roomId;
+    try {
+      await recordSquadCallPeersAsync(info, uid);
+    } catch (e) {
+      console.warn('[SquadQuickInvite] record-call-peers failed', e);
+      squadQuickInvitePeersPostedRoomIdRef.current = null;
+    }
+  }
+
   function leaveRoomAndSetOnline(nextStatus = 'ONLINE') {
     try {
       const token = localStorage.getItem('accessToken');
@@ -650,6 +683,8 @@ function VideoChatContent() {
           userIdRef.current = userId;
         } catch (_) {}
       }
+
+      tryRecordSquadQuickInvitePeersOnLeaveKeepalive();
 
       const roomId = roomInfoRef.current?.roomId;
       if (roomId && userId) {
@@ -682,6 +717,8 @@ function VideoChatContent() {
           userIdRef.current = userId;
         } catch (_) {}
       }
+
+      await tryRecordSquadQuickInvitePeersOnLeaveAsync();
 
       const roomId = roomInfoRef.current?.roomId;
       if (roomId && userId) {

@@ -5,7 +5,6 @@ import Image from 'next/image';
 import clsx from 'clsx';
 import { FaArrowLeftLong } from 'react-icons/fa6';
 import { API, apiRequest } from '@/lib/api';
-
 export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, squadMemberIds = [] }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);

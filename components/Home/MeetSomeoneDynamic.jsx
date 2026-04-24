@@ -8,7 +8,7 @@ import FilterButtons from '@/components/ui/FilterButtons';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
-import { IoLogOutOutline, IoClose, IoVideocam } from 'react-icons/io5';
+import { IoLogOutOutline, IoClose } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import FaceCard4 from './FaceCard4';
@@ -46,6 +46,7 @@ export default function MeetSomeoneDynamic() {
   const [squadInviteOpen, setSquadInviteOpen] = useState(false);
   const [squadLobby, setSquadLobby] = useState(null);
   const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+  const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
   const [squadProductMessage, setSquadProductMessage] = useState('');
   const [guestProfiles, setGuestProfiles] = useState({});
   const [isSearching, setIsSearching] = useState(false);
@@ -100,15 +101,35 @@ export default function MeetSomeoneDynamic() {
           // unreadCount reflects anything "new" (unread messages or pending requests)
           // We sum totalUnreadMessages (inbox + requests) and pendingFriendRequests.
           const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
-          setUnreadCount(count);
+          setUnreadCount((prev) => (prev === count ? prev : count));
         }
       } catch (e) {
         // fail silently
       }
     };
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchNotifications, 5000);
+    const onFocus = () => void fetchNotifications();
+    const onVisible = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void fetchNotifications();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onFocus);
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisible);
+    }
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onFocus);
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisible);
+      }
+    };
   }, []);
 
 
@@ -490,6 +511,46 @@ export default function MeetSomeoneDynamic() {
       }
     } finally {
       setSquadMeetBusy(false);
+    }
+  };
+
+  const handleRemoveSquadMember = async (memberId) => {
+    if (!memberId || squadMemberActionBusyId) return;
+    setSquadMemberActionBusyId(memberId);
+    setSquadProductMessage('');
+    try {
+      await apiRequest(API.SQUAD.REMOVE_MEMBER, {
+        method: 'POST',
+        body: JSON.stringify({ memberId }),
+      });
+      await refreshSquadLobby();
+    } catch (e) {
+      setSquadProductMessage(e?.message || 'Could not remove member');
+    } finally {
+      setSquadMemberActionBusyId(null);
+    }
+  };
+
+  const handleLeaveSquadSelf = async () => {
+    if (!myUserId || squadMemberActionBusyId) return;
+    setSquadMemberActionBusyId(myUserId);
+    setSquadProductMessage('');
+    try {
+      const isHost = String(squadLobby?.inviterId || '') === String(myUserId);
+      if (isHost) {
+        await apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' });
+        setMode('solo');
+      } else {
+        await apiRequest(API.SQUAD.REMOVE_MEMBER, {
+          method: 'POST',
+          body: JSON.stringify({ memberId: myUserId }),
+        });
+      }
+      await refreshSquadLobby();
+    } catch (e) {
+      setSquadProductMessage(e?.message || 'Could not leave squad');
+    } finally {
+      setSquadMemberActionBusyId(null);
     }
   };
 
@@ -1520,7 +1581,7 @@ export default function MeetSomeoneDynamic() {
               </div>
 
               {/* Squad UI overlay */}
-              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-4xl', 'text-center', 'justify-center', 'mt-12', 'md:mt-20', 'px-2')}>
+              <div className={clsx('relative', 'z-10', 'w-full', 'max-w-4xl', 'text-center', 'justify-center', 'mt-4', 'md:mt-10', 'px-2')}>
                 {squadProductMessage ? (
                   <div
                     role="alert"
@@ -1543,12 +1604,42 @@ export default function MeetSomeoneDynamic() {
                     {squadProductMessage}
                   </div>
                 ) : null}
-                <div className={clsx('flex', 'items-center', 'justify-center', 'gap-2', 'md:gap-4', 'mb-8', 'md:mb-10', 'font-sans', 'flex-wrap')}>
+                <div className={clsx('flex', 'items-center', 'justify-center', 'gap-2', 'md:gap-4', 'mb-6', 'md:mb-8', 'font-sans', 'flex-wrap')}>
                   {/* Me */}
                   <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
                     <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                      <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                        <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
+                      <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                        <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                          <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
+                        </div>
+                        <button
+                          type="button"
+                          disabled={squadMemberActionBusyId === myUserId}
+                          onClick={handleLeaveSquadSelf}
+                          className={clsx(
+                            'absolute',
+                            '-top-2',
+                            '-right-2',
+                            'z-20',
+                            'w-6',
+                            'h-6',
+                            'rounded-full',
+                            'bg-red-600',
+                            'border',
+                            'border-white/90',
+                            'text-white',
+                            'text-[10px]',
+                            'font-bold',
+                            'flex',
+                            'items-center',
+                            'justify-center',
+                            'shadow-md',
+                            'disabled:opacity-40'
+                          )}
+                          title="Leave squad"
+                        >
+                          x
+                        </button>
                       </div>
                       <span className="text-xs">Me</span>
                     </div>
@@ -1559,14 +1650,46 @@ export default function MeetSomeoneDynamic() {
                         <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
                       </div>
                       <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                        <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                          {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
-                            <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
-                          ) : guestId ? (
-                            <span className="text-xl md:text-3xl text-white/60">…</span>
-                          ) : (
-                            <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
-                          )}
+                        <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                          <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                            {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
+                              <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
+                            ) : guestId ? (
+                              <span className="text-xl md:text-3xl text-white/60">…</span>
+                            ) : (
+                              <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
+                            )}
+                          </div>
+                          {guestId ? (
+                            <button
+                              type="button"
+                              disabled={squadMemberActionBusyId === guestId}
+                              onClick={() => handleRemoveSquadMember(guestId)}
+                              className={clsx(
+                                'absolute',
+                                '-top-2',
+                                '-right-2',
+                                'z-20',
+                                'w-6',
+                                'h-6',
+                                'rounded-full',
+                                'bg-red-600',
+                                'border',
+                                'border-white/90',
+                                'text-white',
+                                'text-[10px]',
+                                'font-bold',
+                                'flex',
+                                'items-center',
+                                'justify-center',
+                                'shadow-md',
+                                'disabled:opacity-40'
+                              )}
+                              title="Remove from squad"
+                            >
+                              x
+                            </button>
+                          ) : null}
                         </div>
                         <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
                       </div>
@@ -1574,26 +1697,8 @@ export default function MeetSomeoneDynamic() {
                   ))}
                 </div>
 
-                {canSquadMeet && (
-                  <div className="mb-6 flex justify-center px-4">
-                    <button
-                      type="button"
-                      disabled={squadMeetBusy}
-                      onClick={handleSquadEnterCall}
-                      className={clsx(
-                        'flex items-center justify-center gap-2 rounded-2xl px-6 py-3 md:px-10 md:py-4',
-                        'bg-gradient-to-r from-fuchsia-600 to-violet-700 border border-white/30 text-white font-semibold text-sm md:text-base',
-                        'hover:opacity-95 active:scale-[0.98] transition shadow-lg disabled:opacity-50'
-                      )}
-                    >
-                      <IoVideocam className="text-xl" />
-                      {squadMeetBusy ? 'Starting…' : 'Meet someone rn'}
-                    </button>
-                  </div>
-                )}
-
               {/* Share */}
-              <div className={clsx('inline-flex', 'items-center', 'gap-4', 'bg-[#0A032D]/40', 'rounded-full', 'px-10', 'py-3', 'mb-8', 'font-sans')}>
+              <div className={clsx('inline-flex', 'items-center', 'gap-4', 'bg-[#0A032D]/40', 'rounded-full', 'px-10', 'py-3', 'mb-2', 'font-sans')}>
                 <span className={clsx('text-white/80', 'text-sm', 'font-medium', 'mr-2')}>Share to</span>
 
                  <button className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white')}>
@@ -1611,6 +1716,19 @@ export default function MeetSomeoneDynamic() {
                 </button>
                
               </div>
+
+                {canSquadMeet && (
+                  <div className="mb-8 mt-8 flex justify-center px-4">
+                    <MeetNowButton
+                      onClick={handleSquadEnterCall}
+                      isSearching={squadMeetBusy}
+                      searchingText="Starting..."
+                      text="Meet Someone now"
+                      className="w-[79%] h-30"
+                      isVideoOn
+                    />
+                  </div>
+                )}
 
            
 
@@ -1730,6 +1848,7 @@ export default function MeetSomeoneDynamic() {
         open={squadInviteOpen}
         onClose={() => setSquadInviteOpen(false)}
         onInviteSent={() => void refreshSquadLobby()}
+        squadMemberIds={squadLobby?.memberIds || []}
       />
     </div>
   );

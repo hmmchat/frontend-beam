@@ -6,12 +6,13 @@ import clsx from 'clsx';
 import { FaArrowLeftLong } from 'react-icons/fa6';
 import { API, apiRequest } from '@/lib/api';
 
-export default function SquadInviteFriendsModal({ open, onClose, onInviteSent }) {
+export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, squadMemberIds = [] }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [sentIds, setSentIds] = useState(() => new Set());
+  const [pendingInviteeIds, setPendingInviteeIds] = useState(() => new Set());
   const [inviteProductMessage, setInviteProductMessage] = useState('');
 
   const loadFriends = useCallback(async () => {
@@ -52,7 +53,21 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent })
   useEffect(() => {
     if (!open) return;
     setInviteProductMessage('');
-    loadFriends();
+    const loadPending = async () => {
+      try {
+        const r = await apiRequest(API.SQUAD.PENDING_INVITATIONS_LOBBY);
+        const ids = new Set(
+          (r?.invitations || [])
+            .map((x) => x?.inviteeId)
+            .filter(Boolean)
+        );
+        setPendingInviteeIds(ids);
+      } catch {
+        setPendingInviteeIds(new Set());
+      }
+    };
+    void loadFriends();
+    void loadPending();
   }, [open, loadFriends]);
 
   const filtered = useMemo(() => {
@@ -74,9 +89,36 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent })
         body: JSON.stringify({ inviteeId: friendId }),
       });
       setSentIds((prev) => new Set([...prev, friendId]));
+      setPendingInviteeIds((prev) => new Set([...prev, friendId]));
       onInviteSent?.(friendId);
     } catch (e) {
       setInviteProductMessage(e?.message || 'Could not send invite');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const cancelInvite = async (friendId) => {
+    setBusyId(friendId);
+    setInviteProductMessage('');
+    try {
+      await apiRequest(API.SQUAD.CANCEL_INVITATION, {
+        method: 'POST',
+        body: JSON.stringify({ inviteeId: friendId }),
+      });
+      setPendingInviteeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
+        return next;
+      });
+      setSentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
+        return next;
+      });
+      onInviteSent?.(friendId);
+    } catch (e) {
+      setInviteProductMessage(e?.message || 'Could not cancel invite');
     } finally {
       setBusyId(null);
     }
@@ -139,8 +181,9 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent })
           ) : (
             <ul className="divide-y divide-white/10 border border-white/10 rounded-2xl overflow-hidden mx-2">
               {filtered.map((f) => {
-                const sent = sentIds.has(f.friendId);
+                const sent = sentIds.has(f.friendId) || pendingInviteeIds.has(f.friendId);
                 const busy = busyId === f.friendId;
+                const alreadyInSquad = squadMemberIds.includes(f.friendId);
                 return (
                   <li
                     key={f.friendId}
@@ -152,11 +195,13 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent })
                     <span className="flex-1 text-sm font-medium truncate">{f.username}</span>
                     <button
                       type="button"
-                      disabled={sent || busy}
-                      onClick={() => invite(f.friendId)}
+                      disabled={busy || alreadyInSquad}
+                      onClick={() => (sent ? cancelInvite(f.friendId) : invite(f.friendId))}
                       className={clsx(
                         'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition',
-                        sent
+                        alreadyInSquad
+                          ? 'bg-white/10 text-white/60 border border-white/20 cursor-not-allowed'
+                          : sent
                           ? 'bg-yellow-400 text-black'
                           : 'bg-white/15 hover:bg-white/25 border border-white/30'
                       )}
@@ -164,12 +209,16 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent })
                       <span
                         className={clsx(
                           'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
-                          sent ? 'bg-black/20' : 'bg-white text-purple-900'
+                          alreadyInSquad
+                            ? 'bg-white/10 text-white/70'
+                            : sent
+                            ? 'bg-black/20'
+                            : 'bg-white text-purple-900'
                         )}
                       >
-                        {sent ? '✓' : '+'}
+                        {alreadyInSquad ? '•' : sent ? 'x' : '+'}
                       </span>
-                      {sent ? 'Sent' : busy ? '…' : 'Invite'}
+                      {alreadyInSquad ? 'In squad' : sent ? (busy ? '…' : 'Cancel invite now') : busy ? '…' : 'Invite'}
                     </button>
                   </li>
                 );

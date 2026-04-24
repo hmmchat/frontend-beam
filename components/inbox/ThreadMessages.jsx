@@ -52,6 +52,7 @@ export default function ThreadMessages({
   loading,
   loadOlderThreadMessages,
   onSquadInviteResponse,
+  activePendingSquadInvitationIds,
 }) {
   const [squadBusyId, setSquadBusyId] = useState(null);
 
@@ -105,7 +106,8 @@ export default function ThreadMessages({
             const squadMeta = parseSquadMeta(message.squadMeta);
             const squadInviteResolved =
               squadMeta?.invitationId &&
-              terminalSquadInvitationIds.has(String(squadMeta.invitationId));
+              (terminalSquadInvitationIds.has(String(squadMeta.invitationId)) ||
+                !activePendingSquadInvitationIds?.has(String(squadMeta.invitationId)));
             const isGif =
               message.messageType === "GIF" ||
               message.messageType === "GIF_WITH_MESSAGE" ||

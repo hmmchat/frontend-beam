@@ -7,7 +7,7 @@ import SignUpModal from '@/components/auth/SignUpModal';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
-import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline, IoVideocam } from 'react-icons/io5';
+import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import clsx from 'clsx';
 
@@ -24,6 +24,7 @@ export default function MeetSomeoneMobile() {
     const [squadInviteOpen, setSquadInviteOpen] = useState(false);
     const [squadLobby, setSquadLobby] = useState(null);
     const [squadMeetBusy, setSquadMeetBusy] = useState(false);
+    const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
     const [squadProductMessage, setSquadProductMessage] = useState('');
     const [guestProfiles, setGuestProfiles] = useState({});
     const prevModeSquadRef = useRef(mode);
@@ -81,7 +82,7 @@ export default function MeetSomeoneMobile() {
                 const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
                 if (notifRes) {
                     const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
-                    setUnreadCount(count);
+                    setUnreadCount((prev) => (prev === count ? prev : count));
                 }
             } catch (e) {
                 // silent failure
@@ -91,10 +92,28 @@ export default function MeetSomeoneMobile() {
         fetchMetrics();
         fetchNotifications();
         const metricsInterval = setInterval(fetchMetrics, 15000);
-        const notifInterval = setInterval(fetchNotifications, 10000);
+        const notifInterval = setInterval(fetchNotifications, 5000);
+        const onFocus = () => void fetchNotifications();
+        const onVisible = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                void fetchNotifications();
+            }
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('focus', onFocus);
+        }
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisible);
+        }
         return () => {
             clearInterval(metricsInterval);
             clearInterval(notifInterval);
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('focus', onFocus);
+            }
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisible);
+            }
         };
     }, []);
 
@@ -272,6 +291,46 @@ export default function MeetSomeoneMobile() {
         }
     };
 
+    const handleRemoveSquadMember = async (memberId) => {
+        if (!memberId || squadMemberActionBusyId) return;
+        setSquadMemberActionBusyId(memberId);
+        setSquadProductMessage('');
+        try {
+            await apiRequest(API.SQUAD.REMOVE_MEMBER, {
+                method: 'POST',
+                body: JSON.stringify({ memberId }),
+            });
+            await refreshSquadLobby();
+        } catch (e) {
+            setSquadProductMessage(e?.message || 'Could not remove member');
+        } finally {
+            setSquadMemberActionBusyId(null);
+        }
+    };
+
+    const handleLeaveSquadSelf = async () => {
+        if (!myUserId || squadMemberActionBusyId) return;
+        setSquadMemberActionBusyId(myUserId);
+        setSquadProductMessage('');
+        try {
+            const isHost = String(squadLobby?.inviterId || '') === String(myUserId);
+            if (isHost) {
+                await apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' });
+                setMode('solo');
+            } else {
+                await apiRequest(API.SQUAD.REMOVE_MEMBER, {
+                    method: 'POST',
+                    body: JSON.stringify({ memberId: myUserId }),
+                });
+            }
+            await refreshSquadLobby();
+        } catch (e) {
+            setSquadProductMessage(e?.message || 'Could not leave squad');
+        } finally {
+            setSquadMemberActionBusyId(null);
+        }
+    };
+
     return (
         <div className="relative min-h-screen w-full overflow-hidden font-sans text-white flex flex-col font-[family-name:var(--font-otomanopee)]">
 
@@ -410,7 +469,7 @@ export default function MeetSomeoneMobile() {
                     </div>
                 ) : (
                     /* ===== SQUAD VIEW ===== */
-                    <div className="relative w-full max-w-3xl text-center mt-auto mb-30 px-6">
+                    <div className="relative w-full max-w-3xl text-center mt-auto mb-36 px-6">
                         {squadProductMessage ? (
                             <div
                                 role="alert"
@@ -425,15 +484,26 @@ export default function MeetSomeoneMobile() {
                             </button>
                             <img src="/assets/Vector.svg" alt="" className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center justify-center gap-2 mb-8 font-sans flex-wrap">
+                        <div className="flex items-center justify-center gap-2 mb-6 font-sans flex-wrap">
                             <div className="flex flex-col items-center gap-2">
-                                <div className="relative w-16 h-16 rounded-full border border-white/30 overflow-hidden bg-white/5">
-                                    <Image
-                                        src={myProfile?.displayPictureUrl || '/assets/ico.png'}
-                                        alt="me"
-                                        fill
-                                        className="object-cover"
-                                    />
+                                <div className="relative w-16 h-16 overflow-visible">
+                                    <div className="w-full h-full rounded-full border border-white/30 overflow-hidden bg-white/5 relative">
+                                        <Image
+                                            src={myProfile?.displayPictureUrl || '/assets/ico.png'}
+                                            alt="me"
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        disabled={squadMemberActionBusyId === myUserId}
+                                        onClick={handleLeaveSquadSelf}
+                                        className="absolute -top-2 -right-2 z-20 w-5 h-5 rounded-full bg-red-600 border border-white/90 text-white text-[10px] font-bold flex items-center justify-center disabled:opacity-40"
+                                        title="Leave squad"
+                                    >
+                                        x
+                                    </button>
                                 </div>
                                 <span className="text-xs">Me</span>
                             </div>
@@ -443,14 +513,27 @@ export default function MeetSomeoneMobile() {
                                         <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-70" />
                                     </div>
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className="relative w-16 h-16 rounded-full border border-white/30 flex items-center justify-center overflow-hidden bg-white/5">
-                                            {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
-                                                <Image src={guestProfiles[guestId].displayPictureUrl} alt="" fill className="object-cover" />
-                                            ) : guestId ? (
-                                                <span className="text-lg text-white/50">…</span>
-                                            ) : (
-                                                <span className="text-2xl text-white/50">?</span>
-                                            )}
+                                        <div className="relative w-16 h-16 overflow-visible">
+                                            <div className="w-full h-full rounded-full border border-white/30 flex items-center justify-center overflow-hidden bg-white/5">
+                                                {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
+                                                    <Image src={guestProfiles[guestId].displayPictureUrl} alt="" fill className="object-cover" />
+                                                ) : guestId ? (
+                                                    <span className="text-lg text-white/50">…</span>
+                                                ) : (
+                                                    <span className="text-2xl text-white/50">?</span>
+                                                )}
+                                            </div>
+                                            {guestId ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={squadMemberActionBusyId === guestId}
+                                                    onClick={() => handleRemoveSquadMember(guestId)}
+                                                    className="absolute -top-2 -right-2 z-20 w-5 h-5 rounded-full bg-red-600 border border-white/90 text-white text-[10px] font-bold flex items-center justify-center disabled:opacity-40"
+                                                    title="Remove from squad"
+                                                >
+                                                    x
+                                                </button>
+                                            ) : null}
                                         </div>
                                         <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
                                     </div>
@@ -458,25 +541,7 @@ export default function MeetSomeoneMobile() {
                             ))}
                         </div>
 
-                        {canSquadMeet && (
-                            <div className="mb-6 flex justify-center">
-                                <button
-                                    type="button"
-                                    disabled={squadMeetBusy}
-                                    onClick={handleSquadEnterCall}
-                                    className={clsx(
-                                        'flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-sm',
-                                        'bg-gradient-to-r from-fuchsia-600 to-violet-700 border border-white/30 text-white',
-                                        'disabled:opacity-50'
-                                    )}
-                                >
-                                    <IoVideocam className="text-xl" />
-                                    {squadMeetBusy ? 'Starting…' : 'Meet someone rn'}
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-6 font-sans">
+                        <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 mb-2 font-sans">
                             <span className="text-white/80 text-sm font-medium mr-2">Share to</span>
                             <button type="button" className="hover:bg-white/10 p-2 rounded-full transition text-white">
                                 <IoLogoSnapchat className="text-2xl" />
@@ -491,6 +556,22 @@ export default function MeetSomeoneMobile() {
                                 <IoCopyOutline className="text-2xl" />
                             </button>
                         </div>
+
+                        {canSquadMeet && (
+                            <div className="mb-8 mt-6 flex justify-center">
+                                <button
+                                    type="button"
+                                    disabled={squadMeetBusy}
+                                    onClick={handleSquadEnterCall}
+                                    className="w-full bg-[#150030] border border-white/30 rounded-2xl py-5 flex items-center justify-center gap-3 active:scale-95 transition-transform disabled:opacity-60"
+                                >
+                                    <img src="/assets/video-off.svg" className="w-6 h-6 invert opacity-80" alt="Camera" />
+                                    <span className="text-lg font-bold tracking-wide">
+                                        {squadMeetBusy ? 'Starting...' : 'Meet Someone now'}
+                                    </span>
+                                </button>
+                            </div>
+                        )}
 
                         <button
                             type="button"
@@ -536,6 +617,7 @@ export default function MeetSomeoneMobile() {
                 open={squadInviteOpen}
                 onClose={() => setSquadInviteOpen(false)}
                 onInviteSent={() => void refreshSquadLobby()}
+                squadMemberIds={squadLobby?.memberIds || []}
             />
         </div>
     );

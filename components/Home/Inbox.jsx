@@ -299,6 +299,9 @@ export default function Inbox() {
   const [peerTyping, setPeerTyping] = useState(false);
   const [myAvatarUrl, setMyAvatarUrl] = useState(null);
   const [clientUnreadByConv, setClientUnreadByConv] = useState({});
+  const [activePendingSquadInvitationIds, setActivePendingSquadInvitationIds] =
+    useState(() => new Set());
+  const refreshPendingSquadInvitationIdsRef = useRef(null);
   const clientLastSeenAtByConvRef = useRef({});
   const messagesScrollRef = useRef(null);
   const threadMenuRef = useRef(null);
@@ -849,6 +852,9 @@ export default function Inbox() {
       setThreadNextCursor(undefined);
       setThreadHasMore(false);
       try {
+        if (refreshPendingSquadInvitationIdsRef.current) {
+          await refreshPendingSquadInvitationIdsRef.current();
+        }
         if (!isSyntheticConversationId(cid)) {
           const data = await apiRequest(
             API.FRIENDS.GET_CONVERSATION_MESSAGES(cid, {
@@ -909,15 +915,55 @@ export default function Inbox() {
     [markReadForPeer],
   );
 
+  const refreshPendingSquadInvitationIds = useCallback(async () => {
+    try {
+      const pending = await apiRequest(API.SQUAD.RECEIVED_INVITATIONS);
+      const ids = new Set(
+        (pending?.invitations || []).map((inv) => String(inv?.id)).filter(Boolean),
+      );
+      setActivePendingSquadInvitationIds((prev) => {
+        if (prev.size === ids.size) {
+          let same = true;
+          for (const id of ids) {
+            if (!prev.has(id)) {
+              same = false;
+              break;
+            }
+          }
+          if (same) return prev;
+        }
+        return ids;
+      });
+    } catch {
+      setActivePendingSquadInvitationIds((prev) => (prev.size === 0 ? prev : new Set()));
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshPendingSquadInvitationIdsRef.current = refreshPendingSquadInvitationIds;
+  }, [refreshPendingSquadInvitationIds]);
+
   const handleSquadInviteResponse = useCallback(
     async (invitationId, action) => {
       if (!invitationId) return;
       setThreadProductMessage(null);
       try {
         if (action === "accept") {
-          await apiRequest(API.SQUAD.ACCEPT_INVITATION(invitationId), {
+          const res = await apiRequest(API.SQUAD.ACCEPT_INVITATION(invitationId), {
             method: "POST",
           });
+          const attachState = String(res?.lateJoinAttach || "");
+          if (attachState === "failed") {
+            setThreadProductMessage({
+              variant: "warning",
+              text: "Invite accepted, but auto-join to active call failed. Open Squad and tap Meet someone now.",
+            });
+          } else if (attachState === "no_active_room") {
+            setThreadProductMessage({
+              variant: "warning",
+              text: "Invite accepted. Squad is active, but no live room was found yet.",
+            });
+          }
           if (activeChat) await loadThreadMessages(activeChat, { quiet: true });
           await loadLists({ quiet: true });
           router.push("/?squad=1");
@@ -1034,6 +1080,9 @@ export default function Inbox() {
 
       if (msg.type === "friend:message" && msg.data) {
         const m = msg.data;
+        if (m.messageType === "SQUAD_INVITE" || m.messageType === "SQUAD_INVITE_OUTCOME") {
+          refreshPendingSquadInvitationIdsRef.current?.();
+        }
         const uid = currentUserIdRef.current;
         const isIncoming = String(m.toUserId) === String(uid);
         const activeNow = activeChatRef.current;
@@ -1175,6 +1224,7 @@ export default function Inbox() {
       if (msg.type === "friend:refresh") {
         loadListsRef.current?.({ quiet: true, skipNotificationBadge: true });
         loadNotificationBadgeRef.current?.();
+        refreshPendingSquadInvitationIdsRef.current?.();
       }
 
       if (msg.type === "friend:typing" && msg.data) {
@@ -1231,6 +1281,10 @@ export default function Inbox() {
   useEffect(() => {
     connectFriendsWsRef.current = connectFriendsWs;
   }, [connectFriendsWs]);
+
+  useEffect(() => {
+    void refreshPendingSquadInvitationIds();
+  }, [refreshPendingSquadInvitationIds]);
 
   useEffect(() => {
     connectFriendsWs();
@@ -1914,7 +1968,7 @@ export default function Inbox() {
                         "font-medium",
                       )}
                     >
-                      You've sent a message here already — next sends need a
+                      You&apos;ve sent a message here already — next sends need a
                       gift (tap gift icon).
                     </p>
                   )}
@@ -2000,6 +2054,7 @@ export default function Inbox() {
                     loading={loadingThread}
                     loadOlderThreadMessages={loadOlderThreadMessages}
                     onSquadInviteResponse={handleSquadInviteResponse}
+                    activePendingSquadInvitationIds={activePendingSquadInvitationIds}
                   />
                 </div>
 

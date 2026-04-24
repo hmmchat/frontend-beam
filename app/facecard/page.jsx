@@ -16,6 +16,7 @@ import FacecardEditor from "@/components/facecard/FacecardEditor";
 import SelectorOverlay from "@/components/facecard/SelectorOverlay";
 
 import Skeleton from "@/components/ui/Skeleton";
+import PortraitImageCropModal from "@/components/ui/PortraitImageCropModal";
 import FaceCard2 from "@/components/Home/FaceCard2";
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -88,6 +89,9 @@ function FacecardContent() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [musicSavingKey, setMusicSavingKey] = useState(null);
   const [exitEditorToProfile, setExitEditorToProfile] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState(null);
+  const [cropTargetSlot, setCropTargetSlot] = useState(null);
 
   const progress = calculateProgress(user);
 
@@ -602,7 +606,123 @@ function FacecardContent() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (e) => {
+  const closeCropModal = () => {
+    setCropModalOpen(false);
+    setCropTargetSlot(null);
+    setCropImageUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const uploadSlotPhoto = async (file, slotIndex) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alert("You need to be signed in to upload photos.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "profile-photos");
+
+    const uploadRes = await fetch(
+      `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!uploadRes.ok) {
+      const msg = await readHttpErrorMessage(uploadRes);
+      alert(msg || "Upload failed. Check the file and try again.");
+      return;
+    }
+
+    const uploadData = await uploadRes.json();
+    const uploadedUrl = uploadData?.file?.url;
+    if (!uploadedUrl) {
+      alert(
+        "Upload succeeded but no file URL was returned. Please try again.",
+      );
+      return;
+    }
+
+    if (slotIndex === 0) {
+      const updateRes = await fetch(API.USERS.UPDATE_PROFILE, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ displayPictureUrl: uploadedUrl }),
+      });
+      if (!updateRes.ok) {
+        const msg = await readHttpErrorMessage(updateRes);
+        alert(msg || "Photo uploaded but profile could not be updated.");
+        return;
+      }
+      setUser((prev) => ({ ...prev, displayPictureUrl: uploadedUrl }));
+    } else {
+      const order = slotIndex - 1;
+      const photoRes = await fetch(API.USERS.ADD_PHOTO, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ url: uploadedUrl, order }),
+      });
+      if (!photoRes.ok) {
+        const msg = await readHttpErrorMessage(photoRes);
+        alert(
+          msg || "Photo uploaded but could not be added to your gallery.",
+        );
+        return;
+      }
+      setUser((prev) => {
+        const currentPhotos = prev.photos || [];
+        const existingIndex = currentPhotos.findIndex(
+          (p) => p.order === order,
+        );
+        const newPhotos = [...currentPhotos];
+        if (existingIndex > -1) {
+          newPhotos[existingIndex] = {
+            ...newPhotos[existingIndex],
+            url: uploadedUrl,
+          };
+        } else {
+          newPhotos.push({ url: uploadedUrl, order });
+          newPhotos.sort((a, b) => a.order - b.order);
+        }
+        return { ...prev, photos: newPhotos };
+      });
+    }
+  };
+
+  const handleCroppedPhoto = async (file) => {
+    const slot = cropTargetSlot;
+    if (slot === null || slot === undefined) return;
+
+    setPhotoUploading(true);
+    try {
+      await uploadSlotPhoto(file, slot);
+    } catch (err) {
+      console.error("Photo upload error:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload photo. Please try again.",
+      );
+    } finally {
+      setPhotoUploading(false);
+      closeCropModal();
+    }
+  };
+
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (e.target) e.target.value = "";
     if (!file) return;
@@ -622,96 +742,15 @@ function FacecardContent() {
       return;
     }
 
-    setPhotoUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "profile-photos");
-
-      const uploadRes = await fetch(
-        `${API.FILES.UPLOAD}?folder=profile-photos`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        },
-      );
-
-      if (!uploadRes.ok) {
-        const msg = await readHttpErrorMessage(uploadRes);
-        alert(msg || "Upload failed. Check the file and try again.");
-        return;
-      }
-
-      const uploadData = await uploadRes.json();
-      const uploadedUrl = uploadData?.file?.url;
-      if (!uploadedUrl) {
-        alert(
-          "Upload succeeded but no file URL was returned. Please try again.",
-        );
-        return;
-      }
-
-      if (activeSlot === 0) {
-        const updateRes = await fetch(API.USERS.UPDATE_PROFILE, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ displayPictureUrl: uploadedUrl }),
-        });
-        if (!updateRes.ok) {
-          const msg = await readHttpErrorMessage(updateRes);
-          alert(msg || "Photo uploaded but profile could not be updated.");
-          return;
-        }
-        setUser((prev) => ({ ...prev, displayPictureUrl: uploadedUrl }));
-      } else {
-        const order = activeSlot - 1;
-        const photoRes = await fetch(API.USERS.ADD_PHOTO, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ url: uploadedUrl, order }),
-        });
-        if (!photoRes.ok) {
-          const msg = await readHttpErrorMessage(photoRes);
-          alert(
-            msg || "Photo uploaded but could not be added to your gallery.",
-          );
-          return;
-        }
-        setUser((prev) => {
-          const currentPhotos = prev.photos || [];
-          const existingIndex = currentPhotos.findIndex(
-            (p) => p.order === order,
-          );
-          const newPhotos = [...currentPhotos];
-          if (existingIndex > -1) {
-            newPhotos[existingIndex] = {
-              ...newPhotos[existingIndex],
-              url: uploadedUrl,
-            };
-          } else {
-            newPhotos.push({ url: uploadedUrl, order });
-            newPhotos.sort((a, b) => a.order - b.order);
-          }
-          return { ...prev, photos: newPhotos };
-        });
-      }
-    } catch (err) {
-      console.error("Photo upload error:", err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to upload photo. Please try again.",
-      );
-    } finally {
-      setPhotoUploading(false);
+    if (activeSlot === null || activeSlot === undefined) {
+      alert("Pick a photo slot first.");
+      return;
     }
+
+    const url = URL.createObjectURL(file);
+    setCropTargetSlot(activeSlot);
+    setCropImageUrl(url);
+    setCropModalOpen(true);
   };
 
   const handleShareFacecard = async () => {
@@ -961,6 +1000,13 @@ function FacecardContent() {
 
   return (
     <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
+      <PortraitImageCropModal
+        open={cropModalOpen && !!cropImageUrl}
+        imageUrl={cropImageUrl}
+        onClose={closeCropModal}
+        onComplete={handleCroppedPhoto}
+        busy={photoUploading}
+      />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {view === "success" ? (
           <FacecardDisplay

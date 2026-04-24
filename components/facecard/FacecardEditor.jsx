@@ -308,7 +308,7 @@ export default function FacecardEditor({
               {/* Photo 1 (DP) */}
               <div
                 onClick={() => handleSlotClick(0)}
-                className="w-full aspect-[3/4] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
+                className="w-full aspect-[2/3] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
               >
                 <img
                   src={user?.displayPictureUrl || "/imageprofile.png"}
@@ -326,7 +326,7 @@ export default function FacecardEditor({
                   <div
                     key={idx}
                     onClick={() => handleSlotClick(idx + 1)}
-                    className="w-full aspect-[3/4] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
+                    className="w-full aspect-[2/3] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
                   >
                     {photo ? (
                       <img

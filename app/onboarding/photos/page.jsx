@@ -2,8 +2,33 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { API } from '@/lib/api';
+import PortraitImageCropModal from '@/components/ui/PortraitImageCropModal';
+
+const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+const PROFILE_PHOTO_ACCEPT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+
+async function readHttpErrorMessage(res) {
+  try {
+    const ct = res.headers.get('content-type');
+    if (ct && ct.includes('application/json')) {
+      const j = await res.json();
+      if (typeof j === 'string') return j;
+      return (
+        j.message || j.error || j.detail || `Request failed (${res.status})`
+      );
+    }
+    const t = await res.text();
+    return (t && t.trim()) || res.statusText || `HTTP ${res.status}`;
+  } catch {
+    return res.statusText || `HTTP ${res.status}`;
+  }
+}
 
 export default function PhotosOnboarding() {
   const router = useRouter();
@@ -12,6 +37,8 @@ export default function PhotosOnboarding() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState(null);
 
   useEffect(() => {
     fetchPhotos();
@@ -36,31 +63,83 @@ export default function PhotosOnboarding() {
         const data = await response.json();
         setPhotos(data.photos || []);
       }
-    } catch (error) {
-      console.error('Error fetching photos:', error);
+    } catch (err) {
+      console.error('Error fetching photos:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePhotoUpload = async (file) => {
+  const closeCropModal = () => {
+    setCropModalOpen(false);
+    setCropImageUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const onFileInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
     if (!file) return;
     if (photos.length >= 4) {
       setError('Maximum 4 photos allowed');
       return;
     }
+    if (!PROFILE_PHOTO_ACCEPT_TYPES.includes(file.type)) {
+      setError('Please choose a JPEG, PNG, WebP, or GIF image.');
+      return;
+    }
+    if (file.size > PROFILE_PHOTO_MAX_BYTES) {
+      setError('Image must be 10MB or smaller.');
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      router.push('/');
+      return;
+    }
+    setError('');
+    const url = URL.createObjectURL(file);
+    setCropImageUrl(url);
+    setCropModalOpen(true);
+  };
+
+  const handleCroppedPhoto = async (file) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || photos.length >= 4) {
+      closeCropModal();
+      return;
+    }
 
     setUploading(true);
     setError('');
-
     try {
-      const token = localStorage.getItem('accessToken');
-      
-      // For now, use placeholder URL
-      // TODO: Integrate Cloudinary for real upload
-      const photoUrl = 'https://via.placeholder.com/300';
-      const order = photos.length; // 0, 1, 2, or 3
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'profile-photos');
 
+      const uploadRes = await fetch(
+        `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        },
+      );
+
+      if (!uploadRes.ok) {
+        const msg = await readHttpErrorMessage(uploadRes);
+        throw new Error(msg || 'Upload failed');
+      }
+
+      const uploadData = await uploadRes.json();
+      const photoUrl = uploadData?.file?.url;
+      if (!photoUrl) {
+        throw new Error('Upload succeeded but no file URL was returned.');
+      }
+
+      const order = photos.length;
       const response = await fetch(API.USERS.ADD_PHOTO, {
         method: 'POST',
         headers: {
@@ -74,17 +153,21 @@ export default function PhotosOnboarding() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload photo');
+        let message = 'Failed to save photo';
+        try {
+          const errorData = await response.json();
+          message = errorData.message || message;
+        } catch { /* ignore */ }
+        throw new Error(message);
       }
 
-      // Refresh photos
       await fetchPhotos();
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      setError(error.message);
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload photo');
     } finally {
       setUploading(false);
+      closeCropModal();
     }
   };
 
@@ -103,11 +186,10 @@ export default function PhotosOnboarding() {
         throw new Error('Failed to delete photo');
       }
 
-      // Refresh photos
       await fetchPhotos();
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      setError(error.message);
+    } catch (err) {
+      console.error('Error deleting photo:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete photo');
     }
   };
 
@@ -129,6 +211,13 @@ export default function PhotosOnboarding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-8">
+      <PortraitImageCropModal
+        open={cropModalOpen && !!cropImageUrl}
+        imageUrl={cropImageUrl}
+        onClose={closeCropModal}
+        onComplete={handleCroppedPhoto}
+        busy={uploading}
+      />
       <div className="max-w-4xl mx-auto">
         {/* Progress */}
         <div className="mb-8">
@@ -154,13 +243,14 @@ export default function PhotosOnboarding() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {/* Existing photos */}
             {photos.map((photo) => (
-              <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden group">
+              <div key={photo.id} className="relative aspect-[2/3] rounded-lg overflow-hidden group">
                 <img 
                   src={photo.url} 
                   alt={`Photo ${photo.order + 1}`}
                   className="w-full h-full object-cover"
                 />
                 <button
+                  type="button"
                   onClick={() => handleDeletePhoto(photo.id)}
                   className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -174,7 +264,7 @@ export default function PhotosOnboarding() {
               <div 
                 key={`empty-${index}`}
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center 0  meeting now hover:border-white/60 hover:bg-white/5 transition-all"
+                className="aspect-[2/3] rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center hover:border-white/60 hover:bg-white/5 transition-all"
               >
                 <div className="text-center">
                   <div className="text-4xl mb-2">+</div>
@@ -187,9 +277,9 @@ export default function PhotosOnboarding() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             className="hidden"
-            onChange={(e) => handlePhotoUpload(e.target.files?.[0])}
+            onChange={onFileInputChange}
             disabled={uploading || photos.length >= 4}
           />
 
@@ -205,27 +295,29 @@ export default function PhotosOnboarding() {
             </div>
           )}
 
-          <div className="text-center text-white/60 text-sm">
-            <p>💡 <strong>Note:</strong> Photo upload currently uses placeholder URLs.</p>
-            <p className="mt-1">For real uploads, Cloudinary integration is needed.</p>
-          </div>
+          <p className="text-center text-white/60 text-sm">
+            Photos use the same portrait shape as your face card. Adjust framing before saving.
+          </p>
         </div>
 
         {/* Navigation */}
         <div className="flex gap-4">
           <button
+            type="button"
             onClick={() => router.back()}
             className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full font-semibold transition-all"
           >
             ← Back
           </button>
           <button
+            type="button"
             onClick={handleSkip}
             className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full font-semibold transition-all"
           >
             Skip for Now
           </button>
           <button
+            type="button"
             onClick={handleContinue}
             className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-full font-semibold transition-all"
           >

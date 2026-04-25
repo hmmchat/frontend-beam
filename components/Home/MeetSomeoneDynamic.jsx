@@ -8,7 +8,7 @@ import FilterButtons from '@/components/ui/FilterButtons';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
-import { IoLogOutOutline, IoClose } from 'react-icons/io5';
+import { IoLogOutOutline, IoClose, IoMic, IoMicOff, IoVolumeHigh, IoVolumeMute } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
 import FaceCard4 from './FaceCard4';
@@ -53,6 +53,9 @@ export default function MeetSomeoneDynamic() {
   const [quickInviteBusyId, setQuickInviteBusyId] = useState(null);
   const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
   const [squadProductMessage, setSquadProductMessage] = useState('');
+  const [squadLobbyCall, setSquadLobbyCall] = useState(null);
+  const [squadLobbyMicMuted, setSquadLobbyMicMuted] = useState(false);
+  const [squadLobbyAudioOff, setSquadLobbyAudioOff] = useState(false);
   const [guestProfiles, setGuestProfiles] = useState({});
   const [isSearching, setIsSearching] = useState(false);
   const [isResumeLoading, setIsResumeLoading] = useState(false);
@@ -149,6 +152,20 @@ export default function MeetSomeoneDynamic() {
   const squadVideoRoomNavKeyRef = useRef('');
   const isSearchingRef = useRef(false);
   const latestSilentFetchIdRef = useRef(0);
+  const squadLobbyAudioBusyRef = useRef(false);
+  const squadLobbyCallBootstrapBusyRef = useRef(false);
+  const squadLobbyAudioWsRef = useRef(null);
+  const squadLobbyAudioDeviceRef = useRef(null);
+  const squadLobbyAudioSendTransportRef = useRef(null);
+  const squadLobbyAudioRecvTransportRef = useRef(null);
+  const squadLobbyAudioLocalStreamRef = useRef(null);
+  const squadLobbyAudioConsumersRef = useRef({});
+  const squadLobbyAudioConsumerUserRef = useRef({});
+  const squadLobbyAudioProducerMetaRef = useRef({});
+  const squadLobbyAudioElsRef = useRef({});
+  const squadLobbyAudioProduceResolverRef = useRef(null);
+  const squadLobbyAudioPendingProducersRef = useRef([]);
+  const squadLobbyAudioMyProducerIdsRef = useRef(new Set());
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -324,7 +341,6 @@ export default function MeetSomeoneDynamic() {
   );
   const canSquadMeet =
     isInSquadLobby &&
-    squadLobby?.status !== 'IN_CALL' &&
     squadLobby.memberIds.length >= 2;
 
   /**
@@ -332,7 +348,64 @@ export default function MeetSomeoneDynamic() {
    * on `/` (not only after lobby membership resolves). Meet CTA still requires 2+ members.
    */
   const squadHomeInviteMeetSlotActive =
-    mode === 'squad' && squadLobby?.status !== 'IN_CALL';
+    mode === 'squad';
+
+  const getStreamingWsUrl = useCallback(() => {
+    return API.STREAMING.WS_URL;
+  }, []);
+
+  const cleanupSquadLobbyBackgroundAudio = useCallback(() => {
+    const ws = squadLobbyAudioWsRef.current;
+    if (ws) {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+      squadLobbyAudioWsRef.current = null;
+    }
+    Object.values(squadLobbyAudioConsumersRef.current || {}).forEach((consumer) => {
+      try {
+        consumer?.close?.();
+      } catch {
+        // ignore
+      }
+    });
+    squadLobbyAudioConsumersRef.current = {};
+    squadLobbyAudioConsumerUserRef.current = {};
+    squadLobbyAudioProducerMetaRef.current = {};
+    squadLobbyAudioProduceResolverRef.current = null;
+    squadLobbyAudioPendingProducersRef.current = [];
+    squadLobbyAudioMyProducerIdsRef.current = new Set();
+    Object.values(squadLobbyAudioElsRef.current || {}).forEach((el) => {
+      try {
+        el.srcObject = null;
+        el.remove();
+      } catch {
+        // ignore
+      }
+    });
+    squadLobbyAudioElsRef.current = {};
+    const local = squadLobbyAudioLocalStreamRef.current;
+    if (local) {
+      local.getTracks().forEach((track) => track.stop());
+      squadLobbyAudioLocalStreamRef.current = null;
+    }
+    try {
+      squadLobbyAudioSendTransportRef.current?.close?.();
+    } catch {
+      // ignore
+    }
+    try {
+      squadLobbyAudioRecvTransportRef.current?.close?.();
+    } catch {
+      // ignore
+    }
+    squadLobbyAudioSendTransportRef.current = null;
+    squadLobbyAudioRecvTransportRef.current = null;
+    squadLobbyAudioDeviceRef.current = null;
+    squadLobbyAudioBusyRef.current = false;
+  }, []);
 
   const refreshSquadLobby = useCallback(async () => {
     try {
@@ -353,8 +426,18 @@ export default function MeetSomeoneDynamic() {
     if (prev === 'squad' && mode === 'solo') {
       void apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' }).catch(() => {});
     }
-    if (mode !== 'squad') setSquadProductMessage('');
-  }, [mode]);
+    if (mode !== 'squad') {
+      setSquadProductMessage('');
+      setSquadLobbyCall(null);
+      cleanupSquadLobbyBackgroundAudio();
+      setSquadLobbyMicMuted(false);
+      setSquadLobbyAudioOff(false);
+    } else {
+      // Entering squad mode should always start voice lobby with mic/live audio ON by default.
+      setSquadLobbyMicMuted(false);
+      setSquadLobbyAudioOff(false);
+    }
+  }, [cleanupSquadLobbyBackgroundAudio, mode]);
 
   useEffect(() => {
     if (mode !== 'squad') {
@@ -413,16 +496,38 @@ export default function MeetSomeoneDynamic() {
   }, [squadLobby]);
 
   useEffect(() => {
+    const track = squadLobbyAudioLocalStreamRef.current?.getAudioTracks?.()[0];
+    if (track) {
+      track.enabled = !squadLobbyMicMuted;
+    }
+  }, [squadLobbyMicMuted]);
+
+  useEffect(() => {
+    Object.values(squadLobbyAudioElsRef.current || {}).forEach((el) => {
+      el.muted = squadLobbyAudioOff;
+      if (!squadLobbyAudioOff) {
+        el.play?.().catch(() => {});
+      }
+    });
+  }, [squadLobbyAudioOff]);
+
+  useEffect(() => {
     if (mode !== 'squad' || !squadLobby) {
       squadVideoRoomNavKeyRef.current = '';
     }
   }, [mode, squadLobby]);
 
   const applySquadEnterResponse = useCallback(
-    async (data) => {
+    async (data, options = {}) => {
+      const { navigate = true } = options;
       const roomKey = data?.roomId || '';
       if (!roomKey) return;
-      if (squadVideoRoomNavKeyRef.current === roomKey) return;
+      setSquadLobbyCall({
+        roomId: data.roomId,
+        sessionId: data.sessionId,
+        memberIds: data.memberIds || [],
+      });
+      if (navigate && squadVideoRoomNavKeyRef.current === roomKey) return;
 
       const memberIds = data.memberIds || [];
       const others = memberIds.filter((id) => id && id !== myUserId);
@@ -478,40 +583,91 @@ export default function MeetSomeoneDynamic() {
           partner,
         }),
       );
-      squadVideoRoomNavKeyRef.current = roomKey;
-      router.push('/video-chat');
+      if (navigate) {
+        squadVideoRoomNavKeyRef.current = roomKey;
+        router.push('/video-chat');
+      }
     },
     [myUserId, router],
   );
 
+  const ensureSquadLobbyCallStarted = useCallback(async () => {
+    if (mode !== 'squad' || !canSquadMeet) return false;
+    if (squadMeetBusy || squadLobbyCallBootstrapBusyRef.current) return false;
+    squadLobbyCallBootstrapBusyRef.current = true;
+    try {
+      const data = await apiRequest(API.SQUAD.ENTER_CALL, {
+        method: 'POST',
+        body: JSON.stringify({ background: true }),
+      });
+      await applySquadEnterResponse(data, { navigate: false });
+      return true;
+    } catch (e) {
+      if (e?.status === 410) {
+        await refreshSquadLobby();
+        return false;
+      }
+      return false;
+    } finally {
+      squadLobbyCallBootstrapBusyRef.current = false;
+    }
+  }, [applySquadEnterResponse, canSquadMeet, mode, refreshSquadLobby, squadMeetBusy]);
+
+  useEffect(() => {
+    if (mode !== 'squad' || !canSquadMeet) return;
+    if (squadLobbyCall?.roomId) return;
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled || squadLobbyCall?.roomId) return;
+      await ensureSquadLobbyCallStarted();
+    };
+    void tick();
+    const id = setInterval(() => {
+      void tick();
+    }, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [mode, canSquadMeet, squadLobbyCall?.roomId, ensureSquadLobbyCallStarted]);
+
+  // Preserve existing behavior: when any member starts "Meet someone now",
+  // everyone in that squad lobby (status IN_CALL) auto-transitions to video page.
   useEffect(() => {
     if (mode !== 'squad' || squadLobby?.status !== 'IN_CALL') return;
-    if (squadMeetBusy) return;
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) return;
 
     let cancelled = false;
     (async () => {
       try {
+        // Close lobby-only audio first. Closing after ENTER_CALL can make the
+        // streaming service mark this user as left just before /video-chat loads.
+        cleanupSquadLobbyBackgroundAudio();
         const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
         if (cancelled) return;
-        await applySquadEnterResponse(data);
+        await applySquadEnterResponse(data, { navigate: true });
       } catch (e) {
         if (e?.status === 410) {
           await refreshSquadLobby();
         }
-        // Host may still be creating the room; next membership poll will retry.
+        // If room isn't ready yet, the next membership poll retries.
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [mode, squadLobby?.status, squadMeetBusy, applySquadEnterResponse, refreshSquadLobby]);
+  }, [applySquadEnterResponse, cleanupSquadLobbyBackgroundAudio, mode, refreshSquadLobby, squadLobby?.status]);
 
   const handleSquadEnterCall = async () => {
     if (!canSquadMeet || squadMeetBusy) return;
     setSquadProductMessage('');
     setSquadMeetBusy(true);
     try {
+      // Close lobby audio before explicit call entry so the backend's
+      // ENTER_CALL response is the final participant state used by video-chat.
+      cleanupSquadLobbyBackgroundAudio();
       const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
       await applySquadEnterResponse(data);
     } catch (e) {
@@ -525,6 +681,263 @@ export default function MeetSomeoneDynamic() {
       setSquadMeetBusy(false);
     }
   };
+
+  useEffect(() => {
+    const roomId = squadLobbyCall?.roomId;
+    const shouldRun =
+      mode === 'squad' &&
+      Boolean(roomId) &&
+      isInSquadLobby &&
+      !(typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat'));
+
+    if (!shouldRun) {
+      cleanupSquadLobbyBackgroundAudio();
+      return;
+    }
+    if (squadLobbyAudioWsRef.current || squadLobbyAudioBusyRef.current) return;
+
+    let cancelled = false;
+    const send = (msg) => {
+      const ws = squadLobbyAudioWsRef.current;
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg));
+      }
+    };
+
+    const consume = (producerId) => {
+      const recvTransport = squadLobbyAudioRecvTransportRef.current;
+      const device = squadLobbyAudioDeviceRef.current;
+      if (!recvTransport || !device || !roomId) {
+        squadLobbyAudioPendingProducersRef.current.push(producerId);
+        return;
+      }
+      send({
+        type: 'consume',
+        data: {
+          roomId,
+          transportId: recvTransport.id,
+          producerId,
+          rtpCapabilities: device.rtpCapabilities,
+        },
+      });
+    };
+
+    const drainPendingLobbyProducers = () => {
+      const queued = squadLobbyAudioPendingProducersRef.current.splice(0);
+      queued.forEach((pid) => consume(pid));
+    };
+
+    const start = async () => {
+      squadLobbyAudioBusyRef.current = true;
+      try {
+        const token = localStorage.getItem('accessToken') || '';
+        if (!token) return;
+        let userId = '';
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub || payload.uid || payload.id || '';
+        } catch {
+          userId = '';
+        }
+        if (!userId || !roomId) return;
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
+          video: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        const micTrack = stream.getAudioTracks()[0];
+        if (micTrack) micTrack.enabled = !squadLobbyMicMuted;
+        squadLobbyAudioLocalStreamRef.current = stream;
+
+        const ws = new WebSocket(`${getStreamingWsUrl()}?userId=${userId}&token=${encodeURIComponent(token)}`);
+        squadLobbyAudioWsRef.current = ws;
+        ws.onopen = () => {
+          send({
+            type: 'join-room',
+            data: {
+              roomId,
+              preserveParticipantOnClose: true,
+            },
+          });
+        };
+        ws.onmessage = async (evt) => {
+          if (cancelled) return;
+          const msg = JSON.parse(evt.data || '{}');
+          const { type, data } = msg || {};
+          if (type === 'room-joined') {
+            const { Device } = await import('mediasoup-client');
+            const device = new Device();
+            await device.load({ routerRtpCapabilities: data.rtpCapabilities });
+            squadLobbyAudioDeviceRef.current = device;
+            send({ type: 'create-transport', data: { roomId, producing: true, consuming: false } });
+            return;
+          }
+          if (type === 'transport-created') {
+            const { id, iceParameters, iceCandidates, dtlsParameters, producing } = data || {};
+            const device = squadLobbyAudioDeviceRef.current;
+            if (!device) return;
+            if (producing) {
+              const transport = device.createSendTransport({ id, iceParameters, iceCandidates, dtlsParameters });
+              squadLobbyAudioSendTransportRef.current = transport;
+              transport.on('connect', ({ dtlsParameters: dp }, cb) => {
+                send({ type: 'connect-transport', data: { roomId, transportId: id, dtlsParameters: dp } });
+                cb();
+              });
+              transport.on('produce', ({ kind, rtpParameters }, cb, errback) => {
+                if (kind !== 'audio') {
+                  errback?.(new Error('Lobby background only publishes audio'));
+                  return;
+                }
+                // Must match /video-chat: resolve produce callback only after server `produced`.
+                squadLobbyAudioProduceResolverRef.current = cb;
+                send({ type: 'produce', data: { roomId, transportId: id, kind, rtpParameters } });
+              });
+              const aTrack = squadLobbyAudioLocalStreamRef.current?.getAudioTracks?.()[0];
+              if (aTrack) {
+                try {
+                  await transport.produce({ track: aTrack });
+                } catch {
+                  // ignore audio produce errors in lobby mode
+                }
+              }
+              send({ type: 'create-transport', data: { roomId, producing: false, consuming: true } });
+              return;
+            }
+            const transport = device.createRecvTransport({ id, iceParameters, iceCandidates, dtlsParameters });
+            squadLobbyAudioRecvTransportRef.current = transport;
+            transport.on('connect', ({ dtlsParameters: dp }, cb) => {
+              send({ type: 'connect-transport', data: { roomId, transportId: id, dtlsParameters: dp } });
+              cb();
+            });
+            drainPendingLobbyProducers();
+            send({ type: 'get-producers', data: { roomId } });
+            return;
+          }
+          if (type === 'producers-list' && Array.isArray(data)) {
+            data.forEach((p) => {
+              if (!p?.producerId) return;
+              if (p.kind && p.kind !== 'audio') return;
+              const isSameUser = String(p?.userId || '') === String(userId);
+              const isMyProducer = squadLobbyAudioMyProducerIdsRef.current.has(String(p.producerId));
+              if (isSameUser && isMyProducer) return;
+              if (String(p?.userId || '')) {
+                squadLobbyAudioProducerMetaRef.current[String(p.producerId)] = String(p.userId || '');
+              }
+              consume(p.producerId);
+            });
+            return;
+          }
+          if (type === 'new-producer') {
+            if (!data?.producerId) return;
+            if (data.kind && data.kind !== 'audio') return;
+            const isSameUser = String(data?.userId || '') === String(userId);
+            const isMyProducer = squadLobbyAudioMyProducerIdsRef.current.has(String(data.producerId));
+            if (isSameUser && isMyProducer) return;
+            if (String(data?.userId || '')) {
+              squadLobbyAudioProducerMetaRef.current[String(data.producerId)] = String(data.userId || '');
+            }
+            consume(data.producerId);
+            return;
+          }
+          if (type === 'produced') {
+            if (data?.id != null) squadLobbyAudioMyProducerIdsRef.current.add(String(data.id));
+            if (data?.kind === 'audio') {
+              squadLobbyAudioProduceResolverRef.current?.({ id: data.id });
+              squadLobbyAudioProduceResolverRef.current = null;
+            }
+            return;
+          }
+          if (type === 'consumed') {
+            const { id, producerId, kind } = data || {};
+            if (!id || !producerId || !kind || kind !== 'audio') return;
+            const recvTransport = squadLobbyAudioRecvTransportRef.current;
+            if (!recvTransport) return;
+            const consumer = await recvTransport.consume({
+              id,
+              producerId,
+              kind,
+              rtpParameters: data.rtpParameters,
+            });
+            squadLobbyAudioConsumersRef.current[id] = consumer;
+            const remoteUserId = squadLobbyAudioProducerMetaRef.current[String(producerId)] || String(producerId);
+            squadLobbyAudioConsumerUserRef.current[id] = remoteUserId;
+            const streamOut = new MediaStream([consumer.track]);
+            const audioEl = document.createElement('audio');
+            audioEl.autoplay = true;
+            audioEl.playsInline = true;
+            audioEl.setAttribute('playsinline', 'true');
+            audioEl.volume = 1;
+            audioEl.style.position = 'fixed';
+            audioEl.style.left = '-9999px';
+            audioEl.style.top = '0';
+            audioEl.style.width = '1px';
+            audioEl.style.height = '1px';
+            audioEl.style.opacity = '0';
+            audioEl.style.pointerEvents = 'none';
+            audioEl.srcObject = streamOut;
+            audioEl.muted = squadLobbyAudioOff;
+            squadLobbyAudioElsRef.current[id] = audioEl;
+            try {
+              document.body.appendChild(audioEl);
+            } catch {
+              // ignore
+            }
+            try {
+              await audioEl.play();
+            } catch {
+              // autoplay might require user gesture; keep element for retry by browser policies
+            }
+            return;
+          }
+          if (type === 'participant-left') {
+            const leftUserId = String(data?.userId || '');
+            Object.entries(squadLobbyAudioConsumerUserRef.current).forEach(([consumerId, ownerId]) => {
+              if (String(ownerId) !== leftUserId) return;
+              try {
+                squadLobbyAudioConsumersRef.current[consumerId]?.close?.();
+              } catch {
+                // ignore
+              }
+              delete squadLobbyAudioConsumersRef.current[consumerId];
+              delete squadLobbyAudioConsumerUserRef.current[consumerId];
+              const el = squadLobbyAudioElsRef.current[consumerId];
+              if (el) {
+                try {
+                  el.srcObject = null;
+                  el.remove();
+                } catch {
+                  // ignore
+                }
+                delete squadLobbyAudioElsRef.current[consumerId];
+              }
+            });
+          }
+        };
+      } catch {
+        // silent fail: lobby still works even if background audio fails
+      } finally {
+        squadLobbyAudioBusyRef.current = false;
+      }
+    };
+
+    void start();
+    return () => {
+      cancelled = true;
+      cleanupSquadLobbyBackgroundAudio();
+    };
+  }, [
+    cleanupSquadLobbyBackgroundAudio,
+    getStreamingWsUrl,
+    isInSquadLobby,
+    mode,
+    squadLobbyAudioOff,
+    squadLobbyCall?.roomId,
+    squadLobbyMicMuted,
+  ]);
 
   const handleRemoveSquadMember = async (memberId) => {
     if (!memberId || squadMemberActionBusyId) return;
@@ -1852,6 +2265,50 @@ export default function MeetSomeoneDynamic() {
                 </div>
 
                 <div className={clsx('flex w-full shrink-0 flex-col items-center')}>
+                  {canSquadMeet ? (
+                    <div
+                      className={clsx(
+                        'mb-2',
+                        'inline-flex',
+                        'items-center',
+                        'gap-2',
+                        'rounded-full',
+                        'border',
+                        'border-white/20',
+                        'bg-[#0A032D]/45',
+                        'px-2',
+                        'py-1.5',
+                        'backdrop-blur-sm',
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSquadLobbyMicMuted((prev) => !prev)}
+                        className={clsx(
+                          'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
+                          squadLobbyMicMuted
+                            ? 'border-red-300/70 bg-red-500/20 text-red-100'
+                            : 'border-white/40 text-white hover:bg-white/10',
+                        )}
+                        title={squadLobbyMicMuted ? 'Unmute microphone' : 'Mute microphone'}
+                      >
+                        {squadLobbyMicMuted ? <IoMicOff className="text-lg" /> : <IoMic className="text-lg" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSquadLobbyAudioOff((prev) => !prev)}
+                        className={clsx(
+                          'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
+                          squadLobbyAudioOff
+                            ? 'border-yellow-300/70 bg-yellow-500/20 text-yellow-100'
+                            : 'border-white/40 text-white hover:bg-white/10',
+                        )}
+                        title={squadLobbyAudioOff ? 'Turn audio on' : 'Turn audio off'}
+                      >
+                        {squadLobbyAudioOff ? <IoVolumeMute className="text-lg" /> : <IoVolumeHigh className="text-lg" />}
+                      </button>
+                    </div>
+                  ) : null}
                   <div
                     className={clsx(
                       'inline-flex',

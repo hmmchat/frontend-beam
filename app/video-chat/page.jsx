@@ -108,6 +108,7 @@ function VideoChatContent() {
   const [broadcastChatWarning, setBroadcastChatWarning] = useState('');
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [loadingMeme, setLoadingMeme] = useState(null);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
@@ -571,6 +572,67 @@ function VideoChatContent() {
     }, 1000);
     return () => clearInterval(id);
   }, [pullStrangerCooldownSec]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pickLoadingMeme = (memes) => {
+      const activeMemes = Array.isArray(memes)
+        ? memes.filter((meme) => meme && (meme.imageUrl || meme.text))
+        : [];
+      if (activeMemes.length === 0) return null;
+
+      const orderedMemes = activeMemes
+        .filter((meme) => Number.isFinite(Number(meme.order)))
+        .sort((a, b) => Number(a.order) - Number(b.order));
+      if (orderedMemes.length > 0) {
+        const key = 'beam_loading_meme_order_index';
+        const previousIndex = Number.parseInt(localStorage.getItem(key) || '0', 10);
+        const safeIndex = Number.isFinite(previousIndex) ? previousIndex % orderedMemes.length : 0;
+        localStorage.setItem(key, String((safeIndex + 1) % orderedMemes.length));
+        return orderedMemes[safeIndex];
+      }
+
+      return activeMemes[Math.floor(Math.random() * activeMemes.length)];
+    };
+
+    const normalizeMeme = (meme) => {
+      if (!meme) return null;
+      return {
+        imageUrl: meme.imageUrl || '',
+        text: meme.text || 'Finding someone who matches your energy...',
+      };
+    };
+
+    (async () => {
+      try {
+        const response = await apiRequest(API.STREAMING.GET_LOADING_MEMES);
+        if (cancelled) return;
+        const selected = pickLoadingMeme(response?.memes || []);
+        if (selected) {
+          setLoadingMeme(normalizeMeme(selected));
+          return;
+        }
+      } catch (_) {}
+
+      try {
+        const response = await apiRequest(API.STREAMING.GET_RANDOM_LOADING_MEME);
+        if (cancelled) return;
+        setLoadingMeme(normalizeMeme(response?.meme || response));
+      } catch (_) {
+        if (!cancelled) {
+          setLoadingMeme({
+            imageUrl: '',
+            text: 'Finding someone who matches your energy...',
+          });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // When a third person is in the call (2 remote peers), pull-stranger window is done: stop UI timer and grace.
   // When dropping from 3+ tiles to 2 (guest kicked), clear pull-stranger grace — otherwise room-health keeps
@@ -1839,10 +1901,24 @@ function VideoChatContent() {
           /* Landing/Loading state: Full peer section placeholder and local */
           <>
             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-               <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'text-white/30')}>
-                  <div className={clsx('w-8', 'h-8', 'border-2', 'border-white/10', 'border-t-white', 'rounded-full', 'animate-spin', 'mb-4')} />
-                  <p className={clsx('text-sm', 'font-bold', 'tracking-widest', 'uppercase')}>Waiting for match...</p>
-               </div>
+              <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'bg-black', 'p-6', 'text-white')}>
+                {loadingMeme?.imageUrl ? (
+                  <img
+                    src={loadingMeme.imageUrl}
+                    alt={loadingMeme.text || 'Loading meme'}
+                    className={clsx('h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'rounded-[1.5rem]', 'object-contain', 'shadow-2xl')}
+                  />
+                ) : (
+                  <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'border', 'border-white/10', 'bg-white/5', 'p-8', 'text-center', 'shadow-2xl')}>
+                    <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
+                  </div>
+                )}
+                {loadingMeme?.text && loadingMeme?.imageUrl ? (
+                  <p className={clsx('mt-5', 'max-w-xl', 'rounded-full', 'bg-white/10', 'px-5', 'py-2', 'text-center', 'text-sm', 'font-black', 'uppercase', 'tracking-wider', 'text-white', 'backdrop-blur-md')}>
+                    {loadingMeme.text}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
               {!showChatInput && (

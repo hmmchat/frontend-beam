@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { API, apiRequest, getAuthHeaders } from "@/lib/api";
+import { getNotificationCountThrottled } from "@/lib/notification-count";
 import InboxHeader from "../inbox/InboxHeader";
 import ConversationSidebar from "../inbox/ConversationSidebar";
 import ThreadHeader from "../inbox/ThreadHeader";
@@ -422,20 +423,25 @@ export default function Inbox() {
   const notifNextAllowedAtRef = useRef(0);
   const notifBadgeTimerRef = useRef(null);
 
-  const scheduleNotificationBadge = useCallback(() => {
+  const scheduleNotificationBadge = useCallback((opts = {}) => {
     const minGapMs = 12000;
     const backoff429Ms = 60000;
+    const force = opts.force === true;
     const fire = async () => {
       notifBadgeTimerRef.current = null;
       const now = Date.now();
-      if (now < notifNextAllowedAtRef.current) {
+      if (!force && now < notifNextAllowedAtRef.current) {
         const wait = notifNextAllowedAtRef.current - now + 50;
         notifBadgeTimerRef.current = window.setTimeout(fire, wait);
         return;
       }
       notifNextAllowedAtRef.current = now + minGapMs;
       try {
-        const data = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT);
+        const data = await getNotificationCountThrottled({
+          force,
+          minGapMs,
+          backoff429Ms,
+        });
         setNotif(data);
       } catch (e) {
         setNotif(null);
@@ -450,7 +456,11 @@ export default function Inbox() {
       }
     };
     const now = Date.now();
-    if (now >= notifNextAllowedAtRef.current) {
+    if (force || now >= notifNextAllowedAtRef.current) {
+      if (notifBadgeTimerRef.current) {
+        clearTimeout(notifBadgeTimerRef.current);
+        notifBadgeTimerRef.current = null;
+      }
       void fire();
       return;
     }
@@ -691,7 +701,7 @@ export default function Inbox() {
             body: JSON.stringify({ section: "SENT_REQUESTS" }),
           });
         }
-        scheduleNotificationBadge();
+        scheduleNotificationBadge({ force: true });
       } catch {
         /* optional endpoint */
       }
@@ -790,7 +800,7 @@ export default function Inbox() {
         await apiRequest(API.FRIENDS.MARK_MESSAGES_READ(otherUserId), {
           method: "POST",
         });
-        scheduleNotificationBadge();
+        scheduleNotificationBadge({ force: true });
       } catch (e) {
         console.warn("[Inbox] markRead", e);
       }
@@ -1189,7 +1199,7 @@ export default function Inbox() {
           }, 350);
         }
         if (!inInbox && !inReq && !inSent) loadListsFn?.({ quiet: true });
-        if (isIncoming) scheduleNotifFn?.();
+        if (isIncoming) scheduleNotifFn?.({ force: true });
         const ac2 = activeChatRef.current;
         const activeCid2 = ac2?.conversationId || ac2?.rowKey;
         if (
@@ -1223,7 +1233,7 @@ export default function Inbox() {
 
       if (msg.type === "friend:refresh") {
         loadListsRef.current?.({ quiet: true, skipNotificationBadge: true });
-        loadNotificationBadgeRef.current?.();
+        loadNotificationBadgeRef.current?.({ force: true });
         refreshPendingSquadInvitationIdsRef.current?.();
       }
 

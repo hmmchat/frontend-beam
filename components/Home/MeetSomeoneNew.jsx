@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { IoVideocam, IoNavigate, IoTimeOutline, IoChatbubbleOutline, IoPersonOutline, IoHomeOutline, IoLayersOutline } from 'react-icons/io5';
 import { FaCrown, FaMobileAlt } from 'react-icons/fa';
 import { API, apiRequest } from '@/lib/api';
+import {
+  getNotificationBadgeCount,
+  getNotificationCountThrottled,
+  subscribeNotificationRealtime,
+  subscribeNotificationCount,
+} from '@/lib/notification-count';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 import clsx from 'clsx';
 import Image from 'next/image';
@@ -41,40 +47,7 @@ export default function MeetSomeoneNew({
   const activeUsers = externalActiveUsers !== undefined ? externalActiveUsers : internalActiveUsers;
   const myProfile = externalMyProfile || internalMyProfile;
 
-  useEffect(() => {
-    if (!externalMyProfile) fetchMyProfile();
-    if (externalCoins === undefined) fetchWalletBalance();
-
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return;
-        const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
-        if (notifRes) {
-          const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
-          setUnreadCount(count);
-        }
-      } catch (e) {
-        // silent failure
-      }
-    };
-
-    fetchNotifications();
-    const notifInterval = setInterval(fetchNotifications, 10000);
-
-    if (externalActiveUsers === undefined) {
-        const activeUsersInterval = setInterval(() => {
-            setInternalActiveUsers(prev => prev + Math.floor(Math.random() * 10) - 5);
-        }, 10000);
-        return () => {
-            clearInterval(notifInterval);
-            clearInterval(activeUsersInterval);
-        };
-    }
-    return () => clearInterval(notifInterval);
-  }, [externalMyProfile, externalCoins, externalActiveUsers]);
-
-  const fetchMyProfile = async () => {
+  async function fetchMyProfile() {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
@@ -90,9 +63,9 @@ export default function MeetSomeoneNew({
     } catch (error) {
       console.error('Error fetching my profile:', error);
     }
-  };
+  }
 
-  const fetchWalletBalance = async () => {
+  async function fetchWalletBalance() {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
@@ -106,7 +79,50 @@ export default function MeetSomeoneNew({
     } catch (error) {
       console.error('Error fetching balance:', error);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (!externalMyProfile) void Promise.resolve().then(() => fetchMyProfile());
+    if (externalCoins === undefined) void Promise.resolve().then(() => fetchWalletBalance());
+
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        const notifRes = await getNotificationCountThrottled();
+        if (notifRes) {
+          const count = getNotificationBadgeCount(notifRes);
+          setUnreadCount(count);
+        }
+      } catch (e) {
+        // silent failure
+      }
+    };
+
+    const unsubscribe = subscribeNotificationCount((notifRes) => {
+      setUnreadCount(getNotificationBadgeCount(notifRes));
+    });
+    const unsubscribeRealtime = subscribeNotificationRealtime();
+    fetchNotifications();
+    const notifInterval = setInterval(fetchNotifications, 10000);
+
+    if (externalActiveUsers === undefined) {
+        const activeUsersInterval = setInterval(() => {
+            setInternalActiveUsers(prev => prev + Math.floor(Math.random() * 10) - 5);
+        }, 10000);
+        return () => {
+            unsubscribe();
+            unsubscribeRealtime();
+            clearInterval(notifInterval);
+            clearInterval(activeUsersInterval);
+        };
+    }
+    return () => {
+      unsubscribe();
+      unsubscribeRealtime();
+      clearInterval(notifInterval);
+    };
+  }, [externalMyProfile, externalCoins, externalActiveUsers]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');

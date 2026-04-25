@@ -14,7 +14,9 @@ const FIGMA_MIN_H = '76.69px';
 export default function SquadQuickInviteStrip({
   friends,
   busyId,
+  pendingInviteeIds,
   onInvite,
+  onCancelInvite,
   onSeeAll,
   className = '',
 }) {
@@ -42,31 +44,36 @@ export default function SquadQuickInviteStrip({
         className="flex min-w-0 flex-1 flex-row flex-wrap items-center justify-center sm:flex-nowrap"
         style={{ gap: FIGMA_GAP }}
       >
-        {friends.map((f) => (
-          <div key={f.friendId} className="flex shrink-0 flex-col items-center gap-1">
-            <div className="relative h-[52px] w-[52px] shrink-0 md:h-14 md:w-14">
-              <div className="absolute inset-0 rounded-full border-[2px] border-white/50 overflow-hidden bg-white/10">
-                <Image src={f.photoUrl} alt="" fill className="object-cover" sizes="56px" />
+        {friends.map((f) => {
+          const pending = pendingInviteeIds?.has?.(String(f.friendId));
+          return (
+            <div key={f.friendId} className="flex shrink-0 flex-col items-center gap-1">
+              <div className="relative h-[52px] w-[52px] shrink-0 md:h-14 md:w-14">
+                <div className="absolute inset-0 rounded-full border-[2px] border-white/50 overflow-hidden bg-white/10">
+                  <Image src={f.photoUrl} alt="" fill className="object-cover" sizes="56px" />
+                </div>
+                <button
+                  type="button"
+                  disabled={busyId === f.friendId}
+                  onClick={() => (pending ? onCancelInvite?.(f.friendId) : onInvite?.(f.friendId))}
+                  className={clsx(
+                    'absolute -right-0.5 -top-0.5 z-10 flex h-6 w-6 items-center justify-center rounded-full',
+                    'border border-white/90 text-sm font-bold leading-none shadow-md active:scale-95 disabled:opacity-40',
+                    pending
+                      ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+                      : 'bg-white text-[#5b21b6] hover:bg-white/95',
+                  )}
+                  aria-label={pending ? `Cancel invite to ${f.username}` : `Invite ${f.username}`}
+                >
+                  {pending ? '-' : '+'}
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={busyId === f.friendId}
-                onClick={() => onInvite?.(f.friendId)}
-                className={clsx(
-                  'absolute -right-0.5 -top-0.5 z-10 flex h-6 w-6 items-center justify-center rounded-full',
-                  'border border-white/90 bg-white text-sm font-bold leading-none text-[#5b21b6] shadow-md',
-                  'hover:bg-white/95 active:scale-95 disabled:opacity-40',
-                )}
-                aria-label={`Invite ${f.username}`}
-              >
-                +
-              </button>
+              <span className="max-w-[5.5rem] truncate text-center text-[10px] font-medium text-white md:text-xs">
+                {f.username}
+              </span>
             </div>
-            <span className="max-w-[5.5rem] truncate text-center text-[10px] font-medium text-white md:text-xs">
-              {f.username}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button

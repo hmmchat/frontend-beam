@@ -10,6 +10,12 @@ import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import { IoMenu, IoHome, IoTimeOutline, IoChatbubbleEllipsesOutline, IoPersonOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
+import {
+    getNotificationBadgeCount,
+    getNotificationCountThrottled,
+    subscribeNotificationRealtime,
+    subscribeNotificationCount,
+} from '@/lib/notification-count';
 import clsx from 'clsx';
 
 export default function MeetSomeoneMobile() {
@@ -29,6 +35,7 @@ export default function MeetSomeoneMobile() {
     const [squadShareBusy, setSquadShareBusy] = useState(false);
     const [quickInviteFriends, setQuickInviteFriends] = useState([]);
     const [quickInviteBusyId, setQuickInviteBusyId] = useState(null);
+    const [quickInvitePendingIds, setQuickInvitePendingIds] = useState(() => new Set());
     const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
     const [squadProductMessage, setSquadProductMessage] = useState('');
     const [guestProfiles, setGuestProfiles] = useState({});
@@ -88,9 +95,9 @@ export default function MeetSomeoneMobile() {
             try {
                 const token = localStorage.getItem('accessToken');
                 if (!token) return;
-                const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
+                const notifRes = await getNotificationCountThrottled();
                 if (notifRes) {
-                    const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
+                    const count = getNotificationBadgeCount(notifRes);
                     setUnreadCount((prev) => (prev === count ? prev : count));
                 }
             } catch (e) {
@@ -99,13 +106,18 @@ export default function MeetSomeoneMobile() {
         };
 
         fetchMetrics();
+        const unsubscribe = subscribeNotificationCount((notifRes) => {
+            const count = getNotificationBadgeCount(notifRes);
+            setUnreadCount((prev) => (prev === count ? prev : count));
+        });
+        const unsubscribeRealtime = subscribeNotificationRealtime();
         fetchNotifications();
         const metricsInterval = setInterval(fetchMetrics, 15000);
-        const notifInterval = setInterval(fetchNotifications, 5000);
-        const onFocus = () => void fetchNotifications();
+        const notifInterval = setInterval(fetchNotifications, 10000);
+        const onFocus = () => void getNotificationCountThrottled({ force: true, minGapMs: 5000 });
         const onVisible = () => {
             if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-                void fetchNotifications();
+                void getNotificationCountThrottled({ force: true, minGapMs: 5000 });
             }
         };
         if (typeof window !== 'undefined') {
@@ -115,6 +127,8 @@ export default function MeetSomeoneMobile() {
             document.addEventListener('visibilitychange', onVisible);
         }
         return () => {
+            unsubscribe();
+            unsubscribeRealtime();
             clearInterval(metricsInterval);
             clearInterval(notifInterval);
             if (typeof window !== 'undefined') {
@@ -343,11 +357,23 @@ export default function MeetSomeoneMobile() {
     const loadQuickInviteFriends = useCallback(async () => {
         if (!squadHomeInviteMeetSlotActive || !myUserId) {
             setQuickInviteFriends([]);
+            setQuickInvitePendingIds(new Set());
             return;
         }
         try {
-            const data = await apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS);
+            const [data, pendingData] = await Promise.all([
+                apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS),
+                apiRequest(API.SQUAD.PENDING_INVITATIONS_LOBBY).catch(() => null),
+            ]);
             const memberSet = new Set((squadLobby?.memberIds || []).filter(Boolean));
+            setQuickInvitePendingIds(
+                new Set(
+                    (pendingData?.invitations || [])
+                        .map((x) => x?.inviteeId)
+                        .filter(Boolean)
+                        .map(String),
+                ),
+            );
             const raw = data.suggestions || data.peers || [];
             const mapped = raw
                 .map((s) => {
@@ -364,12 +390,14 @@ export default function MeetSomeoneMobile() {
             setQuickInviteFriends(mapped.slice(0, 3));
         } catch {
             setQuickInviteFriends([]);
+            setQuickInvitePendingIds(new Set());
         }
     }, [squadHomeInviteMeetSlotActive, myUserId, squadLobby?.memberIds]);
 
     useEffect(() => {
         if (mode !== 'squad') {
             setQuickInviteFriends([]);
+            setQuickInvitePendingIds(new Set());
             return;
         }
         void loadQuickInviteFriends();
@@ -384,10 +412,32 @@ export default function MeetSomeoneMobile() {
                 method: 'POST',
                 body: JSON.stringify({ inviteeId: friendId }),
             });
+            setQuickInvitePendingIds((prev) => new Set([...prev, String(friendId)]));
             await refreshSquadLobby();
-            await loadQuickInviteFriends();
         } catch (e) {
             setSquadProductMessage(e?.message || 'Could not send invite');
+        } finally {
+            setQuickInviteBusyId(null);
+        }
+    };
+
+    const handleQuickSquadCancelInvite = async (friendId) => {
+        if (!friendId || quickInviteBusyId) return;
+        setQuickInviteBusyId(friendId);
+        setSquadProductMessage('');
+        try {
+            await apiRequest(API.SQUAD.CANCEL_INVITATION, {
+                method: 'POST',
+                body: JSON.stringify({ inviteeId: friendId }),
+            });
+            setQuickInvitePendingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(String(friendId));
+                return next;
+            });
+            await refreshSquadLobby();
+        } catch (e) {
+            setSquadProductMessage(e?.message || 'Could not cancel invite');
         } finally {
             setQuickInviteBusyId(null);
         }
@@ -688,18 +738,9 @@ export default function MeetSomeoneMobile() {
                         </div>
                         </div>
 
+                        {/* pb-*: space above tab bar — lower value moves Invite / Meet closer to bottom nav */}
                         {squadHomeInviteMeetSlotActive && (quickInviteFriends.length > 0 || canSquadMeet) ? (
-                            {/* pb-*: space above tab bar — lower value moves Invite / Meet closer to bottom nav */}
                             <div className="relative z-10 flex w-full shrink-0 flex-col gap-4 px-6 pb-24">
-                                {quickInviteFriends.length > 0 ? (
-                                    <SquadQuickInviteStrip
-                                        friends={quickInviteFriends}
-                                        busyId={quickInviteBusyId}
-                                        onInvite={(id) => void handleQuickSquadInvite(id)}
-                                        onSeeAll={() => setSquadInviteOpen(true)}
-                                        className="w-full"
-                                    />
-                                ) : null}
                                 {canSquadMeet ? (
                                     <button
                                         type="button"
@@ -712,6 +753,16 @@ export default function MeetSomeoneMobile() {
                                             {squadMeetBusy ? 'Starting...' : 'Meet Someone now'}
                                         </span>
                                     </button>
+                                ) : quickInviteFriends.length > 0 ? (
+                                    <SquadQuickInviteStrip
+                                        friends={quickInviteFriends}
+                                        busyId={quickInviteBusyId}
+                                        pendingInviteeIds={quickInvitePendingIds}
+                                        onInvite={(id) => void handleQuickSquadInvite(id)}
+                                        onCancelInvite={(id) => void handleQuickSquadCancelInvite(id)}
+                                        onSeeAll={() => setSquadInviteOpen(true)}
+                                        className="w-full"
+                                    />
                                 ) : null}
                             </div>
                         ) : null}

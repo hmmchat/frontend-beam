@@ -11,6 +11,12 @@ import LocationModal from '@/components/modals/LocationModal';
 import { IoLogOutOutline, IoClose, IoMic, IoMicOff, IoVolumeHigh, IoVolumeMute } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
 import { setPresenceStatus, setPresenceStatusKeepalive } from '@/lib/presence-status';
+import {
+  getNotificationBadgeCount,
+  getNotificationCountThrottled,
+  subscribeNotificationRealtime,
+  subscribeNotificationCount,
+} from '@/lib/notification-count';
 import FaceCard4 from './FaceCard4';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
@@ -51,6 +57,7 @@ export default function MeetSomeoneDynamic() {
   const [squadShareBusy, setSquadShareBusy] = useState(false);
   const [quickInviteFriends, setQuickInviteFriends] = useState([]);
   const [quickInviteBusyId, setQuickInviteBusyId] = useState(null);
+  const [quickInvitePendingIds, setQuickInvitePendingIds] = useState(() => new Set());
   const [squadMemberActionBusyId, setSquadMemberActionBusyId] = useState(null);
   const [squadProductMessage, setSquadProductMessage] = useState('');
   const [squadLobbyCall, setSquadLobbyCall] = useState(null);
@@ -101,26 +108,27 @@ export default function MeetSomeoneDynamic() {
         const token = localStorage.getItem('accessToken');
         if (!token) return;
 
-        // GET_NOTIFICATIONS_COUNT returns counts for INBOX, RECEIVED_REQUESTS, SENT_REQUESTS, and FRIEND_REQUESTS.
-        // It accounts for lastSeenAt, so visiting /inbox reduces the count appropriately.
-        const notifRes = await apiRequest(API.FRIENDS.GET_NOTIFICATIONS_COUNT).catch(() => null);
+        const notifRes = await getNotificationCountThrottled();
 
         if (notifRes) {
-          // unreadCount reflects anything "new" (unread messages or pending requests)
-          // We sum totalUnreadMessages (inbox + requests) and pendingFriendRequests.
-          const count = (notifRes.totalUnreadMessages || 0) + (notifRes.pendingFriendRequests || 0);
+          const count = getNotificationBadgeCount(notifRes);
           setUnreadCount((prev) => (prev === count ? prev : count));
         }
       } catch (e) {
         // fail silently
       }
     };
+    const unsubscribe = subscribeNotificationCount((notifRes) => {
+      const count = getNotificationBadgeCount(notifRes);
+      setUnreadCount((prev) => (prev === count ? prev : count));
+    });
+    const unsubscribeRealtime = subscribeNotificationRealtime();
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
-    const onFocus = () => void fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    const onFocus = () => void getNotificationCountThrottled({ force: true, minGapMs: 5000 });
     const onVisible = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        void fetchNotifications();
+        void getNotificationCountThrottled({ force: true, minGapMs: 5000 });
       }
     };
     if (typeof window !== 'undefined') {
@@ -130,6 +138,8 @@ export default function MeetSomeoneDynamic() {
       document.addEventListener('visibilitychange', onVisible);
     }
     return () => {
+      unsubscribe();
+      unsubscribeRealtime();
       clearInterval(interval);
       if (typeof window !== 'undefined') {
         window.removeEventListener('focus', onFocus);
@@ -1021,11 +1031,23 @@ export default function MeetSomeoneDynamic() {
   const loadQuickInviteFriends = useCallback(async () => {
     if (!squadHomeInviteMeetSlotActive || !myUserId) {
       setQuickInviteFriends([]);
+      setQuickInvitePendingIds(new Set());
       return;
     }
     try {
-      const data = await apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS);
+      const [data, pendingData] = await Promise.all([
+        apiRequest(API.SQUAD.QUICK_INVITE_SUGGESTIONS),
+        apiRequest(API.SQUAD.PENDING_INVITATIONS_LOBBY).catch(() => null),
+      ]);
       const memberSet = new Set((squadLobby?.memberIds || []).filter(Boolean));
+      setQuickInvitePendingIds(
+        new Set(
+          (pendingData?.invitations || [])
+            .map((x) => x?.inviteeId)
+            .filter(Boolean)
+            .map(String),
+        ),
+      );
       const raw = data.suggestions || data.peers || [];
       const mapped = raw
         .map((s) => {
@@ -1042,12 +1064,14 @@ export default function MeetSomeoneDynamic() {
       setQuickInviteFriends(mapped.slice(0, 3));
     } catch {
       setQuickInviteFriends([]);
+      setQuickInvitePendingIds(new Set());
     }
   }, [squadHomeInviteMeetSlotActive, myUserId, squadLobby?.memberIds]);
 
   useEffect(() => {
     if (mode !== 'squad') {
       setQuickInviteFriends([]);
+      setQuickInvitePendingIds(new Set());
       return;
     }
     void loadQuickInviteFriends();
@@ -1062,10 +1086,32 @@ export default function MeetSomeoneDynamic() {
         method: 'POST',
         body: JSON.stringify({ inviteeId: friendId }),
       });
+      setQuickInvitePendingIds((prev) => new Set([...prev, String(friendId)]));
       await refreshSquadLobby();
-      await loadQuickInviteFriends();
     } catch (e) {
       setSquadProductMessage(e?.message || 'Could not send invite');
+    } finally {
+      setQuickInviteBusyId(null);
+    }
+  };
+
+  const handleQuickSquadCancelInvite = async (friendId) => {
+    if (!friendId || quickInviteBusyId) return;
+    setQuickInviteBusyId(friendId);
+    setSquadProductMessage('');
+    try {
+      await apiRequest(API.SQUAD.CANCEL_INVITATION, {
+        method: 'POST',
+        body: JSON.stringify({ inviteeId: friendId }),
+      });
+      setQuickInvitePendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(friendId));
+        return next;
+      });
+      await refreshSquadLobby();
+    } catch (e) {
+      setSquadProductMessage(e?.message || 'Could not cancel invite');
     } finally {
       setQuickInviteBusyId(null);
     }
@@ -2365,27 +2411,25 @@ export default function MeetSomeoneDynamic() {
                 </div>
                 </div>
 
-                {/* Bottom CTAs: Invite = solo MeetNow row; Meet = solo Filter row. mt-40 only when that widget is the sole CTA (matches solo); both shown → gap-6 only between them. */}
-                {squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
-                  <SquadQuickInviteStrip
-                    friends={quickInviteFriends}
-                    busyId={quickInviteBusyId}
-                    onInvite={(id) => void handleQuickSquadInvite(id)}
-                    onSeeAll={() => setSquadInviteOpen(true)}
-                    className={clsx('w-[79%]', !canSquadMeet && 'mt-40')}
-                  />
-                ) : null}
+                {/* Bottom CTA: Meet replaces Invite once the squad is ready. */}
                 {squadHomeInviteMeetSlotActive && canSquadMeet ? (
                   <MeetNowButton
                     onClick={handleSquadEnterCall}
                     isSearching={squadMeetBusy}
                     searchingText="Starting..."
                     text="Meet Someone now"
-                    className={clsx(
-                      'h-30 w-[79%]',
-                      quickInviteFriends.length === 0 ? 'mt-40' : '',
-                    )}
+                    className="h-30 w-[79%] mt-40"
                     isVideoOn
+                  />
+                ) : squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
+                  <SquadQuickInviteStrip
+                    friends={quickInviteFriends}
+                    busyId={quickInviteBusyId}
+                    pendingInviteeIds={quickInvitePendingIds}
+                    onInvite={(id) => void handleQuickSquadInvite(id)}
+                    onCancelInvite={(id) => void handleQuickSquadCancelInvite(id)}
+                    onSeeAll={() => setSquadInviteOpen(true)}
+                    className="w-[79%] mt-40"
                   />
                 ) : null}
                 </div>

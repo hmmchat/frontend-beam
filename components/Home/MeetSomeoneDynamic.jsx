@@ -2224,34 +2224,6 @@ export default function MeetSomeoneDynamic() {
                         <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
                           <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
                         </div>
-                        <button
-                          type="button"
-                          disabled={squadMemberActionBusyId === myUserId}
-                          onClick={handleLeaveSquadSelf}
-                          className={clsx(
-                            'absolute',
-                            '-top-2',
-                            '-right-2',
-                            'z-20',
-                            'w-6',
-                            'h-6',
-                            'rounded-full',
-                            'bg-red-600',
-                            'border',
-                            'border-white/90',
-                            'text-white',
-                            'text-[10px]',
-                            'font-bold',
-                            'flex',
-                            'items-center',
-                            'justify-center',
-                            'shadow-md',
-                            'disabled:opacity-40'
-                          )}
-                          title="Leave squad"
-                        >
-                          x
-                        </button>
                       </div>
                       <span className="text-xs">Me</span>
                     </div>

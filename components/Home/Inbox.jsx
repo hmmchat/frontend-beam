@@ -1696,6 +1696,41 @@ export default function Inbox() {
       void markReadForPeer(row.otherUser?.id || row.otherUserId);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const cid = params.get("chat");
+    if (!cid || activeChat?.rowKey === cid) return;
+
+    const row = [...inboxList, ...requestsList, ...sentList].find(
+      (c) => String(c.conversationId || c.id) === String(cid),
+    );
+    if (row) {
+      openRow(row);
+      return;
+    }
+
+    const otherUserId = params.get("userId");
+    if (!otherUserId) return;
+    setActiveTab("inbox");
+    setActiveChat({
+      rowKey: cid,
+      conversationId: cid,
+      otherUser: {
+        id: otherUserId,
+        username: params.get("username") || "User",
+        displayPictureUrl: params.get("photo") || null,
+      },
+      otherUserId,
+      isFriend: params.get("friend") === "1",
+      isFollowRequest: false,
+      isOutgoingFriendRequest: false,
+      followRequestId: null,
+      outgoingFriendRequestId: null,
+      unreadCount: 0,
+    });
+  }, [activeChat?.rowKey, inboxList, requestsList, sentList]);
+
   const showRecipientFollowActions =
     activeTab === "requests" &&
     activeChat &&

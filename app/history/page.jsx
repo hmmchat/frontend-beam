@@ -23,6 +23,8 @@ function HistoryContent() {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
   const [timelinesBySessionId, setTimelinesBySessionId] = useState({});
+  const [actionBusyId, setActionBusyId] = useState(null);
+  const [productMessage, setProductMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,6 +94,31 @@ function HistoryContent() {
 
   const viewerId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
+  const sendFriendRequest = async (toUserId) => {
+    if (!toUserId || actionBusyId) return;
+    setActionBusyId(toUserId);
+    setProductMessage('');
+    try {
+      await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
+        method: 'POST',
+        body: JSON.stringify({ toUserId }),
+      });
+      setProductMessage('Friend request sent.');
+      setCalls((prev) =>
+        prev.map((call) => ({
+          ...call,
+          participants: (call.participants || []).map((p) =>
+            String(p.userId) === String(toUserId) ? { ...p, friendRequestSent: true } : p
+          ),
+        }))
+      );
+    } catch (e) {
+      setProductMessage(e?.message || 'Could not send friend request');
+    } finally {
+      setActionBusyId(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 h-[100dvh] w-full text-white overflow-hidden">
 
@@ -131,6 +158,11 @@ function HistoryContent() {
                         ">
 
           <div className="h-full overflow-y-auto space-y-4 pt-3 mt-3 md:px-6 px-3">
+            {productMessage ? (
+              <div className="mx-2 rounded-2xl border border-white/20 bg-black/25 px-4 py-3 text-sm text-white/90">
+                {productMessage}
+              </div>
+            ) : null}
             {loading ? (
               <HistorySkeleton />
             ) : calls.length === 0 ? (
@@ -287,33 +319,45 @@ function HistoryContent() {
 
             {/* Right */}
             <div className="flex items-center gap-4">
-              <button
-                onClick={() =>
-                  participant.conversationId &&
-                  router.push(`/inbox?chat=${participant.conversationId}`)
-                }
-                className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-              >
-                <img
-                  src="/history/mail.svg"
-                  alt="message"
-                  className="w-6 h-6"
-                />
-              </button>
+              {participant.conversationId ? (
+                <button
+                  type="button"
+                  title={participant.isFriend ? "Message" : `Message once for ${participant.messageCost ?? 10} coins`}
+                  onClick={() => {
+                    const q = new URLSearchParams({
+                      chat: participant.conversationId,
+                      userId: participant.userId,
+                      username: participant.username || "User",
+                      friend: participant.isFriend ? "1" : "0",
+                    });
+                    if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
+                    router.push(`/inbox?${q.toString()}`);
+                  }}
+                  className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                >
+                  <img
+                    src="/history/mail.svg"
+                    alt="message"
+                    className="w-6 h-6"
+                  />
+                </button>
+              ) : null}
 
-              <button
-                className={`w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors ${
-                  participant.isFriend
-                    ? "text-red-400 border-red-400/50"
-                    : ""
-                }`}
-              >
-                <img
-                  src="/history/heart.svg"
-                  alt="heart"
-                  className="w-6 h-6"
-                />
-              </button>
+              {!participant.isFriend ? (
+                <button
+                  type="button"
+                  disabled={actionBusyId === participant.userId || participant.friendRequestSent}
+                  onClick={() => sendFriendRequest(participant.userId)}
+                  className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors disabled:opacity-50"
+                  title={participant.friendRequestSent ? "Friend request sent" : "Send friend request"}
+                >
+                  <img
+                    src="/history/heart.svg"
+                    alt="heart"
+                    className="w-6 h-6"
+                  />
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

@@ -651,15 +651,6 @@ export default function MeetSomeoneMobile() {
                                             className="object-cover"
                                         />
                                     </div>
-                                    <button
-                                        type="button"
-                                        disabled={squadMemberActionBusyId === myUserId}
-                                        onClick={handleLeaveSquadSelf}
-                                        className="absolute -top-2 -right-2 z-20 w-5 h-5 rounded-full bg-red-600 border border-white/90 text-white text-[10px] font-bold flex items-center justify-center disabled:opacity-40"
-                                        title="Leave squad"
-                                    >
-                                        x
-                                    </button>
                                 </div>
                                 <span className="text-xs">Me</span>
                             </div>

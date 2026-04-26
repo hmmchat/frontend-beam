@@ -50,6 +50,7 @@ const FaceCard4 = ({
 
   if (!user) return null;
 
+  const hideFacecardAge = Boolean(user.hideFacecardAge);
   const age = user.age ?? calculateAge(user.dateOfBirth);
   const city = user.city || user.preferredCity || "Unknown";
 
@@ -112,13 +113,18 @@ const FaceCard4 = ({
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
           <div>
             <h1 className="text-[18px] font-semibold text-[#FFB800] text-start">
-              {user.username || "User"}{" "}
-              <span
-                className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-                style={{ WebkitTextStroke: "0.7px white" }}
-              >
-                {age || "—"}
-              </span>
+              {user.username || "User"}
+              {!hideFacecardAge && (
+                <>
+                  {" "}
+                  <span
+                    className="font-sm text-transparent  px-2 py-0.5 rounded-full"
+                    style={{ WebkitTextStroke: "0.7px white" }}
+                  >
+                    {age || "—"}
+                  </span>
+                </>
+              )}
             </h1>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
               {/* <IoLocationOutline className="shrink-0" /> */}
@@ -176,13 +182,18 @@ const FaceCard4 = ({
             <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
               <div>
                 <h1 className="text-[18px] font-semibold text-[#FFB800]">
-                  {user.username || "User"}{" "}
-                  <span
-                    className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-                    style={{ WebkitTextStroke: "0.7px white" }}
-                  >
-                    {age || "—"}
-                  </span>
+                  {user.username || "User"}
+                  {!hideFacecardAge && (
+                    <>
+                      {" "}
+                      <span
+                        className="font-sm text-transparent  px-2 py-0.5 rounded-full"
+                        style={{ WebkitTextStroke: "0.7px white" }}
+                      >
+                        {age || "—"}
+                      </span>
+                    </>
+                  )}
                 </h1>
                 <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
                   <IoLocationOutline className="shrink-0" />

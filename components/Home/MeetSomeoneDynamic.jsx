@@ -20,8 +20,7 @@ import {
 import FaceCard4 from './FaceCard4';
 import LocalVideo from './LocalVideo';
 import clsx from 'clsx';
-import LocationCard from './LocationCard';
-import { getFacecardPhotos } from '@/lib/facecard-utils';
+import { getFacecardPhotos, buildDiscoveryCityFaceCardUser } from '@/lib/facecard-utils';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 
 import FaceCard from './FaceCard';
@@ -1245,7 +1244,13 @@ export default function MeetSomeoneDynamic() {
 
   useEffect(() => {
     // Only reset index when the user actually changes to a different person
-    const cardId = currentCard?.userId || currentCard?._id || currentCard?.id;
+    const cardId =
+      currentCard?.userId ||
+      currentCard?._id ||
+      currentCard?.id ||
+      (currentCard?.type === 'LOCATION' || currentCard?.isLocationCard
+        ? `location:${currentCard?.city ?? ''}`
+        : null);
     if (cardId) {
       setCurrentImageIndex(0);
 
@@ -1285,6 +1290,21 @@ export default function MeetSomeoneDynamic() {
   }, [currentCard?.userId, currentCard?._id, currentCard?.id]);
 
   const allPhotos = getFacecardPhotos(currentCard);
+
+  const discoveryCityFaceUser = useMemo(() => {
+    if (!currentCard || (currentCard.type !== 'LOCATION' && !currentCard.isLocationCard)) return null;
+    return buildDiscoveryCityFaceCardUser({
+      city: currentCard.city,
+      availableCount: currentCard.availableCount,
+      faceCardImageUrl: currentCard.faceCardImageUrl,
+    });
+  }, [
+    currentCard?.type,
+    currentCard?.isLocationCard,
+    currentCard?.city,
+    currentCard?.availableCount,
+    currentCard?.faceCardImageUrl,
+  ]);
 
   const handleNextImage = (e) => {
     e?.stopPropagation();
@@ -1368,7 +1388,7 @@ export default function MeetSomeoneDynamic() {
 
     // If it's a location card, "proceeding" means selecting that location
     if (currentCard.type === 'LOCATION' || currentCard.isLocationCard) {
-      handleSelectLocation(currentCard.city);
+      await handleSelectLocation(currentCard.city);
       return;
     }
 
@@ -1601,14 +1621,15 @@ export default function MeetSomeoneDynamic() {
     fetchCard(sessionId);
   };
 
-  const handleSelectLocation = async (city) => {
+  const handleSelectLocation = async (city, { persistPreference = false } = {}) => {
     setSwiping(true);
     try {
       const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
         method: 'POST',
         body: JSON.stringify({
           sessionId: sessionId,
-          city: city
+          city: city,
+          persistPreference,
         })
       });
 
@@ -1716,12 +1737,36 @@ export default function MeetSomeoneDynamic() {
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
                 </div>
               ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
-                <LocationCard 
-                  city={currentCard.city} 
-                  count={currentCard.availableCount}
-                  onSelect={() => handleSelectLocation(currentCard.city)}
-                  onSkip={handleRaincheck}
-                />
+                discoveryCityFaceUser ? (
+                  <div className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}>
+                    <div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'justify-center', 'px-4')}>
+                      <FaceCard4
+                        user={discoveryCityFaceUser}
+                        hideArrows={true}
+                        currentIndex={currentImageIndex}
+                        onIndexChange={setCurrentImageIndex}
+                      />
+                    </div>
+                    <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
+                      <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
+                        <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                          <IoIosArrowBack />
+                        </button>
+                        <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
+                          <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+                            Raincheck!
+                          </button>
+                          <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+                            Meet rn
+                          </button>
+                        </div>
+                        <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                          <IoIosArrowForward />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
               ) : (
              <div className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}>
 
@@ -2045,16 +2090,41 @@ export default function MeetSomeoneDynamic() {
                               {isSearchingState ? (
                                 <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'w-full')}>
                                 </div>
-                              ) : isLocationState ? (
-                                <LocationCard 
-                                  location={currentCard.location || {
-                                    city: currentCard.city,
-                                    country: currentCard.country,
-                                    image: currentCard.image
-                                  }} 
-                                  onAccept={() => handleAcceptCard(currentCard)}
-                                  onNext={() => fetchCard(null)}
-                                />
+                              ) : isLocationState && discoveryCityFaceUser ? (
+                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing')}>
+                                  <FaceCard
+                                    user={discoveryCityFaceUser}
+                                    hideArrows={true}
+                                    currentIndex={currentImageIndex}
+                                    onIndexChange={setCurrentImageIndex}
+                                  />
+                                  <div className={clsx('absolute', 'bottom-6', 'left-0', 'w-full', 'flex', 'items-center', 'justify-between', 'gap-3', 'px-4')}>
+                                    <button
+                                      onClick={handlePrevImage}
+                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
+                                    >
+                                      ←
+                                    </button>
+                                    <button
+                                      onClick={handleRaincheck}
+                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
+                                    >
+                                      Raincheck!
+                                    </button>
+                                    <button
+                                      onClick={handleProceed}
+                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
+                                    >
+                                      Meet rn
+                                    </button>
+                                    <button
+                                      onClick={handleNextImage}
+                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
+                                    >
+                                      →
+                                    </button>
+                                  </div>
+                                </div>
                               ) : (
 
                                 
@@ -2086,7 +2156,7 @@ export default function MeetSomeoneDynamic() {
                                       onClick={handleProceed}
                                       className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
                                     >
-                                      Meet rn.  
+                                      Meet rn
                                     </button>
 
                                     <button

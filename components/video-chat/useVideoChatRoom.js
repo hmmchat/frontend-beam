@@ -91,6 +91,7 @@ export default function useVideoChatRoom() {
   const suppressAutoResumeUntilRef = useRef(0);
   const prevRemoteStreamCountRef = useRef(0);
   const getProducersRetryTimeoutsRef = useRef([]);
+  const isBroadcastingRef = useRef(false);
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
 
@@ -107,6 +108,10 @@ export default function useVideoChatRoom() {
       el.srcObject = stream;
     }
   }, [remoteStreams]);
+
+  useEffect(() => {
+    isBroadcastingRef.current = isBroadcasting;
+  }, [isBroadcasting]);
 
   function cleanup() {
     if (wsRef.current) {
@@ -394,6 +399,15 @@ export default function useVideoChatRoom() {
         const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
         const participantCount = Number(roomState?.participantCount || 0);
         if (!roomState?.exists || participantCount <= 1) {
+          if (isBroadcastingRef.current) {
+            roomHealthFailureCountRef.current = 0;
+            mergeRoomHealthDebug({
+              graceActive: false,
+              graceRemainingSec: 0,
+              failureCount: 0
+            });
+            return;
+          }
           roomHealthFailureCountRef.current += 1;
           mergeRoomHealthDebug({
             graceActive: false,
@@ -461,7 +475,10 @@ export default function useVideoChatRoom() {
 
       if (remoteMediaMissingSinceRef.current) {
         const missingForMs = Date.now() - remoteMediaMissingSinceRef.current;
-        if (missingForMs >= 4000) await handlePeerLeftAutoResume();
+        if (missingForMs >= 4000) {
+          if (isBroadcastingRef.current) return;
+          await handlePeerLeftAutoResume();
+        }
       }
     }, 1000);
     return () => clearInterval(intervalId);
@@ -558,6 +575,10 @@ export default function useVideoChatRoom() {
   };
 
   const handlePeerLeftAutoResume = async () => {
+    if (isBroadcastingRef.current) {
+      remoteMediaMissingSinceRef.current = null;
+      return;
+    }
     if (autoTransitioningRef.current) return;
     autoTransitioningRef.current = true;
     intentionalExitRef.current = true;

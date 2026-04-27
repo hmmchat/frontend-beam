@@ -154,6 +154,7 @@ function VideoChatContent() {
   const localScreenMsProducerRef = useRef(null);
   /** producerId → { uiRemoteId, source: 'audio' | 'camera' | 'screen' } for producer-closed cleanup */
   const producerIdToMetaRef = useRef(new Map());
+  const isBroadcastingRef = useRef(false);
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
 
@@ -173,6 +174,10 @@ function VideoChatContent() {
       el.srcObject = stream;
     }
   }, [remoteStreams]);
+
+  useEffect(() => {
+    isBroadcastingRef.current = isBroadcasting;
+  }, [isBroadcasting]);
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -536,6 +541,15 @@ function VideoChatContent() {
         // If user is no longer in an active room OR room dropped to solo participant, leave stuck call UI.
         const participantCount = Number(roomState?.participantCount || 0);
         if (!roomState?.exists || participantCount <= 1) {
+          if (isBroadcastingRef.current) {
+            roomHealthFailureCountRef.current = 0;
+            mergeRoomHealthDebug({
+              graceActive: false,
+              graceRemainingSec: 0,
+              failureCount: 0
+            });
+            return;
+          }
           roomHealthFailureCountRef.current += 1;
           mergeRoomHealthDebug({
             graceActive: false,
@@ -695,6 +709,9 @@ function VideoChatContent() {
       if (remoteMediaMissingSinceRef.current) {
         const missingForMs = Date.now() - remoteMediaMissingSinceRef.current;
         if (missingForMs >= 4000) {
+          if (isBroadcastingRef.current) {
+            return;
+          }
           flowLog('media_health_auto_resume', { missingForMs });
           await handlePeerLeftAutoResume();
         }
@@ -888,6 +905,10 @@ function VideoChatContent() {
   };
 
   const handlePeerLeftAutoResume = async () => {
+    if (isBroadcastingRef.current) {
+      remoteMediaMissingSinceRef.current = null;
+      return;
+    }
     if (autoTransitioningRef.current) return;
     autoTransitioningRef.current = true;
     intentionalExitRef.current = true;
@@ -1899,59 +1920,62 @@ function VideoChatContent() {
         {/* Layout Engine */}
         {remoteStreams.length === 0 ? (
           /* Landing/Loading state: Full peer section placeholder and local */
-          <>
-            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-              <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'bg-black', 'p-6', 'text-white')}>
-                {loadingMeme?.imageUrl ? (
-                  <img
-                    src={loadingMeme.imageUrl}
-                    alt={loadingMeme.text || 'Loading meme'}
-                    className={clsx('h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'rounded-[1.5rem]', 'object-contain', 'shadow-2xl')}
-                  />
-                ) : (
-                  <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'border', 'border-white/10', 'bg-white/5', 'p-8', 'text-center', 'shadow-2xl')}>
-                    <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
+          isBroadcasting ? (
+            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <LocalVideoSection {...localVideoProps} />
+            </div>
+          ) : (
+            <>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
+                <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'bg-black', 'p-6', 'text-white')}>
+                  {loadingMeme?.imageUrl ? (
+                    <img
+                      src={loadingMeme.imageUrl}
+                      alt={loadingMeme.text || 'Loading meme'}
+                      className={clsx('h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'rounded-[1.5rem]', 'object-contain', 'shadow-2xl')}
+                    />
+                  ) : (
+                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'border', 'border-white/10', 'bg-white/5', 'p-8', 'text-center', 'shadow-2xl')}>
+                      <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
+                    </div>
+                  )}
+                  {loadingMeme?.text && loadingMeme?.imageUrl ? (
+                    <p className={clsx('mt-5', 'max-w-xl', 'rounded-full', 'bg-white/10', 'px-5', 'py-2', 'text-center', 'text-sm', 'font-black', 'uppercase', 'tracking-wider', 'text-white', 'backdrop-blur-md')}>
+                      {loadingMeme.text}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+                {!showChatInput && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
+                    <button
+                      type="button"
+                      onClick={() => setIsCoinModalOpen(true)}
+                      className={clsx(
+                        'flex items-center gap-2',
+                        'rounded-full',
+                        'border border-white/15',
+                        'bg-black/50',
+                        'backdrop-blur-md',
+                        'px-4 py-2',
+                        'text-white',
+                        'hover:bg-white/10',
+                        'active:scale-95',
+                        'transition'
+                      )}
+                      title="Add coins"
+                    >
+                      <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
+                      <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
+                      <span className="text-lg leading-none -mt-[1px]">+</span>
+                    </button>
                   </div>
                 )}
-                {loadingMeme?.text && loadingMeme?.imageUrl ? (
-                  <p className={clsx('mt-5', 'max-w-xl', 'rounded-full', 'bg-white/10', 'px-5', 'py-2', 'text-center', 'text-sm', 'font-black', 'uppercase', 'tracking-wider', 'text-white', 'backdrop-blur-md')}>
-                    {loadingMeme.text}
-                  </p>
-                ) : null}
+                <LocalVideoSection {...localVideoProps} />
               </div>
-            </div>
-            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
-              {!showChatInput && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
-                  <button
-                    type="button"
-                    onClick={() => setIsCoinModalOpen(true)}
-                    className={clsx(
-                      'flex items-center gap-2',
-                      'rounded-full',
-                      'border border-white/15',
-                      'bg-black/50',
-                      'backdrop-blur-md',
-                      'px-4 py-2',
-                      'text-white',
-                      'hover:bg-white/10',
-                      'active:scale-95',
-                      'transition'
-                    )}
-                    title="Add coins"
-                  >
-                    <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
-                    <span className="text-sm font-semibold">{coins.toLocaleString()}</span>
-                    <span className="text-lg leading-none -mt-[1px]">+</span>
-                  </button>
-
-                 
-                </div>
-              )}
-               <LocalVideoSection {...localVideoProps}  />
-               
-            </div>
-          </>
+            </>
+          )
         ) : remoteStreams.length === 1 ? (
           /* 1:1 Matched Layout: Peer 1 | Local */
           <>

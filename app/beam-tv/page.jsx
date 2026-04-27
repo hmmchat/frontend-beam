@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import clsx from 'clsx';
@@ -210,6 +210,8 @@ function BeamTVInner() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [favouriteByUserId, setFavouriteByUserId] = useState({});
+  const [favouriteProfiles, setFavouriteProfiles] = useState([]); // [{ userId, username, displayPictureUrl, isLive, liveRoomId }]
+  const [favouritesPanelOpen, setFavouritesPanelOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true); // default "on" (actual unmute requires user gesture)
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -239,6 +241,8 @@ function BeamTVInner() {
   const loopingRef = useRef(false);
   const lastInitialFetchKeyRef = useRef('');
   const chatProfileCacheRef = useRef(new Map());
+  const transitionLockRef = useRef(false);
+  const [feedTransitionPhase, setFeedTransitionPhase] = useState('idle'); // idle | out | pre-in | in
 
   const cleanup = useCallback((opts = {}) => {
     const { preserveStreams = false } = opts || {};
@@ -323,15 +327,10 @@ function BeamTVInner() {
           loopingRef.current = false;
           return;
         }
-        // Still exhausted after rotating: keep UI stable and loop current broadcast if we have one.
-        if (currentBroadcast?.roomId) {
-          // No-op: keep the current WS + media instead of re-joining and hitting DB unique constraint.
-          setStatus('connected');
-          loopingRef.current = false;
-          return;
-        }
+        // Still exhausted after rotating: transition to explicit empty state.
         cleanup({ preserveStreams: preserveUi });
         broadcastStartedAtRef.current = null;
+        setCurrentBroadcast(null);
         setStatus('empty');
         loopingRef.current = false;
         return;
@@ -433,21 +432,8 @@ function BeamTVInner() {
     setJoinState({ state: 'idle', message: '' });
   }, [requestedJoin.roomId, requestedJoin.userId]);
 
-  const leaveBroadcastIfAny = useCallback(async () => {
-    const roomId = currentBroadcast?.roomId;
-    if (!roomId) return;
-    try {
-      // This path removes either participant or viewer; for Beam TV we are a viewer.
-      send({ type: 'leave-room', data: { roomId } });
-    } catch (_) {}
-    // Small delay so message can flush before socket is closed by cleanup()
-    await new Promise((r) => setTimeout(r, 80));
-  }, [currentBroadcast?.roomId, send]);
-
-  const handleNext = async () => {
+  const proceedToNextBroadcast = useCallback(async () => {
     if (!currentBroadcast || !sessionId) return;
-    // Explicitly leave as viewer first to avoid duplicate CallViewer unique constraint on re-join.
-    await leaveBroadcastIfAny();
     // If user was in waitlist for this broadcast, remove them before switching.
     await cancelJoinIfNeeded();
     
@@ -478,8 +464,29 @@ function BeamTVInner() {
       }
     }
     // Keep current broadcast visible while we load next.
-    fetchNextBroadcast(sessionId, { preserveUi: true });
-  };
+    await fetchNextBroadcast(sessionId, { preserveUi: true });
+  }, [cancelJoinIfNeeded, currentBroadcast, fetchNextBroadcast, sessionId]);
+
+  const runFeedScrollTransition = useCallback(async (action = proceedToNextBroadcast) => {
+    if (transitionLockRef.current) return;
+    transitionLockRef.current = true;
+    try {
+      setFeedTransitionPhase('out');
+      await new Promise((r) => setTimeout(r, 220));
+      await action();
+      setFeedTransitionPhase('pre-in');
+      requestAnimationFrame(() => setFeedTransitionPhase('in'));
+      await new Promise((r) => setTimeout(r, 260));
+      setFeedTransitionPhase('idle');
+    } finally {
+      transitionLockRef.current = false;
+    }
+  }, [proceedToNextBroadcast]);
+
+  const handleNext = useCallback(() => {
+    if (!currentBroadcast || !sessionId) return;
+    runFeedScrollTransition();
+  }, [currentBroadcast, runFeedScrollTransition, sessionId]);
 
   const connectToBroadcast = async (roomId, did) => {
     const accessToken = localStorage.getItem('accessToken') || '';
@@ -762,6 +769,92 @@ function BeamTVInner() {
       setEngagementMsg('Share recorded.');
     }
   };
+
+  const refreshFavouriteProfiles = useCallback(async () => {
+    if (!isLoggedIn()) {
+      setFavouriteProfiles([]);
+      return;
+    }
+    try {
+      const res = await apiRequest(API.STREAMING.GET_FAVOURITES_WITH_LIVE_STATUS(100));
+      const items = Array.isArray(res?.favourites) ? res.favourites : [];
+      setFavouriteProfiles(items);
+      const map = {};
+      items.forEach((f) => {
+        const uid = String(f?.userId || '');
+        if (uid) map[uid] = true;
+      });
+      setFavouriteByUserId((prev) => ({ ...prev, ...map }));
+    } catch (error) {
+      // Fallback for environments where the new endpoint isn't available yet.
+      try {
+        const liveRes = await apiRequest(API.STREAMING.GET_FAVOURITE_BROADCASTERS(100));
+        const broadcasts = Array.isArray(liveRes?.broadcasts) ? liveRes.broadcasts : [];
+        const seen = new Set();
+        const fallbackItems = [];
+        broadcasts.forEach((b) => {
+          const roomId = String(b?.roomId || '');
+          const participants = Array.isArray(b?.participants) ? b.participants : [];
+          participants.forEach((p) => {
+            const uid = String(p?.userId || '');
+            if (!uid || seen.has(uid)) return;
+            seen.add(uid);
+            fallbackItems.push({
+              userId: uid,
+              username: p?.username || null,
+              displayPictureUrl: p?.displayPictureUrl || null,
+              age: p?.age ?? null,
+              isLive: true,
+              liveRoomId: roomId
+            });
+          });
+        });
+        setFavouriteProfiles(fallbackItems);
+      } catch (fallbackError) {
+        console.warn('[BeamTV] Failed to load favourites strip', { error, fallbackError });
+        setFavouriteProfiles([]);
+        setEngagementMsg('Could not load favourites. Please re-login and try again.');
+      }
+    }
+  }, []);
+
+  const handleFavouriteAvatarClick = useCallback(async (fav) => {
+    const uid = String(fav?.userId || '');
+    if (!uid) return;
+    if (!fav?.isLive || !fav?.liveRoomId) {
+      return;
+    }
+    const targetRoomId = String(fav.liveRoomId);
+    if (!targetRoomId) return;
+    if (transitionLockRef.current) return;
+    transitionLockRef.current = true;
+    try {
+      setFeedTransitionPhase('out');
+      await new Promise((r) => setTimeout(r, 220));
+      if (String(currentBroadcast?.roomId || '') !== targetRoomId) {
+        await cancelJoinIfNeeded();
+      }
+      await fetchBroadcastByRoomId(targetRoomId, { preserveUi: true });
+      setFeedTransitionPhase('pre-in');
+      requestAnimationFrame(() => setFeedTransitionPhase('in'));
+      await new Promise((r) => setTimeout(r, 260));
+      setFeedTransitionPhase('idle');
+    } finally {
+      transitionLockRef.current = false;
+    }
+  }, [cancelJoinIfNeeded, currentBroadcast?.roomId, fetchBroadcastByRoomId]);
+
+  const sortedFavouriteProfiles = useMemo(() => {
+    const items = Array.isArray(favouriteProfiles) ? [...favouriteProfiles] : [];
+    return items.sort((a, b) => {
+      const aLive = a?.isLive ? 1 : 0;
+      const bLive = b?.isLive ? 1 : 0;
+      if (aLive !== bLive) return bLive - aLive; // live first
+      const aName = String(a?.username || '').toLowerCase();
+      const bName = String(b?.username || '').toLowerCase();
+      return aName.localeCompare(bName);
+    });
+  }, [favouriteProfiles]);
 
   const copyShareUrl = async () => {
     if (!shareUrl) return;
@@ -1129,6 +1222,16 @@ function BeamTVInner() {
     };
   }, [status, currentBroadcast?.roomId]);
 
+  // Fetch complete favourites strip (both live + offline) and keep live badges fresh.
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    refreshFavouriteProfiles();
+    const id = setInterval(() => {
+      refreshFavouriteProfiles();
+    }, 8000);
+    return () => clearInterval(id);
+  }, [status, currentBroadcast?.roomId, refreshFavouriteProfiles]);
+
   // Keep tiles' muted state in sync with global sound toggle
   useEffect(() => {
     setRemoteStreams((prev) => prev.map((s) => ({ ...s, forceMuted: !(soundEnabled && audioUnlocked) })));
@@ -1246,15 +1349,79 @@ function BeamTVInner() {
         <div className="text-white text-3xl font-black tracking-tighter">
           Beam<span className="text-purple-500">TV</span>
         </div>
-        <button 
-          onClick={() => router.push('/')} 
-          className="text-white/80 font-bold bg-white/10 px-4 py-2 rounded-full border border-white/20 hover:bg-white/20 transition"
-        >
-          Exit TV
-        </button>
+        <div className="flex items-center gap-3">
+          {isLoggedIn() && (
+            <button
+              type="button"
+              onClick={() => setFavouritesPanelOpen((v) => !v)}
+              className="text-white font-black bg-purple-700/55 px-5 py-2 rounded-full border border-white/30 hover:bg-purple-600/70 transition tracking-wide"
+            >
+              Broadcasting rn
+            </button>
+          )}
+          <button 
+            onClick={() => router.push('/')} 
+            className="text-white/80 font-bold bg-white/10 px-4 py-2 rounded-full border border-white/20 hover:bg-white/20 transition"
+          >
+            Exit TV
+          </button>
+        </div>
       </div>
 
+      {isLoggedIn() && favouritesPanelOpen && (
+        <div className="absolute top-20 right-28 z-50 w-[560px] max-w-[90vw] rounded-[2.2rem] border border-white/25 bg-[#390f87]/88 backdrop-blur-xl shadow-2xl p-5">
+          <div className="max-h-[360px] overflow-y-auto pr-1">
+            {sortedFavouriteProfiles.length === 0 && (
+              <div className="text-white/70 text-sm font-bold py-6 text-center">No favourites yet.</div>
+            )}
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+              {sortedFavouriteProfiles.map((fav) => {
+            const uid = String(fav?.userId || '');
+            if (!uid) return null;
+            const isLive = Boolean(fav?.isLive && fav?.liveRoomId);
+            return (
+              <button
+                key={`fav-strip-${uid}`}
+                type="button"
+                disabled={!isLive}
+                onClick={() => handleFavouriteAvatarClick(fav)}
+                className={clsx(
+                  'relative w-[84px] h-[84px] rounded-2xl overflow-hidden border-2 transition-all',
+                  isLive
+                    ? 'border-pink-400/90 shadow-[0_0_18px_rgba(236,72,153,0.55)] hover:scale-105 cursor-pointer'
+                    : 'border-white/35 opacity-45 cursor-not-allowed'
+                )}
+                title={isLive ? 'Live now - open broadcast' : 'Offline'}
+              >
+                <img
+                  src={fav?.displayPictureUrl || '/avatar-placeholder.png'}
+                  alt={fav?.username || 'Favourite'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/avatar-placeholder.png';
+                  }}
+                />
+                {isLive && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.9)]" />
+                )}
+              </button>
+            );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex p-4 pb-12 mt-16 gap-4 min-h-0 min-w-0">
+        <div
+          className={clsx(
+            "w-full h-full transition-transform duration-300 ease-out",
+            feedTransitionPhase === 'out' && '-translate-y-[110%]',
+            feedTransitionPhase === 'pre-in' && 'translate-y-[110%] transition-none',
+            feedTransitionPhase === 'in' && 'translate-y-0'
+          )}
+        >
         {status === 'loading' && (
           <BroadcastSkeleton />
         )}
@@ -1294,6 +1461,7 @@ function BeamTVInner() {
              <div className="absolute bottom-6 right-6 z-40">
                 <button
                   onClick={handleNext}
+                  disabled={feedTransitionPhase !== 'idle'}
                   className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center transition-all hover:bg-white/20 hover:scale-105 active:scale-95 shadow-2xl"
                   title="Next Broadcast"
                 >
@@ -1521,6 +1689,7 @@ function BeamTVInner() {
              )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

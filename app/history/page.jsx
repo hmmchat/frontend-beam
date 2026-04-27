@@ -26,6 +26,23 @@ function HistoryContent() {
   const [actionBusyId, setActionBusyId] = useState(null);
   const [productMessage, setProductMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [viewerId, setViewerId] = useState(typeof window !== "undefined" ? localStorage.getItem("userId") : null);
+
+  useEffect(() => {
+    if (!viewerId) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const uid = payload.sub || payload.uid || payload.id;
+          if (uid) {
+            setViewerId(String(uid));
+            localStorage.setItem("userId", String(uid));
+          }
+        } catch (e) {}
+      }
+    }
+  }, [viewerId]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -92,7 +109,6 @@ function HistoryContent() {
     }).replace(',', ' |') + " IST";
   };
 
-  const viewerId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   const sendFriendRequest = async (toUserId) => {
     if (!toUserId || actionBusyId) return;
@@ -140,7 +156,7 @@ function HistoryContent() {
           <div className="flex items-center gap-2">
             <div 
               onClick={() => router.push('/')}
-              className="border border-white rounded-full p-2 0  meeting now hover:bg-white/10 transition-colors"
+              className="border-[2px] border-white/40   rounded-full md:p-3.5 p-2   meeting now hover:bg-white/10 transition-colors"
             >
               <FaArrowLeftLong />
             </div>
@@ -153,11 +169,11 @@ function HistoryContent() {
         </div>
 
         {/* Main Card */}
-        <div className="flex-1 rounded-[60px] md:p-6 overflow-hidden 
+        <div className="flex-1 rounded-[60px] md:px-6 md:px-2 overflow-hidden 
                         md:ring md:ring-white/50  
                         ">
 
-          <div className="h-full overflow-y-auto space-y-4 pt-3 mt-3 md:px-6 px-3">
+          <div className="h-full overflow-y-auto space-y-4 pt-3 mt-3 md:px-12 px-3">
             {productMessage ? (
               <div className="mx-2 rounded-2xl border border-white/20 bg-black/25 px-4 py-3 text-sm text-white/90">
                 {productMessage}
@@ -179,7 +195,7 @@ function HistoryContent() {
     key={call.sessionId}
     className={`${
       hasMultiple
-        ? "border border-white/40 rounded-[32px] md:p-2 p-1"
+        ? "border border-white/60 rounded-[32px] md:p-2 p-1"
         : ""
     } flex flex-col`}
   >
@@ -241,11 +257,11 @@ function HistoryContent() {
     {/* ❌ Removed loading div → it was causing fake top gap */}
 
     {/* ================= CARDS ================= */}
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 ">
       {otherParticipants.map((participant) => (
         <div
           key={participant.userId}
-          className="border border-white/30 rounded-[26px] p-5 space-y-4"
+          className="border border-white/40 rounded-[26px] md:p-5 p-3  space-y-4 "
         >
           {/* Top row */}
           <div className="flex items-center gap-3">
@@ -255,9 +271,13 @@ function HistoryContent() {
               </p>
             )}
             {call.callType === "Broadcast" && (
-              <p className="text-xs text-white px-3 py-1 border-2 border-blue-400 font-semibold rounded-full">
-                Broadcast
-              </p>
+<div className="flex items-center gap-2">
+                <p className="text-xs text-white px-5 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full flex ">
+                Squad 
+              </p> 
+              <img src="/history/broadcast.svg" alt="broadcast" className="w-5 h-5" />
+              </div>
+            
             )}
 
             <span className="text-xs font-outfit text-white/90">
@@ -286,78 +306,73 @@ function HistoryContent() {
                     )}`
                   )
                 }
-                className="w-14 h-14 rounded-full overflow-hidden border border-white/10 hover:bg-white/5 transition-colors"
+                className="w-14 md:w-20 h-14 md:h-20  rounded-full overflow-hidden border border-white border-2 hover:bg-white/5 transition-colors"
               >
                 <Image
                   src={
-                    participant.displayPictureUrl ||
-                    "/assets/avatarDefault.png"
+                    participant.displayPictureUrl 
                   }
                   alt="user"
                   width={56}
                   height={56}
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full "
                 />
               </button>
 
-              <div className="space-y-1">
-                <div className="md:text-[16px] text-[12px]">
-                  👦 {participant.username || "Stranger"}
+              <div className="">
+                <div className="md:text-[14px] text-[12px]  ">
+                 <span className="md:mr-[5px]">👦</span>  { participant.username }
                 </div>
 
-                <div className="md:text-[16px] text-[11px] font-outfit text-white/80 flex items-center gap-1">
-                  <MdOutlineLocationOn />
-                  {participant.location || "Somewhere"}
+                <div className="md:text-[14px] text-[11px] font-outfit text-white/80 flex items-center gap-1 mt-1">
+                  <img src="/history/locationline.svg" alt="location" className="md:w-5 md:h-5 w-3 h-3" />
+                  {  participant.location }
                 </div>
 
-                <div className="flex items-center gap-2 md:text-sm text-[11px] font-outfit">
-                  <IoVideocamOutline />
+                <div className="flex items-center gap-2 font-semibold md:text-sm text-[11px] font-outfit md:mt-2 mt-1">
+                <img src="/history/video-outline.svg" alt="videocam" className="md:w-7 md:h-7 w-5 h-5" />
                   {formatDuration(participant.durationSeconds)}
                 </div>
               </div>
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-4">
-              {participant.conversationId ? (
-                <button
-                  type="button"
-                  title={participant.isFriend ? "Message" : `Message once for ${participant.messageCost ?? 10} coins`}
-                  onClick={() => {
-                    const q = new URLSearchParams({
-                      chat: participant.conversationId,
-                      userId: participant.userId,
-                      username: participant.username || "User",
-                      friend: participant.isFriend ? "1" : "0",
-                    });
-                    if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
-                    router.push(`/inbox?${q.toString()}`);
-                  }}
-                  className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-                >
-                  <img
-                    src="/history/mail.svg"
-                    alt="message"
-                    className="w-6 h-6"
-                  />
-                </button>
-              ) : null}
+            <div className="flex items-center md:gap-1">
+              <button
+                type="button"
+                title={participant.isFriend ? "Message" : (participant.conversationId ? `Message once for ${participant.messageCost ?? 10} coins` : "Message")}
+                onClick={() => {
+                  const q = new URLSearchParams({
+                    chat: participant.conversationId || "",
+                    userId: participant.userId,
+                    username: participant.username || "User",
+                    friend: participant.isFriend ? "1" : "0",
+                  });
+                  if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
+                  router.push(`/inbox?${q.toString()}`);
+                }}
+                className="w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+              >
+                <img
+                  src="/history/mail.svg"
+                  alt="message"
+                  className="w-6 h-6 md:w-8 md:h-8"
+                />
+              </button>
 
-              {!participant.isFriend ? (
-                <button
-                  type="button"
-                  disabled={actionBusyId === participant.userId || participant.friendRequestSent}
-                  onClick={() => sendFriendRequest(participant.userId)}
-                  className="w-10 h-10 border border-white/40 rounded-full grid place-items-center hover:bg-white/10 transition-colors disabled:opacity-50"
-                  title={participant.friendRequestSent ? "Friend request sent" : "Send friend request"}
-                >
-                  <img
-                    src="/history/heart.svg"
-                    alt="heart"
-                    className="w-6 h-6"
-                  />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                disabled={actionBusyId === participant.userId || participant.friendRequestSent || participant.isFriend}
+                onClick={() => !participant.isFriend && sendFriendRequest(participant.userId)}
+                className={`w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors disabled:opacity-50 ${participant.isFriend ? 'hidden' : ''}`}
+                title={participant.isFriend ? "Friends" : (participant.friendRequestSent ? "Friend request sent" : "Send friend request")}
+              >
+                <img
+                  src="/history/heart.svg"
+                  alt="heart"
+                  className={`w-6 h-6 md:w-8 md:h-8 ${participant.isFriend ? 'hidden' : ''}`}
+                />
+              </button>
             </div>
           </div>
         </div>

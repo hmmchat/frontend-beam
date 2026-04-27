@@ -59,7 +59,7 @@ const [isVideoOn, setIsVideoOn] = useState(false);
             <div className={clsx('z-10', 'text-center', 'max-w-lg')}>
               <img src="/LOGO.png" className={clsx('md:w-[230px]', 'mx-auto', 'w-44', 'sm:w-5')} />
 
-              <p className={clsx('text-white', 'text-[20px]', 'font-otomanopee', '-mt-2')}>
+              <p className={clsx('text-white', 'text-[20px]', 'md:text-[20px]', 'font-otomanopee', '-mt-2')}>
                 Meet someone here
               </p>
 

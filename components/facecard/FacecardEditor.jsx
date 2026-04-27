@@ -50,394 +50,43 @@ export default function FacecardEditor({
 
   return (
     <div
-      className="relative flex w-full h-full flex-col items-center justify-start md:justify-center overflow-visible md:overflow-hidden p-0 text-white outfit-font md:p-2"
+      className="relative flex w-full min-h-screen flex-col items-center justify-start md:justify-center overflow-visible md:overflow-x-auto p-0 text-white outfit-font md:p-2"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      {/* --- MOBILE VIEW (Matches Screenshot) --- */}
 
-      <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-        <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 p-10 relative z-10">
-          {/* TOP ROW: Close, Name Box, Progress */}
-          <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
-            {/* Close Button */}
 
-            <div className="col-span-2">
-              <button
-                onClick={leaveEditor}
-                className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Name Box with Brackets */}
-            <div className="col-span-6 flex justify-center">
-              <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
-                <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
-                <div className="flex flex-col justify-center h-full">
-                  <h2 className="text-[12px] text-white">{firstName}</h2>
-
-                  <p className="text-[10px]  font-outfit text-white">
-                    UserID:{user?.id?.slice(0, 8) || "4heu24sds"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-span-4 row-span-2 flex justify-center items-center">
-              <div className="relative w-[120px] h-[120px] flex items-center justify-center">
-                {/* Glow */}
-
-                {/* Outer ring */}
-                <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 shadow-[0_0_15px_rgba(236,72,153,0.7),inset_0_0_10px_rgba(236,72,153,0.5)]" />
-
-                <div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-white" />
-
-                <div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-pink-500/60" />
-
-                {/* Main yellow ring with pink glow */}
-                <div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]">
-                  {/* Inner thin ring */}
-                  <div className="absolute w-[75px] h-[75px] rounded-full border-[3px] border-[#FFBC2B]" />
-
-                  {/* Center text */}
-                  <span className="text-[18px] text-white font-semibold">
-                    {progress}
-                    <span className="text-sm opacity-60">%</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-span-5 mt-1">
-              <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
-                <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
-
-                <div className="">
-                  <p className="text-[10px] uppercase   text-white">
-                    DOB :{" "}
-                    {user?.dateOfBirth
-                      ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                      : "22/08/1998"}
-                  </p>
-                  <p className="text-[10px] font-thin  text-white">
-                    Zodiac : {zodiac?.name || "Gemini"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-span-3 flex justify-center mt-1">
-              <button
-                onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
-                className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
-              >
-                {zodiac?.imageUrl ? (
-                  <img
-                    src={zodiac.imageUrl}
-                    className="h-[20px] w-[20px] object-contain brightness-0 invert"
-                  />
-                ) : (
-                  <span className="opacity-40 text-2xl">+</span>
-                )}
-              </button>
-            </div>
-
-            <div className="col-span-5 mt-1">
-              <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
-                <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
-
-                <div className="">
-                  <p className="text-[10px]  opacity-60 text-white">
-                    Gender Identity
-                  </p>
-                  <p className="text-[10px]  text-white">{user?.gender}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Gender Icon + Facecard Button Column */}
-            <div className="col-span-3 flex flex-col gap-4 mt-2">
-              <div className="flex justify-center">
-                <button className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white">
-                  {user?.gender === "MALE"
-                    ? "♂"
-                    : user?.gender === "FEMALE"
-                      ? "♀"
-                      : "⚧"}
-                </button>
-              </div>
-            </div>
-
-            <div className="col-span-4 flex justify-center items-center">
-              <button
-                onClick={() => onOpenFacecardPreview?.()}
-                className="w-full py-4 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
-              >
-                <span className="text-xl">
-                  <img src="/eye.svg" alt="" />
-                </span>
-                <span className="text-xs font-bold  tracking-widest text-white">
-                  Facecard
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
-
-          {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
-
-          {/* Action Rows: Interests, Causes, Brands */}
-          <div className="flex flex-col gap-5">
-            {/* Interests */}
-            <div className="flex items-center justify-between gap-3">
-              {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
-                Interests
-              </span>
-
-              {/* RIGHT → Box + Button */}
-              <div className="flex items-center gap-3">
-                <div
-                  onClick={() => setShowSelector("interests")}
-                  className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
-                >
-                  {interests.length > 0 ? (
-                    <div key={interestIndex} className="animate-slide-down">
-                      {interests[interestIndex]}
-                    </div>
-                  ) : (
-                    "Select"
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowSelector("interests")}
-                  className="w-12 h-12 border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
-                Causes
-              </span>
-
-              {/* RIGHT → Box + Button */}
-              <div className="flex items-center gap-3">
-                <div
-                  onClick={() => setShowSelector("values")}
-                  className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
-                >
-                  {causes.length > 0 ? (
-                    <div key={causeIndex} className="animate-slide-down italic">
-                      {causes[causeIndex]}
-                    </div>
-                  ) : (
-                    "Select"
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowSelector("values")}
-                  className="w-12 h-12 border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Brands */}
-            <div className="flex items-center justify-between gap-3">
-              {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
-                Brands
-              </span>
-
-              {/* RIGHT → Icons */}
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const selection = user?.brandPreferences?.[i];
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => setShowSelector("brands")}
-                      className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 0  meeting now hover:bg-white/10"
-                    >
-                      {selection ? (
-                        <img
-                          src={selection.brand?.logoUrl}
-                          className="w-10 h-10 rounded-full object-contain"
-                        />
-                      ) : (
-                        <span className="opacity-40 text-xl">+</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Photo Slots Section */}
-          <div className="relative group">
-            {photoUploading && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-sm">
-                <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-4">
-              {/* Photo 1 (DP) */}
-              <div
-                onClick={() => handleSlotClick(0)}
-                className="w-full aspect-[2/3] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
-              >
-                <img
-                  src={user?.displayPictureUrl || "/imageprofile.png"}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-black text-[10px]">
-                  ✎
-                </div>
-              </div>
-
-              {/* Other Slots */}
-              {[0, 1].map((idx) => {
-                const photo = user?.photos?.find((p) => p.order === idx);
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => handleSlotClick(idx + 1)}
-                    className="w-full aspect-[2/3] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
-                  >
-                    {photo ? (
-                      <img
-                        src={photo.url}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">
-                        +
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="w-full flex items-center justify-between  mb-4 ">
-            {/* LEFT: Album + Info */}
-            <div className="flex items-center gap-5">
-              {/* Album */}
-              <div
-                onClick={() => setShowSelector("music")}
-                className="relative 0  meeting now active:scale-95 transition"
-              >
-                <div
-                  className={`w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2 ${user?.musicPreference ? "bg-black" : "bg-white/5"}`}
-                >
-                  <div
-                    className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
-                  >
-                    {user?.musicPreference?.albumArtUrl ? (
-                      <img
-                        src={user.musicPreference.albumArtUrl}
-                        className="w-full h-full object-cover"
-                        alt="Album Art"
-                      />
-                    ) : (
-                      <span className="text-4xl opacity-20 text-white">+</span>
-                    )}
-                  </div>
-
-                  {/* center dot */}
-                  <div className="absolute w-8 h-8 rounded-full bg-black border border-white/20 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative px-6 py-1 min-w-[120px]">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
-                <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
-                {/* Text */}
-                <div className="inline-flex flex-col justify-end items-start">
-                  <p className="text-white text-[10px] leading-tight">
-                    {user?.musicPreference?.name ||
-                      user?.musicPreference?.songName ||
-                      "Select Song"}
-                  </p>
-                  <p className="text-white/60 text-[10px] text-center">
-                    {user?.musicPreference?.artist ||
-                      user?.musicPreference?.artistName ||
-                      "Spotify"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: Dots */}
-            <div className="grid grid-cols-6 gap-2 opacity-30">
-              {[...Array(42)].map((_, i) => (
-                <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
-              ))}
-            </div>
-          </div>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
-        </div>
-      </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
 
-      <div className="scale-[0.95] lg:scale-100 [@media(max-height:800px)]:scale-[0.9] [@media(max-height:700px)]:scale-[0.8] [@media(max-height:600px)]:scale-[0.7] transition-all duration-300">
-        <div className="relative hidden md:flex w-full max-w-[1100px] flex-col md:flex-row gap-4 md:gap-6 overflow-visible rounded-[60px] md:rounded-[60px] border border-white/60 p-4 md:p-4">
+      <div className=" transition-all duration-300 max-w-[1200px] w-full px-6 mx-auto">
+
+
+
+        <div className="relative hidden lg:flex lg:flex-row  w-full  flex-col  gap-4 md:gap-6    rounded-[60px] md:rounded-[60px] border border-white/60 p-4 md:p-4">
           {/* Main Editor UI */}
 
-          <div className="flex-1 border border-2 border-white/30 rounded-[54px] p-8 relative flex flex-col gap-10">
+          <div className="flex-1 w-full border border-2 border-white/30 rounded-[54px] p-8 px-11 relative flex flex-col gap-10">
             {/* Top Header Row */}
-            <div className="flex items-start gap-6 ">
+            <div className="flex items-start gap-10  ">
               {/* Left: Back + Vertical Name */}
-              <div className="relative flex flex-col items-start ">
+     <div className="relative flex flex-col items-start h-full justify-between">
                 {/* Back Button */}
                 <button
                   onClick={leaveEditor}
-                  className="w-12 h-12 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
+                  className="w-16 h-18  p-3 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
                 >
                   <span className="text-xl "><FaArrowLeft /></span>
                 </button>
 
                 {/* Vertical Name Wrapper */}
-                <div className="relative  w-[70px]  flex items-center justify-center">
+<div className="relative w-[70px] h-full flex items-center justify-center">
                   {/* Rotated content */}
-                  <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-3  mt-24 relative">
+                  <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-5 mt-2   relative">
                     {/* Corner brackets */}
                     <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/50"></span>
                     <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/50"></span>
@@ -453,10 +102,12 @@ export default function FacecardEditor({
                     </p>
                   </div>
                 </div>
+
+
               </div>
 
               {/* Right: Photo Slots */}
-              <div className="relative flex gap-4 justify-center">
+              <div className="relative flex gap-5 justify-center">
                 {photoUploading && (
                   <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[2.5rem] bg-black/55 backdrop-blur-sm">
                     <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3" />
@@ -467,56 +118,53 @@ export default function FacecardEditor({
                 )}
 
                 {/* Slot 1 */}
-                <div
-                  onClick={() => handleSlotClick(0)}
-                  className={`w-[160px] sm:w-[180px] md:w-[200px] aspect-[2/3] border-b-6 rounded-[36px] border border-2 border-white/50 overflow-visible relative ${
-                    photoUploading
-                      ? "pointer-events-none opacity-60"
-                      : "0  meeting now"
-                  }`}
-                >
-                  <img
-                    src={user?.displayPictureUrl || "/imageprofile.png"}
-                    className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
-                    alt="Photo 1"
-                  />
-                   <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">✎</button>
+<div
+  onClick={() => handleSlotClick(0)}
+  className={`w-[160px] sm:w-[180px] md:w-[198px] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${
+    photoUploading ? "pointer-events-none opacity-60" : ""
+  }`}
+>
+  <img
+    src={user?.displayPictureUrl || "/imageprofile.png"}
+    alt="Photo 1"
+    className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+  />
 
-                </div>
+  <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
+    ✎
+  </button>
+</div>
 
                 {/* Slot 2 (Photo Order 0) */}
                 <div
-                  onClick={() => handleSlotClick(1)}
-                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[36px] border-2 border-white/20 flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
-                    photoUploading
-                      ? "pointer-events-none opacity-60"
-                      : "0  meeting now hover:bg-white/10"
-                  }`}
-                >
-                               <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">x</button>
-                  {user?.photos?.find((p) => p.order === 0)?.url ? (
-              
-                    <img
-                      src={user.photos.find((p) => p.order === 0).url}
-                      className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
-                      alt="Photo 2"
-                    />
-       
+  onClick={() => handleSlotClick(1)}
+  className={`w-[160px] sm:w-[180px] md:w-[198px]   border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
+    photoUploading
+      ? "pointer-events-none opacity-60"
+      : "hover:bg-white/10"
+  }`}
+>
+  <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
+    ×
+  </button>
 
-                    
-                  ) : (
-                    <span className="text-5xl opacity-60 border border-4 border-white/80 rounded-full px-3">
-                      +
-                    </span>
-
-                    
-                  )}
-                </div>
+  {user?.photos?.find((p) => p.order === 0)?.url ? (
+    <img
+      src={user.photos.find((p) => p.order === 0).url}
+      alt="Photo 2"
+      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+    />
+  ) : (
+    <span className="text-5xl opacity-60 border-4 border-white/80 rounded-full px-3">
+      +
+    </span>
+  )}
+</div>
 
                 {/* Slot 3 (Photo Order 1) */}
                 <div
                   onClick={() => handleSlotClick(2)}
-                  className={`w-[200px] border-b-6 aspect-[2/3] border-white/50 rounded-[36px] border-2 border-white/20 flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
+                  className={`w-[160px] sm:w-[180px] md:w-[198px]   border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
                     photoUploading
                       ? "pointer-events-none opacity-60"
                       : "0  meeting now hover:bg-white/10"
@@ -526,7 +174,7 @@ export default function FacecardEditor({
                   {user?.photos?.find((p) => p.order === 1)?.url ? (
                     <img
                       src={user.photos.find((p) => p.order === 1).url}
-                      className="w-full h-full object-cover rounded-[36px] rounded-b-[32px]"
+                      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
                       alt="Photo 3"
                     />
                   ) : (
@@ -545,19 +193,24 @@ export default function FacecardEditor({
                   className="hidden"
                 />
               </div>
+
+
+
+
+
             </div>
 
             {/* Info Sections Area */}
-            <div className="grid grid-cols-10 gap-10 items-center">
+            <div className="grid grid-cols-10 mt-5  gap-2  items-center">
               {/* DOB & Gender Text Labels */}
-              <div className="col-span-3 flex flex-col gap-16 ">
+              <div className="col-span-3 w-[90%] flex flex-col gap-10 ">
                 {/* DOB + Zodiac */}
-                <div className="relative px-5 py-3 flex justify-center">
+                <div className="relative px-1 py-4 flex justify-center">
                   <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t-[2px] border-l-[2px] border-white/40"></span>
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t-[2px] border-r-[2px] border-white/40"></span>
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-[2px] border-l-[2px] border-white/40"></span>
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-[2px] border-r-[2px] border-white/40"></span>
 
                     <p className="text-[12px] uppercase opacity-80 font-outfit">
                       DOB :{" "}
@@ -573,7 +226,7 @@ export default function FacecardEditor({
                 </div>
 
                 {/* Gender */}
-                <div className="relative px-5 py-3 flex justify-center">
+                <div className="relative px-1 py-4 flex justify-center">
                   <div className="flex flex-col items-start text-left">
                     <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
                     <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
@@ -588,7 +241,7 @@ export default function FacecardEditor({
                 </div>
 
                 {/* Brands */}
-                <div className="relative px-5 py-3 flex justify-center">
+                <div className="relative px-1 py-4 mt-5 flex justify-center">
                   <div className="flex flex-col items-start text-left">
                     <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
                     <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
@@ -603,23 +256,26 @@ export default function FacecardEditor({
                 </div>
               </div>
 
+
+
               {/* Icon Pills & Brand Grid */}
-              <div className="col-span-7 space-y-12 ">
+              <div className="col-span-7 space-y-7 ">
                 <div className="flex items-center gap-4">
+                  
                   <button
                     type="button"
                     onClick={() => {
                       if (typeof onPickZodiac === "function") onPickZodiac();
                       else setShowSelector("zodiacs");
                     }}
-                    className="w-18 h-18 rounded-2xl border border-2 border-white/60 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
+                    className="w-[84px] h-[84px] rounded-[20px] border border-[1.5px] border-b-[4px] border-white/60 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
                     aria-label="Change zodiac"
                   >
                     {user?.zodiac?.imageUrl ? (
                       <img
                         src={user.zodiac.imageUrl}
                         alt={user.zodiac.name || "Zodiac"}
-                        className="h-full w-full object-contain p-2 font-outfit text-sm"
+                        className="h-[75%] w-[75%] object-contain p-2 font-outfit text-sm"
                       />
                     ) : (
                       zodiac?.symbol || (
@@ -630,7 +286,7 @@ export default function FacecardEditor({
 
                   <div
                     onClick={() => setShowSelector("interests")}
-                    className="flex-1 h-18 rounded-full border border-white/60 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
+className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
                   >
                     <span className="text-sm font-thin tracking-wide font-outfit">Interests:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
@@ -667,7 +323,7 @@ export default function FacecardEditor({
                 
 
                 <div className="flex items-center font-outfit gap-4 ">
-                  <div className="w-18 h-18 mt-2 rounded-2xl border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
+                  <div className="w-[84px] h-[84px] rounded-[20px] border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
                     {user?.gender === "MALE"
                       ? "♂"
                       : user?.gender === "FEMALE"
@@ -677,7 +333,7 @@ export default function FacecardEditor({
 
                   <div
                     onClick={() => setShowSelector("values")}
-                    className="flex-1 mt-2  h-18 rounded-full border border-white/50 px-8 flex items-center justify-between 0  meeting now hover:bg-white/5 transition overflow-hidden"
+className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
                   >
                     <span className="text-sm  tracking-wide">Causes:</span>
                     <div className="flex-1 flex justify-end overflow-hidden">
@@ -703,7 +359,7 @@ export default function FacecardEditor({
                 </div>
 
                 {/* Brand Icons Row */}
-                <div className="flex gap-6 mt-5  scrollbar-hide">
+                <div className="flex gap-8 mt-12  scrollbar-hide">
                   {[0, 1, 2, 3, 4].map((i) => {
                     const selection = user?.brandPreferences?.[i];
                     return (
@@ -728,22 +384,28 @@ export default function FacecardEditor({
                     );
                   })}
                 </div>
+
+
+                
               </div>
+
+
+              
             </div>
           </div>
 
           {/* Right Side Info Col */}
-          <div className="w-72 flex flex-col gap-10 py-6 pr-4">
+          <div className="w-full lg:w-[260px] xl:w-[300px] flex flex-col gap-10 py-6 pr-4">
             {/* Progress Area */}
             <div className="flex flex-col items-center gap-6">
               <div className="relative w-56 h-56 flex items-center justify-center">
                 {/* Outer ring */}
-                <div className="absolute w-[186px] h-[186px] rounded-full border-[3px] border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.7),inset_0_0_15px_rgba(236,72,153,0.5)]" />
-                <div className="absolute w-[180px] h-[180px] rounded-full border-[3px] border-white" />
-                <div className="absolute w-[174px] h-[174px] rounded-full border-[3px] border-pink-500/60" />
+                <div className="absolute w-[190px] h-[190px] rounded-full border-[5px] border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.7),inset_0_0_15px_rgba(236,72,153,0.5)]" />
+                <div className="absolute w-[180px] h-[180px] rounded-full border-[4px] border-white" />
+                <div className="absolute w-[174px] h-[174px] rounded-full border-[5px] border-pink-500/70" />
 
                 {/* Main yellow ring */}
-                <div className="w-[160px] h-[160px] rounded-full border-[8px] border-yellow-400 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.8),inset_0_0_18px_rgba(236,72,153,0.6)]">
+                <div className="w-[160px] h-[160px] rounded-full border-[8px] border-yellow-400 flex items-center justify-center ">
                   {/* Inner thin ring */}
                   <div className="absolute w-[140px] h-[140px] rounded-full border-[4px] border-[#FFBC2B]" />
 
@@ -758,7 +420,7 @@ export default function FacecardEditor({
               <button
                 type="button"
                 onClick={() => onOpenFacecardPreview?.()}
-                className="w-5/6 py-4 border-2 border-b-4 border-white/40 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
+                className="w-[80%] py-6 border-2 border-b-4 border-white/40 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
               >
                 <span className="text-xl">
                   <img src="/eye.svg" alt="" />
@@ -840,6 +502,8 @@ export default function FacecardEditor({
               </div>
             </div>
           </div>
+
+
         </div>
       </div>
 
@@ -900,3 +564,363 @@ export default function FacecardEditor({
     </div>
   );
 }
+
+
+
+
+
+      // <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
+      //   <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 p-10 relative z-10">
+      //     {/* TOP ROW: Close, Name Box, Progress */}
+      //     <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
+      //       {/* Close Button */}
+
+      //       <div className="col-span-2">
+      //         <button
+      //           onClick={leaveEditor}
+      //           className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
+      //         >
+      //           ✕
+      //         </button>
+      //       </div>
+
+      //       {/* Name Box with Brackets */}
+      //       <div className="col-span-6 flex justify-center">
+      //         <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+      //           <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
+      //           <div className="flex flex-col justify-center h-full">
+      //             <h2 className="text-[12px] text-white">{firstName}</h2>
+
+      //             <p className="text-[10px]  font-outfit text-white">
+      //               UserID:{user?.id?.slice(0, 8) || "4heu24sds"}
+      //             </p>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       <div className="col-span-4 row-span-2 flex justify-center items-center">
+      //         <div className="relative w-[120px] h-[120px] flex items-center justify-center">
+      //           {/* Glow */}
+
+      //           {/* Outer ring */}
+      //           <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 shadow-[0_0_15px_rgba(236,72,153,0.7),inset_0_0_10px_rgba(236,72,153,0.5)]" />
+
+      //           <div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-white" />
+
+      //           <div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-pink-500/60" />
+
+      //           {/* Main yellow ring with pink glow */}
+      //           <div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]">
+      //             {/* Inner thin ring */}
+      //             <div className="absolute w-[75px] h-[75px] rounded-full border-[3px] border-[#FFBC2B]" />
+
+      //             {/* Center text */}
+      //             <span className="text-[18px] text-white font-semibold">
+      //               {progress}
+      //               <span className="text-sm opacity-60">%</span>
+      //             </span>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       <div className="col-span-5 mt-1">
+      //         <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+      //           <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
+
+      //           <div className="">
+      //             <p className="text-[10px] uppercase   text-white">
+      //               DOB :{" "}
+      //               {user?.dateOfBirth
+      //                 ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+      //                 : "22/08/1998"}
+      //             </p>
+      //             <p className="text-[10px] font-thin  text-white">
+      //               Zodiac : {zodiac?.name || "Gemini"}
+      //             </p>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       <div className="col-span-3 flex justify-center mt-1">
+      //         <button
+      //           onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
+      //           className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
+      //         >
+      //           {zodiac?.imageUrl ? (
+      //             <img
+      //               src={zodiac.imageUrl}
+      //               className="h-[20px] w-[20px] object-contain brightness-0 invert"
+      //             />
+      //           ) : (
+      //             <span className="opacity-40 text-2xl">+</span>
+      //           )}
+      //         </button>
+      //       </div>
+
+      //       <div className="col-span-5 mt-1">
+      //         <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
+      //           <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 left-0 w-3 h-3 border-b-1 border-l-1 border-white/50"></span>
+      //           <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
+
+      //           <div className="">
+      //             <p className="text-[10px]  opacity-60 text-white">
+      //               Gender Identity
+      //             </p>
+      //             <p className="text-[10px]  text-white">{user?.gender}</p>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       {/* Gender Icon + Facecard Button Column */}
+      //       <div className="col-span-3 flex flex-col gap-4 mt-2">
+      //         <div className="flex justify-center">
+      //           <button className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white">
+      //             {user?.gender === "MALE"
+      //               ? "♂"
+      //               : user?.gender === "FEMALE"
+      //                 ? "♀"
+      //                 : "⚧"}
+      //           </button>
+      //         </div>
+      //       </div>
+
+      //       <div className="col-span-4 flex justify-center items-center">
+      //         <button
+      //           onClick={() => onOpenFacecardPreview?.()}
+      //           className="w-full py-4 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
+      //         >
+      //           <span className="text-xl">
+      //             <img src="/eye.svg" alt="" />
+      //           </span>
+      //           <span className="text-xs font-bold  tracking-widest text-white">
+      //             Facecard
+      //           </span>
+      //         </button>
+      //       </div>
+      //     </div>
+
+      //     {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
+
+      //     {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
+
+      //     {/* Action Rows: Interests, Causes, Brands */}
+      //     <div className="flex flex-col gap-5">
+      //       {/* Interests */}
+      //       <div className="flex items-center justify-between gap-3">
+      //         {/* LEFT → Label */}
+      //         <span className="text-[12px] font-black  tracking-wide">
+      //           Interests
+      //         </span>
+
+      //         {/* RIGHT → Box + Button */}
+      //         <div className="flex items-center gap-3">
+      //           <div
+      //             onClick={() => setShowSelector("interests")}
+      //             className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
+      //           >
+      //             {interests.length > 0 ? (
+      //               <div key={interestIndex} className="animate-slide-down">
+      //                 {interests[interestIndex]}
+      //               </div>
+      //             ) : (
+      //               "Select"
+      //             )}
+      //           </div>
+
+      //           <button
+      //             onClick={() => setShowSelector("interests")}
+      //             className="w-12 h-12 border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+      //           >
+      //             +
+      //           </button>
+      //         </div>
+      //       </div>
+
+      //       <div className="flex items-center justify-between gap-3">
+      //         {/* LEFT → Label */}
+      //         <span className="text-[12px] font-black  tracking-wide">
+      //           Causes
+      //         </span>
+
+      //         {/* RIGHT → Box + Button */}
+      //         <div className="flex items-center gap-3">
+      //           <div
+      //             onClick={() => setShowSelector("values")}
+      //             className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
+      //           >
+      //             {causes.length > 0 ? (
+      //               <div key={causeIndex} className="animate-slide-down italic">
+      //                 {causes[causeIndex]}
+      //               </div>
+      //             ) : (
+      //               "Select"
+      //             )}
+      //           </div>
+
+      //           <button
+      //             onClick={() => setShowSelector("values")}
+      //             className="w-12 h-12 border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+      //           >
+      //             +
+      //           </button>
+      //         </div>
+      //       </div>
+
+      //       {/* Brands */}
+      //       <div className="flex items-center justify-between gap-3">
+      //         {/* LEFT → Label */}
+      //         <span className="text-[12px] font-black  tracking-wide">
+      //           Brands
+      //         </span>
+
+      //         {/* RIGHT → Icons */}
+      //         <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+      //           {[0, 1, 2, 3, 4].map((i) => {
+      //             const selection = user?.brandPreferences?.[i];
+      //             return (
+      //               <div
+      //                 key={i}
+      //                 onClick={() => setShowSelector("brands")}
+      //                 className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 0  meeting now hover:bg-white/10"
+      //               >
+      //                 {selection ? (
+      //                   <img
+      //                     src={selection.brand?.logoUrl}
+      //                     className="w-10 h-10 rounded-full object-contain"
+      //                   />
+      //                 ) : (
+      //                   <span className="opacity-40 text-xl">+</span>
+      //                 )}
+      //               </div>
+      //             );
+      //           })}
+      //         </div>
+      //       </div>
+      //     </div>
+
+      //     {/* Photo Slots Section */}
+      //     <div className="relative group">
+      //       {photoUploading && (
+      //         <div className="absolute inset-0 z-30 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-sm">
+      //           <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      //         </div>
+      //       )}
+
+      //       <div className="grid grid-cols-3 gap-4">
+      //         {/* Photo 1 (DP) */}
+      //         <div
+      //           onClick={() => handleSlotClick(0)}
+      //           className="w-full aspect-[2/3] border-2  border-white/50 rounded-[1rem] overflow-hidden relative shadow-2xl"
+      //         >
+      //           <img
+      //             src={user?.displayPictureUrl || "/imageprofile.png"}
+      //             className="w-full h-full object-cover"
+      //           />
+      //           <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-black text-[10px]">
+      //             ✎
+      //           </div>
+      //         </div>
+
+      //         {/* Other Slots */}
+      //         {[0, 1].map((idx) => {
+      //           const photo = user?.photos?.find((p) => p.order === idx);
+      //           return (
+      //             <div
+      //               key={idx}
+      //               onClick={() => handleSlotClick(idx + 1)}
+      //               className="w-full aspect-[2/3] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
+      //             >
+      //               {photo ? (
+      //                 <img
+      //                   src={photo.url}
+      //                   className="w-full h-full object-cover"
+      //                 />
+      //               ) : (
+      //                 <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">
+      //                   +
+      //                 </div>
+      //               )}
+      //             </div>
+      //           );
+      //         })}
+      //       </div>
+      //     </div>
+
+      //     <div className="w-full flex items-center justify-between  mb-4 ">
+      //       {/* LEFT: Album + Info */}
+      //       <div className="flex items-center gap-5">
+      //         {/* Album */}
+      //         <div
+      //           onClick={() => setShowSelector("music")}
+      //           className="relative 0  meeting now active:scale-95 transition"
+      //         >
+      //           <div
+      //             className={`w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2 ${user?.musicPreference ? "bg-black" : "bg-white/5"}`}
+      //           >
+      //             <div
+      //               className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
+      //             >
+      //               {user?.musicPreference?.albumArtUrl ? (
+      //                 <img
+      //                   src={user.musicPreference.albumArtUrl}
+      //                   className="w-full h-full object-cover"
+      //                   alt="Album Art"
+      //                 />
+      //               ) : (
+      //                 <span className="text-4xl opacity-20 text-white">+</span>
+      //               )}
+      //             </div>
+
+      //             {/* center dot */}
+      //             <div className="absolute w-8 h-8 rounded-full bg-black border border-white/20 flex items-center justify-center">
+      //               <div className="w-2 h-2 rounded-full bg-white/30"></div>
+      //             </div>
+      //           </div>
+      //         </div>
+
+      //         <div className="relative px-6 py-1 min-w-[120px]">
+      //           <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
+      //           <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
+      //           <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
+      //           <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
+      //           {/* Text */}
+      //           <div className="inline-flex flex-col justify-end items-start">
+      //             <p className="text-white text-[10px] leading-tight">
+      //               {user?.musicPreference?.name ||
+      //                 user?.musicPreference?.songName ||
+      //                 "Select Song"}
+      //             </p>
+      //             <p className="text-white/60 text-[10px] text-center">
+      //               {user?.musicPreference?.artist ||
+      //                 user?.musicPreference?.artistName ||
+      //                 "Spotify"}
+      //             </p>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       {/* RIGHT: Dots */}
+      //       <div className="grid grid-cols-6 gap-2 opacity-30">
+      //         {[...Array(42)].map((_, i) => (
+      //           <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
+      //         ))}
+      //       </div>
+      //     </div>
+
+      //     <input
+      //       type="file"
+      //       ref={fileInputRef}
+      //       onChange={handleFileChange}
+      //       accept="image/*"
+      //       className="hidden"
+      //     />
+      //   </div>
+      // </div>

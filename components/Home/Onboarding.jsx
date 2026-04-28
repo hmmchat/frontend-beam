@@ -641,7 +641,7 @@ if (prompt.trim() && accessToken) {
 <div className=" items-center  ">
 
 <div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
-            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
+            <div className="w-full  sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
 
 
 
@@ -669,10 +669,10 @@ if (prompt.trim() && accessToken) {
 
     <div className="flex items-center justify-center ">
   <div className="w-full md:border md:border-white/30 md:p-2   md:pb-3  md:rounded-[60px] ">
-<form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  p-2">
+<form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  md:p-2">
                 
                 {/* 2️⃣ Photo upload UI */}
-                <div className=" border border-white/30 p-3 md:p-5 rounded-[44px] ">
+                <div className=" border border-white/30 py-3 md:p-5 md:rounded-[44px]  rounded-[20px] ">
                 
 
                   <div className="flex justify-center md:gap-4 gap-2">
@@ -686,7 +686,7 @@ if (prompt.trim() && accessToken) {
                           key={i}
 className="
   relative 
-  w-[90px] sm:w-[110px] md:w-32 
+  w-[110px] sm:w-[110px] md:w-32 
   aspect-[2/3] md:aspect-[2/3] 
   rounded-[1rem] md:rounded-[1.5rem]
   border border-b-[3px] md:border-2 md:border-b-4 
@@ -735,7 +735,7 @@ className="
                 {/* 3️⃣ Name input */}
 
 
-                <div className="md:px-4 font-outfit">
+                <div className="md:px-4 px-2 font-outfit">
                   <label className="text-white text-sm mb-1 block">
                     Enter name/ username
                   </label>
@@ -750,7 +750,7 @@ className="
                 </div>
 
                 {/* 4️⃣ DOB inputs */}
-                <div className="md:px-4 font-outfit">
+                <div className="md:px-4 px-2 font-outfit">
                   <label className="text-white text-sm mb-1 block">Date of birth</label>
                   <div className="grid grid-cols-3 gap-4">
                     <input
@@ -792,7 +792,7 @@ className="
 
                 {/* 5️⃣ Gender identity */}
 {/* 5️⃣ Gender + City (Row UI) */}
-<div className="md:px-4 font-outfit grid grid-cols-2 gap-3">
+<div className="md:px-4 px-2 font-outfit grid grid-cols-2 gap-3">
 
   {/* Gender */}
   <div>

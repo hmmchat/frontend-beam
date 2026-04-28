@@ -3,12 +3,144 @@
 import { useEffect, useMemo, useState } from "react";
 import { API, apiRequest } from "@/lib/api";
 
-const DEFAULT_AD_UNIT_ID = process.env.NEXT_PUBLIC_REWARDED_AD_UNIT_ID || "wallet_free_coins";
+const DEFAULT_AD_UNIT_ID = process.env.NEXT_PUBLIC_GAM_REWARDED_AD_UNIT || "";
 const DEV_FALLBACK_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REWARDED_AD_DEV_FALLBACK === "true";
+const GPT_SCRIPT_SRC = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
+
+function randomId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function getRewardedAdUnitId() {
+  return DEFAULT_AD_UNIT_ID.trim();
+}
 
 function getWindowAdSdk() {
   if (typeof window === "undefined") return null;
   return window.HmmRewardedAds || window.rewardedAds || null;
+}
+
+function loadGptScript() {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Browser environment is required."));
+  }
+
+  if (window.googletag?.apiReady) {
+    return Promise.resolve(window.googletag);
+  }
+
+  if (!window.__hmmGptLoaderPromise) {
+    window.__hmmGptLoaderPromise = new Promise((resolve, reject) => {
+      window.googletag = window.googletag || { cmd: [] };
+
+      const existingScript = document.querySelector(`script[src="${GPT_SCRIPT_SRC}"]`);
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.googletag), { once: true });
+        existingScript.addEventListener("error", () => reject(new Error("Failed to load Google ad script.")), {
+          once: true,
+        });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = GPT_SCRIPT_SRC;
+      script.onload = () => resolve(window.googletag);
+      script.onerror = () => reject(new Error("Failed to load Google ad script."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return window.__hmmGptLoaderPromise;
+}
+
+async function showGoogleRewardedAd(adUnitId) {
+  const googletag = await loadGptScript();
+
+  return new Promise((resolve, reject) => {
+    googletag.cmd.push(() => {
+      const pubads = googletag.pubads();
+      const txId = `gam-${Date.now()}-${randomId()}`;
+      let resolved = false;
+      let rewardGranted = false;
+
+      const slot = googletag.defineOutOfPageSlot(adUnitId, googletag.enums.OutOfPageFormat.REWARDED);
+      if (!slot) {
+        reject(new Error("No rewarded ad inventory available right now."));
+        return;
+      }
+
+      slot.addService(pubads);
+
+      const finishResolve = () => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve({
+          adUnitId,
+          adNetwork: "google-gam",
+          providerTransactionId: txId,
+        });
+      };
+
+      const finishReject = (message) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        reject(new Error(message));
+      };
+
+      const onReady = (event) => {
+        if (event.slot !== slot) return;
+        try {
+          event.makeRewardedVisible();
+        } catch {
+          finishReject("Could not display rewarded ad.");
+        }
+      };
+
+      const onGranted = (event) => {
+        if (event.slot !== slot) return;
+        rewardGranted = true;
+      };
+
+      const onClosed = (event) => {
+        if (event.slot !== slot) return;
+        if (rewardGranted) {
+          finishResolve();
+          return;
+        }
+        finishReject("Ad was closed before reward completion.");
+      };
+
+      const onRenderEnded = (event) => {
+        if (event.slot !== slot) return;
+        if (event.isEmpty) {
+          finishReject("No ad available right now. Please try again later.");
+        }
+      };
+
+      const cleanup = () => {
+        pubads.removeEventListener("rewardedSlotReady", onReady);
+        pubads.removeEventListener("rewardedSlotGranted", onGranted);
+        pubads.removeEventListener("rewardedSlotClosed", onClosed);
+        pubads.removeEventListener("slotRenderEnded", onRenderEnded);
+        googletag.destroySlots([slot]);
+      };
+
+      pubads.addEventListener("rewardedSlotReady", onReady);
+      pubads.addEventListener("rewardedSlotGranted", onGranted);
+      pubads.addEventListener("rewardedSlotClosed", onClosed);
+      pubads.addEventListener("slotRenderEnded", onRenderEnded);
+
+      if (!window.__hmmGptServicesEnabled) {
+        googletag.enableServices();
+        window.__hmmGptServicesEnabled = true;
+      }
+
+      googletag.display(slot);
+    });
+  });
 }
 
 async function showRewardedAd(adUnitId) {
@@ -17,8 +149,12 @@ async function showRewardedAd(adUnitId) {
     return sdk.showRewardedAd({ adUnitId, placement: "wallet_free_coins" });
   }
 
+  if (adUnitId) {
+    return showGoogleRewardedAd(adUnitId);
+  }
+
   if (!DEV_FALLBACK_ENABLED) {
-    throw new Error("Rewarded ads are not available yet. Please try again later.");
+    throw new Error("Rewarded ads are not configured yet. Please try again later.");
   }
 
   await new Promise((resolve) => setTimeout(resolve, 8000));
@@ -36,6 +172,8 @@ export default function FreeCoinsSection({ onRewardGranted }) {
   const [error, setError] = useState("");
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [now, setNow] = useState(Date.now());
+  const adUnitId = getRewardedAdUnitId();
+  const customSdk = getWindowAdSdk();
 
   useEffect(() => {
     let mounted = true;
@@ -66,7 +204,8 @@ export default function FreeCoinsSection({ onRewardGranted }) {
     return Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
   }, [cooldownUntil, now]);
 
-  const disabled = loadingConfig || watching || !config?.isActive || cooldownSeconds > 0;
+  const adUnavailable = !customSdk && !adUnitId && !DEV_FALLBACK_ENABLED;
+  const disabled = loadingConfig || watching || !config?.isActive || cooldownSeconds > 0 || adUnavailable;
   const coinsPerAd = Number(config?.coinsPerAd) || 0;
   const maxAdsPerDay = config?.maxAdsPerDay;
 
@@ -78,13 +217,13 @@ export default function FreeCoinsSection({ onRewardGranted }) {
     setMessage("Loading rewarded ad...");
 
     try {
-      const proof = await showRewardedAd(DEFAULT_AD_UNIT_ID);
+      const proof = await showRewardedAd(adUnitId);
       setMessage("Verifying ad reward...");
 
       const result = await apiRequest(API.ADS.VERIFY_REWARD, {
         method: "POST",
         body: JSON.stringify({
-          adUnitId: proof?.adUnitId || DEFAULT_AD_UNIT_ID,
+          adUnitId: proof?.adUnitId || adUnitId || "wallet_free_coins",
           adNetwork: proof?.adNetwork,
           providerTransactionId: proof?.providerTransactionId,
           rewardToken: proof?.rewardToken,
@@ -125,6 +264,11 @@ export default function FreeCoinsSection({ onRewardGranted }) {
           <p className="mt-2 text-sm text-white/70">
             Complete the full ad to earn {coinsPerAd || "..."} coins.
           </p>
+          {adUnavailable ? (
+            <p className="mt-1 text-xs text-amber-200">
+              Rewarded ad unit is not configured yet.
+            </p>
+          ) : null}
           {maxAdsPerDay ? (
             <p className="mt-1 text-xs text-white/50">
               Limit: {maxAdsPerDay} ads per day.

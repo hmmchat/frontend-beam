@@ -10,6 +10,7 @@ import FaceCard2 from "../Home/FaceCard2";
 import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
 import { API, apiRequest } from "@/lib/api";
 import RewardsReferralsPanel from "../Profile/RewardsReferralsPanel";
+import FreeCoinsSection from "../Profile/FreeCoinsSection";
 import { buildGetMoneyModel, formatInrValue } from "@/lib/getMoney";
 
 export default function ProfileMobile() {
@@ -41,22 +42,35 @@ export default function ProfileMobile() {
     load();
   }, []);
 
+  const loadWallet = async () => {
+    try {
+      const balance = await apiRequest(API.WALLET.GET_BALANCE);
+      setWalletSnapshot({
+        diamonds: Number(balance?.diamonds) || 0,
+        coins: Number(balance?.balance) || 0,
+        loading: false,
+      });
+    } catch (e) {
+      console.error("[ProfileMobile] Failed to load wallet:", e);
+      setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        const balance = await apiRequest(API.WALLET.GET_BALANCE);
-        setWalletSnapshot({
-          diamonds: Number(balance?.diamonds) || 0,
-          coins: Number(balance?.balance) || 0,
-          loading: false,
-        });
-      } catch (e) {
-        console.error("[ProfileMobile] Failed to load wallet:", e);
-        setWalletSnapshot((prev) => ({ ...prev, loading: false }));
-      }
-    };
     loadWallet();
   }, []);
+
+  const handleAdRewardGranted = (result) => {
+    if (typeof result?.newBalance === "number") {
+      setWalletSnapshot((prev) => ({
+        ...prev,
+        coins: result.newBalance,
+        loading: false,
+      }));
+      return;
+    }
+    loadWallet();
+  };
 
   const progress = user ? calculateProgress(user) : 0;
   const displayName = user?.username?.trim() || "Profile";
@@ -364,12 +378,16 @@ export default function ProfileMobile() {
               </div>
             </div>
 
-            <button className="flex items-center gap-3 border border-white/40 px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
-              <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
-                +
-              </span>
-              Add withdrawal method
-            </button>
+            <div className="w-full space-y-5">
+              <FreeCoinsSection onRewardGranted={handleAdRewardGranted} />
+
+              <button className="flex w-full items-center justify-center gap-3 border border-white/40 px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
+                <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
+                  +
+                </span>
+                Add withdrawal method
+              </button>
+            </div>
 
             <div className="mt-12 text-sm text-white/70 space-y-6 text-left w-full pt-6">
               <div className="flex items-center gap-3">

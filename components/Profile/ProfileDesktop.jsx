@@ -92,22 +92,35 @@ export default function ProfileDesktop({
     return () => clearInterval(interval);
   }, [interests.length]);
 
+  const loadWallet = async () => {
+    try {
+      const balance = await apiRequest(API.WALLET.GET_BALANCE);
+      setWalletSnapshot({
+        diamonds: Number(balance?.diamonds) || 0,
+        coins: Number(balance?.balance) || 0,
+        loading: false,
+      });
+    } catch (err) {
+      console.error("Failed to fetch wallet balance:", err);
+      setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        const balance = await apiRequest(API.WALLET.GET_BALANCE);
-        setWalletSnapshot({
-          diamonds: Number(balance?.diamonds) || 0,
-          coins: Number(balance?.balance) || 0,
-          loading: false,
-        });
-      } catch (err) {
-        console.error("Failed to fetch wallet balance:", err);
-        setWalletSnapshot((prev) => ({ ...prev, loading: false }));
-      }
-    };
     loadWallet();
   }, []);
+
+  const handleAdRewardGranted = (result) => {
+    if (typeof result?.newBalance === "number") {
+      setWalletSnapshot((prev) => ({
+        ...prev,
+        coins: result.newBalance,
+        loading: false,
+      }));
+      return;
+    }
+    loadWallet();
+  };
 
   const moneyModel = buildGetMoneyModel({
     diamonds: walletSnapshot.diamonds,
@@ -369,7 +382,11 @@ export default function ProfileDesktop({
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto">
             {activeTab === "getmoney" ? (
-              <GetMoneyTab moneyModel={moneyModel} loading={walletSnapshot.loading} />
+              <GetMoneyTab
+                moneyModel={moneyModel}
+                loading={walletSnapshot.loading}
+                onRewardGranted={handleAdRewardGranted}
+              />
             ) : activeTab === "prompts" ? (
               <PromptsTab user={user} setUser={setUser} />
             ) : activeTab === "rewards" ? (

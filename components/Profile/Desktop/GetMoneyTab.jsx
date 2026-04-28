@@ -1,8 +1,9 @@
 "use client";
 
 import { formatInrValue } from "@/lib/getMoney";
+import FreeCoinsSection from "../FreeCoinsSection";
 
-export default function GetMoneyTab({ moneyModel, loading = false }) {
+export default function GetMoneyTab({ moneyModel, loading = false, onRewardGranted }) {
   const diamondsLeft = moneyModel?.diamondsLeft ?? 0;
   const diamonds = moneyModel?.diamonds ?? 0;
   const progress = moneyModel?.unlockProgress ?? 0;
@@ -34,12 +35,16 @@ export default function GetMoneyTab({ moneyModel, loading = false }) {
         </div>
       </div>
 
-      <button className="flex items-center gap-3 border border-white px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
-        <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
-          +
-        </span>
-        Add withdrawal method
-      </button>
+      <div className="w-full max-w-lg space-y-5">
+        <FreeCoinsSection onRewardGranted={onRewardGranted} />
+
+        <button className="flex w-full items-center justify-center gap-3 border border-white px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
+          <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
+            +
+          </span>
+          Add withdrawal method
+        </button>
+      </div>
 
       <div className="mt-auto text-sm text-white/70 space-y-6 text-left w-full pt-12">
         <div className="flex items-center gap-3">

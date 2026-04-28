@@ -295,6 +295,8 @@ export default function MeetSomeoneNew({
   <MeetNowButton
     onClick={handleMeetNow}
     className="w-full h-20"
+     iconClass="md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
+                 borderClass = "md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
   />
 </div>
 

@@ -181,6 +181,7 @@ export default function Home() {
                 fullWidth
                 className="w-full py-5 bg-black/15 backdrop-blur-[1px] border-[1px] border-white/70 border-b-4 text-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 onClick={() => setIsSignUpOpen(true)}
+                
               >
                 <div className="flex items-center justify-center gap-3 text-[14px]">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center border border-white ">

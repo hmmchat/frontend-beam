@@ -143,7 +143,7 @@ export default function ConversationSidebar({
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-[46px] rounded-[25px]  border border-white/50 p-6">
+      <div className="flex h-screen flex-col overflow-hidden md:rounded-[46px] rounded-[30px]  border border-white/50 p-6">
         {loading ? (
           <InboxSkeleton />
         ) : listLoadError ? (

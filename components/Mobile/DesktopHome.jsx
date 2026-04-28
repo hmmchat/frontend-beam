@@ -185,6 +185,8 @@ const [isVideoOn, setIsVideoOn] = useState(false);
               <div className={clsx('flex-1', 'flex', 'items-center', 'justify-center', 'mt-44')}>
                 <MeetNowButton
                   className={clsx('w-[90%]', 'py-8')}
+                                   borderClass = "md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
+                                     iconClass=  "md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
                   onClick={() => setIsSignUpOpen(true)}
                   isVideoOn={isVideoOn}
                   onVideoClick={() => setIsVideoOn(!isVideoOn)}

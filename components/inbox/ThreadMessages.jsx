@@ -123,11 +123,19 @@ export default function ThreadMessages({
                 key={message.id || idx}
                 className={`flex items-start gap-2 ${isMe ? "justify-end" : ""}`}
               >
+                {!isMe && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                    <Image
+                      src={activeChat?.otherUser?.displayPictureUrl || "/assets/avatar1.png"}
+                      alt="avatar"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
                 <div
-                  className={`p-1 rounded-2xl max-w-[75%] shadow-md overflow-hidden ${
-                    isMe
-                      ? "bg-black/20 text-white rounded-tr-none border border-white/10"
-                      : "bg-white/10 text-white rounded-tl-none border border-white/5"
+                  className={`p-1 rounded-lg max-w-[75%] shadow-md overflow-hidden ${
+                    isMe ? "bg-black/20 text-white  " : "bg-black/20 text-white  "
                   }`}
                 >
                   {isGif && (
@@ -188,7 +196,7 @@ export default function ThreadMessages({
                   )}
                   {(isSquadInvite || isSquadOutcome) && (
                     <div className="px-4 py-3 space-y-3">
-                      <p className="text-[15px] text-white/95 whitespace-pre-wrap break-words">
+                      <p className="md:text-[12px] text-[11px] font-outfit text-white/95 whitespace-pre-wrap break-words">
                         {message.message}
                       </p>
                       {isSquadInvite &&
@@ -196,47 +204,65 @@ export default function ThreadMessages({
                         squadMeta?.invitationId &&
                         typeof onSquadInviteResponse === "function" &&
                         (squadInviteResolved ? (
-                          <p className="text-[12px] text-white/50 font-medium">
+                          <p className="text-[11px] md:text-[12px] text-white/50 font-medium">
                             This invite isn&apos;t active anymore.
                           </p>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              disabled={squadBusyId === message.id}
-                              onClick={async () => {
-                                setSquadBusyId(message.id);
-                                try {
-                                  await onSquadInviteResponse(
-                                    squadMeta.invitationId,
-                                    "accept",
-                                  );
-                                } finally {
-                                  setSquadBusyId(null);
-                                }
-                              }}
-                              className="rounded-full bg-emerald-500/90 hover:bg-emerald-500 text-black text-xs font-bold px-4 py-2 disabled:opacity-40"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              type="button"
-                              disabled={squadBusyId === message.id}
-                              onClick={async () => {
-                                setSquadBusyId(message.id);
-                                try {
-                                  await onSquadInviteResponse(
-                                    squadMeta.invitationId,
-                                    "reject",
-                                  );
-                                } finally {
-                                  setSquadBusyId(null);
-                                }
-                              }}
-                              className="rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-xs font-bold px-4 py-2 disabled:opacity-40"
-                            >
-                              Reject
-                            </button>
+
+  {/* Reject (X icon) */}
+  <button
+    type="button"
+    disabled={squadBusyId === message.id}
+    onClick={async () => {
+      setSquadBusyId(message.id);
+      try {
+        await onSquadInviteResponse(
+          squadMeta.invitationId,
+          "reject",
+        );
+      } finally {
+        setSquadBusyId(null);
+      }
+    }}
+    className="w-8 h-8 text-red-500 flex items-center justify-center rounded-full bg-red/10  disabled:opacity-40"
+  >
+    ✕
+  </button>
+
+               <button
+    type="button"
+    disabled={squadBusyId === message.id}
+    onClick={async () => {
+      setSquadBusyId(message.id);
+      try {
+        await onSquadInviteResponse(
+          squadMeta.invitationId,
+          "accept",
+        );
+      } finally {
+        setSquadBusyId(null);
+      }
+    }}
+    className="flex items-center gap-2 px-5 py-3 rounded-[10px] border border-white/40 border-b-4 text-white text-xs font-semibold hover:bg-white/10 disabled:opacity-40"
+  >
+    Join now
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h7a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"
+      />
+    </svg>
+  </button>
+
                           </div>
                         ))}
                     </div>
@@ -246,7 +272,7 @@ export default function ThreadMessages({
                     !isSquadInvite &&
                     !isSquadOutcome && (
                     <div
-                      className={`px-4 py-2 whitespace-pre-wrap break-words text-[15px] ${
+                      className={`md:px-4  px-3 py-2 whitespace-pre-wrap break-words md:text-[12px] text-[11px] font-outfit   ${
                         unreadBubble ? "font-bold" : ""
                       }`}
                     >
@@ -255,7 +281,7 @@ export default function ThreadMessages({
                   )}
                 </div>
                 {isMe && (
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/30 relative">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                     <Image
                       src={myAvatarUrl || "/assets/avatar1.png"}
                       alt="me"

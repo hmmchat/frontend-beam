@@ -592,8 +592,8 @@ if (prompt.trim() && accessToken) {
   }
 
   return (
-    <div 
-      className=" w-full relative outfit-font text-white" 
+
+<div className="w-full h-[100dvh] overflow-hidden relative outfit-font text-white"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -611,8 +611,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-
-<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen overflow-y-auto p-6">
+<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen overflow-hidden p-6">
 
             {step === 1 && (
     <>
@@ -625,7 +624,7 @@ if (prompt.trim() && accessToken) {
   </p>
 </div> */}
           {/* Left */} 
-          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto border border-white/30 rounded-[3rem] py-10 md:py-16 hidden md:flex ">
+          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto md:border md:border-white/30 md:rounded-[60px] hidden md:flex ">
             <div className="mx-auto ">
 
             <h3 className="text-3xl font-bold ">Welcome onboard,</h3>
@@ -639,10 +638,10 @@ if (prompt.trim() && accessToken) {
 
           {/* Right - Form */}
 
-<div className="justify-center items-center">
+<div className=" items-center  ">
 
-          <div className="flex flex-col items-center justify-center min-h-screen md:min-h-full overflow-y-auto md:border md:border-white/30 md:rounded-[60px] ">
-            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto  ">
+<div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
+            <div className="w-full max-w-[90%] sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
 
 
 
@@ -657,7 +656,7 @@ if (prompt.trim() && accessToken) {
 
 
 
-<div className="flex flex-col justify-center h-full mt-0">
+<div className="flex flex-col justify-start h-auto mt-4">
 
 
   <div
@@ -669,7 +668,7 @@ if (prompt.trim() && accessToken) {
   >
 
     <div className="flex items-center justify-center ">
-  <div className="w-full md:border md:border-white/30 md:p-2   md:pb-6  md:rounded-[60px] ">
+  <div className="w-full md:border md:border-white/30 md:p-2   md:pb-3  md:rounded-[60px] ">
 <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  p-2">
                 
                 {/* 2️⃣ Photo upload UI */}
@@ -1045,15 +1044,15 @@ className="
 
 
 
-          <div className="flex flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
+          <div className="md:flex md:flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
       {/* Right */}
 
-<div className="w-full max-w-lg  flex flex-col  p-4">
+<div className="w-full max-w-lg  flex flex-col  ">
 
 
 
 
-<div className="md:hidden  tetxt-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
+<div className="md:hidden  text-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
  <div className="flex items-center gap-2  md:hidden font-outfit">
 
        <p className="text-[10px] font-outfit text-white mt-1 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
@@ -1065,20 +1064,19 @@ className="
 
             
           {/* Bordered wrapper — matches step 1 form border */}
-<div className="md:border md:border-white/30 md:block rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+<div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
 
           {/* Prompt box */}
-    <div className="border border-white/30 rounded-[36px] p-10 text-white">
-  <textarea
-    value={prompt}
-    onChange={(e) => {
-      setPrompt(e.target.value);
-      setSelectedPrompts([]);
-    }}
-    placeholder="Type your own"
-    rows={4}
-    className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60"
-  />
+    <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
+<textarea
+  value={prompt}
+  onChange={(e) => {
+    setPrompt(e.target.value);
+    setSelectedPrompts([]);
+  }}
+  placeholder="Type your own"
+  className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60 h-[72px] md:h-[96px]"
+/>
   <div className="text-[10px] text-right opacity-40 mt-1">
     {prompt.length}/255
   </div>
@@ -1086,7 +1084,7 @@ className="
 
 
           {/* Suggestions */}
-          <div className="border border-white/30 mt-3 rounded-[40px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
+          <div className="border border-white/30 mt-3 md:rounded-[40px] rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
             <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
               <span className="opacity-90 text-[12px]">Suggestions</span>
               <button 
@@ -1113,10 +1111,8 @@ className="
             </div>
 
 <div
-  className="flex flex-wrap gap-2 content-start items-start mt-6 overflow-hidden"
-  style={{
-    maxHeight: "300px" // 👈 tweak this once, don’t overthink
-  }}
+  className="flex flex-wrap gap-2 h-[255px] md:h-[300px] content-start items-start mt-6 overflow-hidden"
+
 >
               {suggestions.map((text, i) => {
                 const isLong = text.length > 25;
@@ -1135,7 +1131,7 @@ className="
     });
   }}
   className={`
-    border border-[2px]  border-white/40 border-b-[3px] rounded-xl px-4 md:py-4 py-3  text-xs transition
+    border border-[1px]  border-white/40 border-b-[3px] rounded-xl px-4 md:py-4 py-3  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
@@ -1151,18 +1147,12 @@ className="
               })}
             </div>
 
- {/* <div className="flex items-center gap-2  mt-6 hidden md:flex">
-              <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center text-[10px]">i</div>
-              <p className="text-[10px] text-white/50 leading-tight">
-                Prompts show up as your opener<br/>
-                Say Literally anything, it can be changed anytime
-              </p>
-            </div> */}
+
            
           </div>
 
           {/* Bottom actions */}
-  <div className="mt-auto  md:pt-8  mb-4 w-[90%]  mx-auto flex ">
+  <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex ">
             
             <button
               onClick={handleSubmit}

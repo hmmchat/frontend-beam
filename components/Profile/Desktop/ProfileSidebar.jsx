@@ -14,7 +14,7 @@ export default function ProfileSidebar({
 }) {
   const router = useRouter();
   return (
-    <div className="col-span-1 flex flex-col items-center justify-center rounded-[3rem] border border-white/20 p-6 text-center">
+    <div className="col-span-1 flex flex-col items-center justify-center rounded-[3rem] border border-white/40 p-6 text-center">
       <div className="relative">
         <div className="h-full w-full overflow-hidden rounded-full border-2 border-white">
           <Image
@@ -22,12 +22,12 @@ export default function ProfileSidebar({
             alt="profile"
             width={120}
             height={120}
-            className="h-30 w-30 rounded-full object-cover"
+            className="h-40 w-40 rounded-full object-cover"
           />
         </div>
 
-        <div className="absolute bottom-0 right-[-10] flex h-14 w-14 items-center justify-center rounded-full border border-white/40">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full">
+        <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60">
+          <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
             <Image
               src="/gift/gift8.png"
               alt="gift"
@@ -37,9 +37,9 @@ export default function ProfileSidebar({
 
             <div
               onClick={() => setActiveTab("stickers")}
-              className="absolute -bottom-1 -right-4 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full"
+              className="absolute bottom-8 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full"
             >
-              <img src="/edit.png" alt="edit" className="h-3 w-3" />
+              <img src="/edit.png" alt="edit" className="h-4 w-4" />
             </div>
           </div>
         </div>
@@ -51,26 +51,31 @@ export default function ProfileSidebar({
       <div className="mt-10 w-full space-y-4 px-4 text-left">
         <div
           onClick={() => setActiveTab("account")}
-          className={`flex cursor-pointer items-center justify-between gap-2 border-b border-white/20 pb-3 ${activeTab === "account" || activeTab === "default" ? "opacity-100" : "opacity-70"}`}
+          className={`flex cursor-pointer items-center justify-between  border-b border-white/20 pb-3 ${activeTab === "account" || activeTab === "default" ? "opacity-100" : "opacity-70"}`}
         >
           <div>
             <p className="text-sm">My account</p>
-            <p className="text-[10px] text-white/60">Fill account details</p>
+            <p className="text-[10px] text-white/70 font-outfit">Fill account details</p>
           </div>
+
+          <div className="flex gap-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               router.push("/facecard?view=editor&from=profile");
             }}
-            className="shrink-0 rounded-full border border-white/40 px-2 py-1 text-[9px] transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
+            className="shrink-0  rounded-full border border-white/80 px-2 py-1 text-[9px] font-outfit transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
             aria-label="Open profile completion"
           >
             {progress}% complete
           </button>
-          <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white">
+
+
+          <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/70">
             ›
           </span>
+          </div>
         </div>
 
         <div
@@ -89,18 +94,22 @@ export default function ProfileSidebar({
         >
           <div>
             <p className="text-sm">Get money</p>
-            <p className="text-[10px] text-white/60">
+            <p className="text-[10px] text-white/60 font-outfit">
               {moneyModel?.isUnlocked
                 ? "Ready to withdraw"
                 : `${moneyModel?.diamondsLeft ?? 0} left to withdraw`}
             </p>
           </div>
+
+          <div className="flex gap-2">
           <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
             💎 {moneyModel?.diamonds ?? 0}
           </span>
           <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
             ›
           </span>
+
+</div>
         </div>
 
         <div

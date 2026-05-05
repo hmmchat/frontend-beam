@@ -188,9 +188,7 @@ export default function FreeCoinsSection({ onRewardGranted }) {
       }
     };
     loadConfig();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -211,7 +209,6 @@ export default function FreeCoinsSection({ onRewardGranted }) {
 
   const handleWatchAd = async () => {
     if (disabled) return;
-
     setWatching(true);
     setError("");
     setMessage("Loading rewarded ad...");
@@ -254,28 +251,27 @@ export default function FreeCoinsSection({ onRewardGranted }) {
   };
 
   return (
-    <section className="w-full rounded-3xl border border-white/30 bg-white/10 p-5 text-left shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+    <section className="w-full rounded-3xl border border-white/30 p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-white/60">Free coins</p>
-          <h3 className="mt-1 text-xl font-semibold text-white">
-            Watch a rewarded ad
-          </h3>
-          <p className="mt-2 text-sm text-white/70">
+          <h3 className="mt-1 text-lg font-semibold text-white">Watch a rewarded ad</h3>
+          <p className="mt-1.5 text-sm text-white/70">
             Complete the full ad to earn {coinsPerAd || "..."} coins.
           </p>
-          {adUnavailable ? (
-            <p className="mt-1 text-xs text-amber-200">
-              Rewarded ad unit is not configured yet.
-            </p>
-          ) : null}
-          {maxAdsPerDay ? (
-            <p className="mt-1 text-xs text-white/50">
-              Limit: {maxAdsPerDay} ads per day.
-            </p>
-          ) : null}
+{adUnavailable && (
+  <p className="mt-1 text-xs text-amber-200">
+    Rewarded ad unit is not configured yet.
+  </p>
+)}
+
+{maxAdsPerDay && (
+  <p className="mt-1 text-xs text-white/50">
+    Limit: {maxAdsPerDay} ads per day.
+  </p>
+)}
         </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-2xl">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-2xl">
           +
         </div>
       </div>
@@ -284,7 +280,7 @@ export default function FreeCoinsSection({ onRewardGranted }) {
         type="button"
         onClick={handleWatchAd}
         disabled={disabled}
-        className="mt-5 w-full rounded-2xl border border-white px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:border-white/30 disabled:text-white/40 disabled:hover:bg-transparent disabled:hover:text-white/40"
+        className="mt-4 w-full rounded-2xl border border-white px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:border-white/30 disabled:text-white/40"
       >
         {loadingConfig
           ? "Loading rewards..."
@@ -297,8 +293,8 @@ export default function FreeCoinsSection({ onRewardGranted }) {
                 : "Rewards unavailable"}
       </button>
 
-      {message ? <p className="mt-3 text-center text-xs text-emerald-200">{message}</p> : null}
-      {error ? <p className="mt-3 text-center text-xs text-rose-200">{error}</p> : null}
+      {message && <p className="mt-3 text-center text-xs text-emerald-200">{message}</p>}
+      {error && <p className="mt-3 text-center text-xs text-rose-200">{error}</p>}
     </section>
   );
 }

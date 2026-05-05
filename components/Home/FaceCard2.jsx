@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -8,7 +9,7 @@ import {
   IoVideocam,
   IoVideocamOff
 } from 'react-icons/io5';
-import { IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowBack, IoMdArrowRoundBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 
 import { IoIosArrowForward } from "react-icons/io";
@@ -40,6 +41,9 @@ function buildBrandLogos(prefs, legacy) {
 }
 
 const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onShare }) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isCardsPage = pathname?.includes('/cards');
   const [internalIndex, setInternalIndex] = useState(0);
 
   if (!user) return null;
@@ -85,11 +89,44 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
 
   return ( 
     <>
+        {/* DESKTOP HEADER (Outside scaled card) */}
+        <div className="absolute left-0 top-4 z-20 hidden w-full items-center justify-between md:flex md:px-5 md:pt-4">
+          <div className="flex items-center gap-4">
+  
+            <div>
+            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[20px] font-bold leading-none text-[#FFB800]">
+              <span>{user.username || "User"}</span>
+              <span
+                className="inline-block text-[18px] font-bold leading-none text-[#FFB800]"
+                style={{
+                  WebkitTextStroke: "0.8px #4f0b99",
+                }}
+              >
+                {age || "—"}
+              </span>
+            </h1>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+              <IoLocationOutline className="shrink-0" />
+              <span className="truncate">{city}</span>
+            </div>
+          </div>
+        </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center text-white"
+            >
+              <IoEllipsisVerticalSharp />
+            </button>
+          </div>
+        </div>
+
 
 
 <div
   data-facecard-boundary="true"
-  className="w-[85vw] aspect-[360/670] max-w-[400px] 
+  className="w-[90vw] aspect-[360/670] max-w-[400px] 
                 sm:w-[340px] md:w-[360px] lg:w-[480px] 
                 md:aspect-[376/660] shrink-0 rounded-[30px] 
                 p-[2px]
@@ -103,52 +140,68 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
 
 
                   
-      <div className="relative h-full w-full overflow-hidden rounded-[28px]">
+      <div className="relative h-full w-full overflow-hidden    border border-white/60 md:border-none rounded-[28px]">
         {/* HEADER */}
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 ">
-          <div>
-            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[18px] font-bold leading-none text-[#FFB800]">
-              <span>{user.username || 'User'}</span>
+        {/* MOBILE HEADER (Inside card) */}
+        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-4 md:hidden">
+          <div className="flex items-center gap-2">
+            {isCardsPage && (
+              <button
+                onClick={() => router.back()}
+                className="mr-1 flex items-center gap-1 text-white/80 hover:text-white transition-colors text-sm border border-white/80 rounded-full p-1.5"
+              >
+                <IoMdArrowRoundBack className="text-xl" />
+                
+              </button>
+            )}
+    <div className='flex flex-col'>
+            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[18px] font-bold leading-none text-[#FFB800] ">
+              <span>{user.username || "User"}</span>
               <span
                 className="inline-block text-[18px] font-bold leading-none text-[#FFB800]"
                 style={{
                   WebkitTextStroke: "0.8px #4f0b99",
                 }}
               >
-                {age || '—'}
+                {age || "—"}
               </span>
             </h1>
+
             <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              <IoLocationOutline className="shrink-0" />
-              <span className="truncate">{city}</span>
+
+              <span className="truncate font-outfit">{city}</span>
             </div>
-           
+</div>
+
+
+
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-          
-          
-           
-            <button type="button" className="flex h-6 w-6 items-center justify-center text-white md:hidden" >
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center text-white"
+            >
               <IoEllipsisVerticalSharp />
             </button>
           </div>
         </div>
+    
 
         {/* Inner chrome */}
-        <div className="absolute bottom-2 left-1 right-1 top-[4.25rem] rounded-[26px] border border-white/45">
+        <div className="absolute bottom-2 left-2 right-2 md:left-1 md:right-1 top-[4.25rem] rounded-[26px] border border-white/40">
           {/* Intent */}
           <div className="absolute left-0 right-0 top-2 z-20 px-2 ">
-            <div className="rounded-[22px] border border-white/35 md:py-12 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
+            <div className="rounded-[22px] border border-white/35 font-outfit md:py-12 px-3 py-10 text-center text-[10px] md:text-[12px] leading-snug text-white backdrop-blur-[2px]">
               {user.intent || 'Here to meet strangers and overthink later.'}
             </div>
           </div>
 
           {/* MAIN BODY — flex row: left sidebar + right image */}
-          <div className="absolute bottom-2 left-2 right-2 top-[5.25rem]  md:top-[8rem] flex ">
+          <div className="absolute bottom-2 left-0 right-2 top-[7rem]  md:top-[8rem] flex ">
 
             {/* LEFT SIDEBAR */}
-            <div className="w-[24%] flex flex-col items-center gap-1 z-20">
+            <div className="md:w-[24%] w-[26%] flex flex-col items-center gap-1 z-20">
               {/* Brands capsule */}
               <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
                 <div className="flex flex-col items-center gap-[7.5px]">
@@ -195,7 +248,7 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
               <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-2 pt-2 shadow-inner backdrop-blur-sm">
                 <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                   {user.musicPreference ? (
-                    <img src={albumArt} className="h-full w-full object-cover" alt="" />
+                    <img src={albumArt} className="h-full w-full object-cover animate-spin-slow" alt="" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" />
                   )}

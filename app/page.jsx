@@ -92,14 +92,12 @@ const MyComponent = () => {
     } catch (_) {}
   }, [authChecked, isLoggedIn]);
 
-  // No loading overlay anymore. Handled by fallback rendering.
 
-  if (isLoggedIn && profileComplete) {
-    return <MeetSomeoneDynamic />;
-  }
 
-  return (
-    <div>
+
+return (
+  <>
+    <div className={isLoggedIn && profileComplete ? "hidden" : ""}>
       <div className="hidden md:block">
         <DesktopHome />
       </div>
@@ -107,7 +105,12 @@ const MyComponent = () => {
         <MobileHome />
       </div>
     </div>
-  );
+
+    <div className={isLoggedIn && profileComplete ? "block" : "hidden"}>
+      <MeetSomeoneDynamic />
+    </div>
+  </>
+);
 };
 
 export default MyComponent;

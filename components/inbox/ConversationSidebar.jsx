@@ -126,12 +126,18 @@ export default function ConversationSidebar({
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => { setActiveTab("sent"); setActiveChat(null); }}
+              onClick={() => {
+                const nextTab = activeTab === "sent" ? "requests" : "sent";
+                setActiveTab(nextTab);
+                setActiveChat(null);
+              }}
               className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
                 }`}
             >
               <img src="/inbox/eye.svg" alt="" className="text-lg" />
-              <p className="text-[10px] font-thin text-white">Sent Requests</p>
+              <p className="text-[10px] font-thin text-white">
+                {activeTab === "sent" ? "Received Requests" : "Sent Requests"}
+              </p>
             </button>
             
             <div className="flex gap-2 items-center shrink-0">

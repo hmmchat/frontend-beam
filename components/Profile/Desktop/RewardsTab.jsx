@@ -5,7 +5,7 @@ import RewardsReferralsPanel from "../RewardsReferralsPanel";
 
 export default function RewardsTab({ onBack }) {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
+<div className="flex h-full w-full min-w-0 flex-col gap-2 overflow-hidden">
       <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
@@ -20,7 +20,10 @@ export default function RewardsTab({ onBack }) {
         </p>
       </div>
 
-      <RewardsReferralsPanel />
+<div className="flex h-full w-full min-w-0 flex-col gap-2 overflow-hidden">
+  {/* header */}
+  <RewardsReferralsPanel />
+</div>
     </div>
   );
 }

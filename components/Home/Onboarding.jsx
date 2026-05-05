@@ -638,7 +638,7 @@ if (prompt.trim() && accessToken) {
 
           {/* Right - Form */}
 
-<div className=" items-center  ">
+<div className=" items-center   ">
 
 <div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
             <div className="w-full  sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
@@ -800,23 +800,23 @@ className="
       Gender Identity
     </label>
 <div onClick={() => setShowGenderModal(true)}
-  className="w-full border border-white/40  border-b-[3px]
+  className="w-full border border-white/40 border-b-[3px]
   rounded-[1rem] px-5 py-4 text-white text-lg 
-  flex justify-between items-center cursor-pointer"
+  flex justify-between items-center cursor-pointer gap-2"
 >
-  <span className="flex items-center gap-2">
+  <span className="flex items-center gap-2 truncate min-w-0">
     {gender === 'male' ? '♂ Male' : gender === 'female' ? '♀ Female' : gender === 'nonbinary' ? '⚧ Non Binary' : preferNotToSay ? '🙂 Prefer not to say' : 'Select'}
   </span>
-  <span>▼</span>
+  <span className="shrink-0">▼</span>
 </div>
 {errors.gender && <div className="text-xs text-rose-400 mt-1">{errors.gender}</div>}
 
 
 {showGenderModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-end pr-80 ">
+  <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-72  ">
 
     <div
-      className="w-[90%] max-w-xs text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden "
+      className="w-[90%] max-w-xs text-white rounded-[2rem] p-6  relative overflow-hidden "
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -900,23 +900,23 @@ className="
   onClick={() => setShowCityModal(true)}
   className="w-full border border-white/40 border-b-[3px] 
   rounded-[1rem] px-5 py-4 text-white text-lg 
-  flex justify-between items-center cursor-pointer"
+  flex justify-between items-center cursor-pointer gap-2"
 >
-  <span>{
+  <span className="truncate min-w-0">{
     city === 'ANYWHERE_IN_INDIA' ? 'Anywhere in India' : 
     (cities.find(c => c.value === city)?.name || city || "Anywhere")
   }</span>
-  <span>▼</span>
+  <span className="shrink-0">▼</span>
 </div>
 {errors.city && <div className="text-xs text-rose-400 mt-1">{errors.city}</div>}
   </div>
 
 
   {showCityModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-end pr-28 pb-20 ">
+  <div className="fixed inset-0 z-50 flex items-center  justify-center md:justify-end md:pr-40 md:pb-14   ">
 
     <div
-      className="w-[90%] max-w-md text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
+      className="w-[90%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -1003,7 +1003,7 @@ className="
   onClick={() => {
     if (validate()) setStep(2);
   }}
-  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-8 border border-b-[3px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
+  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-8 border-[2px] border-b-[4px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
 >
   Step 2/2: Add Prompt
 </button>
@@ -1064,7 +1064,7 @@ className="
 
             
           {/* Bordered wrapper — matches step 1 form border */}
-<div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+<div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden  mt-6 sm:mt-0">
 
           {/* Prompt box */}
     <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
@@ -1157,7 +1157,7 @@ className="
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-2  mx-auto border-2 border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
+              className="flex-2  mx-auto border-[2px] border-b-[4px] border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
             >
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>

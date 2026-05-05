@@ -52,6 +52,7 @@ function musicTrackKey(song) {
 }
 
 import ProfileGuard from "@/components/auth/ProfileGuard";
+import { IoEllipsisVerticalSharp, IoLocationOutline } from "react-icons/io5";
 
 export default function FacecardPage() {
   return (
@@ -997,7 +998,7 @@ function FacecardContent() {
 
   const age = calculateAge(user?.dateOfBirth);
   const firstName = user?.username?.split(" ")[0] || "User";
-
+  const city = user?.preferredCity || user?.city || "Unknown";
   return (
     <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
       <PortraitImageCropModal
@@ -1061,7 +1062,7 @@ function FacecardContent() {
 
       {facecardPreviewOpen && user && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden "
+          className="fixed inset-0 z-[200] flex items-center justify-center  overflow-hidden "
           onClick={() => setFacecardPreviewOpen(false)}
           role="presentation"
         >
@@ -1081,8 +1082,41 @@ function FacecardContent() {
 
       
 
-            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[96vh]  border-0  md:border md:border-white/40   rounded-[60px] w-[960px] ">
+            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[98vh]  border-0  md:border md:border-white/40   rounded-[60px] w-[960px] ">
         
+
+   {/* <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 px-14 ">
+   
+         
+            
+          <div>
+            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[18px] font-bold leading-none text-[#FFB800]">
+              <span>{user.username || 'User'}</span>
+              <span
+                className="inline-block text-[18px] font-bold leading-none text-[#FFB800]"
+                style={{
+                  WebkitTextStroke: "0.8px #4f0b99",
+                }}
+              >
+                {age || '—'}
+              </span>
+            </h1>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+              <IoLocationOutline className="shrink-0" />
+              <span className="truncate">{city}</span>
+            </div>
+           
+          </div>
+
+
+          
+           
+            <button type="button" className="flex h-6 w-6  text-white " >
+              <IoEllipsisVerticalSharp className="z-10 text-2xl"/>
+            </button>
+        
+        </div>  */}
+
 
               <div className=" flex justify-center  h-[90%]    " >
                 <div

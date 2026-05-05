@@ -179,62 +179,64 @@ function SettingsContent() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden px-5 pb-16 pt-8 font-outfit md:px-10 md:pt-10">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <Image
-          src="/test.png"
-          alt=""
-          fill
-          className="object-cover opacity-30"
-          priority
-        />
-      </div>
+    <div className="relative flex  w-full h-[100dvh]  flex-col overflow-x-hidden px-5 pb-16 pt-8 font-outfit md:px-10 md:pt-10">
+         <div
+            className="absolute inset-0 -z-10"
+            style={{
+              backgroundImage: "url(/assets/mb.jpg)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
 
-      <header className="mb-8 flex w-full max-w-5xl items-center justify-between self-center px-1">
+
+      <header className=" mb-2  md:mb-0 flex w-full max-w-5xl items-center justify-between self-center px-1">
         <button
           type="button"
           onClick={() => router.push("/profile")}
           className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white transition-colors hover:bg-white/10"
           aria-label="Back to profile"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/40">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60">
             <ArrowLeft size={18} />
           </span>
           <span className="text-base font-medium">Settings</span>
         </button>
-        <h1 className="text-3xl font-extrabold tracking-wide text-yellow-400 [font-family:var(--font-otomanopee),sans-serif]">
-          beam
-        </h1>
+<img src="/assets/Logo.svg" alt="logo" className="w-24 h-18" />
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 rounded-[2.5rem] border border-white/30 px-5 py-6 md:px-10 md:py-8">
-        <section className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold text-white md:text-base">
-            Terms of service
-          </h2>
-          <div className="divide-y divide-white/15">
-            <PlaceholderRow label="Terms of service" />
-            <PlaceholderRow label="About Us" />
-            <PlaceholderRow label="Safety center" />
-            <PlaceholderRow label="Privacy policy" />
-          </div>
-        </section>
+<main className="mx-auto w-full max-w-5xl flex-1 overflow-hidden rounded-[32px] md:rounded-[60px] border md:border-white/70 border-white/40 px-5 pt-8  pb-20 md:px-20 md:pt-16  ">
+<section className="mb-5">
+  <h2 className="mb-1 text-[14px] font-semibold text-white md:text-sm font-otomanopee">
+    Terms of service
+  </h2>
 
-        <section className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold text-white md:text-base">
+  <div className="w-[95%] ml-auto divide-y divide-white/15">
+    <PlaceholderRow label="Terms of service" />
+    <PlaceholderRow label="About Us" />
+    <PlaceholderRow label="Safety center" />
+    <PlaceholderRow label="Privacy policy" />
+  </div>
+</section>
+
+        <section className="mb-4">
+          <h2 className="mb-1 text-sm font-semibold text-white md:text-sm font-otomanopee">
             Support
           </h2>
-          <div className="divide-y divide-white/15">
+
+  <div className="w-[95%] ml-auto divide-y divide-white/15">
             <PlaceholderRow label="FAQs" />
             <PlaceholderRow label="Contact Us" />
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-white md:text-base">
+          <h2 className="mb-1 text-sm font-semibold text-white md:text-sm font-otomanopee">
             Account
           </h2>
-          <div className="divide-y divide-white/15">
+
+  <div className="w-[95%] ml-auto divide-y divide-white/15">
             <ActionRow
               label="Sign out"
               onClick={signOut}

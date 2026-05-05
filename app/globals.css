@@ -204,3 +204,50 @@
   min-width: 100%;
   animation: marquee 6s linear infinite;
 }
+
+
+.age-badge {
+  font-size: 18px;
+  font-weight: 1200;
+  font-family: 'Poppins', sans-serif;
+  color: transparent;
+  -webkit-text-stroke: 0.7px #f59e0b;
+  /* border only */
+}
+
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  height: 13px;
+}
+
+.marquee p {
+  position: absolute;
+  white-space: nowrap;
+  animation: marquee 15s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}

@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,14 +18,12 @@ export default function PromptsTab({ user, setUser }) {
       setLoading(true);
       const data = await apiRequest(API.USERS.GET_INTENT_PROMPTS(7));
       if (data && data.prompts) {
-        setSuggestions(data.prompts.map(p => p.text || p));
+        setSuggestions(data.prompts.map((p) => p.text || p));
       } else if (Array.isArray(data)) {
-        setSuggestions(data.slice(0, 7).map(p => p.text || p));
+        setSuggestions(data.slice(0, 6).map((p) => p.text || p));
       }
     } catch (err) {
       console.error("Failed to fetch suggestions:", err);
-      // Fallback suggestions
-
     } finally {
       setLoading(false);
     }
@@ -37,70 +37,74 @@ export default function PromptsTab({ user, setUser }) {
 
   const handleUpdateIntent = async (newIntent) => {
     if (newIntent === user?.intent) return;
-
     try {
-      // Optimistic update
       if (setUser) {
-        setUser(prev => ({ ...prev, intent: newIntent }));
+        setUser((prev) => ({ ...prev, intent: newIntent }));
       }
-
       await apiRequest(API.USERS.UPDATE_INTENT, {
         method: "PATCH",
         body: JSON.stringify({ intent: newIntent }),
       });
     } catch (err) {
       console.error("Failed to update intent:", err);
-      // alert("Failed to update prompt. Please try again.");
     }
   };
 
+  // 🔥 STRICT 5 ROWS ONLY (max 10 suggestions)
+  const displayedSuggestions = suggestions.slice(0, 10);
+
   return (
-    <div className="flex min-w-0 flex-1 flex-col px-14">
-      <div className="border border-white/30  rounded-[2rem] p-5 py-8 text-center text-sm text-white/90">
-      <textarea
-  rows={4}
-  value={localIntent}
-  onChange={(e) => setLocalIntent(e.target.value)}
-  onBlur={() => handleUpdateIntent(localIntent)}
-  placeholder="Type your own prompt here..."
-  className="w-full bg-transparent resize-none outline-none text-center 
-  placeholder-white/40 font-outfit pt-4"
-/>
+    <div className="flex h-full w-full flex-col px-6 md:px-10">
+      {/* Prompt Box */}
+      <div className="flex-shrink-0 border-[2px] border-white/50 rounded-[2rem] p-5 py-6 text-center text-sm text-white/90 mb-5">
+        <textarea
+          rows={5}
+          value={localIntent}
+          onChange={(e) => setLocalIntent(e.target.value)}
+          onBlur={() => handleUpdateIntent(localIntent)}
+          placeholder="Type your own prompt here..."
+          className="w-full bg-transparent resize-none outline-none text-center placeholder-white/40 font-outfit text-base leading-relaxed pt-1"
+        />
       </div>
 
-      <div className="mt-3 text-left">
-        <div className="mb-4 flex items-center justify-between">
+
+
+      {/* Suggestions */}
+
+
+      {/* Suggestions */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <p className="text-sm text-white/70">Suggestions</p>
           <button
             type="button"
             onClick={fetchSuggestions}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white transition hover:bg-white/10"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white transition hover:bg-white/10"
             aria-label="Refresh suggestions"
           >
             <img
               src="/refresh.png"
               alt=""
-              className={`p-2 ${loading ? "animate-spin" : ""}`}
+              className={`p-1.5 ${loading ? "animate-spin" : ""}`}
             />
           </button>
         </div>
 
-<div
-  className="flex flex-wrap gap-3 overflow-hidden"
-  style={{
-    maxHeight: "350px" // 👈 controls ~5 rows
-  }}
->
+        {/* Chips — strictly 5 rows max, no scrolling */}
+        <div className="flex flex-wrap gap-2 max-h-[310px] overflow-hidden pb-1">
           {loading ? (
-            <div className="w-full py-10 flex justify-center">
-              <div className="w-6 h-6 border-2 border-white/30  rounded-full animate-spin" />
+            <div className="w-full py-8 flex justify-center">
+              <div className="w-6 h-6 border-2 border-white/30 rounded-full animate-spin" />
             </div>
           ) : (
-            suggestions.map((text, i) => (
+            displayedSuggestions.map((text, i) => (
               <div
                 key={i}
                 onClick={() => handleUpdateIntent(text)}
-                className={`max-w-full break-words px-4 py-4 border-[2px] border-white/30 rounded-xl text-[14px] border-b-4 hover:bg-white hover:text-black transition cursor-pointer font-outfit ${user?.intent === text ? 'bg-white text-black' : ''}`}
+                className={`px-5 py-4 border-[2px] border-white/30 rounded-xl text-[13.5px] leading-tight hover:bg-white/10 transition cursor-pointer font-outfit shrink-0
+                  ${user?.intent === text
+                    ? "border-yellow-400  border-[2px] border-b-[4px]"
+                    : "border-b-[4px]"}`}
               >
                 {text}
               </div>
@@ -108,7 +112,6 @@ export default function PromptsTab({ user, setUser }) {
           )}
         </div>
       </div>
-
     </div>
   );
 }

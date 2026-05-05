@@ -318,7 +318,7 @@ export default function ProfileDesktop({
 
       <ProfileHeader icons={["/edit.png", "/setting.png", "/bandage.png"]} />
 
-      <div className="z-10 grid w-full max-w-5xl grid-cols-1 gap-6 rounded-[3rem] border border-white/30 p-3 md:grid-cols-3">
+      <div className="z-10 grid w-full md:max-w-5xl lg:max-w-5xl grid-cols-1 flex-1 min-h-0 gap-3 rounded-[60px] border border-white/70 p-3 md:grid-cols-[0.36fr_0.64fr]">
         <ProfileSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -329,58 +329,57 @@ export default function ProfileDesktop({
         />
 
         <div
-          className={`col-span-2 flex h-[80vh] min-w-0 flex-col rounded-[3rem] border border-white/20 px-8 ${
-            activeTab === "account" || activeTab === "default" ? "py-4" : "py-10"
-          }`}
-        >
+className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-white/40 px-6 md:px-8 ${
+  activeTab === "account" || activeTab === "default" ? "py-4" : "py-6 md:py-8"
+}`}>
           {activeTab === "account" || activeTab === "default" ? (
             <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
               <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
-                <div className="origin-top scale-[0.72] transition-transform lg:scale-[0.78]">
-                <div
-                  ref={facecardExportRef}
-                  data-facecard-export-root="true"
-                >
-                    <FaceCard3
-                      user={{
-                        ...user,
-                        age,
-                        city: user?.preferredCity || user?.city,
-                      }}
-                      currentIndex={currentImageIndex}
-                      onIndexChange={setCurrentImageIndex}
-                      hideArrows={true}
-                      hideHeader={true}
-                    />
-                  </div>
+                <div className="w-full max-w-[420px] transition-transform ">
+              <div className="flex h-full w-full items-start justify-center overflow-hidden">
+  <div
+    className="
+      origin-top
+      [@media(max-height:2100px)]:scale-[0.95]
+      [@media(max-height:2000px)]:scale-[0.90]
+      [@media(max-height:1900px)]:scale-[0.87]
+      [@media(max-height:1800px)]:scale-[0.85]
+      [@media(max-height:1700px)]:scale-[0.88]
+      [@media(max-height:1500px)]:scale-[0.87]
+      [@media(max-height:1200px)]:scale-[0.87]
+      [@media(max-height:1000px)]:scale-[0.86]
+      [@media(max-height:800px)]:scale-[0.75]
+      md:[@media(max-height:700px)]:scale-[0.70]
+      [@media(max-height:600px)]:scale-[0.50]
+    "
+  >
+    <div
+      ref={facecardExportRef}
+      data-facecard-export-root="true"
+    >
+      <FaceCard3
+        user={{
+          ...user,
+          age,
+          city: user?.preferredCity || user?.city,
+        }}
+        currentIndex={currentImageIndex}
+        onIndexChange={setCurrentImageIndex}
+        hideArrows={true}
+        hideHeader={true}
+      />
+    </div>
+  </div>
+</div>
                 </div>
               </div>
-              <div className="mt-2 flex shrink-0 items-center gap-5 pb-1">
-                <button
-                  type="button"
-                  onClick={handleDownloadFacecard}
-                  className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40 transition hover:bg-white/10"
-                  aria-label="Download facecard"
-                >
-                  <Image src="/download.svg" alt="" width={26} height={26} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleShareFacecard}
-                  className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40 transition hover:bg-white/10"
-                  aria-label="Share facecard"
-                >
-                  <Image
-                    src="/share-outline.svg"
-                    alt=""
-                    width={26}
-                    height={26}
-                  />
-                </button>
-              </div>
+             
             </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto">
+
+
+            // <div className="min-h-0 flex-1 overflow-y-auto flex items-start justify-center">
+<div className="min-h-0 flex-1 flex items-start justify-center">
             {activeTab === "getmoney" ? (
               <GetMoneyTab
                 moneyModel={moneyModel}
@@ -388,7 +387,17 @@ export default function ProfileDesktop({
                 onRewardGranted={handleAdRewardGranted}
               />
             ) : activeTab === "prompts" ? (
-              <PromptsTab user={user} setUser={setUser} />
+<div className="flex h-full w-full items-center justify-center overflow-hidden">
+  <div className="origin-top 
+    [@media(max-height:1000px)]:scale-[0.98] 
+    [@media(max-height:900px)]:scale-[0.95] 
+    [@media(max-height:800px)]:scale-[0.70] 
+    [@media(max-height:700px)]:scale-[0.82] 
+    [@media(max-height:600px)]:scale-[0.6]"
+  >
+    <PromptsTab user={user} setUser={setUser} />
+  </div>
+</div>
             ) : activeTab === "rewards" ? (
               <RewardsTab onBack={() => setActiveTab("default")} />
             ) : (

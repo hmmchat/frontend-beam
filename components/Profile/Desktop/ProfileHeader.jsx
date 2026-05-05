@@ -18,25 +18,24 @@ export default function ProfileHeader({
       <button
         type="button"
         onClick={() => router.push("/")}
-        className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white hover:bg-white/10 transition-colors"
+        className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white "
         aria-label="Back to home"
       >
-        <span className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center shrink-0">
+        <span className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 transition-colors">
           <ArrowLeft size={18} />
         </span>
         <span className="text-md font-medium">My Profile</span>
       </button>
 
-      <h1 className="text-3xl font-extrabold text-yellow-400 tracking-wide">
-        beam
-      </h1>
 
-      <div className="flex items-center gap-3">
+      <img src="/logo.png" alt="beam" className="h-12 w-28 object-contain" />
+
+      <div className="flex items-center gap-1">
         {icons.map((src, i) => {
           const isEdit = i === editIconIndex;
           const isSettings = i === settingsIconIndex;
           const shellClass =
-            "w-10 h-10 border border-white rounded-full flex items-center justify-center shrink-0";
+            "w-12 h-12 border border-white rounded-full flex items-center justify-center shrink-0";
           if (isEdit) {
             return (
               <button

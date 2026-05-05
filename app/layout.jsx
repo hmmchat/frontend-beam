@@ -4,7 +4,7 @@ import { Outfit } from 'next/font/google';
 import CaptureReferralFromUrl from '@/components/CaptureReferralFromUrl';
 
 const otomanopeeOne = localFont({
-  src: '../public/fonnts.com-OtomanopeeOne-Regular.ttf',
+  src: '../public/OtomanopeeOne-Regular.ttf',
   variable: '--font-otomanopee',
   weight: '400',
   display: 'swap',

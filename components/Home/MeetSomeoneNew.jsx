@@ -141,23 +141,19 @@ export default function MeetSomeoneNew({
   };
 
   return (
-<div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
-
-<div
-  className="absolute inset-0  opacity-70 mix-blend-hard-light md:animate-zoom-slow"
-  style={{
-    backgroundImage: 'url(/bg.jpg)',
-    backgroundSize: 'cover',
-          backgroundPosition: '25% center',
-    backgroundRepeat: 'repeat',
-  }}
-/>    
-
+    <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
+      {/* 🔥 FULL SCREEN BACKGROUND */}
+      <div
+        className="absolute inset-0 opacity-70 mix-blend-hard-light"
+        style={{
+          backgroundImage: "url(/bg.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "15% center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       
 
-<div className="border border-white/30 absolute top-4 left-1/2 -translate-x-1/2  h-[39vh] w-[96vw] rounded-t-3xl rounded-b-2xl" />
-      {/* Overlay Glow */}
-<div className='border border-white/30 bottom-28 h-[38vh] absolute  left-1/2 -translate-x-1/2 w-[96vw] rounded-b-3xl  rounded-t-2xl'/>
 
       {/* Top Bar */}
     <div className="relative z-10 w-full px-6 pt-10 flex justify-between items-center">
@@ -291,7 +287,7 @@ export default function MeetSomeoneNew({
 </div>
 
   
-             <div className="w-full mt-8">
+             <div className="w-full mt-6">
   <MeetNowButton
     onClick={handleMeetNow}
     className="w-full h-20"
@@ -303,7 +299,7 @@ export default function MeetSomeoneNew({
 <FilterButtons 
   onGenderClick={() => setIsGenderModalOpen(true)}
   onLocationClick={() => setIsLocationModalOpen(true)}
-  className="mt-6"
+  className="mt-3"
 />
             </div>
         </div>
@@ -314,7 +310,7 @@ export default function MeetSomeoneNew({
       </div>
 
       {/* Bottom Navigation */}
-      <div className="relative z-10 w-full max-w-sm px-4 pb-10 mt-auto mx-auto">
+      <div className="relative z-10 w-full max-w-sm px-4 mx-auto -mt-10">
         <div className=" border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 

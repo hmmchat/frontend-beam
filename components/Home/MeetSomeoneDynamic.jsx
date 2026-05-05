@@ -1676,12 +1676,13 @@ export default function MeetSomeoneDynamic() {
   }, [isSearching, waitingForMatch, swiping, sessionId, mode]);
 
   return (
-    <div className={clsx('relative', 'min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
-      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
+    <>
+    <div className={clsx('relative', 'md:min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
+      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'md:h-screen', 'overflow-hidden')}>
 
         {/* MOBILE VIEW (CONDITIONAL) */}
         {!isSearching && (
-          <div className={clsx('block', 'md:hidden')}>
+          <div className={clsx('block', 'md:hidden h-[100vdh]')}>
             <MeetSomeoneNew 
               onMeetNow={async () => {
                 setIsSearching(true);
@@ -2597,5 +2598,9 @@ export default function MeetSomeoneDynamic() {
         squadMemberIds={squadLobby?.memberIds || []}
       />
     </div>
+
+
+
+    </>
   );
 }

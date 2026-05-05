@@ -220,12 +220,7 @@ export default function FriendWall() {
             style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Corner Brackets */}
-            <span className="absolute hidden md:block top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/40 m-4 rounded-tl-xl"></span>
-            <span className="absolute hidden md:block top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white/40 m-4 rounded-tr-xl"></span>
-            <span className="absolute hidden md:block bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white/40 m-4 rounded-bl-xl"></span>
-            <span className="absolute hidden md:block bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/40 m-4 rounded-br-xl"></span>
-
+ 
             <button
               type="button"
               className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
@@ -235,15 +230,12 @@ export default function FriendWall() {
             </button>
 
             <div className="relative z-10 flex flex-col items-center gap-4 max-h-[90vh]">
-              <div className="text-center space-y-1 mb-6 md:-mb-14">
-                <h3 className="text-xl font-black uppercase tracking-widest text-white">Friend Facecard</h3>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-mono">
-                  Checking out {selectedFriend.username}&apos;s profile
-                </p>
-              </div>
+            
 
               <div className="w-full flex justify-center py-4">
-                <div className="origin-center scale-[0.75] sm:scale-[0.8] md:scale-[0.8] lg:scale-[0.85] transition-transform">
+                <div className="origin-center w-full transition-transform">
+
+                  
                   <FaceCard2
                     user={{
                       ...selectedFriend,

@@ -1,0 +1,51 @@
+"use client";
+
+import { ArrowLeft } from "lucide-react";
+import FaceCard2 from "../../Home/FaceCard2";
+import FaceCard3 from "../../Home/FaceCard3";
+
+export default function ProfileMobileAccount({ 
+  onBack, 
+  user, 
+  age, 
+  currentImageIndex, 
+  setCurrentImageIndex, 
+  handleDownloadFacecard, 
+  handleShareFacecard,
+  facecardExportRef
+}) {
+  return (
+    <div className="w-full flex flex-col h-full pb-6">
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
+          aria-label="Back to profile"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <p className="text-base">My account</p>
+      </div>
+      {user ? (
+        <div className="flex justify-center w-full">
+          <div ref={facecardExportRef} className=" origin-top">
+            <FaceCard3
+              user={{
+                ...user,
+                age,
+                city: user?.preferredCity || user?.city,
+              }}
+              currentIndex={currentImageIndex}
+              onIndexChange={setCurrentImageIndex}
+              onDownload={handleDownloadFacecard}
+              onShare={handleShareFacecard}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="text-center text-white/60 text-sm">Loading…</p>
+      )}
+    </div>
+  );
+}

@@ -234,7 +234,7 @@ export default function RewardsReferralsPanel() {
   };
 
   const box =
-    "w-full max-w-[min(100%,22rem)] rounded-[2rem] border border-[rgba(200,180,255,0.4)] bg-black/15 text-center md:max-w-none md:rounded-[2.5rem]";
+    "w-full  rounded-[2rem] border border-[rgba(200,180,255,0.4)]  text-center md:max-w-none md:rounded-[2.5rem]";
 
   if (loading) {
     return (
@@ -265,108 +265,94 @@ export default function RewardsReferralsPanel() {
       : 0;
 
   return (
-    <div className="flex w-full min-h-0 flex-col items-center gap-2 md:gap-4">
-      <div className={`${box} mx-auto px-6 py-5 md:px-12 md:py-7`}>
-        <p className="mb-2 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
-          Invite your gang and win
-        </p>
-        <p className="mb-4 flex items-center justify-center gap-2 text-2xl font-bold text-white md:mb-5 md:text-[44px] md:leading-none">
-          <img src="/Coins/coin1.png" alt="" className="h-9 w-9 md:h-10 md:w-10" />
-          {referralRewardCoins}
-        </p>
+    <div className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto px-3 py-2 md:py-4">
+      
+      {/* === INVITE BOX === */}
+      <div className="w-full h-full md:h-fit  mx-auto">
+        <div className={`${box} px-8 py-20 md:px-8 md:py-6`}>
+          <p className="mb-2 text-center font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
+            Invite your gang and win
+          </p>
+          
+          <p className="mb-4 flex items-center justify-center gap-1  font-semibold text-white text-xl md:text-2xl">
+            <img 
+              src="/Coins/coin1.png" 
+              alt="" 
+              className="h-8 w-8 md:h-9 md:w-9" 
+            />
+            {referralRewardCoins}
+          </p>
 
-        <div className="mx-auto mb-4 flex w-max justify-center md:mb-5">
-          <div
-            className="relative h-[116px] w-[116px] p-[6px] md:h-[142px] md:w-[142px]"
-            role="img"
-            aria-label="Scan QR code to open your referral link"
-          >
-            <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
+          <div className="mx-auto mb-4 flex w-max justify-center">
+            <div 
+              className="relative p-[6px] h-[150px] w-[150px] md:h-[118px] md:w-[118px]"
+              role="img"
+              aria-label="Scan QR code to open your referral link"
+            >
+              <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={copyInviteMessage}
-          className="mx-auto w-full max-w-[17.5rem] rounded-full bg-[#2a1548] py-2.5 text-white transition hover:bg-[#351a5a] md:max-w-[32rem] md:py-3"
-        >
-          {referralCode ? (
-            <span className="font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold md:text-[22px]">
-              {referralCode}
-            </span>
-          ) : (
-            <span className="text-sm text-white/80">Your referral code</span>
-          )}
-        </button>
-      </div>
-
-      <div className={`${box} mx-auto px-6 py-5 md:px-12 md:py-7`}>
-        <p className="mb-4 font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
-          Share to
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-7 md:gap-10">
-          <button
-            type="button"
-            onClick={shareSnapchat}
-            className="p-0.5"
-            aria-label="Share on Snapchat"
-          >
-            <Image
-              src="/shareicon4.png"
-              alt=""
-              width={36}
-              height={36}
-              className="brightness-0 invert"
-            />
-          </button>
-          <button
-            type="button"
-            onClick={shareInstagram}
-            className="p-0.5"
-            aria-label="Share on Instagram"
-          >
-            <Image
-              src="/shareicon2.png"
-              alt=""
-              width={36}
-              height={36}
-              className="brightness-0 invert"
-            />
-          </button>
-          <button
-            type="button"
-            onClick={openWhatsApp}
-            className="p-0.5"
-            aria-label="Share on WhatsApp"
-          >
-            <Image
-              src="/shareicon1.png"
-              alt=""
-              width={36}
-              height={36}
-              className="brightness-0 invert"
-            />
-          </button>
           <button
             type="button"
             onClick={copyInviteMessage}
-            className="p-0.5"
-            aria-label="Copy invite to clipboard"
+            className="mx-auto w-full max-w-[260px] rounded-full bg-[#2a1548]/40 py-3 text-white transition hover:bg-[#351a5a]"
           >
-            <Image
-              src="/shareicon3.png"
-              alt=""
-              width={36}
-              height={36}
-              className="brightness-0 invert"
-            />
+            {referralCode ? (
+              <span className="font-[family-name:var(--font-outfit),sans-serif] text-[17px] font-semibold">
+                {referralCode}
+              </span>
+            ) : (
+              <span className="text-sm text-white/80">Your referral code</span>
+            )}
           </button>
         </div>
       </div>
 
-      {hint ? (
-        <p className="text-center text-[10px] text-white/50">{hint}</p>
-      ) : null}
+      {/* === SHARE BOX === */}
+      <div className="w-full  h-full md:h-fit mx-auto">
+        <div className={`${box} px-8 py-16 md:px-8 md:py-6`}>
+          <p className=" text-center font-[family-name:var(--font-outfit),sans-serif] text-[14px] font-semibold text-white md:text-[17px]">
+            Share to
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 mt-6">
+            <button
+              type="button"
+              onClick={shareSnapchat}
+              className="p-0.5 transition hover:scale-110"
+              aria-label="Share on Snapchat"
+            >
+              <Image src="/shareicon4.png" alt="" width={40} height={40} className="brightness-0 invert" />
+            </button>
+            <button
+              type="button"
+              onClick={shareInstagram}
+              className="p-0.5 transition hover:scale-110"
+              aria-label="Share on Instagram"
+            >
+              <Image src="/shareicon2.png" alt="" width={40} height={40} className="brightness-0 invert" />
+            </button>
+            <button
+              type="button"
+              onClick={openWhatsApp}
+              className="p-0.5 transition hover:scale-110"
+              aria-label="Share on WhatsApp"
+            >
+              <Image src="/shareicon1.png" alt="" width={40} height={40} className="brightness-0 invert" />
+            </button>
+            <button
+              type="button"
+              onClick={copyInviteMessage}
+              className="p-0.5 transition hover:scale-110"
+              aria-label="Copy invite to clipboard"
+            >
+              <Image src="/shareicon3.png" alt="" width={40} height={40} className="brightness-0 invert" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {hint && <p className="text-center text-[10px] text-white/50">{hint}</p>}
     </div>
   );
 }

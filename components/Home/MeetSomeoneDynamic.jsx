@@ -1682,7 +1682,7 @@ export default function MeetSomeoneDynamic() {
 
         {/* MOBILE VIEW (CONDITIONAL) */}
         {!isSearching && (
-          <div className={clsx('block', 'md:hidden h-[100vdh]')}>
+          <div className={clsx('block', 'md:hidden h-[100dvh]')}>
             <MeetSomeoneNew 
               onMeetNow={async () => {
                 setIsSearching(true);

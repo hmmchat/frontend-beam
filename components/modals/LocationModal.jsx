@@ -121,14 +121,14 @@ export default function LocationModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6"
+      className="fixed inset-0 z-[110] flex items-center justify-center md:p-6"
       onClick={onClose}
     >
       {/* Backdrop (Full screen) */}
 
       {/* Modal Content */}
       <div
-        className="relative z-10 w-full max-w-[1000px] h-full max-h-[85vh] border-2 border-white/30 rounded-[40px] bg-purple-950/40 backdrop-blur-xl p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
+        className="relative z-10 w-full max-w-[1000px] h-full md:max-h-[85vh] max-h-[100vh] md:border-2 md:border-white/30 md:rounded-[40px] bg-purple-950/40 backdrop-blur-xl md:p-4 p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
 
@@ -154,11 +154,20 @@ export default function LocationModal({ isOpen, onClose }) {
             }}
           />
 
-          <div className="relative z-10 px-6 py-8 flex flex-col h-full  w-[70%] mx-auto">
+          <div className="relative z-10 md:px-6 px-4 py-8 flex flex-col h-full  md:w-[70%] mx-auto">
             {/* Header */}
-            <h2 className="text-lg font-bold text-white text-left w-full tracking-wide mx-auto mb-3 ">
+            <div className="flex items-center mb-3">
+              <button 
+                onClick={onClose} 
+                className="md:hidden text-white p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Go back"
+              >
+                <IoMdArrowBack className="text-2xl" />
+              </button>
+              <h2 className="text-lg font-bold text-white px-2 text-left w-full tracking-wide">
                 Select City
               </h2>
+            </div>
 
             {/* Search */}
             <div className="mb-8 relative mx-auto w-full">
@@ -180,41 +189,40 @@ export default function LocationModal({ isOpen, onClose }) {
             </p>
 
             {/* City List */}
-            <div className="flex-1 overflow-y-auto  custom-scrollbar flex justify-center pb-6 mt-4">
-              <div className="grid grid-cols-6 gap-5 max-w-[750px] w-full content-start">
-                {(searchLoading && cities.length === 0) ? (
-                  Array(6).fill(0).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={`rounded-2xl border-2 border-white  animate-pulse h-24 col-span-6 ${
-                        i < 2 ? 'sm:col-span-3' : 'sm:col-span-2'
-                      }`} 
-                    />
-                  ))
-                ) : cities.map((city, index) => (
-                  <button
-                    key={city.value + city.name}
-                    onClick={() => setSelectedCity(city.value)}
-                    className={`px-6 py-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden  group col-span-6 ${
-                      index < 2 ? 'sm:col-span-3' : 'sm:col-span-2'
-                    } ${
-                      selectedCity === city.value
-                        ? 'border-yellow-400 border-b-[3px] border-[1px] '
-                        : 'border-white/40 border-b-[3px] border-[1px]  hover:bg-white/10 hover:border-white/50'
-                    }`}
-                  >
-                    <div className="text-white text-sm group-hover:translate-x-1 transition-transform">
-                      {city.name}
-                    </div>
-                    <div className="text-white text-xs font-sans">
-                      {city.availableCount
-                        ? `${city.availableCount.toLocaleString()} online`
-                        : 'Active city'}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex justify-center pb-6 mt-4">
+  <div className="grid grid-cols-2 sm:grid-cols-6 gap-5 max-w-[750px] w-full content-start">
+    {(searchLoading && cities.length === 0) ? (
+      Array(6).fill(0).map((_, i) => (
+        <div 
+          key={i} 
+          className="rounded-2xl border-2 border-white animate-pulse h-24 col-span-1 sm:col-span-2"
+        />
+      ))
+    ) : cities.map((city, index) =>  (
+      <button
+        key={city.value + city.name}
+        onClick={() => setSelectedCity(city.value)}
+       className={`md:px-6 px-3 py-3 md:py-5 md:rounded-[18px] rounded-[15px] border border-b-[4px] md:border-b-[4px] text-left transition-all relative overflow-hidden group
+  col-span-1 
+  sm:${index < 2 ? 'col-span-3' : 'col-span-2'}
+  ${
+    selectedCity === city.value
+      ? 'border-yellow-400 border-b-[3px]'
+      : 'border-white/40 border-b-[3px] hover:bg-white/10 hover:border-white/50'
+  }`}
+      >
+        <div className="text-white md:text-sm  text-[10px] group-hover:translate-x-1 transition-transform">
+          {city.name}
+        </div>
+        <div className="text-white text-xs font-sans">
+          {city.availableCount
+            ? `${city.availableCount.toLocaleString()} online`
+            : 'Active city'}
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
 
             {/* Empty State */}
             {cities.length === 0 && !searchLoading && (

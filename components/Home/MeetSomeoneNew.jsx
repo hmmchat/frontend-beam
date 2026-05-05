@@ -17,6 +17,7 @@ import Image from 'next/image';
 import FilterButtons from '@/components/ui/FilterButtons';
 import GenderModal from '@/components/modals/GenderModal';
 import LocationModal from '@/components/modals/LocationModal';
+import CoinModal from '@/components/modals/CoinModal';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ export default function MeetSomeoneNew({
   const [internalMyProfile, setInternalMyProfile] = useState(null);
   const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
 
@@ -215,7 +217,7 @@ export default function MeetSomeoneNew({
 
         <div className="w-full relative py-10 px-0">
      
-            <div className="absolute inset-0 " />
+            {/* Empty space removed */}
             
             <div className="flex flex-col gap-10 items-center py-6 px-4">
         
@@ -309,8 +311,9 @@ export default function MeetSomeoneNew({
 
       </div>
 
+
       {/* Bottom Navigation */}
-      <div className="relative z-10 w-full max-w-sm px-4 mx-auto -mt-10">
+      <div className="relative z-10 mb-4 w-full max-w-sm px-4 mx-auto -mt-10">
         <div className=" border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 
@@ -349,8 +352,9 @@ export default function MeetSomeoneNew({
 
 
       {/* Modals */}
-      <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
+      <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)}/>
       <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+      <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
       
       <OverlayLayer
         open={overlay.open}

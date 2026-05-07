@@ -11,37 +11,37 @@ export default function BroadcastHud({
   if (!isBroadcasting) return null;
 
   return (
-    <div className="absolute left-6 top-28 z-[65] flex flex-col gap-3">
+    <div className="absolute left-12 top-32 z-[65] flex flex-col gap-3">
       {/* Eye (viewer count) + Waitlist + Share */}
-      <div className="w-14 rounded-[1.4rem] bg-black/60 backdrop-blur-md border border-white/15 overflow-hidden">
+      <div className="w-10 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden py-5">
         <button
           type="button"
           className="w-full h-14 flex items-center justify-center text-white/90"
           title="Viewers"
         >
           <div className="flex flex-col items-center leading-none">
-            <div className="text-[18px]">👁</div>
+            <div className="text-[18px]"><img src="/eye-line.svg" className="w-5 h-5" alt="" /></div>
             <div className="text-[11px] font-black mt-1">{broadcastHud.viewerCount}</div>
           </div>
         </button>
         <button
           type="button"
           onClick={() => setShowWaitlist(true)}
-          className="w-full h-14 flex items-center justify-center border-t border-white/10 text-white/90 hover:bg-white/5"
+          className="w-full h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
           title="Waitlist"
         >
           <div className="flex flex-col items-center leading-none">
-            <div className="text-[18px]">≡</div>
+            <div className="text-[18px]"><img src="/heart.svg" className="w-5 h-5" alt="" /></div>
             <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
           </div>
         </button>
         <button
           type="button"
           onClick={handleShareBroadcastLink}
-          className="w-full h-14 flex items-center justify-center border-t border-white/10 text-white/90 hover:bg-white/5"
+          className="w-full h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
           title="Share"
         >
-          <div className="text-[18px]">↗</div>
+          <div className="text-[18px]"><img src="/share.svg" className="w-5 h-5" alt="" /></div>
         </button>
       </div>
 

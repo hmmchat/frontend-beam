@@ -9,7 +9,7 @@ import {
   getZodiac,
   calculateAge,
 } from "@/lib/facecard-utils";
-
+import clsx from 'clsx';
 // Components
 import FacecardDisplay from "@/components/facecard/FacecardDisplay";
 import FacecardEditor from "@/components/facecard/FacecardEditor";
@@ -892,7 +892,7 @@ function FacecardContent() {
   if (loading) {
     return (
       <div
-        className="relative flex h-dvh max-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-purple-950 text-white outfit-font"
+        className={clsx('relative', 'flex', 'h-dvh', 'max-h-dvh', 'w-full', 'flex-col', 'items-center', 'justify-center', 'overflow-hidden', 'bg-purple-950', 'text-white', 'outfit-font')}
         style={{
           backgroundImage: "url('/assets/mb.jpg')",
           backgroundSize: "cover",
@@ -900,94 +900,94 @@ function FacecardContent() {
         }}
       >
         {/* --- MOBILE SKELETON --- */}
-        <div className="flex md:hidden border-2 border-white/30 rounded-[60px] w-[92%] max-w-sm h-auto flex-col overflow-hidden px-4 py-8 gap-8 relative z-10 bg-black/30 backdrop-blur-md">
-          <div className="grid grid-cols-12 gap-3 items-center px-2">
+        <div className={clsx('flex', 'md:hidden', 'border-2', 'border-white/30', 'rounded-[60px]', 'w-[92%]', 'max-w-sm', 'h-auto', 'flex-col', 'overflow-hidden', 'px-4', 'py-8', 'gap-8', 'relative', 'z-10', 'bg-black/30', 'backdrop-blur-md')}>
+          <div className={clsx('grid', 'grid-cols-12', 'gap-3', 'items-center', 'px-2')}>
             <Skeleton
               circle
-              className="col-span-2 h-9 w-9 border border-white/20"
+              className={clsx('col-span-2', 'h-9', 'w-9', 'border', 'border-white/20')}
             />
-            <div className="col-span-6 flex justify-center">
-              <Skeleton className="h-12 w-32 rounded-xl" />
+            <div className={clsx('col-span-6', 'flex', 'justify-center')}>
+              <Skeleton className={clsx('h-12', 'w-32', 'rounded-xl')} />
             </div>
-            <div className="col-span-4 flex justify-center items-center">
+            <div className={clsx('col-span-4', 'flex', 'justify-center', 'items-center')}>
               <Skeleton
                 circle
-                className="w-[85px] h-[85px] border-4 border-white/5"
+                className={clsx('w-[85px]', 'h-[85px]', 'border-4', 'border-white/5')}
               />
             </div>
           </div>
-          <div className="grid grid-cols-12 gap-4 px-2">
-            <Skeleton className="col-span-7 h-14 rounded-xl border border-white/10" />
-            <Skeleton className="col-span-5 h-14 rounded-xl border border-white/10" />
+          <div className={clsx('grid', 'grid-cols-12', 'gap-4', 'px-2')}>
+            <Skeleton className={clsx('col-span-7', 'h-14', 'rounded-xl', 'border', 'border-white/10')} />
+            <Skeleton className={clsx('col-span-5', 'h-14', 'rounded-xl', 'border', 'border-white/10')} />
           </div>
-          <div className="flex flex-col gap-5 px-2">
+          <div className={clsx('flex', 'flex-col', 'gap-5', 'px-2')}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between gap-3">
-                <Skeleton className="w-16 h-3" />
-                <Skeleton className="w-36 h-10 rounded-full border border-white/10" />
-                <Skeleton className="w-10 h-10 rounded-xl" />
+              <div key={i} className={clsx('flex', 'items-center', 'justify-between', 'gap-3')}>
+                <Skeleton className={clsx('w-16', 'h-3')} />
+                <Skeleton className={clsx('w-36', 'h-10', 'rounded-full', 'border', 'border-white/10')} />
+                <Skeleton className={clsx('w-10', 'h-10', 'rounded-xl')} />
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-4 px-2">
+          <div className={clsx('grid', 'grid-cols-3', 'gap-4', 'px-2')}>
             {[1, 2, 3].map((i) => (
               <Skeleton
                 key={i}
-                className="w-full h-40 rounded-[1rem] border border-white/20"
+                className={clsx('w-full', 'h-40', 'rounded-[1rem]', 'border', 'border-white/20')}
               />
             ))}
           </div>
-          <div className="flex items-center gap-5 px-2">
-            <Skeleton circle className="w-20 h-20 border-2 border-white/20" />
-            <Skeleton className="h-12 w-32 rounded-xl border border-white/10" />
+          <div className={clsx('flex', 'items-center', 'gap-5', 'px-2')}>
+            <Skeleton circle className={clsx('w-20', 'h-20', 'border-2', 'border-white/20')} />
+            <Skeleton className={clsx('h-12', 'w-32', 'rounded-xl', 'border', 'border-white/10')} />
           </div>
         </div>
 
         {/* --- DESKTOP SKELETON --- */}
-        <div className="hidden md:flex relative h-screen w-full md:max-w-7xl origin-center items-center justify-center">
-          <div className="flex w-full h-[85vh] flex-row gap-6 border-2 border-white/30 rounded-[60px] p-6 bg-black/30 backdrop-blur-md">
+        <div className={clsx('hidden', 'md:flex', 'relative', 'h-screen', 'w-full', 'md:max-w-7xl', 'origin-center', 'items-center', 'justify-center')}>
+          <div className={clsx('flex', 'w-full', 'h-[85vh]', 'flex-row', 'gap-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'p-6', 'bg-black/30', 'backdrop-blur-md')}>
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col gap-10 border-2 border-white/10 rounded-[3.5rem] p-8">
+            <div className={clsx('flex-1', 'flex', 'flex-col', 'gap-10', 'border-2', 'border-white/10', 'rounded-[3.5rem]', 'p-8')}>
               {/* Top Row with Photos */}
-              <div className="flex items-start gap-6">
-                <Skeleton circle className="w-16 h-16" />
-                <div className="flex gap-4">
-                  <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/20" />
-                  <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/10" />
-                  <Skeleton className="w-[180px] h-[280px] rounded-[2rem] border border-white/10" />
+              <div className={clsx('flex', 'items-start', 'gap-6')}>
+                <Skeleton circle className={clsx('w-16', 'h-16')} />
+                <div className={clsx('flex', 'gap-4')}>
+                  <Skeleton className={clsx('w-[180px]', 'h-[280px]', 'rounded-[2rem]', 'border', 'border-white/20')} />
+                  <Skeleton className={clsx('w-[180px]', 'h-[280px]', 'rounded-[2rem]', 'border', 'border-white/10')} />
+                  <Skeleton className={clsx('w-[180px]', 'h-[280px]', 'rounded-[2rem]', 'border', 'border-white/10')} />
                 </div>
               </div>
               {/* Middle Labels Area */}
-              <div className="grid grid-cols-10 gap-10 mt-4">
-                <div className="col-span-3 space-y-10">
-                  <Skeleton className="h-16 w-full rounded-xl border border-white/10" />
-                  <Skeleton className="h-16 w-full rounded-xl border border-white/10" />
+              <div className={clsx('grid', 'grid-cols-10', 'gap-10', 'mt-4')}>
+                <div className={clsx('col-span-3', 'space-y-10')}>
+                  <Skeleton className={clsx('h-16', 'w-full', 'rounded-xl', 'border', 'border-white/10')} />
+                  <Skeleton className={clsx('h-16', 'w-full', 'rounded-xl', 'border', 'border-white/10')} />
                 </div>
-                <div className="col-span-7 space-y-8">
-                  <div className="flex gap-4">
-                    <Skeleton className="h-16 w-20 rounded-xl" />
-                    <Skeleton className="h-16 flex-1 rounded-full border border-white/10" />
+                <div className={clsx('col-span-7', 'space-y-8')}>
+                  <div className={clsx('flex', 'gap-4')}>
+                    <Skeleton className={clsx('h-16', 'w-20', 'rounded-xl')} />
+                    <Skeleton className={clsx('h-16', 'flex-1', 'rounded-full', 'border', 'border-white/10')} />
                   </div>
-                  <div className="flex gap-4">
-                    <Skeleton className="h-16 w-20 rounded-xl" />
-                    <Skeleton className="h-16 flex-1 rounded-full border border-white/10" />
+                  <div className={clsx('flex', 'gap-4')}>
+                    <Skeleton className={clsx('h-16', 'w-20', 'rounded-xl')} />
+                    <Skeleton className={clsx('h-16', 'flex-1', 'rounded-full', 'border', 'border-white/10')} />
                   </div>
                 </div>
               </div>
             </div>
             {/* Right Sidebar Area */}
-            <div className="w-72 flex flex-col gap-12 py-10">
+            <div className={clsx('w-72', 'flex', 'flex-col', 'gap-12', 'py-10')}>
               <Skeleton
                 circle
-                className="w-48 h-48 border-4 border-white/5 self-center"
+                className={clsx('w-48', 'h-48', 'border-4', 'border-white/5', 'self-center')}
               />
-              <Skeleton className="h-16 w-full rounded-3xl border border-white/20" />
-              <div className="flex flex-col items-center gap-6">
+              <Skeleton className={clsx('h-16', 'w-full', 'rounded-3xl', 'border', 'border-white/20')} />
+              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6')}>
                 <Skeleton
                   circle
-                  className="w-40 h-40 border-2 border-white/10"
+                  className={clsx('w-40', 'h-40', 'border-2', 'border-white/10')}
                 />
-                <Skeleton className="h-12 w-48 rounded-xl" />
+                <Skeleton className={clsx('h-12', 'w-48', 'rounded-xl')} />
               </div>
             </div>
           </div>
@@ -1000,7 +1000,7 @@ function FacecardContent() {
   const firstName = user?.username?.split(" ")[0] || "User";
   const city = user?.preferredCity || user?.city || "Unknown";
   return (
-    <div className="relative flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden overscroll-none">
+    <div className={clsx('relative', 'flex', 'h-dvh', 'max-h-dvh', 'min-h-0', 'flex-col', 'overflow-hidden', 'overscroll-none')}>
       <PortraitImageCropModal
         open={cropModalOpen && !!cropImageUrl}
         imageUrl={cropImageUrl}
@@ -1008,7 +1008,7 @@ function FacecardContent() {
         onComplete={handleCroppedPhoto}
         busy={photoUploading}
       />
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className={clsx('flex', 'min-h-0', 'flex-1', 'flex-col', 'overflow-hidden')}>
         {view === "success" ? (
           <FacecardDisplay
             user={user}
@@ -1062,12 +1062,12 @@ function FacecardContent() {
 
       {facecardPreviewOpen && user && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center  overflow-hidden "
+          className={clsx('fixed', 'inset-0', 'z-[200]', 'flex', 'items-center', 'justify-center', 'overflow-hidden')}
           onClick={() => setFacecardPreviewOpen(false)}
           role="presentation"
         >
           <div
-            className="relative w-full h-full flex flex-col items-center justify-center"
+            className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
             style={{
               backgroundImage: "url('/assets/mb.jpg')",
               backgroundSize: "cover",
@@ -1082,18 +1082,18 @@ function FacecardContent() {
 
       
 
-            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[98vh]  border-0  md:border md:border-white/40   rounded-[60px] w-[960px] ">
+            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-[98vh]', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'w-[960px]')}>
         
 
-   {/* <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 px-14 ">
+   {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
    
          
             
           <div>
-            <h1 className="inline-flex items-baseline gap-1 font-[family-name:var(--font-outfit),sans-serif] text-[18px] font-bold leading-none text-[#FFB800]">
+            <h1 className={clsx('inline-flex', 'items-baseline', 'gap-1', 'font-[family-name:var(--font-outfit),sans-serif]', 'text-[18px]', 'font-bold', 'leading-none', 'text-[#FFB800]')}>
               <span>{user.username || 'User'}</span>
               <span
-                className="inline-block text-[18px] font-bold leading-none text-[#FFB800]"
+                className={clsx('inline-block', 'text-[18px]', 'font-bold', 'leading-none', 'text-[#FFB800]')}
                 style={{
                   WebkitTextStroke: "0.8px #4f0b99",
                 }}
@@ -1101,7 +1101,7 @@ function FacecardContent() {
                 {age || '—'}
               </span>
             </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+            <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
               <IoLocationOutline className="shrink-0" />
               <span className="truncate">{city}</span>
             </div>
@@ -1111,30 +1111,30 @@ function FacecardContent() {
 
           
            
-            <button type="button" className="flex h-6 w-6  text-white " >
-              <IoEllipsisVerticalSharp className="z-10 text-2xl"/>
+            <button type="button" className={clsx('flex', 'h-6', 'w-6', 'text-white')} >
+              <IoEllipsisVerticalSharp className={clsx('z-10', 'text-2xl')}/>
             </button>
         
         </div>  */}
 
 
-              <div className=" flex justify-center  h-[90%]    " >
-                <div
-                  ref={facecardPreviewExportRef}
-                  className="origin-center origin-center sm:scale-[0.7] md:scale-[0.8] lg:scale-[0.9] transition-transform"
-                >
-                  <FaceCard2
-                    user={{
-                      ...user,
-                      age,
-                      city: user?.preferredCity || user?.city,
-                    }}
-                    onClose={() => setFacecardPreviewOpen(false)}
-                    onDownload={handleDownloadFacecard}
-                    onShare={handleShareFacecard}
-                  />
-                </div>
-              </div>
+              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'max-h-[96vh]')}>
+  <div
+    ref={facecardPreviewExportRef}
+    className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full',  'mx-auto' ,'      md:[@media(max-height:1000px)]:scale-[0.90]')}
+  >
+    <FaceCard2
+      user={{
+        ...user,
+        age,
+        city: user?.preferredCity || user?.city,
+      }}
+      onClose={() => setFacecardPreviewOpen(false)}
+      onDownload={handleDownloadFacecard}
+      onShare={handleShareFacecard}
+    />
+  </div>
+</div>
             </div>
           </div>
         </div>

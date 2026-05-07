@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 export default function RemoteVideoTile({
@@ -28,6 +28,7 @@ export default function RemoteVideoTile({
   const videoRef = useRef(null);
   const screenRef = useRef(null);
   const pipRef = useRef(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (screenShareStream) return;
@@ -48,8 +49,8 @@ export default function RemoteVideoTile({
       const pr = el?.play?.();
       if (pr && typeof pr.catch === 'function') pr.catch(() => {});
     };
-    play(s);
-    play(p);
+    if (s) play(s);
+    if (p) play(p);
   }, [stream, screenShareStream]);
 
   return (
@@ -83,11 +84,13 @@ export default function RemoteVideoTile({
 
       {/* Next/Leave button — top right */}
       {showLeaveNextButton && onLeaveOrNext && (
+
+        <div>
   <button
   type="button"
   onClick={onLeaveOrNext}
   disabled={isRainchecking}
-  className="absolute top-10 right-10 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
+  className="absolute top-10 right-10 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
 >
   <img 
     src="/arrowright.png" 
@@ -95,11 +98,79 @@ export default function RemoteVideoTile({
     alt="Next" 
   />
 </button>
+
+
+<button
+  type="button"
+  onClick={() => setShowReportModal(true)}
+  className="absolute top-10 right-25 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
+>
+  <img 
+    src="/report-line.svg" 
+    className="w-6 h-6 object-contain pointer-events-none" 
+    alt="Report" 
+  />
+</button>
+
+</div>
+
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 font-otomanopee " onClick={() => setShowReportModal(false)}>
+          <div className="w-full max-w-[320px]  space-y-1 animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
+            
+            {/* Pill Header */}
+            <div className="relative overflow-hidden w-[80%] mx-auto border border-white/50 rounded-full py-4 text-center">
+              <div
+                className="absolute inset-0 z-0"
+                style={{
+                  backgroundImage: 'url(/assets/mb.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+              <div className="absolute inset-0 z-[1]" />
+              <h2 className="relative z-10 text-white text-xl font-black tracking-wider">
+                Report user
+              </h2>
+            </div>
+
+            {/* Main Content Box */}
+            <div className="relative overflow-hidden w-full border border-white/50 rounded-[3rem] p-3 py-18 flex flex-col items-center gap-6 text-center shadow-2xl">
+              <div
+                className="absolute inset-0 z-0"
+                style={{
+                  backgroundImage: 'url(/assets/mb.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+              <div className="absolute inset-0 z-[1]" />
+
+              <div className="relative z-10 space-y-2">
+                <h3 className="text-white text-2xl font-black">Report this user</h3>
+                <p className="text-white/70 text-sm font-outfit">report this user</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  console.log("Reported");
+                  setShowReportModal(false);
+                }}
+                className="relative z-10 mt-4 px-10 py-4 border border-white/40 border-b-[3px] rounded-2xl text-white font-black hover:bg-white/5 active:scale-95 transition-all"
+              >
+                Report this user
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="absolute top-10 left-10 right-5 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 bg-[#C7BCB1]/30 backdrop-blur-2xl px-3 py-2 rounded-[2.5rem] border border-white/30 shadow-xl">
+          <div className="flex items-center gap-4  bg-black/10  backdrop-blur-md px-3 py-2 rounded-[2.5rem] border border-white/30 ">
             <div className="relative">
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
                 <img 

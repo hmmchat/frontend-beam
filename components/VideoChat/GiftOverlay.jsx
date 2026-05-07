@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import { useState } from "react";
 import GiftAnimation from "./GiftAnimation";
-
+import { FaAngleRight } from "react-icons/fa6";
+import { FaAngleLeft } from "react-icons/fa6";
 const giftItems = [
   { id: 1, name: "Lucky", price: 50, img: "🐒" },
   { id: 2, name: "Pika", price: 250, img: "⚡" },
@@ -32,7 +33,7 @@ export default function GiftOverlay({
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
       <div className="fixed inset-0 z-20 " onClick={onClose} />
       {/* Main UI */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
+      <div className="absolute bottom-3 right-5  -translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
         <div
           onClick={(e) => e.stopPropagation()}
           className="border-2 border-white rounded-[40px] w-full max-w-[500px] p-8 shadow-2xl relative overflow-hidden"
@@ -48,18 +49,23 @@ export default function GiftOverlay({
 
           {/* Header */}
           <div className="relative z-10 flex items-center justify-between mb-8">
-            <h2 className="text-white text-2xl font-bold">🎁 Add Gift</h2>
+            <h2 className="text-white text-xl font-otomanopee flex justify-center items-center gap-2"><img src="/gift-light.svg" alt="coin" className="w-7" /> Add Gift</h2>
+<div className="flex  gap-4">
+<FaAngleLeft className="text-white text-xl  border-2 border-white rounded-full  w-6 h-6  p-0.5  flex items-center justify-center cursor-pointer" />
+
+            <FaAngleRight className="text-white text-xl border-2 border-white rounded-full  w-6 h-6  p-0.5 flex items-center justify-center cursor-pointer" />
+            </div>
           </div>
 
           {/* Grid */}
-          <div className="relative z-10 grid grid-cols-4 gap-4 mb-6">
+          <div className="relative z-10 grid grid-cols-4 gap-4 mb-1">
             {giftItems.map((gift) => (
               <div
                 key={gift.id}
                 onClick={() => onSelectGift(gift)}
                 onDoubleClick={() => setAnimGift(gift)}
                 className={clsx(
-                  "bg-[#2D1F4D]/60 border rounded-3xl p-4 flex flex-col items-center gap-2 cursor-pointer",
+                  "border-2 border-white/60 border-b-4 rounded-3xl px-4 py-3 flex flex-col items-center gap-2 cursor-pointer",
                   selectedGiftId === gift.id
                     ? "border-yellow-400"
                     : "border-white/10",

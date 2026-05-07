@@ -140,7 +140,7 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
 
 
                   
-      <div className="relative h-full w-full overflow-hidden    border border-white/60 md:border-none rounded-[28px]">
+      <div className="relative h-full w-full overflow-visible    border border-white/60 md:border-none rounded-[28px]">
         {/* HEADER */}
         {/* MOBILE HEADER (Inside card) */}
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-4 md:hidden">
@@ -191,9 +191,28 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
         {/* Inner chrome */}
         <div className="absolute bottom-2 left-2 right-2 md:left-1 md:right-1 top-[4.25rem] rounded-[26px] border border-white/40">
           {/* Intent */}
-          <div className="absolute left-0 right-0 top-2 z-20 px-2 ">
-            <div className="rounded-[22px] border border-white/35 font-outfit md:py-12 px-3 py-10 text-center text-[10px] md:text-[12px] leading-snug text-white backdrop-blur-[2px]">
+          <div className="absolute left-0 right-0 top-2 z-20 px-2">
+            <div className="relative rounded-[22px] border border-white/35 font-outfit md:py-12 px-3 py-10 text-center text-[10px] md:text-[12px] leading-snug text-white backdrop-blur-[2px] overflow-visible">
               {user.intent || 'Here to meet strangers and overthink later.'}
+
+              {/* Red Warning Effect (Concentric Glows) */}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none scale-75 md:scale-100 ">
+                {/* Layer 3: Largest Glow */}
+   <div className="absolute w-14 h-14 rounded-full bg-red-500/60 blur-[2px]" />
+
+        {/* 🔴 OUTER LAYER (bahar se start) */}
+        <div className="absolute w-32 h-32 rounded-full bg-red-500/40 blur-[5px]" />
+
+
+                <div className="absolute w-64 h-64 rounded-full bg-red-500/20 " />
+                
+                {/* The Warning Icon */}
+                <div className="relative w-5 h-5 bg-red-600 rounded-lg flex items-center justify-center   shadow-[0_0_15px_rgba(220,38,38,0.6)]">
+                  <div className="w-4 h-4 border-[2px] border-white rounded-sm flex items-center justify-center">
+                    <span className="text-white font-black text-xs">!</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -305,18 +305,15 @@ const FaceCard = ({
                 </div>
 
                 {/* Music — FIXED: added "relative" so the musicline.svg stays inside the music capsule on ALL screen sizes */}
-                <div className="relative flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[600px] border border-white/40 px-1 pb-2 pt-2">
-                  <img
-                    src="/musicline.svg"
-                    alt=""
-                    className="absolute left-1 bottom-14 z-50"
-                  />
+                 <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
 
+
+<img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
                   <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
-                        className="h-full w-full object-cover animate-spin-slow"
+                        className="h-full w-full object-cover"
                         alt=""
                       />
                     ) : (
@@ -324,16 +321,21 @@ const FaceCard = ({
                     )}
                   </div>
 
+                  
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
                   <div className="mt-1.5 w-full px-0.5 text-center text-white">
-                    <p className="text-[9px] font-medium leading-tight tracking-wide truncate whitespace-nowrap overflow-hidden">
-                      {user.musicPreference ? songTitle : "\u00a0"}
-                    </p>
-                    <p className="mt-0.5 text-[7px] font-extralight leading-tight text-white/70 truncate whitespace-nowrap overflow-hidden">
-                      {user.musicPreference ? artist : "\u00a0"}
-                    </p>
+
+                  <p className="text-[9px] font-medium leading-tight tracking-wide truncate whitespace-nowrap overflow-hidden">
+  {user.musicPreference ? songTitle : '\u00a0'}
+</p>
+                 <p className="mt-0.5 text-[7px] font-extralight leading-tight text-white/70 truncate">
+  {user.musicPreference ? artist : '\u00a0'}
+</p>
                   </div>
                 </div>
+
+
+
               </div>
 
               {/* RIGHT IMAGE */}
@@ -368,25 +370,7 @@ const FaceCard = ({
         </div>
       </div>
 
-      {!hideArrows && (
-        <div className="flex items-center justify-center gap-2 mt-4 hidden md:flex">
-          {/* Left Button */}
-          <button
-            onClick={handlePrev}
-            className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
-          >
-            <IoIosArrowBack />
-          </button>
-
-          {/* Right Button */}
-          <button
-            onClick={handleNext}
-            className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
-          >
-            <IoIosArrowForward />
-          </button>
-        </div>
-      )}
+      
     </>
   );
 };

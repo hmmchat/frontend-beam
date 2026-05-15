@@ -51,13 +51,13 @@ export default function QuickActions({
   };
 
   return (
-   <div className="absolute bottom-8 left-0 w-full z-40 pointer-events-none">
+   <div className="absolute  bottom-[365px] md:bottom-8 left-0 w-full z-40 pointer-events-none">
   
   {/* LEFT (Dice) - Positioned far left */}
   {callRoles.isLocalHost && (
     <button
       onClick={handleDiceClick}
-      className="absolute bottom-0 left-8 bg-black/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-black/80 transition pointer-events-auto shadow-2xl"
+      className="absolute bottom-0 left-4 md:left-8 bg-black/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-black/80 transition pointer-events-auto shadow-2xl"
     >
       <img
         src={isRolling ? diceImages[diceIndex] : '/dice.png'}
@@ -73,7 +73,7 @@ export default function QuickActions({
     onClick={handleIcebreaker}
     className={clsx(
       "absolute bottom-0 bg-black/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-black/80 transition pointer-events-auto shadow-2xl",
-      "left-[44%] md:left-[44%]" // Positioned to be at the right edge of the left tile
+      "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
     )}
   >
     <img src="/icecream.png" className="w-8 h-8" />

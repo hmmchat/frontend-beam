@@ -1906,7 +1906,7 @@ function VideoChatContent() {
   };
 
   return (
-    <div className={clsx('h-screen', 'w-screen', 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans')}>
+    <div className={clsx(' h-dvh', 'w-screen', 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans')}>
 
              <div
                         className="absolute inset-0 z-0 "
@@ -1916,7 +1916,7 @@ function VideoChatContent() {
                             backgroundSize: 'cover',
                         }}
                     />
-      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'gap-2', 'relative')}>
+      <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'flex', 'flex-col', 'md:flex-row', 'p-2', 'md:gap-2', 'relative')}>
         {/* Layout Engine */}
         {remoteStreams.length === 0 ? (
           /* Landing/Loading state: Full peer section placeholder and local */
@@ -1926,24 +1926,28 @@ function VideoChatContent() {
             </div>
           ) : (
             <>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
-                <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'bg-black', 'p-6', 'text-white')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden')}>
+                           <div
+                        className="absolute inset-0 z-0 "
+                        style={{
+                            backgroundImage: 'url(/assets/mb.jpg)',
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: 'cover',
+                        }}
+                    />
+                <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center',  'p-6', 'text-white')}>
                   {loadingMeme?.imageUrl ? (
                     <img
                       src={loadingMeme.imageUrl}
                       alt={loadingMeme.text || 'Loading meme'}
-                      className={clsx('h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'rounded-[1.5rem]', 'object-contain', 'shadow-2xl')}
+                      className={clsx('h-[200px]', 'max-h-[42%]', 'w-48', 'max-w-xl', 'rounded-[1.5rem]', 'object-contain')}
                     />
                   ) : (
-                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'border', 'border-white/10', 'bg-white/5', 'p-8', 'text-center', 'shadow-2xl')}>
+                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]',  'p-8', 'text-center', 'shadow-2xl')}>
                       <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
                     </div>
                   )}
-                  {loadingMeme?.text && loadingMeme?.imageUrl ? (
-                    <p className={clsx('mt-5', 'max-w-xl', 'rounded-full', 'bg-white/10', 'px-5', 'py-2', 'text-center', 'text-sm', 'font-black', 'uppercase', 'tracking-wider', 'text-white', 'backdrop-blur-md')}>
-                      {loadingMeme.text}
-                    </p>
-                  ) : null}
+                 
                 </div>
               </div>
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
@@ -2234,6 +2238,7 @@ function VideoChatContent() {
           callRoles={callRoles}
           toggleRandomness={toggleRandomness}
           handleIcebreaker={handleIcebreaker}
+         
         />
 
         {/* In-call nav moved onto local tile */}

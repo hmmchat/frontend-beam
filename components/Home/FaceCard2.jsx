@@ -192,8 +192,10 @@ const FaceCard2 = ({ user, currentIndex, onIndexChange, onClose, onDownload, onS
         <div className="absolute bottom-2 left-2 right-2 md:left-1 md:right-1 top-[4.25rem] rounded-[26px] border border-white/40">
           {/* Intent */}
           <div className="absolute left-0 right-0 top-2 z-20 px-2">
-            <div className="relative rounded-[22px] border border-white/35 font-outfit md:py-12 px-3 py-10 text-center text-[10px] md:text-[12px] leading-snug text-white backdrop-blur-[2px] overflow-visible">
-              {user.intent || 'Here to meet strangers and overthink later.'}
+            <div className="relative rounded-[22px] border border-white/35 font-outfit h-[90px] md:h-[115px] flex items-center justify-center px-3 text-center text-[10px] md:text-[12px] leading-snug text-white backdrop-blur-[2px] overflow-visible">
+              <span className="line-clamp-3">
+                {user.intent || 'Here to meet strangers and overthink later.'}
+              </span>
 
               {/* Red Warning Effect (Concentric Glows) */}
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none scale-75 md:scale-100 ">

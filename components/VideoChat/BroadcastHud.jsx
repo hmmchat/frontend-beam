@@ -6,14 +6,15 @@ export default function BroadcastHud({
   setShowWaitlist,
   handleShareBroadcastLink,
   setBroadcastHud,
-  copyShareUrl
+  copyShareUrl,
+  variant = 'normal'
 }) {
-  if (!isBroadcasting) return null;
+  if (!isBroadcasting && variant !== 'beam-tv') return null;
 
   return (
-    <div className="absolute left-12 top-32 z-[65] flex flex-col gap-3">
+    <div className="absolute left-8 md:left-12 top-28 md:top-32 z-[65] flex flex-col gap-3">
       {/* Eye (viewer count) + Waitlist + Share */}
-      <div className="w-10 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden py-5">
+      <div className="w-10 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden md:py-5">
         <button
           type="button"
           className="w-full h-14 flex items-center justify-center text-white/90"
@@ -24,25 +25,35 @@ export default function BroadcastHud({
             <div className="text-[11px] font-black mt-1">{broadcastHud.viewerCount}</div>
           </div>
         </button>
+
+
         <button
           type="button"
           onClick={() => setShowWaitlist(true)}
-          className="w-full h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
-          title="Waitlist"
+          className="w-full h-12 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
+          title={variant === 'beam-tv' ? 'Liked Broadcasters' : 'Waitlist'}
         >
           <div className="flex flex-col items-center leading-none">
-            <div className="text-[18px]"><img src="/heart.svg" className="w-5 h-5" alt="" /></div>
-            <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
+            <div className="text-[18px]"><img src={variant === 'beam-tv' ? '/heart.svg' : '/3queue.svg'} className="w-5 h-5" alt="" /></div>
+            {variant !== 'beam-tv' && (
+              <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
+            )}
           </div>
         </button>
+
+    
         <button
+
           type="button"
           onClick={handleShareBroadcastLink}
-          className="w-full h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
+          className="w-full h-10 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
           title="Share"
         >
           <div className="text-[18px]"><img src="/share.svg" className="w-5 h-5" alt="" /></div>
         </button>
+
+
+
       </div>
 
       {broadcastHud.lastShareMsg && (

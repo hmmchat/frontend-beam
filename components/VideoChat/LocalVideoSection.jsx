@@ -49,7 +49,10 @@ export default function LocalVideoSection({
       {/* 📹 Video Area */}
       <div
         className={clsx(
-          "relative flex-1 min-h-0 min-w-0 transition-all duration-500 rounded-[60px] overflow-hidden",
+          "relative flex-1 min-h-0 min-w-0 transition-all duration-500 md:rounded-[60px] overflow-hidden",
+          (isGiftModalOpen || isDareOpen) &&
+            selectedGiftId &&
+            "shadow-2xl mb-2",
           (isGiftModalOpen || isDareOpen) &&
             selectedGiftId &&
             "shadow-2xl mb-2",
@@ -61,7 +64,7 @@ export default function LocalVideoSection({
           muted
           playsInline
           className={clsx(
-            "absolute inset-0 w-full object-cover scale-x-[-1] rounded-[60px]",
+            "absolute inset-0 w-full object-cover scale-x-[-1] md:rounded-[60px]",
             isGiftModalOpen || isDareOpen ? "h-[87vh]" : "h-full",
           )}
         />
@@ -172,14 +175,14 @@ export default function LocalVideoSection({
               {showChatInput && (
                 <form
                   onSubmit={sendChatMessage}
-                  className="animate-in slide-in-from-bottom-4"
+                  className="animate-in slide-in-from-bottom-6"
                 >
                   <input
                     autoFocus
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..."
-                    className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-2 outline-none"
+                    className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-7 outline-none ml-4"
                   />
                 </form>
               )}
@@ -281,7 +284,7 @@ export default function LocalVideoSection({
         {/* 🔲 HUD BORDER FRAME */}
         <div
           className={clsx(
-            "absolute top-4 left-4 right-4   border rounded-[60px] pointer-events-none z-20 transition-colors",
+            "absolute top-4 left-4 right-4   border rounded-3xl md:rounded-[60px] pointer-events-none z-20 transition-colors",
             isGiftModalOpen || isDareOpen
               ? "border-white/50  bottom-28"
               : "border-white/30 bottom-24",
@@ -289,60 +292,7 @@ export default function LocalVideoSection({
         />
       </div>
 
-      {/* 💰 Bottom Balance Footer (Only when gift or dare is selected) */}
-      {(isGiftModalOpen || isDareOpen) && selectedGiftId && (
-        <div className="h-28 bg-[#1A1033] flex items-center justify-between px-6 md:px-10 animate-in slide-in-from-bottom-full z-10">
-          {/* Desktop/Default Gift View */}
-          {!isDareOpen && (
-            <>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-yellow-400">
-                  <span className="text-xs">⚠️</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">
-                    Insufficient balance
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-white">
-                  <span className="text-xs font-medium opacity-60">
-                    Spend coins:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
-                    <span className="text-lg font-bold">10,00,000</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsCoinModalOpen(true)}
-                className="border-2 border-white/20 hover:border-white/40 text-white px-10 py-4 rounded-3xl text-lg font-bold transition-all active:scale-95 shadow-xl"
-              >
-                Buy Coins
-              </button>
-            </>
-          )}
-
-          {/* Mobile/Specific Dare View */}
-          {isDareOpen && (
-            <div className="flex w-full items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <p className="text-white/60 text-xs font-medium">Coins required:</p>
-                <div className="flex items-center gap-2">
-                   <img src="/assets/Coin-token.svg" className="w-5 h-5" alt="" />
-                   <span className="text-xl font-black text-white px-1">10,00,000</span>
-                </div>
-              </div>
-
-              <button className="relative w-24 h-24 flex items-center justify-center group -translate-y-4">
-                 <div className="absolute inset-0 bg-red-600 rounded-full shadow-[0_0_30px_rgba(220,38,38,0.5)] group-active:scale-95 transition-transform border-4 border-white/10" />
-                 <span className="relative text-white font-black text-center text-sm leading-tight uppercase leading-none px-4 drop-shadow-md">
-                   SEND<br/>DARE
-                 </span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+  
     </div>
   );
 }

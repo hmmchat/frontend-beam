@@ -157,10 +157,10 @@ const FaceCard = ({
 
       <div
         className="
-          w-[85vw] max-w-[360px] 
-          aspect-[356/670]
+          w-[100vw] max-w-[360px] 
+          aspect-[364/680]
           mx-auto
-          scale-100
+      
           [@media(max-height:950px)]:scale-[0.95]
           [@media(max-height:850px)]:scale-[0.9]
           [@media(max-height:750px)]:scale-[0.85]
@@ -182,20 +182,18 @@ const FaceCard = ({
 
 
 
-
-
               
 
               {/* Mobile header (phones + very small tablets) */}
               <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
                 <div>
-                  <h1 className="text-[18px] font-semibold text-[#FFB800]">
+                  <h1 className="text-[14px] text-left text-[#FFB800]">
                     {user.username || "User"}
                     {!hideFacecardAge && (
                       <>
                         {" "}
                         <span
-                          className="font-sm text-transparent px-2 py-0.5 rounded-full"
+                          className="font-xs text-xs  text-transparent px-2 py-0.5 rounded-full"
                           style={{ WebkitTextStroke: "0.7px white" }}
                         >
                           {age || "—"}
@@ -205,7 +203,7 @@ const FaceCard = ({
                   </h1>
                   <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
                     <IoLocationOutline className="shrink-0" />
-                    <span className="truncate">{city}</span>
+                    <span className="truncate font-outfit">{city}</span>
                   </div>
                 </div>
 
@@ -248,16 +246,17 @@ const FaceCard = ({
           )}
 
           {/* Inner chrome */}
-          <div className="absolute bottom-[6px] left-1 right-1 top-[4.25rem] rounded-[34.46px] border border-white/45 ">
+          <div className="absolute bottom-[6px] left-1 right-1 top-[4.25rem] md:rounded-[34.46px] rounded-[20px] border border-white/45 ">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-2 z-20 px-2">
-              <div className="rounded-[29.1px] border border-white/35 md:py-10 px-3 py-6 text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
-                {user.intent || "Here to meet strangers and overthink later."}
+              <div className="flex h-[90px] md:h-[100px] items-center justify-center md:rounded-[29.1px] rounded-[20px] border border-white/35 font-outfit px-4 text-center text-[10px] leading-snug text-white backdrop-blur-[2px] overflow-hidden flex-none">
+                <span className="line-clamp-3">
+                  {user.intent || "Here to meet strangers and overthink later."}
+                </span>
               </div>
             </div>
 
-            {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute bottom-2 left-2 right-2 top-[5.25rem] md:top-[7rem] flex gap-2">
+            <div className="absolute bottom-2 left-2 right-2 top-[6.10rem] md:top-[7rem] flex gap-2">
               {/* LEFT SIDEBAR */}
               <div className="w-[23%] flex flex-col items-center gap-[6px] z-20">
                 {/* Brands capsule */}

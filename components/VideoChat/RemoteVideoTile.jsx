@@ -78,7 +78,7 @@ export default function RemoteVideoTile({
           ref={videoRef}
           autoPlay
           playsInline
-          className="h-full w-full min-h-0 object-cover rounded-[60px] " 
+          className="h-full w-full min-h-0 object-cover md:rounded-[60px] " 
         />
       )}
 
@@ -90,11 +90,11 @@ export default function RemoteVideoTile({
   type="button"
   onClick={onLeaveOrNext}
   disabled={isRainchecking}
-  className="absolute top-10 right-10 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
+  className="absolute md:top-10 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
 >
   <img 
     src="/arrowright.png" 
-    className="w-6 h-6 object-contain pointer-events-none" 
+    className="md:w-6 w-5 h-5 md:h-6 mt-1 md:mt-2 object-contain pointer-events-none" 
     alt="Next" 
   />
 </button>
@@ -103,11 +103,11 @@ export default function RemoteVideoTile({
 <button
   type="button"
   onClick={() => setShowReportModal(true)}
-  className="absolute top-10 right-25 z-20 w-12 h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
+  className="absolute md:top-10 top-6 md:right-25 right-18 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full border border-white/40 bg-black/5 backdrop-blur-md flex items-center justify-center hover:bg-white/10 active:scale-95 disabled:opacity-40"
 >
   <img 
     src="/report-line.svg" 
-    className="w-6 h-6 object-contain pointer-events-none" 
+    className="md:w-6 w-5 h-5 md:h-6  object-contain pointer-events-none" 
     alt="Report" 
   />
 </button>
@@ -168,26 +168,26 @@ export default function RemoteVideoTile({
         </div>
       )}
 
-      <div className="absolute top-10 left-10 right-5 flex items-center justify-between z-10">
+      <div className="absolute md:top-10 top-6  md:left-10 left-6  flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4  bg-black/10  backdrop-blur-md px-3 py-2 rounded-[2.5rem] border border-white/30 ">
+          <div className="flex items-center md:gap-4 gap-1.5  bg-black/10  backdrop-blur-md px-[5px] py-[5px] md:px-3 md:py-2 rounded-[2.5rem] border border-white/30 ">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
+              <div className="md:w-10 w-8 h-8 md:h-10 rounded-full overflow-hidden border-2 border-white/50 bg-gray-200">
                 <img 
                   src={displayPictureUrl } 
                   className="w-full h-full object-cover" 
                   alt="" 
                 />
               </div>
-              <div className="absolute -bottom-1.5 -left-1 text-2xl filter drop-shadow-md">🐒</div>
+              <div className="absolute -bottom-1.5 -left-1 text-base md:text-2xl filter drop-shadow-md">🐒</div>
             </div>
             <div className="flex flex-col pr-4">
-              <span className="text-white text-sm font-extrabold tracking-tight leading-tight whitespace-nowrap">
+              <span className="text-white text-xs md:text-sm md:font-extrabold font-bold tracking-tight leading-tight whitespace-nowrap">
                 {name || 'Matched!'}{age && age !== '?' ? `, ${age}` : ''}
               </span>
               {(city && city !== 'Unknown') && (
                 <div className="flex items-center gap-1 mt-0.5">
-                  <span className="text-[11px] text-white/90 font-bold flex items-center gap-1">
+                  <span className="text-[10px] md:text-[11px] text-white/90 font-bold flex items-center gap-1">
                     <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                     </svg>
@@ -204,16 +204,16 @@ export default function RemoteVideoTile({
               onClick={onSendFriendRequest}
               disabled={isFriendRequestSent}
               className={clsx(
-                'w-[4.5rem] h-[4.5rem] rounded-full flex items-center justify-center transition-all border-2 border-white/40 shadow-xl active:scale-95',
+                'md:w-[4.5rem] w-14 h-[4.5rem] md:h-[4.5rem] rounded-full flex items-center justify-center transition-all border-2 border-white/40 shadow-xl active:scale-95',
                 isFriendRequestSent ? 'bg-green-500/50' : 'bg-[#C7BCB1]/80 hover:bg-[#B7ACA1]'
               )}
             >
               {isFriendRequestSent ? (
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="md:w-8 w-6 h-8 md:h-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg className="w-9 h-9 text-white opacity-90" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="md:w-9 w-7 h-9 md:h-7 h-7 text-white opacity-90" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               )}
@@ -255,8 +255,8 @@ export default function RemoteVideoTile({
           )}
         </div>
       </div>
-      {/* 🔲 HUD BORDER FRAME */}
-      <div className="absolute top-4 left-4 right-4 bottom-24 border border-white/30 rounded-[60px] pointer-events-none z-20" />
+
+      <div className="absolute md:top-4 top-2 md:left-4 left-2 md:right-4 right-2 md:bottom-24 bottom-2 border md:border-white/30 border-white/50  md:rounded-[60px] rounded-3xl pointer-events-none z-20" />
     </div>
   );
 }

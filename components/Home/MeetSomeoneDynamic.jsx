@@ -31,7 +31,8 @@ import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import Link from 'next/link';
 import Skeleton from '@/components/ui/Skeleton';
-import { IoIosArrowBack, IoIosArrowForward,} from 'react-icons/io';
+import { IoIosArrowBack, IoIosArrowForward, IoIosArrowRoundBack,} from 'react-icons/io';
+import SearchingPopup from './SearchingPopup';
 
 
 
@@ -243,16 +244,13 @@ export default function MeetSomeoneDynamic() {
     };
     clearGhostRoom();
 
-    // 1) URL-based recovery (searching mode) - DISABLED to prevent auto-camera open
-    // We only react to URL changes via popstate now, or explicit clicks.
-    /*
+    // 1) URL-based recovery (searching mode)
     const urlSearching = params?.get('searching') === '1';
     if (urlSearching) {
         setIsSearching(true);
         handleUpdateStatus('AVAILABLE');
-        fetchCardSilently(Date.now().toString(), true);
+        fetchCard(null, true);
     }
-    */
 
     // 2) Original resume logic (rainchecks, sessions, etc.)
     // DISABLED to follow "explicit click only" rule for camera/discovery
@@ -1677,12 +1675,19 @@ export default function MeetSomeoneDynamic() {
 
   return (
     <>
-    <div className={clsx('relative', 'md:min-h-screen', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
-      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'md:h-screen', 'overflow-hidden')}>
 
+
+
+
+    <div className={clsx('relative', 'md:min-h-screen','', 'h-[100dvh]', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
+      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
+
+
+      
         {/* MOBILE VIEW (CONDITIONAL) */}
-        {!isSearching && (
-          <div className={clsx('block', 'md:hidden h-[100dvh]')}>
+
+      {!isSearching && (
+          <div className={clsx('block', 'md:hidden ')}>
             <MeetSomeoneNew 
               onMeetNow={async () => {
                 setIsSearching(true);
@@ -1700,9 +1705,34 @@ export default function MeetSomeoneDynamic() {
               coins={coins}
               activeUsers={activeMeetingCount}
               myProfile={myProfile}
+
+              // Squad props
+              squadLobby={squadLobby}
+              guestProfiles={guestProfiles}
+              squadGuestIds={squadGuestIds}
+              canSquadMeet={canSquadMeet}
+              handleSquadEnterCall={handleSquadEnterCall}
+              shareSquadInvite={shareSquadInvite}
+              squadShareBusy={squadShareBusy}
+              squadMeetBusy={squadMeetBusy}
+              handleRemoveSquadMember={handleRemoveSquadMember}
+              squadMemberActionBusyId={squadMemberActionBusyId}
+              squadLobbyMicMuted={squadLobbyMicMuted}
+              setSquadLobbyMicMuted={setSquadLobbyMicMuted}
+              squadLobbyAudioOff={squadLobbyAudioOff}
+              setSquadLobbyAudioOff={setSquadLobbyAudioOff}
+              quickInviteFriends={quickInviteFriends}
+              quickInviteBusyId={quickInviteBusyId}
+              quickInvitePendingIds={quickInvitePendingIds}
+              handleQuickSquadInvite={handleQuickSquadInvite}
+              handleQuickSquadCancelInvite={handleQuickSquadCancelInvite}
+              refreshSquadLobby={refreshSquadLobby}
+              loadQuickInviteFriends={loadQuickInviteFriends}
+              squadProductMessage={squadProductMessage}
             />
           </div>
         )}
+
 
         {/* LEFT SIDE (DESKTOP) */}
 <div className={clsx('hidden', 'md:flex', 'relative', 'h-full', 'min-h-0', 'flex-col', 'items-center', 'justify-center', 'overflow-hidden', 'bg-gradient-purple-dark', 'px-6', 'py-10', 'md:py-16', 'lg:py-8')}>
@@ -1736,6 +1766,18 @@ export default function MeetSomeoneDynamic() {
             >
               {!currentCard || isResumeLoading ? (
                 <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
+                  <SearchingPopup 
+                    isVisible={true} 
+                    onCancel={() => {
+                      setIsSearching(false);
+                      setCurrentCard(null);
+                      if (typeof window !== 'undefined') {
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete('searching');
+                        window.history.pushState({}, '', url.toString());
+                      }
+                    }} 
+                  />
                 </div>
               ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
                 discoveryCityFaceUser ? (
@@ -1996,25 +2038,7 @@ export default function MeetSomeoneDynamic() {
 
 
 
-{/* MOBILE ONLY CLOSE BUTTON while searching */}
-{isSearching && (
-  <button
-     onClick={async () => {
-       setIsSearching(false);
-       setCurrentCard(null);
-       // Reset search state in URL
-       if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          url.searchParams.delete('searching');
-          window.history.pushState({}, '', url.toString());
-       }
-     }}
-     className={clsx('md:hidden', 'absolute', 'top-4', 'right-4', 'z-[100]', 'w-12', 'h-12', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'shadow-xl', 'active:scale-95', 'transition-all')}
-     title="Exit Search"
-  >
-     <IoClose className="text-3xl" />
-  </button>
-)}
+
 
           
 
@@ -2060,7 +2084,7 @@ export default function MeetSomeoneDynamic() {
                   />
                 </>
               ) : (
-                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl', 'shadow-2xl', 'border-2', 'border-white/20', 'flex flex-col md:block')}>
+                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden',  'shadow-2xl', 'flex flex-col md:block')}>
                   
                   {/* MOBILE VIEW LOGIC: 50/50 split during search/location, Fullscreen for FaceCard */}
                   {(() => {
@@ -2073,8 +2097,8 @@ export default function MeetSomeoneDynamic() {
                           {/* TOP HALF (OR FULL SCREEN) */}
                           <div 
                             className={clsx(
-                                "flex md:hidden w-full relative z-20 items-center justify-center pt-14 pb-4 px-4 overflow-hidden transition-all duration-500",
-                                isFaceCardState ? "h-full" : "h-1/2"
+                                "flex md:hidden w-full   relative z-20 items-center justify-center md:pt-14 md:pb-4 md:px-4 overflow-hidden transition-all duration-500",
+                                (isFaceCardState || isSearchingState || isLocationState) ? "h-full" : "h-1/2"
                             )}
                             style={{
                               backgroundImage: 'url(/assets/mb.jpg)',
@@ -2084,49 +2108,103 @@ export default function MeetSomeoneDynamic() {
                             }}
                           >
                             {/* 🔲 HUD BORDER FRAME (Mobile Top/Full) */}
-                            <div className={clsx('absolute', 'inset-2', 'border', 'border-white/40', 'rounded-[2rem]', 'pointer-events-none', 'z-30')} />
+                            <div className={clsx('absolute', 'inset-0',' ' , 'rounded-[2rem]', 'pointer-events-none', 'z-30')} />
 
                             <div className={clsx(
-                                "origin-center transition-transform duration-500",
-                                isFaceCardState ? "scale-[0.8] sm:scale-[0.85]" : "scale-[0.75] sm:scale-[0.8]"
+                                "origin-center transition-transform duration-500 mb-16 sm:mb-0",
+                                isFaceCardState ? "scale-[1.1] sm:scale-[1]" : "scale-[1.1] sm:scale-[1]"
                             )}>
                               {isSearchingState ? (
-                                <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'w-full')}>
+                                <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', '')}>
+                                {/* phone city */}
                                 </div>
                               ) : isLocationState && discoveryCityFaceUser ? (
-                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing')}>
+                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing' , 'w-full', )}>
                                   <FaceCard
                                     user={discoveryCityFaceUser}
                                     hideArrows={true}
                                     currentIndex={currentImageIndex}
                                     onIndexChange={setCurrentImageIndex}
                                   />
-                                  <div className={clsx('absolute', 'bottom-6', 'left-0', 'w-full', 'flex', 'items-center', 'justify-between', 'gap-3', 'px-4')}>
-                                    <button
-                                      onClick={handlePrevImage}
-                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
-                                    >
-                                      ←
-                                    </button>
-                                    <button
-                                      onClick={handleRaincheck}
-                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
-                                    >
-                                      Raincheck!
-                                    </button>
-                                    <button
-                                      onClick={handleProceed}
-                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
-                                    >
-                                      Meet rn
-                                    </button>
-                                    <button
-                                      onClick={handleNextImage}
-                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
-                                    >
-                                      →
-                                    </button>
-                                  </div>
+                                 <div
+  className={clsx(
+    'relative',
+    'md:bottom-6',
+'px-4',
+    'w-full',
+    'flex',
+    'gap-1',
+    'items-center',
+    'justify-between',
+  'bottom-4',
+    
+  )}
+>
+  
+  {/* LEFT ARROW */}
+  <button
+    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
+  >
+    <IoIosArrowBack />
+  </button>
+
+  {/* CENTER BUTTONS */}
+  <div className="flex items-center gap-2">
+    
+    <button
+      onClick={handleRaincheck}
+      className={clsx(
+        'w-[110px]',
+        'h-[42px]',
+        'flex',
+        'items-center',
+        'justify-center',
+        'rounded-full',
+        'border',
+        'border-white/30',
+        'text-white',
+        'text-[12px]',
+        'whitespace-nowrap',
+        'hover:bg-white/10',
+        'transition',
+        'active:scale-95'
+      )}
+    >
+      Raincheck!
+    </button>
+
+    <button
+      onClick={handleProceed}
+      className={clsx(
+        'w-[110px]',
+        'h-[42px]',
+        'flex',
+        'items-center',
+        'justify-center',
+        'rounded-full',
+        'border',
+        'border-white/30',
+        'text-white',
+        'text-[12px]',
+        'whitespace-nowrap',
+        'hover:bg-white/10',
+        'transition',
+        'active:scale-95'
+      )}
+    >
+      Meet rn
+    </button>
+
+  </div>
+
+  {/* RIGHT ARROW */}
+  <button
+    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
+  >
+    <IoIosArrowForward />
+  </button>
+
+</div>
                                 </div>
                               ) : (
 
@@ -2139,45 +2217,113 @@ export default function MeetSomeoneDynamic() {
                                     onIndexChange={setCurrentImageIndex}
                                   />
 
-                        <div className={clsx('absolute', 'bottom-6', 'left-0', 'w-full', 'flex', 'items-center', 'justify-between', 'gap-3', 'px-4')}>
-                                    <button
-                                      onClick={handlePrevImage}
-                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
-                                    >
-                                      ←
-                                    </button>
+                  <div
+  className={clsx(
+      'relative',
+    'md:bottom-6',
+'px-4',
+    'w-full',
+    'flex',
+    'gap-1',
+    'items-center',
+    'justify-between',
+    'bottom-4',
 
-                                    <button
-                                      onClick={handleRaincheck}
-                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
-                                    >
-                                      Raincheck!
-                                    </button>
+  )}
+>
 
-                                    {/* MEET (accept) */}
-                                    <button
-                                      onClick={handleProceed}
-                                      className={clsx('px-4', 'py-2', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-xs', 'whitespace-nowrap', 'hover:bg-white/10', 'transition', 'active:scale-95')}
-                                    >
-                                      Meet rn
-                                    </button>
+  {/* LEFT ARROW */}
+  <button
+    onClick={handlePrevImage}
+    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
+    <IoIosArrowBack />
+  </button>
 
-                                    <button
-                                      onClick={handleNextImage}
-                                      className={clsx('relative', 'z-[110]', 'w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-75', 'cursor-pointer', 'backdrop-blur-sm')}
-                                    >
-                                      →
-                                    </button>
-                                  </div>
+  {/* CENTER BUTTONS */}
+  <div className="flex items-center gap-2">
+
+    <button
+      onClick={handleRaincheck}
+      className={clsx(
+        'w-[110px]',
+        'h-[42px]',
+        'flex',
+        'items-center',
+        'justify-center',
+        'rounded-full',
+        'border',
+        'border-white/30',
+        'text-white',
+        'text-xs',
+        'whitespace-nowrap',
+        'hover:bg-white/10',
+        'transition',
+        'active:scale-95'
+      )}
+    >
+      Raincheck!
+    </button>
+
+    <button
+      onClick={handleProceed}
+      className={clsx(
+        'w-[110px]',
+        'h-[42px]',
+        'flex',
+        'items-center',
+        'justify-center',
+        'rounded-full',
+        'border',
+        'border-white/30',
+        'text-white',
+        'text-xs',
+        'whitespace-nowrap',
+        'hover:bg-white/10',
+        'transition',
+        'active:scale-95'
+      )}
+    >
+      Meet rn
+    </button>
+
+  </div>
+
+  {/* RIGHT ARROW */}
+  <button
+    onClick={handleNextImage}
+    className={clsx(
+      'relative',
+      'z-[110]',
+      'w-10',
+      'h-10',
+      'rounded-full',
+      'border',
+      'border-white/40',
+      'flex',
+      'items-center',
+      'justify-center',
+      'text-white',
+      'text-2xl',
+      'hover:bg-white/10',
+      'transition',
+      'active:scale-75',
+      'cursor-pointer',
+      'backdrop-blur-sm',
+      'shrink-0'
+    )}
+  >
+    <IoIosArrowForward />
+  </button>
+
+</div>
                                 </div>
                               )}
                             </div>
 
                           </div>
 
-                          {/* BOTTOM HALF (CAM PREVIEW) - Hidden when FaceCard is shown on mobile */}
-                          {!isFaceCardState && (
-                            <div className={clsx('flex', 'md:hidden', 'h-1/2', 'w-full', 'relative', 'z-[1]', 'min-h-0')}>
+                          {/* BOTTOM HALF (CAM PREVIEW) - Hidden when FaceCard, Searching, or Location is shown on mobile */}
+                          {(!isFaceCardState && !isSearchingState && !isLocationState) && (                            <div className={clsx('flex', 'md:hidden', 'h-1/2', 'w-full', 'relative', 'z-[1]', 'min-h-0')}>
                                 <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
                                 <LocalVideo 
                                     showSoloCheckbox={false} 
@@ -2458,7 +2604,7 @@ export default function MeetSomeoneDynamic() {
                     text="Meet Someone now"
                     className="h-20 w-[50%]"
                    iconClass=  "md:text-xl transition-all md:h-6 md:w-6 "
-                    borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
+                    borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[20px] rounded-[16px]"
                     isVideoOn
                   />
                 ) : squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (

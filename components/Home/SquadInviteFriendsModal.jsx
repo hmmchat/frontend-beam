@@ -5,6 +5,7 @@ import Image from 'next/image';
 import clsx from 'clsx';
 import { FaArrowLeftLong } from 'react-icons/fa6';
 import { API, apiRequest } from '@/lib/api';
+import { FaSearch } from 'react-icons/fa';
 export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, squadMemberIds = [] }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,19 +128,33 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center md:p-6">
+
+      
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 "
         aria-label="Close"
         onClick={onClose}
       />
+
+      
       <div
         className={clsx(
-          'relative w-full max-w-xl bg-[#1a003d]/95 border border-white/25 md:rounded-[2rem] rounded-t-[2rem]',
+          'relative w-full max-w-xl border border-white/25 md:rounded-[2rem] rounded-t-[2rem]',
           'shadow-2xl max-h-[90dvh] flex flex-col text-white font-sans overflow-hidden'
         )}
       >
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+            <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url(/assets/mb.jpg)",
+              backgroundSize: "cover",
+            }}
+          />
+
+        
+
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10 z-50">
           <button
             type="button"
             onClick={onClose}
@@ -152,7 +167,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
           </h2>
         </div>
 
-        <div className="px-4 py-3">
+<div className="relative z-10 px-6 py-3">
           {inviteProductMessage ? (
             <div
               role="alert"
@@ -161,24 +176,24 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
               {inviteProductMessage}
             </div>
           ) : null}
-          <div className="flex items-center gap-2 rounded-full border border-white/60 px-4 py-2 bg-black/20">
-            <span className="text-white/50 text-sm">⌕</span>
+          <div className="flex items-center gap-2 rounded-full border border-white/60 px-1 py-1 ">
+            <span className="text-white text-sm border rounded-full h-9 w-9 flex items-center justify-center"><FaSearch className=""/></span>
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => setQ(e.target.value)} 
               placeholder="Search friends by name or ID"
               className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/40"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 pb-6">
+ <div className="relative z-10 flex-1 overflow-y-auto px-2 pb-6">
           {loading ? (
             <p className="text-center text-white/50 py-12 text-sm">Loading friends…</p>
           ) : filtered.length === 0 ? (
             <p className="text-center text-white/50 py-12 text-sm">No friends match your search.</p>
           ) : (
-            <ul className="divide-y divide-white/10 border border-white/10 rounded-2xl overflow-hidden mx-2">
+            <ul className="divide-y divide-white/10 border border-white/30 rounded-2xl overflow-hidden mx-2">
               {filtered.map((f) => {
                 const sent = sentIds.has(f.friendId) || pendingInviteeIds.has(f.friendId);
                 const busy = busyId === f.friendId;
@@ -186,7 +201,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                 return (
                   <li
                     key={f.friendId}
-                    className="flex items-center gap-3 px-3 py-3 bg-white/5"
+                    className="flex items-center gap-3 px-3 py-3 "
                   >
                     <div className="relative w-11 h-11 rounded-full overflow-hidden border border-white/30 shrink-0">
                       <Image src={f.photoUrl} alt="" fill className="object-cover" sizes="44px" />
@@ -197,17 +212,17 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                       disabled={busy || alreadyInSquad}
                       onClick={() => (sent ? cancelInvite(f.friendId) : invite(f.friendId))}
                       className={clsx(
-                        'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition',
+                        'flex items-center font-outfit gap-2 rounded-full px-3 py-1.5 text-xs  transition',
                         alreadyInSquad
-                          ? 'bg-white/10 text-white/60 border border-white/20 cursor-not-allowed'
+                          ? 'bg-white/10 text-white/60   cursor-not-allowed'
                           : sent
                           ? 'bg-yellow-400 text-black'
-                          : 'bg-white/15 hover:bg-white/25 border border-white/30'
+                          : ' hover:bg-white/25  '
                       )}
                     >
                       <span
                         className={clsx(
-                          'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
+                          'w-6 h-6 rounded-full flex items-center justify-center text-xl font-bold',
                           alreadyInSquad
                             ? 'bg-white/10 text-white/70'
                             : sent

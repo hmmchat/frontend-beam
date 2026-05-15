@@ -184,44 +184,47 @@ export default function LocationModal({ isOpen, onClose }) {
 
 
             {/* Info */}
-            <p className="text-white/90 text-sm  text-left font-sans tracking-wide">
+            <p className="text-white/90 text-sm mb-3  text-left font-sans tracking-wide">
               Cities having most fun
             </p>
 
             {/* City List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex justify-center pb-6 mt-4">
-  <div className="grid grid-cols-2 sm:grid-cols-6 gap-5 max-w-[750px] w-full content-start">
-    {(searchLoading && cities.length === 0) ? (
-      Array(6).fill(0).map((_, i) => (
-        <div 
-          key={i} 
-          className="rounded-2xl border-2 border-white animate-pulse h-24 col-span-1 sm:col-span-2"
-        />
-      ))
-    ) : cities.map((city, index) =>  (
-      <button
-        key={city.value + city.name}
-        onClick={() => setSelectedCity(city.value)}
-       className={`md:px-6 px-3 py-3 md:py-5 md:rounded-[18px] rounded-[15px] border border-b-[4px] md:border-b-[4px] text-left transition-all relative overflow-hidden group
-  col-span-1 
-  sm:${index < 2 ? 'col-span-3' : 'col-span-2'}
-  ${
-    selectedCity === city.value
-      ? 'border-yellow-400 border-b-[3px]'
-      : 'border-white/40 border-b-[3px] hover:bg-white/10 hover:border-white/50'
-  }`}
-      >
-        <div className="text-white md:text-sm  text-[10px] group-hover:translate-x-1 transition-transform">
-          {city.name}
-        </div>
-        <div className="text-white text-xs font-sans">
-          {city.availableCount
-            ? `${city.availableCount.toLocaleString()} online`
-            : 'Active city'}
-        </div>
-      </button>
-    ))}
-  </div>
+<div className="grid grid-cols-2 md:grid-cols-6 gap-5 max-w-[750px] w-full content-start">
+  {cities.map((city, index) => (
+    <button
+      key={city.value + city.name}
+      onClick={() => setSelectedCity(city.value)}
+      className={`
+        px-3 md:px-6
+        py-3 md:py-5
+        rounded-[15px] md:rounded-[18px]
+        border border-b-[4px]
+        text-left transition-all relative overflow-hidden group
+
+        ${
+          index < 2
+            ? 'md:col-span-3' // desktop first row = 2 cards
+            : 'md:col-span-2' // desktop remaining rows = 3 cards
+        }
+
+        ${
+          selectedCity === city.value
+            ? 'border-yellow-400'
+            : 'border-white/40 hover:bg-white/10 hover:border-white/50'
+        }
+      `}
+    >
+      <div className="text-white md:text-sm text-[10px] group-hover:translate-x-1 transition-transform">
+        {city.name}
+      </div>
+
+      <div className="text-white text-xs font-sans">
+        {city.availableCount
+          ? `${city.availableCount.toLocaleString()} online`
+          : 'Active city'}
+      </div>
+    </button>
+  ))}
 </div>
 
             {/* Empty State */}

@@ -606,6 +606,37 @@ function FacecardContent() {
     setActiveSlot(slotIndex);
     fileInputRef.current?.click();
   };
+  
+  const handleDeletePhoto = async (photoId) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    
+    try {
+      setPhotoUploading(true);
+      const res = await fetch(API.USERS.DELETE_PHOTO(photoId), {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (!res.ok) {
+        const msg = await readHttpErrorMessage(res);
+        throw new Error(msg || "Delete failed");
+      }
+      
+      setUser((prev) => ({
+        ...prev,
+        photos: (prev.photos || []).filter((p) => p.id !== photoId),
+      }));
+    } catch (err) {
+      console.error("Error deleting photo:", err);
+      alert(err instanceof Error ? err.message : "Failed to delete photo");
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const closeCropModal = () => {
     setCropModalOpen(false);
@@ -1030,6 +1061,7 @@ function FacecardContent() {
             handleFileChange={handleFileChange}
             onOpenFacecardPreview={() => setFacecardPreviewOpen(true)}
             photoUploading={photoUploading}
+            onDeletePhoto={handleDeletePhoto}
           />
         )}
       </div>

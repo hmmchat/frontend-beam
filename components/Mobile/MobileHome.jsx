@@ -52,6 +52,7 @@ export default function Home() {
         <div
           className={`w-[96vw] mt-3 mx-auto flex-1 rounded-4xl overflow-hidden flex items-center justify-center transition-all duration-300 ${!isInfoOpen ? "border border-[1px] border-white/30" : "border-none"}`}
         >
+
           <div className="flex w-full flex-col items-center justify-center h-full text-center px-4 relative">
             <div
               onClick={() => setIsInfoOpen(!isInfoOpen)}

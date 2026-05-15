@@ -226,8 +226,10 @@ const FaceCard3 = ({
           <div className="absolute md:bottom-12  bottom-1 left-1 right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-[9px] z-20 px-2 ">
-              <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 md:py-10 px-3 py-10 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
-                {user.intent || "Here to meet strangers and overthink later."}
+              <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[90px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
+                <span className="line-clamp-3">
+                  {user.intent || "Here to meet strangers and overthink later."}
+                </span>
               </div>
             </div>
 

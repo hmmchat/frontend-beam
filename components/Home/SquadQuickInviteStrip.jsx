@@ -55,24 +55,32 @@ export default function SquadQuickInviteStrip({
     />
   </div>
 
-  <button
-    type="button"
-    disabled={busyId === f.friendId}
-    onClick={() =>
-      pending
-        ? onCancelInvite?.(f.friendId)
-        : onInvite?.(f.friendId)
-    }
-    className={clsx(
-      'absolute -right-1 -top-1 z-50 flex h-5 w-5 items-center justify-center rounded-full',
-      'border border-white/90   shadow-md active:scale-95 disabled:opacity-40',
-      pending
-        ? 'bg-yellow-400 text-black hover:bg-yellow-300'
-        : 'bg-white text-[#5b21b6] hover:bg-white/95'
-    )}
-  >
-    {pending ? '-' : '+'}
-  </button>
+<button
+  type="button"
+  disabled={busyId === f.friendId}
+  onClick={() =>
+    pending
+      ? onCancelInvite?.(f.friendId)
+      : onInvite?.(f.friendId)
+  }
+  className={clsx(
+    'absolute -right-1 -top-1 z-50 flex h-5 w-5 items-center justify-center rounded-full',
+    'border border-white/90 shadow-md active:scale-95 disabled:opacity-40',
+    pending
+      ? 'bg-yellow-400 hover:bg-yellow-300'
+      : 'bg-white hover:bg-white/95'
+  )}
+>
+  {pending ? (
+    <span className="text-black text-sm leading-none">-</span>
+  ) : (
+    <img
+      src="/assets/plus.png"
+      alt=""
+      className="w-3 h-3 object-contain invert"
+    />
+  )}
+</button>
 </div>
               <span className="max-w-[5.5rem] font-outfit truncate text-center text-[10px] text-white md:text-xs">
                 {f.username}

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { CiCirclePlus } from "react-icons/ci";
 import { FaArrowLeft } from "react-icons/fa";
 
 export default function FacecardEditor({
@@ -19,6 +20,7 @@ export default function FacecardEditor({
   handleFileChange,
   onOpenFacecardPreview,
   photoUploading = false,
+  onDeletePhoto,
 }) {
   const leaveEditor = () => {
     if (onExitEditor) onExitEditor();
@@ -57,10 +59,10 @@ export default function FacecardEditor({
         backgroundPosition: "center",
       }}
     >
-
+      {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
        <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-         <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 p-10 relative z-10">
+         <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 px-2 relative z-10">
       {/* TOP ROW: Close, Name Box, Progress */}
          <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
             {/* Close Button */}
@@ -75,7 +77,7 @@ export default function FacecardEditor({
             </div>
 
             {/* Name Box with Brackets */}
-            <div className="col-span-6 flex justify-center">
+            <div className="col-span-5 flex justify-center">
               <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
                 <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
                 <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
@@ -91,7 +93,7 @@ export default function FacecardEditor({
               </div>
             </div>
 
-            <div className="col-span-4 row-span-2 flex justify-center items-center">
+            <div className="col-span-5 row-span-2 flex justify-center items-center">
               <div className="relative w-[120px] h-[120px] flex items-center justify-center">
                 {/* Glow */}
 
@@ -124,20 +126,20 @@ export default function FacecardEditor({
                 <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
 
                 <div className="">
-                  <p className="text-[10px] uppercase   text-white">
+                  <p className="text-[10px] uppercase  font-outfit  text-white">
                     DOB :{" "}
                     {user?.dateOfBirth
                       ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
                       : "22/08/1998"}
                   </p>
-                  <p className="text-[10px] font-thin  text-white">
+                  <p className="text-[10px] font-outfit font-thin  text-white">
                     Zodiac : {zodiac?.name || "Gemini"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="col-span-3 flex justify-center mt-1">
+            <div className="col-span-2 flex justify-center mt-1">
               <button
                 onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
                 className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-4xl text-white hover:bg-white/5 transition"
@@ -153,7 +155,7 @@ export default function FacecardEditor({
               </button>
             </div>
 
-            <div className="col-span-5 mt-1">
+            <div className="col-span-5 ">
               <div className="relative px-6 py-1 min-w-[140px] h-[42px]">
                 <span className="absolute top-0 left-0 w-3 h-3 border-t-1 border-l-1 border-white/50"></span>
                 <span className="absolute top-0 right-0 w-3 h-3 border-t-1 border-r-1 border-white/50"></span>
@@ -161,16 +163,16 @@ export default function FacecardEditor({
                 <span className="absolute bottom-0 right-0 w-3 h-3 border-b-1 border-r-1 border-white/50"></span>
 
                 <div className="">
-                  <p className="text-[10px]  opacity-60 text-white">
+                  <p className="text-[10px] font-outfit  text-white">
                     Gender Identity
                   </p>
-                  <p className="text-[10px]  text-white">{user?.gender}</p>
+                  <p className="text-[10px] font-outfit  text-white">{user?.gender}</p>
                 </div>
               </div>
             </div>
 
             {/* Gender Icon + Facecard Button Column */}
-            <div className="col-span-3 flex flex-col gap-4 mt-2">
+            <div className="col-span-2 flex flex-col gap-4 ">
               <div className="flex justify-center">
                 <button className="w-12 h-12 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white">
                   {user?.gender === "MALE"
@@ -182,10 +184,10 @@ export default function FacecardEditor({
               </div>
             </div>
 
-            <div className="col-span-4 flex justify-center items-center">
+            <div className="col-span-5 px-2 flex justify-center items-center">
               <button
                 onClick={() => onOpenFacecardPreview?.()}
-                className="w-full py-4 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
+                className="w-full py-3.5 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-2  hover:bg-white/10 active:scale-95 transition-all"
               >
                 <span className="text-xl">
                   <img src="/eye.svg" alt="" />
@@ -195,6 +197,7 @@ export default function FacecardEditor({
                 </span>
               </button>
             </div>
+
           </div>
 
           {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
@@ -202,11 +205,11 @@ export default function FacecardEditor({
           {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
 
           {/* Action Rows: Interests, Causes, Brands */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 px-2">
             {/* Interests */}
             <div className="flex items-center justify-between gap-3">
               {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
+              <span className="text-[12px] font-black   tracking-wide">
                 Interests
               </span>
 
@@ -236,7 +239,7 @@ export default function FacecardEditor({
 
             <div className="flex items-center justify-between gap-3">
               {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
+              <span className="text-[12px] font-black tracking-wide">
                 Causes
               </span>
 
@@ -267,7 +270,7 @@ export default function FacecardEditor({
             {/* Brands */}
             <div className="flex items-center justify-between gap-3">
               {/* LEFT → Label */}
-              <span className="text-[12px] font-black  tracking-wide">
+              <span className="text-[12px] font-black   tracking-wide">
                 Brands
               </span>
 
@@ -297,7 +300,7 @@ export default function FacecardEditor({
           </div>
 
           {/* Photo Slots Section */}
-          <div className="relative group">
+          <div className="relative group px-2">
             {photoUploading && (
               <div className="absolute inset-0 z-30 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-sm">
                 <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
@@ -329,10 +332,22 @@ export default function FacecardEditor({
                     className="w-full aspect-[2/3] border-2 border-white/20 rounded-[1rem] flex items-center justify-center relative overflow-hidden bg-white/5"
                   >
                     {photo ? (
-                      <img
-                        src={photo.url}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={photo.url}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onDeletePhoto) onDeletePhoto(photo.id);
+                          }}
+                          className="absolute top-2 right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white text-xs z-10 hover:bg-red-600 active:scale-90 transition-all shadow-lg"
+                        >
+                          ✕
+                        </button>
+                      </>
                     ) : (
                       <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">
                         +
@@ -344,7 +359,7 @@ export default function FacecardEditor({
             </div>
           </div>
 
-          <div className="w-full flex items-center justify-between  mb-4 ">
+          <div className="w-full flex items-center justify-between  mb-4 px-3 ">
             {/* LEFT: Album + Info */}
             <div className="flex items-center gap-5">
               {/* Album */}
@@ -353,15 +368,15 @@ export default function FacecardEditor({
                 className="relative 0  meeting now active:scale-95 transition"
               >
                 <div
-                  className={`w-28 h-28 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white border-2 ${user?.musicPreference ? "bg-black" : "bg-white/5"}`}
+                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/80 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
                 >
                   <div
-                    className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
+                    className={`w-29 h-29 rounded-full  p-1 overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
                   >
                     {user?.musicPreference?.albumArtUrl ? (
                       <img
                         src={user.musicPreference.albumArtUrl}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full rounded-full object-cover border-[2px] border-white/40"
                         alt="Album Art"
                       />
                     ) : (
@@ -369,37 +384,42 @@ export default function FacecardEditor({
                     )}
                   </div>
 
-                  {/* center dot */}
-                  <div className="absolute w-8 h-8 rounded-full bg-black border border-white/20 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
-                  </div>
+       
+                
                 </div>
               </div>
 
               <div className="relative px-6 py-1 min-w-[120px]">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/50"></span>
-                <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/50"></span>
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/50"></span>
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/50"></span>
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50"></span>
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50"></span>
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50"></span>
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50"></span>
                 {/* Text */}
-                <div className="inline-flex flex-col justify-end items-start">
-                  <p className="text-white text-[10px] leading-tight">
-                    {user?.musicPreference?.name ||
-                      user?.musicPreference?.songName ||
-                      "Select Song"}
-                  </p>
-                  <p className="text-white/60 text-[10px] text-center">
-                    {user?.musicPreference?.artist ||
-                      user?.musicPreference?.artistName ||
-                      "Spotify"}
-                  </p>
+                <div className="inline-flex flex-col  justify-end items-start">
+               <p className="text-white text-[10px] font-outfit leading-tight">
+  {(user?.musicPreference?.name ||
+    user?.musicPreference?.songName ||
+    "Select Song")
+    .split(" ")
+    .slice(0, 2)
+    .join(" ")}
+</p>
+
+<p className="text-white/60 font-outfit text-[10px] text-center">
+  {(user?.musicPreference?.artist ||
+    user?.musicPreference?.artistName ||
+    "Spotify")
+    .split(" ")
+    .slice(0, 2)
+    .join(" ")}
+</p>
                 </div>
               </div>
             </div>
 
             {/* RIGHT: Dots */}
-            <div className="grid grid-cols-6 gap-2 opacity-30">
-              {[...Array(42)].map((_, i) => (
+            <div className="grid grid-cols-6 gap-1.5 opacity-50">
+              {[...Array(48)].map((_, i) => (
                 <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
               ))}
             </div>
@@ -432,7 +452,7 @@ export default function FacecardEditor({
                 {/* Back Button */}
                 <button
                   onClick={leaveEditor}
-                  className="w-16 h-18  p-3 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
+                  className="w-[58px] h-18  p-1 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
                 >
                   <span className="text-xl "><FaArrowLeft /></span>
                 </button>
@@ -474,15 +494,23 @@ export default function FacecardEditor({
                 {/* Slot 1 */}
 <div
   onClick={() => handleSlotClick(0)}
-  className={`w-[160px] sm:w-[180px] md:w-[198px] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${
+  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${
     photoUploading ? "pointer-events-none opacity-60" : ""
   }`}
 >
-  <img
-    src={user?.displayPictureUrl || "/imageprofile.png"}
-    alt="Photo 1"
-    className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
-  />
+  {user?.displayPictureUrl ? (
+    <img
+      src={user.displayPictureUrl}
+      alt="Photo 1"
+      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-[30px]">
+       <span className="text-5xl opacity-40 border-4 border-white/80 rounded-full px-3">
+        +
+      </span>
+    </div>
+  )}
 
   <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
     ✎
@@ -492,15 +520,24 @@ export default function FacecardEditor({
                 {/* Slot 2 (Photo Order 0) */}
                 <div
   onClick={() => handleSlotClick(1)}
-  className={`w-[160px] sm:w-[180px] md:w-[198px]   border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
+  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
     photoUploading
       ? "pointer-events-none opacity-60"
       : "hover:bg-white/10"
   }`}
 >
-  <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
-    ×
-  </button>
+  {user?.photos?.find((p) => p.order === 0)?.url && (
+    <button 
+      onClick={(e) => {
+        e.stopPropagation();
+        const photo = user.photos.find((p) => p.order === 0);
+        if (onDeletePhoto && photo) onDeletePhoto(photo.id);
+      }}
+      className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
+    >
+      ✕
+    </button>
+  )}
 
   {user?.photos?.find((p) => p.order === 0)?.url ? (
     <img
@@ -509,22 +546,33 @@ export default function FacecardEditor({
       className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
     />
   ) : (
-    <span className="text-5xl opacity-60 border-4 border-white/80 rounded-full px-3">
-      +
-    </span>
+  
+         <CiCirclePlus className="text-[60px] opacity-60  rounded-full "/>
+
   )}
 </div>
 
                 {/* Slot 3 (Photo Order 1) */}
                 <div
                   onClick={() => handleSlotClick(2)}
-                  className={`w-[160px] sm:w-[180px] md:w-[198px]   border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
+                  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
                     photoUploading
                       ? "pointer-events-none opacity-60"
                       : "0  meeting now hover:bg-white/10"
                   }`}
                 >
-                                                 <button className="absolute -top-1 z-20 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">x</button>
+                  {user?.photos?.find((p) => p.order === 1)?.url && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const photo = user.photos.find((p) => p.order === 1);
+                        if (onDeletePhoto && photo) onDeletePhoto(photo.id);
+                      }}
+                      className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
+                    >
+                      ✕
+                    </button>
+                  )}
                   {user?.photos?.find((p) => p.order === 1)?.url ? (
                     <img
                       src={user.photos.find((p) => p.order === 1).url}
@@ -532,9 +580,7 @@ export default function FacecardEditor({
                       alt="Photo 3"
                     />
                   ) : (
-                    <span className="text-5xl opacity-60 border border-4 border-white/80 rounded-full px-3">
-                      +
-                    </span>
+                            <CiCirclePlus className="text-[60px] opacity-60  rounded-full "/>
                   )}
                 </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import clsx from "clsx";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 
 const giftItems = [
   { id: 1, name: "Monkey", price: 50, img: "🐒" },
@@ -30,7 +31,7 @@ export default function DareOverlay({
         {/* DESKTOP VIEW */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="hidden md:block border-2 border-white rounded-[40px] w-full max-w-[500px] p-8 shadow-2xl relative overflow-hidden"
+          className="hidden md:block border-2 border-white rounded-[40px] w-full max-w-[480px] p-8 shadow-2xl relative overflow-hidden"
         >
           {/* Background */}
           <div
@@ -46,22 +47,33 @@ export default function DareOverlay({
 
           {/* Content */}
           <div className="relative z-10 text-white">
+
+            <p className="text-xs opacity-80 text-center mb-2">Dare Sanya to:</p>
             {/* Top Section */}
             <div className="flex items-center justify-between mb-4">
-              <button className="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center">
-                ←
-              </button>
 
-              <div className="text-center">
-                <p className="text-xs opacity-80">Dare Sanya to:</p>
-                <div className="mt-2 px-4 py-2 border border-white/40 rounded-full text-sm font-medium">
-                  Eat a chilli 🌶️
+
+
+              <FaAngleLeft
+                onClick={onClose}
+                className="text-white text-xl border-2 border-white rounded-full w-8 h-8 p-0.5 flex items-center justify-center cursor-pointer transition-all active:scale-90"
+              />
+
+
+
+              <div className="text-center w-full">
+     
+                <div className=" px-4 py-2 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm font-medium">
+                  Eat a chilli 
                 </div>
+
+
               </div>
 
-              <button className="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center">
-                →
-              </button>
+              <FaAngleRight
+
+                className="text-white text-xl border-2 border-white rounded-full w-8 h-8 p-0.5 flex items-center justify-center cursor-pointer transition-all active:scale-90"
+              />
             </div>
 
             {/* Visibility note */}
@@ -72,7 +84,7 @@ export default function DareOverlay({
             {/* Gift Section */}
             <div className="border border-white/40 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                🎁
+                <img src="/gift-light.svg" alt="coin" className="w-7" />
                 <div>
                   <p className="text-sm font-semibold">Add gift</p>
                   <p className="text-xs opacity-70">
@@ -88,10 +100,10 @@ export default function DareOverlay({
                     key={gift.id}
                     onClick={() => onSelectGift(gift.id)}
                     className={clsx(
-                      "min-w-[80px] rounded-2xl p-3 flex flex-col items-center justify-center cursor-pointer border transition",
+                      "min-w-[85px] rounded-2xl p-3 flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
                       selectedGiftId === gift.id
                         ? "border-white bg-white/20"
-                        : "border-white/20 bg-white/5",
+                        : "border-white/60",
                     )}
                   >
                     <div className="text-3xl">{gift.img}</div>

@@ -172,7 +172,7 @@ const FaceCard4 = ({
       <div
         className="w-[85vw] aspect-[360/670] max-w-[360px] 
                    sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[366/662] shrink-0 rounded-[30px] 
+                md:aspect-[366/660] shrink-0 rounded-[30px] 
                 border border-white/40 p-[2px]
                 md:border-0 md:p-0 mt-4 md:scale-90"
       >
@@ -298,7 +298,7 @@ const FaceCard4 = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex h-[125px] w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                <div className="flex h-[125px] w-[80px] shrink-0 flex-col items-center  border border-white/40 rounded-t-[79.52px] rounded-b-[49.52px] px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
 
 
 <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />

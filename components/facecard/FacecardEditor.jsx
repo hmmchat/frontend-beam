@@ -150,7 +150,7 @@ export default function FacecardEditor({
                     className="h-[20px] w-[20px] object-contain brightness-0 invert"
                   />
                 ) : (
-                  <span className="opacity-40 text-2xl">+</span>
+                <span className="opacity-40 text-2xl">  <img src="/assets/plus.png" alt="" /></span>
                 )}
               </button>
             </div>
@@ -228,12 +228,12 @@ export default function FacecardEditor({
                   )}
                 </div>
 
-                <button
-                  onClick={() => setShowSelector("interests")}
-                  className="w-12 h-12 border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
-                >
-                  +
-                </button>
+               <button
+  onClick={() => setShowSelector("interests")}
+  className="w-12 h-12 flex items-center justify-center border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+>
+  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+</button>
               </div>
             </div>
 
@@ -260,9 +260,9 @@ export default function FacecardEditor({
 
                 <button
                   onClick={() => setShowSelector("values")}
-                  className="w-12 h-12 border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+                  className="w-12 h-12 flex items-center justify-center  border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
                 >
-                  +
+         <img src="/assets/plus.png" alt="" className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function FacecardEditor({
                           className="w-10 h-10 rounded-full object-contain"
                         />
                       ) : (
-                        <span className="opacity-40 text-xl">+</span>
+                        <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
                       )}
                     </div>
                   );
@@ -350,7 +350,7 @@ export default function FacecardEditor({
                       </>
                     ) : (
                       <div className="w-12 h-12 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-40">
-                        +
+                        <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
                       </div>
                     )}
                   </div>
@@ -368,7 +368,7 @@ export default function FacecardEditor({
                 className="relative 0  meeting now active:scale-95 transition"
               >
                 <div
-                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/80 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
+                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/40 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
                 >
                   <div
                     className={`w-29 h-29 rounded-full  p-1 overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
@@ -380,7 +380,7 @@ export default function FacecardEditor({
                         alt="Album Art"
                       />
                     ) : (
-                      <span className="text-4xl opacity-20 text-white">+</span>
+                      <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
                     )}
                   </div>
 
@@ -507,7 +507,7 @@ export default function FacecardEditor({
   ) : (
     <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-[30px]">
        <span className="text-5xl opacity-40 border-4 border-white/80 rounded-full px-3">
-        +
+        <img src="/assets/plus.png" alt="" />
       </span>
     </div>
   )}
@@ -679,7 +679,7 @@ export default function FacecardEditor({
                       />
                     ) : (
                       zodiac?.symbol || (
-                        <span className="opacity-40 text-3xl">+</span>
+                        <span className="opacity-40 text-3xl">  <img src="/assets/plus.png" alt="" /></span>
                       )
                     )}
                   </button>
@@ -857,7 +857,7 @@ className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 
               <div className="relative w-32 sm:w-36 md:w-44 aspect-square flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-[3px] border-white/20" />
 
-                <div className="absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-black animate-spin-slow flex items-center justify-center">
+                <div className="absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl  animate-spin-slow flex items-center justify-center">
                   {user?.musicPreference?.albumArtUrl ? (
                     <img
                       src={user.musicPreference.albumArtUrl}

@@ -31,8 +31,12 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
-const [city, setCity] = useState("");
+  const [city, setCity] = useState("");
   const [name, setName] = useState("");
+  const handleNameChange = (val) => {
+    setName(val);
+    if (apiError) setApiError("");
+  };
   const [dob, setDob] = useState({ day: "", month: "", year: "" });
   const [gender, setGender] = useState(null); // 'female' | 'male' | 'nonbinary'
   const [preferNotToSay, setPreferNotToSay] = useState(false);
@@ -430,6 +434,9 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
           
           if (errorMessage.toLowerCase().includes('already exists')) {
             console.warn('Profile already exists, proceeding with updates...');
+          } else if (errorMessage.toLowerCase().includes('unique constraint') && errorMessage.toLowerCase().includes('username')) {
+            setStep(1); // Go back to step 1 to fix the username
+            throw new Error('This username is already taken. Please try another one.');
           } else {
             throw new Error(errorMessage || 'Profile creation failed');
           }
@@ -741,12 +748,13 @@ className="
                   </label>
                   <input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => handleNameChange(e.target.value)}
                     maxLength={DISPLAY_NAME_MAX_LEN}
                     className="w-full bg-black/20 border-2 border-white/30 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
                     placeholder="Your name"
                   />
                   {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
+                  {apiError && apiError.includes('username') && <div className="text-xs text-rose-400 mt-1">{apiError}</div>}
                 </div>
 
                 {/* 4️⃣ DOB inputs */}
@@ -988,7 +996,7 @@ className="
 </div>
 
                 {/* Error Message */}
-                {apiError && (
+                {apiError && !apiError.includes('username') && (
                   <div className="text-red-400 text-sm mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
                     {apiError}
                   </div>
@@ -1073,6 +1081,7 @@ className="
   onChange={(e) => {
     setPrompt(e.target.value);
     setSelectedPrompts([]);
+    if (apiError) setApiError("");
   }}
   placeholder="Type your own"
   className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60 h-[72px] md:h-[96px]"
@@ -1152,12 +1161,18 @@ className="
           </div>
 
           {/* Bottom actions */}
-  <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex ">
+  <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex flex-col items-center">
+            
+            {apiError && !apiError.includes('username') && (
+              <div className="text-red-400 text-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center w-full">
+                {apiError}
+              </div>
+            )}
             
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-2  mx-auto border-[2px] border-b-[4px] border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
+              className="flex-2  w-full mx-auto border-[2px] border-b-[4px] border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
             >
               {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
             </button>

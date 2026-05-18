@@ -424,6 +424,7 @@ function BeamTVInner() {
     const uid = requestedJoin.userId || getAuthedUserId();
     if (!uid) return;
     let cancelled = false;
+    let intervalId = null;
     const tick = async () => {
       if (cancelled) return;
       try {
@@ -431,19 +432,55 @@ function BeamTVInner() {
         // IMPORTANT: GET_USER_ROOM returns exists=true for both viewers and participants.
         // Only redirect when the backend marks the user as a *participant* (host accepted from waitlist).
         if (room?.exists && room?.roomId && room?.role === 'participant') {
-          // Store room so /video-chat can resume
-          localStorage.setItem('currentRoom', JSON.stringify({ roomId: room.roomId, sessionId: room.sessionId || room.roomId }));
+          // Stop polling immediately — prevent double-redirect
+          cancelled = true;
+          if (intervalId) clearInterval(intervalId);
+
+          // Set status to IN_SQUAD BEFORE redirecting — prevents reconcile from removing
+          // this user as "stale participant" (reconcile checks user-service status).
+          // Fire-and-forget — don't await, just let it race ahead of the redirect.
+          try {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+              fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/me/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ status: 'IN_SQUAD' }),
+                keepalive: true,
+              }).catch(() => {});
+            }
+          } catch (_) {}
+
+          // Build partner info from current broadcast participants (best effort)
+          const participants = currentBroadcast?.participants || [];
+          const partner = participants.find(p => String(p?.userId || '') !== String(uid));
+
+          // room.id is the session DB id (roomDetails spreads `id`, not `sessionId`)
+          localStorage.setItem('currentRoom', JSON.stringify({
+            roomId: room.roomId,
+            sessionId: room.id || room.roomId,
+            callType: 'squad',
+            ...(partner ? {
+              partner: {
+                id: partner.userId || '',
+                username: partner.username || 'Host',
+                age: partner.age || '',
+                city: partner.city || '',
+                displayPictureUrl: partner.displayPictureUrl || '/avatar-placeholder.png',
+              }
+            } : {})
+          }));
           router.push('/video-chat');
         }
       } catch (_) {}
     };
-    const id = setInterval(tick, 2000);
+    intervalId = setInterval(tick, 2000);
     tick();
     return () => {
       cancelled = true;
-      clearInterval(id);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, [joinState.state, requestedJoin.userId]);
+  }, [joinState.state, requestedJoin.userId, currentBroadcast]);
 
   const getAuthedUserId = () => {
     const accessToken = localStorage.getItem('accessToken') || '';
@@ -1225,8 +1262,7 @@ function BeamTVInner() {
   }, [status, trySwipeNext]);
 
   return (
-    <div className="h-screen w-screen flex flex-col font-sans overflow-hidden">
-   
+    <div className="h-screen w-screen bg-black flex flex-col font-sans overflow-hidden">
 
       {isLoggedIn() && favouritesPanelOpen && (
         <FavouritesPanel 
@@ -1235,7 +1271,8 @@ function BeamTVInner() {
         />
       )}
 
-      <div className="flex-1 flex p-4  gap-4 min-h-0 min-w-0">
+      {/* p-2 on mobile, p-4 on desktop — matches video-chat spacing */}
+      <div className="flex-1 flex p-2 md:p-4 gap-2 md:gap-4 min-h-0 min-w-0">
         <div
           className={clsx(
             "w-full h-full transition-transform duration-300 ease-out",
@@ -1282,17 +1319,18 @@ function BeamTVInner() {
 
 
              {/* Sound toggle */}
-             <div className="absolute bottom-6 left-6 z-40">
+             <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
                <button
                  type="button"
                  onClick={toggleSound}
                  className={clsx(
-                   'px-4 py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
+                   'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
                    soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
                  )}
                  title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
                >
-                 {soundEnabled ? 'Sound on' : 'Sound off'}
+                 {soundEnabled ? '🔊' : '🔇'}
+                 <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
                </button>
              </div>
 

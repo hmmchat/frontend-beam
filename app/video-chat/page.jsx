@@ -378,11 +378,27 @@ function VideoChatContent() {
       }
 
       if (!info?.roomId) {
-        console.error('[Init] No room ID found!');
-        setStatus('error');
-        setError('No active match found.');
-        setTimeout(() => resumeDiscoveryFromCall(), 200);
-        return;
+        // No roomId in localStorage — try fetching from server before giving up
+        console.warn('[Init] No room ID in localStorage, checking server...');
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (token && uid) {
+            const serverRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+            if (serverRoom?.exists && serverRoom?.roomId && serverRoom?.role === 'participant') {
+              console.log('[Init] Recovered roomId from server:', serverRoom.roomId);
+              info = { roomId: serverRoom.roomId, sessionId: serverRoom.id || serverRoom.roomId };
+              localStorage.setItem('currentRoom', JSON.stringify(info));
+            }
+          }
+        } catch (_) {}
+
+        if (!info?.roomId) {
+          console.error('[Init] No room ID found!');
+          setStatus('error');
+          setError('No active match found.');
+          setTimeout(() => resumeDiscoveryFromCall(), 200);
+          return;
+        }
       }
 
       // Verify active room with retries (handles eventual consistency after room creation).

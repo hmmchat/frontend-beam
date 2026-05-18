@@ -17,7 +17,7 @@ export default function SquadQuickInviteStrip({
   onSeeAll,
   className = '',
 }) {
-  if (!friends?.length) return null;
+
 
   return (
     <div
@@ -34,7 +34,7 @@ export default function SquadQuickInviteStrip({
       </div>
 
 <div className="flex px-5 pt-2 flex-1 flex-row items-center gap-7 overflow-x-auto">
-        {friends.map((f) => {
+        {(friends || []).map((f) => {
           const pending = pendingInviteeIds?.has?.(String(f.friendId));
           return (
 

@@ -173,11 +173,11 @@ export default function MeetSomeoneNew({
     <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
 
 
-<div className="absolute inset-3  mb-20 z-[2] pointer-events-none  flex  overflow-visible">
+<div className="absolute inset-2 mb-20 z-[2] pointer-events-none overflow-visible">
   <svg
     viewBox="0 0 378 681"
-    className=" "
-    preserveAspectRatio="none"
+    className="w-full h-full block"
+    preserveAspectRatio="xMidYMid meet"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -277,7 +277,7 @@ export default function MeetSomeoneNew({
             
             <div className="flex flex-col gap-6 items-center py-6 px-4 w-full">
         
-             <div className="relative w-full flex items-center justify-center   mb-20 ">
+             <div className="relative w-full flex items-center justify-center mb-22">
   
   {/* LEFT BUTTON */}
   <div className="absolute left-0 w-12 h-12 flex items-center justify-center text-white shadow-inner">
@@ -301,7 +301,7 @@ export default function MeetSomeoneNew({
   </div>
 
   {/* CENTER TOGGLE */}
-<div className="flex border border-white/50 p-1 rounded-full w-42 relative shadow-inner h-[40px] ml-0.5">
+<div className="flex border border-white/50  rounded-full w-40 relative shadow-inner h-[40px]  ">
   <div
     className={clsx(
       "absolute top-1 bottom-1 w-[calc(50%-4px)] border bg-black/10 border-white/60 rounded-full transition-all duration-500",
@@ -342,17 +342,17 @@ export default function MeetSomeoneNew({
 </div>
 
 {mode === 'squad' ? (
-  <div className="flex flex-col items-center    w-full ">
+  <div className="flex flex-col items-center     w-full -mt-10 ">
     {squadProductMessage && (
-      <div role="alert" className="w-full rounded-2xl border border-red-400/40 bg-red-950/45 px-4 py-3 text-sm font-medium text-red-50">
+      <div role="alert" className="w-full  rounded-2xl border border-red-400/40 bg-red-950/45 px-4 py-3 text-sm font-medium text-red-50">
         {squadProductMessage}
       </div>
     )}
 
 
-<div className="flex flex-col   ">
+<div className="flex flex-col  gap-6   ">
     {/* Avatars */}
-    <div className="flex flex-wrap items-center justify-center gap-2 ">
+    <div className="flex flex-wrap items-center justify-center gap-2  ">
       {/* Me */}
       <div className="flex flex-col items-center gap-1">
         <div className="w-16 h-16 rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
@@ -444,7 +444,7 @@ export default function MeetSomeoneNew({
           borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px] mx-auto"
           isVideoOn
         />
-      ) : quickInviteFriends?.length > 0 ? (
+      ) : (
         <SquadQuickInviteStrip
           friends={quickInviteFriends}
           busyId={quickInviteBusyId}
@@ -454,8 +454,6 @@ export default function MeetSomeoneNew({
           onSeeAll={() => setIsSquadInviteOpen(true)}
           className="w-full"
         />
-      ) : (
-       <></>
       )}
     </div>
   </div>
@@ -487,7 +485,7 @@ export default function MeetSomeoneNew({
 
 
       {/* Bottom Navigation */}
-      <div className="relative z-10 mb-4 w-full max-w-sm px-4 mx-auto ">
+      <div className="relative z-10 w-full max-w-sm px-4 mx-auto ">
         <div className=" border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 

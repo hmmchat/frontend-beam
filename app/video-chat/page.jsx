@@ -458,6 +458,13 @@ function VideoChatContent() {
       console.log('[Init] Starting media and signaling with room:', info.roomId, 'user:', uid);
       userIdRef.current = uid;
       roomInfoRef.current = info;
+      try {
+        if (sessionStorage.getItem('waitlistJoinRedirect') === '1') {
+          sessionStorage.removeItem('waitlistJoinRedirect');
+          // Beam TV → call redirect: avoid room-health GET /users/room until join-room + first remote.
+          mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
+        }
+      } catch (_) {}
       squadQuickInvitePeersPostedRoomIdRef.current = null;
       setRoomInfo(info);
       if (info.partner) {
@@ -556,6 +563,10 @@ function VideoChatContent() {
         const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
         // If user is no longer in an active room OR room dropped to solo participant, leave stuck call UI.
         const participantCount = Number(roomState?.participantCount || 0);
+        const inWaitlistJoinGrace = Date.now() < (mediaEstablishGraceUntilRef.current || 0);
+        if (inWaitlistJoinGrace && (!roomState?.exists || participantCount <= 1)) {
+          return;
+        }
         if (!roomState?.exists || participantCount <= 1) {
           if (isBroadcastingRef.current) {
             roomHealthFailureCountRef.current = 0;

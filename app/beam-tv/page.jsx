@@ -436,30 +436,38 @@ function BeamTVInner() {
           cancelled = true;
           if (intervalId) clearInterval(intervalId);
 
-          // Set status to IN_SQUAD BEFORE redirecting — prevents reconcile from removing
-          // this user as "stale participant" (reconcile checks user-service status).
-          // Fire-and-forget — don't await, just let it race ahead of the redirect.
+          // Tell streaming WS not to remove our new participant row when this Beam TV tab closes.
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            try {
+              send({
+                type: 'preserve-participant-on-close',
+                data: { roomId: room.roomId }
+              });
+            } catch (_) {}
+          }
+
+          // Align user-service status with broadcast vs squad (backend sets IN_BROADCAST on accept).
+          const targetStatus = room.isBroadcasting ? 'IN_BROADCAST' : 'IN_SQUAD';
           try {
             const token = localStorage.getItem('accessToken');
             if (token) {
-              fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/me/status`, {
+              await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/me/status`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ status: 'IN_SQUAD' }),
-                keepalive: true,
-              }).catch(() => {});
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ status: targetStatus })
+              });
             }
           } catch (_) {}
 
           // Build partner info from current broadcast participants (best effort)
-          const participants = currentBroadcast?.participants || [];
+          const participants = currentBroadcast?.participants || room.participants || [];
           const partner = participants.find(p => String(p?.userId || '') !== String(uid));
 
           // room.id is the session DB id (roomDetails spreads `id`, not `sessionId`)
           localStorage.setItem('currentRoom', JSON.stringify({
             roomId: room.roomId,
             sessionId: room.id || room.roomId,
-            callType: 'squad',
+            callType: room.isBroadcasting ? 'broadcast' : 'squad',
             ...(partner ? {
               partner: {
                 id: partner.userId || '',
@@ -470,6 +478,9 @@ function BeamTVInner() {
               }
             } : {})
           }));
+          try {
+            sessionStorage.setItem('waitlistJoinRedirect', '1');
+          } catch (_) {}
           router.push('/video-chat');
         }
       } catch (_) {}

@@ -31,12 +31,50 @@ const getWsUrl = () => {
     return 'ws://localhost:3006/streaming/ws'; 
   }
 };
+const buildWsUrl = (baseUrl, params = {}) => {
+  const [base, query = ''] = String(baseUrl || '').split('?');
+  const qs = new URLSearchParams(query);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== '') {
+      qs.set(key, String(value));
+    }
+  });
+  const queryString = qs.toString();
+  return queryString ? `${base}?${queryString}` : base;
+};
+const getRerouteWsUrl = (reroute, fallbackUrl) => {
+  const raw = reroute?.wsUrl || reroute?.httpUrl;
+  if (!raw) return fallbackUrl;
+  const wsUrl = String(raw)
+    .replace(/^https:\/\//, 'wss://')
+    .replace(/^http:\/\//, 'ws://')
+    .replace(/\/+$/, '');
+  return wsUrl.includes('/streaming/ws') ? wsUrl : `${wsUrl}/streaming/ws`;
+};
 
 const isRealtimeDebugEnabled = () =>
   process.env.NEXT_PUBLIC_REALTIME_DEBUG === 'true';
 
 const realtimeDebug = (...args) => {
   if (isRealtimeDebugEnabled()) console.log(...args);
+};
+
+const isMobileRuntime = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(max-width: 767px)').matches ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator?.userAgent || '')
+  );
+};
+
+const getPreferredBroadcastLayers = ({ kind, source } = {}) => {
+  if (kind !== 'video') return undefined;
+  if (!isMobileRuntime()) {
+    return { spatialLayer: 2, temporalLayer: 2 };
+  }
+  return source === 'screen'
+    ? { spatialLayer: 1, temporalLayer: 2 }
+    : { spatialLayer: 0, temporalLayer: 2 };
 };
 
 
@@ -99,6 +137,7 @@ function BeamTVInner() {
   const lastInitialFetchKeyRef = useRef('');
   const chatProfileCacheRef = useRef(new Map());
   const transitionLockRef = useRef(false);
+  const sfuRerouteAttemptRef = useRef(0);
   const [feedTransitionPhase, setFeedTransitionPhase] = useState('idle'); // idle | out | pre-in | in
 
   const cleanup = useCallback((opts = {}) => {
@@ -144,7 +183,7 @@ function BeamTVInner() {
     }
   }, []);
 
-  const consumeBroadcastProducer = useCallback((roomId, producerId, rtpCapabilities) => {
+  const consumeBroadcastProducer = useCallback((roomId, producerId, rtpCapabilities, producerMeta = {}) => {
     const producerKey = String(producerId || '');
     if (!roomId || !producerKey || !rtpCapabilities) return;
     if (consumedProducerIdsRef.current.has(producerKey) || consumingProducerIdsRef.current.has(producerKey)) {
@@ -156,7 +195,7 @@ function BeamTVInner() {
       if (!consumeRetryTimeoutsRef.current.has(producerKey)) {
         const tid = setTimeout(() => {
           consumeRetryTimeoutsRef.current.delete(producerKey);
-          consumeBroadcastProducer(roomId, producerKey, rtpCapabilities);
+          consumeBroadcastProducer(roomId, producerKey, rtpCapabilities, producerMeta);
         }, 750);
         consumeRetryTimeoutsRef.current.set(producerKey, tid);
       }
@@ -164,16 +203,38 @@ function BeamTVInner() {
     }
 
     consumingProducerIdsRef.current.add(producerKey);
+    const preferredLayers = getPreferredBroadcastLayers(producerMeta);
     send({
       type: 'consume-broadcast',
       data: {
         roomId,
         transportId: transport.id,
         producerId: producerKey,
-        rtpCapabilities
+        rtpCapabilities,
+        ...(preferredLayers ? { preferredLayers } : {})
       }
     });
   }, [send]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const applyVisibilityPolicy = () => {
+      const hidden = document.hidden;
+      Object.values(consumersRef.current || {}).forEach((consumer) => {
+        if (consumer?.kind !== 'video') return;
+        try {
+          if (hidden) {
+            consumer.pause?.();
+          } else {
+            consumer.resume?.();
+          }
+        } catch (_) {}
+      });
+    };
+    document.addEventListener('visibilitychange', applyVisibilityPolicy);
+    applyVisibilityPolicy();
+    return () => document.removeEventListener('visibilitychange', applyVisibilityPolicy);
+  }, []);
 
   // Hydrate session id on mount
   useEffect(() => {
@@ -431,51 +492,75 @@ function BeamTVInner() {
       } catch (e) {}
     }
 
-    // Backend requires either token or deviceId for anonymous access on WS connection
-    const qs = new URLSearchParams();
-    qs.set('userId', userId);
-    qs.set('deviceId', did);
-    if (accessToken) qs.set('token', accessToken);
-    const wsUrlWithAuth = `${WS_URL}?${qs.toString()}`;
-    const ws = new WebSocket(wsUrlWithAuth);
-    wsRef.current = ws;
+    sfuRerouteAttemptRef.current = 0;
 
-    ws.onopen = () => {
-      realtimeDebug('[BeamTV] WS connected, joining as viewer...');
-      // Guard against accidental re-joins to the same room (can happen during fast UI transitions)
-      const conn = wsRef.current;
-      if (conn && conn.__joinedRoomId === roomId) return;
-      if (conn) conn.__joinedRoomId = roomId;
-      send({ type: 'join-as-viewer', data: { roomId } });
-    };
+    // Backend requires either token or deviceId for anonymous access on WS connection.
+    // roomId lets the API gateway route the initial WebSocket upgrade to the owning SFU node.
+    const openBroadcastSocket = (baseUrl = WS_URL) => {
+      const wsUrlWithAuth = buildWsUrl(baseUrl, {
+        userId,
+        deviceId: did,
+        roomId,
+        ...(accessToken ? { token: accessToken } : {})
+      });
+      const ws = new WebSocket(wsUrlWithAuth);
+      wsRef.current = ws;
 
-    ws.onmessage = async (e) => {
-      const msg = JSON.parse(e.data);
-      realtimeDebug('[BeamTV] WS message:', msg.type, msg);
+      ws.onopen = () => {
+        realtimeDebug('[BeamTV] WS connected, joining as viewer...');
+        // Guard against accidental re-joins to the same room (can happen during fast UI transitions)
+        const conn = wsRef.current;
+        if (conn && conn.__joinedRoomId === roomId) return;
+        if (conn) conn.__joinedRoomId = roomId;
+        send({ type: 'join-as-viewer', data: { roomId } });
+      };
 
-      if (msg.type === 'error') {
-        console.error('[BeamTV] WS Error:', msg.data);
+      ws.onmessage = async (e) => {
+        const msg = JSON.parse(e.data);
+        realtimeDebug('[BeamTV] WS message:', msg.type, msg);
+
+        if (msg.type === 'room-reroute') {
+          if (sfuRerouteAttemptRef.current >= 2) {
+            setStatus('error');
+            setError('Could not route broadcast to the assigned media server.');
+            return;
+          }
+          sfuRerouteAttemptRef.current += 1;
+          const rerouteUrl = getRerouteWsUrl(msg.data, WS_URL);
+          try {
+            ws.onclose = null;
+            ws.close();
+          } catch (_) {}
+          openBroadcastSocket(rerouteUrl);
+          return;
+        }
+
+        if (msg.type === 'error') {
+          console.error('[BeamTV] WS Error:', msg.data);
+          setStatus('error');
+          setError(msg.data?.error || 'A streaming error occurred.');
+          return;
+        }
+
+        try {
+          await handleSignal(msg, roomId, userId);
+        } catch (err) {
+          console.error('[BeamTV] Signal handling error:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('[BeamTV] WebSocket error:', err);
         setStatus('error');
-        setError(msg.data?.error || 'A streaming error occurred.');
-        return;
-      }
+        setError('Connection failed.');
+      };
 
-      try {
-        await handleSignal(msg, roomId, userId);
-      } catch (err) {
-        console.error('[BeamTV] Signal handling error:', err);
-      }
+      ws.onclose = () => {
+        realtimeDebug('[BeamTV] WebSocket closed');
+      };
     };
 
-    ws.onerror = (err) => {
-      console.error('[BeamTV] WebSocket error:', err);
-      setStatus('error');
-      setError('Connection failed.');
-    };
-
-    ws.onclose = () => {
-      realtimeDebug('[BeamTV] WebSocket closed');
-    };
+    openBroadcastSocket();
   };
 
   // If host accepts this user from waitlist, backend moves them into the call.
@@ -968,7 +1053,22 @@ function BeamTVInner() {
           if (p?.producerId && p?.userId) {
             producerUserIdByProducerIdRef.current[p.producerId] = p.userId;
           }
-          consumeBroadcastProducer(roomId, p.producerId, d.rtpCapabilities);
+          consumeBroadcastProducer(roomId, p.producerId, d.rtpCapabilities, {
+            kind: p.kind,
+            source: p.source
+          });
+        });
+        break;
+      }
+      case 'new-producer': {
+        const producerId = data?.producerId;
+        if (!producerId || !deviceRef.current) break;
+        if (data?.userId) {
+          producerUserIdByProducerIdRef.current[producerId] = data.userId;
+        }
+        consumeBroadcastProducer(roomId, producerId, deviceRef.current.rtpCapabilities, {
+          kind: data.kind,
+          source: data.source
         });
         break;
       }
@@ -984,13 +1084,23 @@ function BeamTVInner() {
           producerId: data.producerId,
           kind: data.kind,
           rtpParameters: data.rtpParameters,
-          appData: { remoteUserId: data.userId } // Might be undefined depending on backend
+          appData: { remoteUserId: data.userId }
         });
 
         consumersRef.current[consumer.id] = consumer;
+        consumer.on?.('transportclose', () => {
+          delete consumersRef.current[consumer.id];
+        });
+        consumer.track.onended = () => {
+          delete consumersRef.current[consumer.id];
+          consumedProducerIdsRef.current.delete(String(data.producerId || ''));
+        };
 
         const { track } = consumer;
-        const remoteUserId = producerUserIdByProducerIdRef.current?.[data.producerId] || 'broadcaster';
+        const remoteUserId = data.userId || producerUserIdByProducerIdRef.current?.[data.producerId] || 'broadcaster';
+        if (data.userId) {
+          producerUserIdByProducerIdRef.current[data.producerId] = data.userId;
+        }
         const vSource =
           data.kind === 'video' ? data.source || 'camera' : 'audio';
         producerIdToMetaRef.current.set(String(data.producerId), {

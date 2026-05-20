@@ -164,7 +164,7 @@ function HistoryContent() {
           </div>
 
           <div>
-            <img src="/LOGO.png" alt="Logo" className="w-24 md:w-32" />
+            <img src="/logo.png" alt="Logo" className="w-24 md:w-32" />
           </div>
         </div>
 

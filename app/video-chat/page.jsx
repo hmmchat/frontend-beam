@@ -20,6 +20,7 @@ import WaitlistModal from '@/components/VideoChat/WaitlistModal';
 import RandomnessModal from '@/components/VideoChat/RandomnessModal';
 import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
 import QuickActions from '@/components/video-chat/QuickActions';
+import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserControls';
 
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
@@ -148,6 +149,7 @@ function VideoChatContent() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastHud, setBroadcastHud] = useState({ viewerCount: 0, waitlistCount: 0, lastShareMsg: '', shareOpen: false, shareUrl: '' });
   const [showWaitlist, setShowWaitlist] = useState(false);
+  const [isDareOpen, setIsDareOpen] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [waitlist, setWaitlist] = useState([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
@@ -157,6 +159,14 @@ function VideoChatContent() {
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [loadingMeme, setLoadingMeme] = useState(null);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
+
+  useEffect(() => {
+    apiRequest(API.DISCOVERY.GET_ACTIVE_CITY_OPTIONS)
+      .then(res => setCityOptions(res.options || []))
+      .catch(e => console.error('Error fetching city options:', e));
+  }, []);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
@@ -1994,7 +2004,10 @@ function VideoChatContent() {
     toggleCam,
     isGiftModalOpen,
     setIsGiftModalOpen,
-    setIsCoinModalOpen
+    isDareOpen,
+    setIsDareOpen,
+    setIsCoinModalOpen,
+    coins
   };
   const getRemoteFriendTileProps = (streamInfo) => {
     const uid = String(streamInfo.userId ?? '');
@@ -2021,6 +2034,12 @@ function VideoChatContent() {
   };
 
   /** Matched partner may use partnerInfo as fallback; every other remote uses only that user’s fetched profile. */
+  const getCityLabel = (val) => {
+    if (!val) return '';
+    const opt = cityOptions.find(c => c.value === val);
+    return opt ? (opt.label || opt.name || val) : val;
+  };
+
   const getRemoteTileProfile = (s) => {
     const pid = partnerInfo.id != null && partnerInfo.id !== '' ? String(partnerInfo.id) : '';
     const isPartner = pid !== '' && sameParticipantId(s.userId, pid);
@@ -2028,14 +2047,14 @@ function VideoChatContent() {
       return {
         name: s.name || partnerInfo.name || 'Matched!',
         age: s.age || partnerInfo.age || '',
-        city: s.city || partnerInfo.city || '',
+        city: getCityLabel(s.city || partnerInfo.city || ''),
         displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '/avatar-placeholder.png'
       };
     }
     return {
       name: s.name || 'Guest',
       age: s.age || '',
-      city: s.city || '',
+      city: getCityLabel(s.city || ''),
       displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png'
     };
   };
@@ -2118,7 +2137,25 @@ function VideoChatContent() {
         ) : remoteStreams.length === 1 ? (
           /* 1:1 Matched Layout: Peer 1 | Local */
           <>
+
+<div className="absolute inset-3 bottom-23 flex justify-center md:hidden z-10 pointer-events-none">
+  <svg
+    viewBox="0 0 370 673"
+    preserveAspectRatio="none"
+    className="w-full h-full"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+<mask id="path-1-inside-1_10925_4864" fill="white">
+<path d="M286.378 438C291.904 438 296.563 441.876 300.652 445.593L316.278 459.799C319.96 463.146 324.757 465 329.732 465H348.457C352.2 465 354.071 465 356.088 465.47C362.312 466.922 368.078 472.688 369.53 478.912C370 480.929 370 482.619 370 486V625C370 641.802 370 650.203 366.73 656.62C363.854 662.265 359.265 666.854 353.62 669.73C347.203 673 338.802 673 322 673H48C31.1984 673 22.7972 673 16.3799 669.73C10.7352 666.854 6.1457 662.265 3.26953 656.62C-0.000273228 650.203 0 641.802 0 625V486C0 482.619 0 480.929 0.470291 478.912C1.92181 472.688 7.6876 466.922 13.9123 465.47C15.9291 465 17.8004 465 21.5429 465H38.7676C43.7429 465 48.5402 463.146 52.2217 459.799L67.8477 445.593C71.9366 441.876 76.5957 438 82.1218 438H286.378ZM322 0C338.802 0 347.203 -0.000273228 353.62 3.26953C359.265 6.1457 363.854 10.7352 366.73 16.3799C370 22.7972 370 31.1984 370 48V375C370 378.381 370 380.071 369.53 382.088C368.078 388.312 362.312 394.078 356.088 395.53C354.071 396 352.2 396 348.457 396H330.39C325.023 396 319.882 398.158 316.121 401.986L299.886 418.517C297.491 420.955 294.485 423 291.067 423H77.4328C74.0148 423 71.0093 420.955 68.6143 418.517L52.3789 401.986C48.6184 398.158 43.477 396 38.1104 396H21.5429C17.8004 396 15.9291 396 13.9123 395.53C7.6876 394.078 1.92181 388.312 0.470291 382.088C0 380.071 0 378.381 0 375V48C0 31.1984 -0.000272485 22.7972 3.26953 16.3799C6.1457 10.7352 10.7352 6.1457 16.3799 3.26953C22.7972 -0.00027298 31.1984 0 48 0H322Z"/>
+</mask>
+<path d="M300.652 445.593L301.325 444.853H301.325L300.652 445.593ZM316.278 459.799L315.606 460.539H315.606L316.278 459.799ZM366.73 656.62L367.621 657.074V657.074L366.73 656.62ZM353.62 669.73L354.074 670.621H354.074L353.62 669.73ZM48 673V674V673ZM16.3799 669.73L15.9259 670.621H15.9259L16.3799 669.73ZM3.26953 656.62L2.37853 657.074H2.37853L3.26953 656.62ZM0 486H-1H0ZM52.2217 459.799L52.8944 460.539H52.8944L52.2217 459.799ZM67.8477 445.593L67.175 444.853H67.175L67.8477 445.593ZM353.62 3.26953L354.074 2.37853L354.074 2.37852L353.62 3.26953ZM366.73 16.3799L367.621 15.9259V15.9259L366.73 16.3799ZM330.39 396V395H330.39L330.39 396ZM316.121 401.986L316.835 402.687V402.687L316.121 401.986ZM299.886 418.517L299.172 417.816V417.816L299.886 418.517ZM68.6143 418.517L69.3277 417.816H69.3277L68.6143 418.517ZM52.3789 401.986L51.6655 402.687H51.6655L52.3789 401.986ZM38.1104 396L38.1104 395H38.1104V396ZM0 48H-1H0ZM3.26953 16.3799L2.37853 15.9259L2.37852 15.9259L3.26953 16.3799ZM16.3799 3.26953L15.9259 2.37852L15.9259 2.37853L16.3799 3.26953ZM48 0V-1V0ZM13.9123 395.53L14.1394 394.556L13.9123 395.53ZM0.470291 382.088L-0.503582 382.315L0.470291 382.088ZM0.470291 478.912L-0.503582 478.685L0.470291 478.912ZM13.9123 465.47L13.6852 464.496L13.9123 465.47ZM356.088 465.47L356.315 464.496L356.088 465.47ZM369.53 478.912L368.556 479.139L369.53 478.912ZM369.53 382.088L370.504 382.315L369.53 382.088ZM356.088 395.53L356.315 396.504L356.088 395.53ZM300.652 445.593L299.98 446.333L315.606 460.539L316.278 459.799L316.951 459.059L301.325 444.853L300.652 445.593ZM316.278 459.799L315.606 460.539C319.471 464.053 324.508 466 329.732 466V465V464C325.006 464 320.448 462.238 316.951 459.059L316.278 459.799ZM329.732 465V466H348.457V465V464H329.732V465ZM370 486H369V625H370H371V486H370ZM370 625H369C369 633.417 368.999 639.67 368.595 644.623C368.191 649.564 367.391 653.122 365.839 656.166L366.73 656.62L367.621 657.074C369.34 653.701 370.174 649.85 370.588 644.786C371.001 639.733 371 633.384 371 625H370ZM366.73 656.62L365.839 656.166C363.059 661.623 358.623 666.059 353.166 668.839L353.62 669.73L354.074 670.621C359.907 667.649 364.649 662.907 367.621 657.074L366.73 656.62ZM353.62 669.73L353.166 668.839C350.122 670.391 346.564 671.191 341.623 671.595C336.67 671.999 330.417 672 322 672V673V674C330.384 674 336.733 674.001 341.786 673.588C346.85 673.174 350.701 672.34 354.074 670.621L353.62 669.73ZM322 673V672H48V673V674H322V673ZM48 673V672C39.5827 672 33.3298 671.999 28.3773 671.595C23.4364 671.191 19.8781 670.391 16.8339 668.839L16.3799 669.73L15.9259 670.621C19.299 672.34 23.1499 673.174 28.2144 673.588C33.2673 674.001 39.6157 674 48 674V673ZM16.3799 669.73L16.8339 668.839C11.3773 666.059 6.94083 661.623 4.16053 656.166L3.26953 656.62L2.37853 657.074C5.35057 662.907 10.093 667.649 15.9259 670.621L16.3799 669.73ZM3.26953 656.62L4.16054 656.166C2.60944 653.122 1.80888 649.564 1.40527 644.623C1.00071 639.67 1 633.417 1 625H0H-1C-1 633.384 -1.00085 639.733 -0.588091 644.786C-0.174383 649.85 0.659815 653.701 2.37853 657.074L3.26953 656.62ZM0 625H1V486H0H-1V625H0ZM21.5429 465V466H38.7676V465V464H21.5429V465ZM38.7676 465V466C43.9916 466 49.0288 464.053 52.8944 460.539L52.2217 459.799L51.549 459.059C48.0517 462.238 43.4942 464 38.7676 464V465ZM52.2217 459.799L52.8944 460.539L68.5203 446.333L67.8477 445.593L67.175 444.853L51.549 459.059L52.2217 459.799ZM82.1218 438V439H286.378V438V437H82.1218V438ZM322 0V1C330.417 1 336.67 1.00071 341.623 1.40527C346.564 1.80888 350.122 2.60944 353.166 4.16054L353.62 3.26953L354.074 2.37852C350.701 0.659815 346.85 -0.174383 341.786 -0.588091C336.733 -1.00085 330.384 -1 322 -1V0ZM353.62 3.26953L353.166 4.16053C358.623 6.94083 363.059 11.3773 365.839 16.8339L366.73 16.3799L367.621 15.9259C364.649 10.093 359.907 5.35057 354.074 2.37853L353.62 3.26953ZM366.73 16.3799L365.839 16.8339C367.391 19.8781 368.191 23.4364 368.595 28.3773C368.999 33.3298 369 39.5827 369 48H370H371C371 39.6157 371.001 33.2673 370.588 28.2144C370.174 23.1499 369.34 19.299 367.621 15.9259L366.73 16.3799ZM370 48H369V375H370H371V48H370ZM348.457 396V395H330.39V396V397H348.457V396ZM330.39 396L330.39 395C324.755 395 319.356 397.265 315.408 401.286L316.121 401.986L316.835 402.687C320.407 399.05 325.291 397 330.39 397L330.39 396ZM316.121 401.986L315.408 401.286L299.172 417.816L299.886 418.517L300.599 419.217L316.835 402.687L316.121 401.986ZM291.067 423V422H77.4328V423V424H291.067V423ZM68.6143 418.517L69.3277 417.816L53.0924 401.286L52.3789 401.986L51.6655 402.687L67.9008 419.217L68.6143 418.517ZM52.3789 401.986L53.0924 401.286C49.1439 397.265 43.7454 395 38.1104 395L38.1104 396L38.1103 397C43.2086 397 48.093 399.05 51.6655 402.687L52.3789 401.986ZM38.1104 396V395H21.5429V396V397H38.1104V396ZM0 375H1V48H0H-1V375H0ZM0 48H1C1 39.5827 1.00071 33.3298 1.40527 28.3773C1.80888 23.4364 2.60944 19.8781 4.16054 16.8339L3.26953 16.3799L2.37852 15.9259C0.659815 19.299 -0.174383 23.1499 -0.588091 28.2144C-1.00085 33.2673 -1 39.6157 -1 48H0ZM3.26953 16.3799L4.16053 16.8339C6.94083 11.3773 11.3773 6.94083 16.8339 4.16053L16.3799 3.26953L15.9259 2.37853C10.093 5.35057 5.35057 10.093 2.37853 15.9259L3.26953 16.3799ZM16.3799 3.26953L16.8339 4.16054C19.8781 2.60944 23.4364 1.80888 28.3773 1.40527C33.3298 1.00071 39.5827 1 48 1V0V-1C39.6157 -1 33.2673 -1.00085 28.2144 -0.588091C23.1499 -0.174383 19.299 0.659815 15.9259 2.37852L16.3799 3.26953ZM48 0V1H322V0V-1H48V0ZM21.5429 396V395C17.7648 395 16.0208 394.995 14.1394 394.556L13.9123 395.53L13.6852 396.504C15.8374 397.005 17.8359 397 21.5429 397V396ZM0 375H-1C-1 378.353 -1.00489 380.165 -0.503582 382.315L0.470291 382.088L1.44416 381.861C1.00489 379.977 1 378.408 1 375H0ZM13.9123 395.53L14.1394 394.556C8.28548 393.191 2.80922 387.715 1.44416 381.861L0.470291 382.088L-0.503582 382.315C1.0344 388.91 7.08971 394.966 13.6852 396.504L13.9123 395.53ZM299.886 418.517L299.172 417.816C296.843 420.188 294.082 422 291.067 422V423V424C294.889 424 298.138 421.723 300.599 419.217L299.886 418.517ZM77.4328 423V422C74.4181 422 71.6571 420.188 69.3277 417.816L68.6143 418.517L67.9008 419.217C70.3616 421.723 73.6115 424 77.4328 424V423ZM67.8477 445.593L68.5203 446.333C72.6523 442.576 77.0374 439 82.1218 439V438V437C76.154 437 71.221 441.175 67.175 444.853L67.8477 445.593ZM0 486H1C1 482.592 1.00489 481.023 1.44416 479.139L0.470291 478.912L-0.503582 478.685C-1.00489 480.835 -1 482.647 -1 486H0ZM21.5429 465V464C17.8359 464 15.8374 463.995 13.6852 464.496L13.9123 465.47L14.1394 466.444C16.0208 466.005 17.7648 466 21.5429 466V465ZM0.470291 478.912L1.44416 479.139C2.80922 473.285 8.28548 467.809 14.1394 466.444L13.9123 465.47L13.6852 464.496C7.08971 466.034 1.0344 472.09 -0.503582 478.685L0.470291 478.912ZM348.457 465V466C352.235 466 353.979 466.005 355.861 466.444L356.088 465.47L356.315 464.496C354.163 463.995 352.164 464 348.457 464V465ZM370 486H371C371 482.647 371.005 480.835 370.504 478.685L369.53 478.912L368.556 479.139C368.995 481.023 369 482.592 369 486H370ZM356.088 465.47L355.861 466.444C361.715 467.809 367.191 473.285 368.556 479.139L369.53 478.912L370.504 478.685C368.966 472.09 362.91 466.034 356.315 464.496L356.088 465.47ZM370 375H369C369 378.408 368.995 379.977 368.556 381.861L369.53 382.088L370.504 382.315C371.005 380.165 371 378.353 371 375H370ZM348.457 396V397C352.164 397 354.163 397.005 356.315 396.504L356.088 395.53L355.861 394.556C353.979 394.995 352.235 395 348.457 395V396ZM369.53 382.088L368.556 381.861C367.191 387.715 361.715 393.191 355.861 394.556L356.088 395.53L356.315 396.504C362.91 394.966 368.966 388.91 370.504 382.315L369.53 382.088ZM300.652 445.593L301.325 444.853C297.279 441.175 292.346 437 286.378 437V438V439C291.463 439 295.848 442.576 299.98 446.333L300.652 445.593Z" fill="white" fill-opacity="0.3" mask="url(#path-1-inside-1_10925_4864)"/>
+</svg>
+
+          </div>
+
+
             <RemoteVideoTile
+              className="h-[60%] md:h-auto md:flex-1"
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
               stream={remoteStreams[0].stream}
@@ -2128,10 +2165,13 @@ function VideoChatContent() {
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
               showLeaveNextButton={status === 'connected'}
+              leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
             />
-             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
+
+
+             <div className={clsx('h-[45%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
                {!showChatInput && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                    <button
@@ -2157,7 +2197,7 @@ function VideoChatContent() {
                      <span className="text-lg leading-none -mt-[1px]">+</span>
                    </button>
 
-                   <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3 border border-white/10 backdrop-blur-md ">
+                   <div className="bg-black/50 rounded-full px-4 py-2 flex items-center gap-3backdrop-blur-md ">
                      <button
                        type="button"
                        onClick={() => setOverlay({ open: true, url: '/inbox', title: 'Messages' })}
@@ -2185,15 +2225,49 @@ function VideoChatContent() {
                    </div>
                  </div>
                )}
-               <LocalVideoSection {...localVideoProps} />
+
+
+
+                <LocalVideoSection {...localVideoProps} />
+
             </div>
+
+
+
+            
           </>
         ) : remoteStreams.length === 2 ? (
           /* Multi-User Layout (3 participants): Peer 1 (LEFT) | Peer 2 + Local (RIGHT) */
           <>
+
+
+<div className="absolute inset-3 bottom-23 flex justify-center md:hidden z-10 pointer-events-none">
+  <svg
+    viewBox="0 0 370 673"
+    preserveAspectRatio="none"
+    className="w-full h-full"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+<mask id="path-1-inside-1_10945_46942" fill="white">
+<path d="M130 438C146.802 438 155.203 438 161.62 441.27C167.265 444.146 171.854 448.735 174.73 454.38C178 460.797 178 469.198 178 486V625C178 641.802 178 650.203 174.73 656.62C171.854 662.265 167.265 666.854 161.62 669.73C155.203 673 146.802 673 130 673H48C31.1984 673 22.7972 673 16.3799 669.73C10.7352 666.854 6.1457 662.265 3.26953 656.62C-0.000273227 650.203 7.85747e-10 641.802 7.85747e-10 625V486C7.85762e-10 482.619 7.8577e-10 480.929 0.470291 478.912C1.92181 472.688 7.6876 466.922 13.9123 465.47C15.9291 465 17.8004 465 21.5429 465H38.7676C43.7429 465 48.5402 463.146 52.2217 459.799L67.8477 445.593C71.9366 441.876 76.5957 438 82.1218 438H130ZM286.378 438C291.904 438 296.563 441.876 300.652 445.593L316.278 459.799C319.96 463.146 324.757 465 329.732 465H348.457C352.2 465 354.071 465 356.088 465.47C362.312 466.922 368.078 472.688 369.53 478.912C370 480.929 370 482.619 370 486V625C370 641.802 370 650.203 366.73 656.62C363.854 662.265 359.265 666.854 353.62 669.73C347.203 673 338.802 673 322 673H240C223.198 673 214.797 673 208.38 669.73C202.735 666.854 198.146 662.265 195.27 656.62C192 650.203 192 641.802 192 625V486C192 469.198 192 460.797 195.27 454.38C198.146 448.735 202.735 444.146 208.38 441.27C214.797 438 223.198 438 240 438H286.378ZM322 7.85747e-10C338.802 7.85747e-10 347.203 -0.000273227 353.62 3.26953C359.265 6.1457 363.854 10.7352 366.73 16.3799C370 22.7972 370 31.1984 370 48V375C370 378.381 370 380.071 369.53 382.088C368.078 388.312 362.312 394.078 356.088 395.53C354.071 396 352.2 396 348.457 396H330.39C325.023 396 319.882 398.157 316.121 401.986L299.886 418.517C297.491 420.955 294.485 423 291.067 423H77.4328C74.0148 423 71.0093 420.955 68.6143 418.517L52.3789 401.986C48.6184 398.157 43.477 396 38.1104 396H21.5429C17.8004 396 15.9291 396 13.9123 395.53C7.6876 394.078 1.92181 388.312 0.470291 382.088C7.85748e-10 380.071 7.85747e-10 378.381 7.85747e-10 375V48C7.85915e-10 31.1984 -0.000272485 22.7972 3.26953 16.3799C6.1457 10.7352 10.7352 6.1457 16.3799 3.26953C22.7972 -0.000273227 31.1984 7.85747e-10 48 7.85747e-10H322Z"/>
+</mask>
+<path d="M161.62 441.27L162.074 440.379V440.379L161.62 441.27ZM174.73 454.38L175.621 453.926V453.926L174.73 454.38ZM174.73 656.62L175.621 657.074V657.074L174.73 656.62ZM161.62 669.73L162.074 670.621V670.621L161.62 669.73ZM48 673V674V673ZM16.3799 669.73L15.9259 670.621H15.9259L16.3799 669.73ZM3.26953 656.62L2.37853 657.074H2.37853L3.26953 656.62ZM0 486H-1H0ZM52.2217 459.799L52.8944 460.539H52.8944L52.2217 459.799ZM67.8477 445.593L67.175 444.853H67.175L67.8477 445.593ZM300.652 445.593L301.325 444.853H301.325L300.652 445.593ZM316.278 459.799L315.606 460.539H315.606L316.278 459.799ZM366.73 656.62L367.621 657.074V657.074L366.73 656.62ZM353.62 669.73L354.074 670.621H354.074L353.62 669.73ZM240 673V674V673ZM208.38 669.73L207.926 670.621V670.621L208.38 669.73ZM195.27 656.62L194.379 657.074V657.074L195.27 656.62ZM192 486H191H192ZM195.27 454.38L194.379 453.926V453.926L195.27 454.38ZM208.38 441.27L207.926 440.379V440.379L208.38 441.27ZM353.62 3.26953L354.074 2.37853L354.074 2.37852L353.62 3.26953ZM366.73 16.3799L367.621 15.9259V15.9259L366.73 16.3799ZM330.39 396V395H330.39L330.39 396ZM316.121 401.986L316.835 402.687V402.687L316.121 401.986ZM299.886 418.517L299.172 417.816V417.816L299.886 418.517ZM68.6143 418.517L69.3277 417.816H69.3277L68.6143 418.517ZM52.3789 401.986L51.6655 402.687H51.6655L52.3789 401.986ZM38.1104 396L38.1104 395H38.1104V396ZM0 48H-1H0ZM3.26953 16.3799L2.37853 15.9259L2.37852 15.9259L3.26953 16.3799ZM16.3799 3.26953L15.9259 2.37852L15.9259 2.37853L16.3799 3.26953ZM369.53 382.088L370.504 382.315L369.53 382.088ZM356.088 395.53L356.315 396.504L356.088 395.53ZM356.088 465.47L356.315 464.496L356.088 465.47ZM369.53 478.912L368.556 479.139L369.53 478.912ZM13.9123 395.53L14.1394 394.556L13.9123 395.53ZM0.470291 382.088L-0.503582 382.315L0.470291 382.088ZM0.470291 478.912L-0.503582 478.685L0.470291 478.912ZM13.9123 465.47L13.6852 464.496L13.9123 465.47ZM130 438V439C138.417 439 144.67 439.001 149.623 439.405C154.564 439.809 158.122 440.609 161.166 442.161L161.62 441.27L162.074 440.379C158.701 438.66 154.85 437.826 149.786 437.412C144.733 436.999 138.384 437 130 437V438ZM161.62 441.27L161.166 442.161C166.623 444.941 171.059 449.377 173.839 454.834L174.73 454.38L175.621 453.926C172.649 448.093 167.907 443.351 162.074 440.379L161.62 441.27ZM174.73 454.38L173.839 454.834C175.391 457.878 176.191 461.436 176.595 466.377C176.999 471.33 177 477.583 177 486H178H179C179 477.616 179.001 471.267 178.588 466.214C178.174 461.15 177.34 457.299 175.621 453.926L174.73 454.38ZM178 486H177V625H178H179V486H178ZM178 625H177C177 633.417 176.999 639.67 176.595 644.623C176.191 649.564 175.391 653.122 173.839 656.166L174.73 656.62L175.621 657.074C177.34 653.701 178.174 649.85 178.588 644.786C179.001 639.733 179 633.384 179 625H178ZM174.73 656.62L173.839 656.166C171.059 661.623 166.623 666.059 161.166 668.839L161.62 669.73L162.074 670.621C167.907 667.649 172.649 662.907 175.621 657.074L174.73 656.62ZM161.62 669.73L161.166 668.839C158.122 670.391 154.564 671.191 149.623 671.595C144.67 671.999 138.417 672 130 672V673V674C138.384 674 144.733 674.001 149.786 673.588C154.85 673.174 158.701 672.34 162.074 670.621L161.62 669.73ZM130 673V672H48V673V674H130V673ZM48 673V672C39.5827 672 33.3298 671.999 28.3773 671.595C23.4364 671.191 19.8781 670.391 16.8339 668.839L16.3799 669.73L15.9259 670.621C19.299 672.34 23.1499 673.174 28.2144 673.588C33.2673 674.001 39.6157 674 48 674V673ZM16.3799 669.73L16.8339 668.839C11.3773 666.059 6.94083 661.623 4.16053 656.166L3.26953 656.62L2.37853 657.074C5.35057 662.907 10.093 667.649 15.9259 670.621L16.3799 669.73ZM3.26953 656.62L4.16054 656.166C2.60944 653.122 1.80888 649.564 1.40527 644.623C1.00071 639.67 1 633.417 1 625H0H-1C-1 633.384 -1.00085 639.733 -0.588091 644.786C-0.174383 649.85 0.659815 653.701 2.37853 657.074L3.26953 656.62ZM0 625H1V486H0H-1V625H0ZM21.5429 465V466H38.7676V465V464H21.5429V465ZM38.7676 465V466C43.9916 466 49.0288 464.053 52.8944 460.539L52.2217 459.799L51.549 459.059C48.0517 462.238 43.4942 464 38.7676 464V465ZM52.2217 459.799L52.8944 460.539L68.5203 446.333L67.8477 445.593L67.175 444.853L51.549 459.059L52.2217 459.799ZM82.1218 438V439H130V438V437H82.1218V438ZM300.652 445.593L299.98 446.333L315.606 460.539L316.278 459.799L316.951 459.059L301.325 444.853L300.652 445.593ZM316.278 459.799L315.606 460.539C319.471 464.053 324.508 466 329.732 466V465V464C325.006 464 320.448 462.238 316.951 459.059L316.278 459.799ZM329.732 465V466H348.457V465V464H329.732V465ZM370 486H369V625H370H371V486H370ZM370 625H369C369 633.417 368.999 639.67 368.595 644.623C368.191 649.564 367.391 653.122 365.839 656.166L366.73 656.62L367.621 657.074C369.34 653.701 370.174 649.85 370.588 644.786C371.001 639.733 371 633.384 371 625H370ZM366.73 656.62L365.839 656.166C363.059 661.623 358.623 666.059 353.166 668.839L353.62 669.73L354.074 670.621C359.907 667.649 364.649 662.907 367.621 657.074L366.73 656.62ZM353.62 669.73L353.166 668.839C350.122 670.391 346.564 671.191 341.623 671.595C336.67 671.999 330.417 672 322 672V673V674C330.384 674 336.733 674.001 341.786 673.588C346.85 673.174 350.701 672.34 354.074 670.621L353.62 669.73ZM322 673V672H240V673V674H322V673ZM240 673V672C231.583 672 225.33 671.999 220.377 671.595C215.436 671.191 211.878 670.391 208.834 668.839L208.38 669.73L207.926 670.621C211.299 672.34 215.15 673.174 220.214 673.588C225.267 674.001 231.616 674 240 674V673ZM208.38 669.73L208.834 668.839C203.377 666.059 198.941 661.623 196.161 656.166L195.27 656.62L194.379 657.074C197.351 662.907 202.093 667.649 207.926 670.621L208.38 669.73ZM195.27 656.62L196.161 656.166C194.609 653.122 193.809 649.564 193.405 644.623C193.001 639.67 193 633.417 193 625H192H191C191 633.384 190.999 639.733 191.412 644.786C191.826 649.85 192.66 653.701 194.379 657.074L195.27 656.62ZM192 625H193V486H192H191V625H192ZM192 486H193C193 477.583 193.001 471.33 193.405 466.377C193.809 461.436 194.609 457.878 196.161 454.834L195.27 454.38L194.379 453.926C192.66 457.299 191.826 461.15 191.412 466.214C190.999 471.267 191 477.616 191 486H192ZM195.27 454.38L196.161 454.834C198.941 449.377 203.377 444.941 208.834 442.161L208.38 441.27L207.926 440.379C202.093 443.351 197.351 448.093 194.379 453.926L195.27 454.38ZM208.38 441.27L208.834 442.161C211.878 440.609 215.436 439.809 220.377 439.405C225.33 439.001 231.583 439 240 439V438V437C231.616 437 225.267 436.999 220.214 437.412C215.15 437.826 211.299 438.66 207.926 440.379L208.38 441.27ZM240 438V439H286.378V438V437H240V438ZM322 0V1C330.417 1 336.67 1.00071 341.623 1.40527C346.564 1.80888 350.122 2.60944 353.166 4.16054L353.62 3.26953L354.074 2.37852C350.701 0.659815 346.85 -0.174383 341.786 -0.588091C336.733 -1.00085 330.384 -1 322 -1V0ZM353.62 3.26953L353.166 4.16053C358.623 6.94083 363.059 11.3773 365.839 16.8339L366.73 16.3799L367.621 15.9259C364.649 10.093 359.907 5.35057 354.074 2.37853L353.62 3.26953ZM366.73 16.3799L365.839 16.8339C367.391 19.8781 368.191 23.4364 368.595 28.3773C368.999 33.3298 369 39.5827 369 48H370H371C371 39.6157 371.001 33.2673 370.588 28.2144C370.174 23.1499 369.34 19.299 367.621 15.9259L366.73 16.3799ZM370 48H369V375H370H371V48H370ZM348.457 396V395H330.39V396V397H348.457V396ZM330.39 396L330.39 395C324.755 395 319.356 397.265 315.408 401.286L316.121 401.986L316.835 402.687C320.407 399.05 325.291 397 330.39 397L330.39 396ZM316.121 401.986L315.408 401.286L299.172 417.816L299.886 418.517L300.599 419.217L316.835 402.687L316.121 401.986ZM291.067 423V422H77.4328V423V424H291.067V423ZM68.6143 418.517L69.3277 417.816L53.0924 401.286L52.3789 401.986L51.6655 402.687L67.9008 419.217L68.6143 418.517ZM52.3789 401.986L53.0924 401.286C49.1439 397.265 43.7454 395 38.1104 395L38.1104 396L38.1103 397C43.2086 397 48.093 399.05 51.6655 402.687L52.3789 401.986ZM38.1104 396V395H21.5429V396V397H38.1104V396ZM0 375H1V48H0H-1V375H0ZM0 48H1C1 39.5827 1.00071 33.3298 1.40527 28.3773C1.80888 23.4364 2.60944 19.8781 4.16054 16.8339L3.26953 16.3799L2.37852 15.9259C0.659815 19.299 -0.174383 23.1499 -0.588091 28.2144C-1.00085 33.2673 -1 39.6157 -1 48H0ZM3.26953 16.3799L4.16053 16.8339C6.94083 11.3773 11.3773 6.94083 16.8339 4.16053L16.3799 3.26953L15.9259 2.37853C10.093 5.35057 5.35057 10.093 2.37853 15.9259L3.26953 16.3799ZM16.3799 3.26953L16.8339 4.16054C19.8781 2.60944 23.4364 1.80888 28.3773 1.40527C33.3298 1.00071 39.5827 1 48 1V0V-1C39.6157 -1 33.2673 -1.00085 28.2144 -0.588091C23.1499 -0.174383 19.299 0.659815 15.9259 2.37852L16.3799 3.26953ZM48 0V1H322V0V-1H48V0ZM299.886 418.517L299.172 417.816C296.843 420.188 294.082 422 291.067 422V423V424C294.889 424 298.138 421.723 300.599 419.217L299.886 418.517ZM370 375H369C369 378.408 368.995 379.977 368.556 381.861L369.53 382.088L370.504 382.315C371.005 380.165 371 378.353 371 375H370ZM348.457 396V397C352.164 397 354.163 397.005 356.315 396.504L356.088 395.53L355.861 394.556C353.979 394.995 352.235 395 348.457 395V396ZM369.53 382.088L368.556 381.861C367.191 387.715 361.715 393.191 355.861 394.556L356.088 395.53L356.315 396.504C362.91 394.966 368.966 388.91 370.504 382.315L369.53 382.088ZM348.457 465V466C352.235 466 353.979 466.005 355.861 466.444L356.088 465.47L356.315 464.496C354.163 463.995 352.164 464 348.457 464V465ZM370 486H371C371 482.647 371.005 480.835 370.504 478.685L369.53 478.912L368.556 479.139C368.995 481.023 369 482.592 369 486H370ZM356.088 465.47L355.861 466.444C361.715 467.809 367.191 473.285 368.556 479.139L369.53 478.912L370.504 478.685C368.966 472.09 362.91 466.034 356.315 464.496L356.088 465.47ZM21.5429 396V395C17.7648 395 16.0208 394.995 14.1394 394.556L13.9123 395.53L13.6852 396.504C15.8374 397.005 17.8359 397 21.5429 397V396ZM0 375H-1C-1 378.353 -1.00489 380.165 -0.503582 382.315L0.470291 382.088L1.44416 381.861C1.00489 379.977 1 378.408 1 375H0ZM13.9123 395.53L14.1394 394.556C8.28548 393.191 2.80922 387.715 1.44416 381.861L0.470291 382.088L-0.503582 382.315C1.0344 388.91 7.08971 394.966 13.6852 396.504L13.9123 395.53ZM67.8477 445.593L68.5203 446.333C72.6523 442.576 77.0374 439 82.1218 439V438V437C76.154 437 71.221 441.175 67.175 444.853L67.8477 445.593ZM300.652 445.593L301.325 444.853C297.279 441.175 292.346 437 286.378 437V438V439C291.463 439 295.848 442.576 299.98 446.333L300.652 445.593ZM77.4328 423V422C74.4181 422 71.6571 420.188 69.3277 417.816L68.6143 418.517L67.9008 419.217C70.3616 421.723 73.6115 424 77.4328 424V423ZM0 486H1C1 482.592 1.00489 481.023 1.44416 479.139L0.470291 478.912L-0.503582 478.685C-1.00489 480.835 -1 482.647 -1 486H0ZM21.5429 465V464C17.8359 464 15.8374 463.995 13.6852 464.496L13.9123 465.47L14.1394 466.444C16.0208 466.005 17.7648 466 21.5429 466V465ZM0.470291 478.912L1.44416 479.139C2.80922 473.285 8.28548 467.809 14.1394 466.444L13.9123 465.47L13.6852 464.496C7.08971 466.034 1.0344 472.09 -0.503582 478.685L0.470291 478.912Z" fill="white" fill-opacity="0.3" mask="url(#path-1-inside-1_10945_46942)"/>
+</svg>
+</div>
+
+
+
             <RemoteVideoTile
+              className="h-[57%] md:h-auto md:flex-1"
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
+              onSendFriendRequest={() => {
+                remoteStreams.forEach(s => {
+                  if (s.userId && !friendshipWithRemote[s.userId] && !friendRequestSentTo[s.userId]) {
+                    handleSendFriendRequest(s.userId);
+                  }
+                });
+              }}
               stream={remoteStreams[0].stream}
               screenShareStream={remoteStreams[0].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[0])}
@@ -2201,21 +2275,29 @@ function VideoChatContent() {
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
               showLeaveNextButton={status === 'connected'}
+              leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
+              hideNameOnMobile={true}
+              multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
+              onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
             />
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+
+            <div className="flex min-h-0 min-w-0 flex-1 md:flex-col    md:gap-2">
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}
                 {...getRemoteFriendTileProps(remoteStreams[1])}
-                stream={remoteStreams[1].stream}
+                stream={remoteStreams[1].stream} 
                 screenShareStream={remoteStreams[1].screenStream || null}
                 {...getRemoteTileProfile(remoteStreams[1])}
                 showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
                 showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
                 onKickParticipant={() => handleKickRemote(remoteStreams[1].userId)}
+                borderBottomClass="md:bottom-4"
+                hideNameOnMobile={true}
+                hideAddFriendOnMobile={true}
               />
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
                 {!showChatInput && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                     <button
@@ -2268,16 +2350,24 @@ function VideoChatContent() {
                     </div>
                   </div>
                 )}
-                <LocalVideoSection {...localVideoProps} />
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} />
               </div>
             </div>
           </>
         ) : (
           /* Grid Layout (4 participants): 2x2 Grid */
-          <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-2">
+          <div className="grid min-h-0  min-w-0 flex-1 grid-cols-2 grid-rows-2 md:gap-2">
             <RemoteVideoTile
               key={`remote-${remoteStreams[0].userId}`}
+
               {...getRemoteFriendTileProps(remoteStreams[0])}
+              onSendFriendRequest={() => {
+                remoteStreams.forEach(s => {
+                  if (s.userId && !friendshipWithRemote[s.userId] && !friendRequestSentTo[s.userId]) {
+                    handleSendFriendRequest(s.userId);
+                  }
+                });
+              }}
               stream={remoteStreams[0].stream}
               screenShareStream={remoteStreams[0].screenStream || null}
               {...getRemoteTileProfile(remoteStreams[0])}
@@ -2285,10 +2375,16 @@ function VideoChatContent() {
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
               showLeaveNextButton={status === 'connected'}
+              leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
+              borderBottomClass="md:bottom-4"
+              hideNameOnMobile={true}
+              multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
+              onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
             />
             <RemoteVideoTile
+            
               key={`remote-${remoteStreams[1].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[1])}
               stream={remoteStreams[1].stream}
@@ -2297,6 +2393,9 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
               showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[1].userId)}
+              borderBottomClass="md:bottom-4"
+              hideNameOnMobile={true}
+              hideAddFriendOnMobile={true}
             />
             <RemoteVideoTile
               key={`remote-${remoteStreams[2].userId}`}
@@ -2307,8 +2406,10 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[2])}
               showKickParticipant={canKickRemoteUser(remoteStreams[2].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[2].userId)}
+              hideNameOnMobile={true}
+              hideAddFriendOnMobile={true}
             />
-            <div className={clsx('relative', 'min-h-0', 'min-w-0', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+            <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
               {/* Tile-attached nav + coins */}
               {!showChatInput && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
@@ -2362,21 +2463,32 @@ function VideoChatContent() {
                   </div>
                 </div>
               )}
-              <LocalVideoSection {...localVideoProps} />
+              <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} />
             </div>
           </div>
         )}
- 
-    
+        
+        {remoteStreams.length >= 2 && (
+          <MobileMultiUserControls
+            toggleCam={localVideoProps.toggleCam}
+            isCamOff={localVideoProps.isCamOff}
+            onChatButtonClick={localVideoProps.onChatButtonClick || (() => localVideoProps.setShowChatInput(!localVideoProps.showChatInput))}
+            setIsDareOpen={localVideoProps.setIsDareOpen}
+            setIsGiftModalOpen={localVideoProps.setIsGiftModalOpen}
+            isScreenSharing={localVideoProps.isScreenSharing}
+            onToggleScreenShare={localVideoProps.onToggleScreenShare}
+          />
+        )}
         <QuickActions 
           showChatInput={showChatInput}
           callRoles={callRoles}
           toggleRandomness={toggleRandomness}
           handleIcebreaker={handleIcebreaker}
-         
+          isGiftModalOpen={isGiftModalOpen}
+          isDareOpen={isDareOpen}
         />
 
-        {/* In-call nav moved onto local tile */}
+
 
         <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
 
@@ -2426,6 +2538,57 @@ function VideoChatContent() {
           handleStopBeamcast={handleStopBeamcast}
           setShowWaitlist={setShowWaitlist}
         />
+
+        {/* Group Members Modal */}
+        {showGroupMembersModal && (
+          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in" onClick={() => setShowGroupMembersModal(false)}>
+            <div className="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                <h3 className="text-white font-black text-lg">Group Members</h3>
+                <button onClick={() => setShowGroupMembersModal(false)} className="text-white/50 hover:text-white p-1">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-2 max-h-[60vh] overflow-y-auto">
+                {remoteStreams.map(s => {
+                  const profile = getRemoteTileProfile(s);
+                  const isSent = friendRequestSentTo[s.userId];
+                  const isFriend = friendshipWithRemote[s.userId];
+                  return (
+                    <div key={s.userId} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-colors">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
+                        <img src={profile.displayPictureUrl} className="w-full h-full object-cover" alt="" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold truncate font-otomanopee">{profile.name || 'Matched!'}</div>
+                        {profile.city && profile.city !== 'Unknown' && (
+                          <div className="text-white/50 text-xs truncate font-['Outfit']">{profile.city}</div>
+                        )}
+                      </div>
+                      {!isFriend && (
+                        <button
+                          onClick={() => {
+                            if (!isSent) handleSendFriendRequest(s.userId);
+                          }}
+                          disabled={isSent}
+                          className={clsx(
+                            "px-4 py-2 rounded-full text-sm font-bold transition-all",
+                            isSent ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white hover:bg-white/20 active:scale-95"
+                          )}
+                        >
+                          {isSent ? 'Sent' : 'Add'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
 
         <WaitlistModal
           isOpen={showWaitlist}

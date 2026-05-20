@@ -336,7 +336,7 @@ function SignUpModalContent({ isOpen, onClose }) {
           <div className="flex flex-col flex-col h-full text-center md:block">
             {/* Header */}
             <div className="pt-12 px-4 flex flex-col items-center text-center md:mb-10">
-              <img src="./LOGO.png" className="md:w-56 w-44 mx-auto" />
+              <img src="./logo.png" className="md:w-56 w-44 mx-auto" />
               <p className="text-white md:text-[20px] text-[16px] font-medium -mt-1">
                 Meet someone here <br /> <span className="hidden md:block">immediately after Signing in</span>
               </p>

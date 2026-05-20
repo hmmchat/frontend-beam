@@ -7,7 +7,9 @@ export default function QuickActions({
   showChatInput,
   callRoles,
   toggleRandomness,
-  handleIcebreaker
+  handleIcebreaker,
+  isGiftModalOpen,
+  isDareOpen
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
   const [isRolling, setIsRolling] = useState(false);
@@ -45,38 +47,46 @@ export default function QuickActions({
 
   if (showChatInput) return null;
 
+  const isOverlayOpen = isGiftModalOpen || isDareOpen;
+
   const handleDiceClick = () => {
     setIsRolling(true);
     toggleRandomness?.();
   };
 
   return (
-   <div className="absolute  bottom-[365px] md:bottom-8 left-0 w-full z-40 pointer-events-none">
+   <div className={clsx(
+     "absolute bottom-[39.5%] md:bottom-8 left-0 w-full z-40 pointer-events-none px-10",
+     isOverlayOpen && "hidden md:block"
+   )}>
   
   {/* LEFT (Dice) - Positioned far left */}
   {callRoles.isLocalHost && (
     <button
       onClick={handleDiceClick}
-      className="absolute bottom-0 left-4 md:left-8 bg-black/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-black/80 transition pointer-events-auto shadow-2xl"
+      className="absolute bottom-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl"
     >
       <img
         src={isRolling ? diceImages[diceIndex] : '/dice.png'}
-        className={`w-8 h-8 ${
+        className={`w-7 h-7 ${
           isRolling ? 'rotate-180 scale-110' : ''
         }`}
       />
     </button>
   )}
-
+  {/* CENTER LOGO - Desktop Only */}
+  {/* <div className="hidden md:flex absolute bottom-2 left-1/2 -translate-x-1/2 h-14 items-center justify-center pointer-events-none">
+    <img src="/logotransparent.png" className="h-8 w-auto object-contain z-10" alt="Beam" />
+  </div> */}
   {/* CENTER-RIGHT (Icecream) - Positioned at the right side of the left video (near 50% mark) */}
   <button
     onClick={handleIcebreaker}
     className={clsx(
-      "absolute bottom-0 bg-black/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-black/80 transition pointer-events-auto shadow-2xl",
+      "absolute bottom-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl",
       "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
     )}
   >
-    <img src="/icecream.png" className="w-8 h-8" />
+    <img src="/icecream.png" className="w-5 h-6" />
   </button>
 
 </div>

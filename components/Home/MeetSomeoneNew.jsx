@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { IoVideocam, IoNavigate, IoTimeOutline, IoChatbubbleOutline, IoPersonOutline, IoHomeOutline, IoLayersOutline, IoMic, IoMicOff, IoVolumeHigh, IoVolumeMute } from 'react-icons/io5';
 import { FaCrown, FaMobileAlt } from 'react-icons/fa';
@@ -77,6 +77,8 @@ export default function MeetSomeoneNew({
   const activeUsers = externalActiveUsers !== undefined ? externalActiveUsers : internalActiveUsers;
   const myProfile = externalMyProfile || internalMyProfile;
   const unreadCount = externalUnreadCount !== undefined ? externalUnreadCount : internalUnreadCount;
+  const navbarRef = useRef(null);
+  const [navbarHeight, setNavbarHeight] = useState(88);
 
   async function fetchMyProfile() {
     try {
@@ -111,6 +113,18 @@ export default function MeetSomeoneNew({
       console.error('Error fetching balance:', error);
     }
   }
+
+    useEffect(() => {
+    if (!navbarRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setNavbarHeight(entry.contentRect.height + 24); // +24px extra breathing room
+      }
+    });
+    observer.observe(navbarRef.current);
+    return () => observer.disconnect();
+  }, []); 
+
 
   useEffect(() => {
     if (!externalMyProfile) void Promise.resolve().then(() => fetchMyProfile());
@@ -176,17 +190,21 @@ export default function MeetSomeoneNew({
   };
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
+    <div className="relative h-[100vh] w-full overflow-hidden flex flex-col">
 
 
-<div className="absolute inset-2 mb-20 z-[2] pointer-events-none overflow-visible">
-  <svg
-    viewBox="0 0 378 681"
-    className="w-full h-full block"
-    preserveAspectRatio="xMidYMid meet"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+    {mode !== 'squad' && (
+        <div
+          className="absolute inset-0 z-[2] mt-3 mb-20 flex items-center justify-center pointer-events-none"
+          style={{ bottom: navbarHeight }}   // ← dynamic, not hardcoded
+        >
+<svg
+  viewBox="0 0 380 681"
+className='w-[94%] h-full'
+  preserveAspectRatio="none"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
       <path
         d="M93.7835 338C97.225 338 98.9457 338 100.067 338.335C101.639 338.805 101.514 338.739 102.792 339.768C103.703 340.501 105.757 343.486 109.864 349.456C113.83 355.22 120.474 359 128 359H252C259.526 359 266.17 355.22 270.136 349.456C274.243 343.486 276.297 340.501 277.208 339.768C278.486 338.739 278.361 338.805 279.933 338.335C281.054 338 282.775 338 286.217 338H298.463C301.033 338 303.143 339.915 304.722 341.943L320.442 362.142C322.337 364.576 325.249 366 328.334 366H365.817C369.848 366 371.863 366 373.568 366.864C374.992 367.585 376.329 368.912 377.061 370.33C377.938 372.028 377.952 373.931 377.981 377.737C378 380.246 378 382.988 378 386V633C378 649.801 378 658.203 374.73 664.62C371.854 670.265 367.265 674.854 361.62 677.73C355.203 681 346.801 681 330 681H48C31.1985 681 22.7972 681 16.3799 677.73C10.7353 674.854 6.14571 670.265 3.26953 664.62C-0.000251449 658.203 -3.49457e-09 649.801 0 633V386C0 383.446 0.000108949 381.086 0.0117415 378.897C0.0324858 374.995 0.0428579 373.044 0.918083 371.342C1.65451 369.909 2.976 368.595 4.41202 367.866C6.11869 367 8.16608 367 12.2609 367H49.5693C52.7088 367 55.6662 365.526 57.5557 363.019L73.5205 341.834C75.0172 339.848 77.0592 338 79.5462 338H93.7835ZM330 0C346.802 0 355.203 -0.000273228 361.62 3.26953C367.265 6.14571 371.854 10.7352 374.73 16.3799C378 22.7972 378 31.1987 378 48V286C378 288.554 378 290.914 377.988 293.103C377.968 297.005 377.957 298.956 377.082 300.658C376.346 302.091 375.024 303.405 373.588 304.134C371.881 305 369.834 305 365.739 305H328.408C325.282 305 322.334 306.462 320.443 308.952L304.649 329.754C303.009 331.914 300.808 334 298.095 334H286.217C282.775 334 281.055 334 279.934 333.665C278.362 333.195 278.487 333.261 277.209 332.232C276.297 331.499 274.243 328.514 270.136 322.544C266.17 316.779 259.526 313 252 313H128C120.474 313 113.83 316.779 109.864 322.544C105.757 328.514 103.703 331.499 102.791 332.232C101.513 333.261 101.638 333.195 100.066 333.665C98.9453 334 97.2246 334 93.7831 334H79.8815C77.2659 334 75.1402 331.999 73.5908 329.892L57.5518 308.076C55.6674 305.513 52.6761 304 49.4951 304H12.3305C8.18 304 6.10473 304 4.39651 303.132C2.94977 302.397 1.64214 301.094 0.901822 299.65C0.0276937 297.944 0.0206606 295.95 0.00659464 291.963C2.40291e-05 290.1 -4.40241e-10 288.117 0 286V48C0 31.1987 -0.000137434 22.7972 3.26953 16.3799C6.14568 10.7352 10.7352 6.14571 16.3799 3.26953C22.7972 -0.00027298 31.1984 0 48 0H330Z"
         stroke="rgba(255,255,255,0.35)"
@@ -194,6 +212,7 @@ export default function MeetSomeoneNew({
       />
     </svg>
   </div>
+)}
       {/* 🔥 FULL SCREEN BACKGROUND */}
       <div
         className="absolute inset-0 opacity-70 mix-blend-hard-light"
@@ -210,11 +229,11 @@ export default function MeetSomeoneNew({
       
 
       
-      
-
+      {/* this div */}
+  <div className="flex flex-col py-8"> 
 
       {/* Top Bar */}
-    <div className="relative z-10 w-full px-6 pt-10 flex justify-between items-center ">
+    <div className="relative z-10 w-full px-6  flex justify-between items-center ">
 
 
 
@@ -256,13 +275,16 @@ export default function MeetSomeoneNew({
 
 </div>
 
+
+
+
 </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-4">
+      <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-4">
 
-    <div className="text-center flex flex-col items-center justify-center mx-auto mt-10">
-  <img src="./LOGO.png" className="w-34 mx-auto" />
+    <div className="text-center flex flex-col items-center justify-center mx-auto mt-7">
+  <img src="./logo.png" className="w-34 mx-auto" />
   
   <p className="text-white text-[13px] font-medium ">
     Meet Someone here
@@ -286,6 +308,7 @@ export default function MeetSomeoneNew({
              <div className="relative w-full flex items-center justify-center mb-22">
   
   {/* LEFT BUTTON */}
+  {mode !== 'squad' && (
   <div className="absolute left-0 w-12 h-12 flex items-center justify-center text-white shadow-inner">
              <Link href="/beam-tv">
                 <button className={clsx('relative', 'h-11', 'w-11', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
@@ -305,6 +328,7 @@ export default function MeetSomeoneNew({
 </button>
                 </Link>
   </div>
+  )}
 
   {/* CENTER TOGGLE */}
 <div className="flex border border-white/50  rounded-full w-40 relative shadow-inner h-[40px]  ">
@@ -336,6 +360,7 @@ export default function MeetSomeoneNew({
   </button>
 </div>
   {/* RIGHT BUTTON */}
+  {mode !== 'squad' && (
   <div className="absolute right-0 w-12 h-12  flex items-center justify-center text-white ">
              <Link href="/cards">
   <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
@@ -343,6 +368,7 @@ export default function MeetSomeoneNew({
   </button>
 </Link>
   </div>
+  )}
 
   
 </div>
@@ -361,17 +387,17 @@ export default function MeetSomeoneNew({
     <div className="flex flex-wrap items-center justify-center gap-2  ">
       {/* Me */}
       <div className="flex flex-col items-center gap-1">
-        <div className="w-16 h-16 rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
+        <div className="w-18 h-18 rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
           <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className="w-full h-full object-cover" />
         </div>
         <span className="text-[10px] text-white/70 ">Me</span>
       </div>
 
-      {squadGuestIds?.map((guestId, i) => (
+{squadGuestIds?.slice(0, 2).map((guestId, i) => (
         <div key={`g-${i}`} className="flex items-center gap-2">
           <img src="/assets/plus.png" alt="" className="w-3 h-3 mb-4" />
           <div className="flex flex-col items-center gap-1">
-            <div className="relative w-16 h-16">
+            <div className="relative w-18 h-18">
               <div className="w-full h-full rounded-full border-[3px] border-white/90 flex items-center justify-center overflow-hidden bg-black/10">
                 {guestId && guestProfiles?.[guestId]?.displayPictureUrl ? (
                   <img src={guestProfiles[guestId].displayPictureUrl} alt="" className="w-full h-full object-cover" />
@@ -482,16 +508,18 @@ export default function MeetSomeoneNew({
   </>
 )}
             </div>
-        </div>
 
 
 
 
-      </div>
 
 
-      {/* Bottom Navigation */}
-      <div className="relative z-10 w-full max-w-sm px-4 mx-auto ">
+
+
+
+
+
+   <div className="relative z-10 w-full max-w-sm px-4 mx-auto ">
         <div className=" border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
             <button className="text-white text-2xl hover:scale-125 transition-transform"><img src="./mobhome.svg" alt="chat" className="w-[30px] h-[30px]" /></button>
             <button 
@@ -525,6 +553,29 @@ export default function MeetSomeoneNew({
             </button>
         </div>
       </div>
+
+
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+      </div>
+
+
+
+
+
+</div>
+
+   
 
 
 

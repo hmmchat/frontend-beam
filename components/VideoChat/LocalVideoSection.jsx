@@ -21,9 +21,12 @@ export default function LocalVideoSection({
   toggleCam,
   isGiftModalOpen,
   setIsGiftModalOpen,
+  isDareOpen,
+  setIsDareOpen,
   setIsCoinModalOpen,
+  coins,
+  hideMobileControlsRow = false
 }) {
-  const [isDareOpen, setIsDareOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const setLocalVideoEl = useCallback(
     (el) => {
@@ -137,6 +140,7 @@ export default function LocalVideoSection({
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
           onSelectGift={(gift) => setSelectedGiftId(gift.id)}
           selectedGiftId={selectedGiftId}
+          coins={coins}
         />
 
         <DareOverlay
@@ -186,7 +190,19 @@ export default function LocalVideoSection({
                   />
                 </form>
               )}
-              <div className="flex flex-wrap gap-4">
+{/* 3 button */}
+              <div className={clsx("gap-1 md:gap-2 mb-2", hideMobileControlsRow ? "hidden md:flex flex-wrap" : "flex flex-wrap")}>
+                       <button
+                  type="button"
+                  onClick={toggleCam}
+                  className="w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                >
+                  <img
+                    src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
+                    className="w-5 h-5 object-contain"
+                    alt="Video"
+                  />
+                </button>
                 {typeof onToggleScreenShare === "function" && (
                   <button
                     type="button"
@@ -197,7 +213,7 @@ export default function LocalVideoSection({
                         : "Share screen or window"
                     }
                     className={clsx(
-                      "w-12 h-12 rounded-full border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
+                      "w-11 h-11 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
                       isScreenSharing
                         ? "border-emerald-400/80 bg-emerald-500/20"
                         : "border-white/40",
@@ -213,24 +229,14 @@ export default function LocalVideoSection({
                     </svg>
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={toggleCam}
-                  className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
-                >
-                  <img
-                    src="/video.png"
-                    className={`w-5 h-5 object-contain ${isCamOff ? "opacity-30" : "opacity-100"}`}
-                    alt="Video"
-                  />
-                </button>
+         
                 <button
                   type="button"
                   onClick={
                     onChatButtonClick ||
                     (() => setShowChatInput(!showChatInput))
                   }
-                  className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                  className="w-11 h-11 rounded-full border  border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
                 >
                   <img
                     src="/msg.png"
@@ -238,10 +244,15 @@ export default function LocalVideoSection({
                     alt="Message"
                   />
                 </button>
+
+{/* logo */}
+       <img src="/logotransparent.png" className=' z-10 md:hidden  mt-2 ml-2' />
+                
               </div>
             </div>
-
-            <div className="flex gap-4">
+            
+{/* 2 gift button  */}
+            <div className={clsx("gap-2 md:gap-2", hideMobileControlsRow ? "hidden md:flex" : "flex")}>
               <button
                 type="button"
                 onClick={() => setIsDareOpen(true)}
@@ -260,15 +271,12 @@ export default function LocalVideoSection({
               </button>
               <button
                 type="button"
-                onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
+                onClick={() => setIsGiftModalOpen(true)}
                 className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
               >
                 <img
                   src="/circle.png"
-                  className={clsx(
-                    "absolute inset-0 w-full h-full rounded-full",
-                    isGiftModalOpen ? "active" : "bg-pink-800",
-                  )}
+                  className="absolute inset-0 w-full h-full rounded-full bg-pink-800"                  
                   alt=""
                 />
                 <img
@@ -284,7 +292,7 @@ export default function LocalVideoSection({
         {/* 🔲 HUD BORDER FRAME */}
         <div
           className={clsx(
-            "absolute top-4 left-4 right-4   border rounded-3xl md:rounded-[60px] pointer-events-none z-20 transition-colors",
+            "absolute hidden  md:block top-4 left-4 right-4   border rounded-3xl md:rounded-[60px] pointer-events-none z-20 transition-colors",
             isGiftModalOpen || isDareOpen
               ? "border-white/50  bottom-28"
               : "border-white/30 bottom-24",

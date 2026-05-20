@@ -1866,7 +1866,7 @@ export default function MeetSomeoneDynamic() {
             <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
               <div className={clsx( 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
                 <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-                  <img src="/LOGO.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
+                  <img src="/logo.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
                   <p className={clsx('text-white', 'text-[21px]', '-mt-2', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here</p>
                   <div className={clsx('inline-flex', 'gap-1', 'mt-5', 'font-[family-name:var(--font-otomanopee)]')}>
                     <img src="/assets/video-on.svg" alt="" className={clsx('w-5', 'h-5' )} />

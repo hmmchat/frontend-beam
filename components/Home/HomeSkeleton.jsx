@@ -21,7 +21,7 @@ export default function HomeSkeleton() {
         <div className="hidden md:flex relative h-full flex-col items-center justify-center p-8">
            <div className="border-2 border-white/30 w-full h-[96vh] justify-center items-center flex rounded-2xl relative bg-black/10 backdrop-blur-sm">
              <div className="flex flex-col items-center gap-6">
-                <img src="/LOGO.png" className="md:w-64 w-44 opacity-80" alt="Logo" />
+                <img src="/logo.png" className="md:w-64 w-44 opacity-80" alt="Logo" />
                 <p className="text-white text-2xl opacity-60">Meet someone here,</p>
                 <div className="flex items-center gap-2 mt-3 opacity-40">
                    <img src="/assets/video-on.svg" alt="" className="w-4 h-4" />

@@ -1,28 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GiftAnimation from "./GiftAnimation";
 import { FaAngleRight } from "react-icons/fa6";
 import { FaAngleLeft } from "react-icons/fa6";
-const giftItems = [
-  { id: 1, name: "Lucky", price: 50, img: "🐒" },
-  { id: 2, name: "Pika", price: 250, img: "⚡" },
-  { id: 3, name: "Hero", price: 2000, img: "🦸" },
-  { id: 4, name: "Iron", price: 25000, img: "🤖" },
-  { id: 5, name: "Pool", price: 100, img: "⚔️" },
-  { id: 6, name: "Blue", price: 300, img: "👾" },
-  { id: 7, name: "Monster", price: 5000, img: "🧶" },
-  { id: 8, name: "Dora", price: 10000, img: "🐱" },
-  { id: 9, name: "Candy", price: 20, img: "🍭" },
-  { id: 10, name: "Cone", price: 150, img: "🍦" },
-  { id: 11, name: "Car", price: 800, img: "🏎️" },
-  { id: 12, name: "Gem", price: 1200, img: "💎" },
-  { id: 13, name: "King", price: 7000, img: "👑" },
-  { id: 14, name: "Galaxy", price: 15000, img: "🪐" },
-  { id: 15, name: "Magic", price: 12000, img: "🦄" },
-  { id: 16, name: "Blast", price: 50000, img: "🚀" },
-];
+import { API, apiRequest } from "@/lib/api";
 
 export default function GiftOverlay({
   isOpen,
@@ -30,11 +13,34 @@ export default function GiftOverlay({
   onOpenCoinModal,
   onSelectGift,
   selectedGiftId,
+  coins,
 }) {
+  const [giftItems, setGiftItems] = useState([]);
   const [animGift, setAnimGift] = useState(null);
   const [page, setPage] = useState(0);
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(giftItems.length / itemsPerPage);
+  const [rotated, setRotated] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && giftItems.length === 0) {
+      apiRequest(API.FRIENDS.GET_GIFT_CATALOG)
+        .then(data => {
+          if (data && data.gifts) {
+            const formatted = data.gifts.map((g, idx) => ({
+              id: g.giftId || idx,
+              name: g.name,
+              price: g.diamonds || 0,
+              img: g.emoji || "🎁",
+              imageUrl: g.imageUrl
+            }));
+            setGiftItems(formatted);
+          }
+        })
+        .catch(err => console.error("Failed to load gifts", err));
+    }
+  }, [isOpen, giftItems.length]);
+
+  const totalPages = Math.max(1, Math.ceil(giftItems.length / itemsPerPage));
 
   const displayedGifts = giftItems.slice(
     page * itemsPerPage,
@@ -51,16 +57,20 @@ export default function GiftOverlay({
 
   if (!isOpen) return null;
 
+  const selectedGift = giftItems.find((g) => g.id === selectedGiftId);
+  const currentPrice = selectedGift ? selectedGift.price : 0;
+  const hasSufficientCoins = coins >= currentPrice;
+
   return (
     <>
       {/* Animation Layer */}
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
       <div className="fixed inset-0 z-20 " onClick={onClose} />
       {/* Main UI */}
-      <div className="absolute bottom-3 right-5  -translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
+      <div className="absolute md:bottom-3  md:right-5  md:-translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="border-2 border-white rounded-[40px] w-full max-w-[500px] p-8 shadow-2xl relative overflow-hidden"
+          className="border-2 border-white md:rounded-[40px] rounded-[36px] w-full max-w-[500px] md:p-8 p-6 shadow-2xl relative overflow-hidden"
         >
           {/* Background */}
           <div
@@ -73,9 +83,9 @@ export default function GiftOverlay({
           />
 
           {/* Header */}
-          <div className="relative z-10 flex items-center justify-between mb-8">
-            <h2 className="text-white text-xl font-otomanopee flex justify-center items-center gap-2">
-              <img src="/gift-light.svg" alt="coin" className="w-7" /> Add Gift
+          <div className="relative z-10 flex items-center justify-between md:mb-8 mb-4">
+            <h2 className="text-white md:text-xl font-otomanopee flex justify-center items-center gap-2">
+              <img src="/gift-light.svg" alt="coin" className="md:w-7 w-6" /> Add Gift
             </h2>
             <div className="flex gap-4">
               <FaAngleLeft
@@ -90,21 +100,27 @@ export default function GiftOverlay({
           </div>
 
           {/* Grid */}
-          <div className="relative z-10 grid grid-cols-4 gap-4 mb-1">
+          <div className="relative z-10 grid grid-cols-4 md:gap-4 gap-2 mb-1">
             {displayedGifts.map((gift) => (
               <div
                 key={gift.id}
                 onClick={() => onSelectGift(gift)}
                 onDoubleClick={() => setAnimGift(gift)}
                 className={clsx(
-                  "border-2 border-white/60 border-b-4 rounded-3xl px-4 py-3 flex flex-col items-center gap-2 cursor-pointer transition-all hover:scale-105",
+                  "md:border-[2px] border-[1px] border-white/60 md:border-b-[4px] border-b-[3px] md:rounded-3xl rounded-xl md:px-4 md:py-3 px-1 py-2 flex flex-col items-center gap-2 cursor-pointer transition-all hover:scale-105",
                   selectedGiftId === gift.id
                     ? "border-yellow-400 bg-white/5"
                     : "border-white/10"
                 )}
               >
-                <div className="text-4xl">{gift.img}</div>
-                <div className="text-white text-xs">💎 {gift.price}</div>
+                <div className="md:text-4xl text-xl">
+                  {gift.imageUrl ? (
+                    <img src={gift.imageUrl} className="w-10 h-10 object-contain" alt={gift.name} />
+                  ) : (
+                    gift.img
+                  )}
+                </div>
+                <div className="text-white md:text-xs text-[10px]">💎 {gift.price}</div>
               </div>
             ))}
           </div>
@@ -125,16 +141,110 @@ export default function GiftOverlay({
       </div>
 
       {/* Bottom Bar */}
-      <div className="absolute bottom-6 left-10 right-10 z-50 flex justify-between">
-        <div className="text-white text-sm">Insufficient balance</div>
-        <button
-          onClick={onOpenCoinModal}
-          className="bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
-        >
-          Buy Coins
-        </button>
+      {/* Bottom Bar Desktop */}
+      <div className="absolute hidden md:flex bottom-6 left-10 right-10 z-50 flex justify-between items-center">
+        {!hasSufficientCoins ? (
+          <>
+            <div className="text-white text-sm">Insufficient balance</div>
+            <button
+              onClick={onOpenCoinModal}
+              className="bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
+            >
+              Buy Coins
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-white text-sm flex items-center gap-2">
+              Spend Coin:
+              <span className="flex justify-center items-center gap-1 font-semibold">
+                <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
+                {currentPrice}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                if (selectedGift) setAnimGift(selectedGift);
+              }}
+              className={clsx(
+                "bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white active:scale-95 transition-all",
+                !selectedGift ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"
+              )}
+              disabled={!selectedGift}
+            >
+              Send Gift
+            </button>
+          </>
+        )}
+      </div>
+
+
+ 
+
+
+
+
+
+      {/* Bottom Bar Mobile */}
+      <div className="absolute w-full px-4 flex items-center py-7 md:hidden bottom-0 z-50 justify-between">
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+            opacity: 0.9,
+          }}
+        />
+        {!hasSufficientCoins ? (
+          <>
+            <div className="text-white z-10 text-sm">Insufficient balance</div>
+            <button
+              onClick={onOpenCoinModal}
+              className="z-10 bg-black/40 border border-white/50 border-b-2 px-6 py-3 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
+            >
+              Buy Coins
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-white z-10 text-sm flex items-center gap-2">
+              Spend Coin:
+              <span className="flex justify-center items-center gap-1 font-semibold">
+                <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
+                {currentPrice}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={!selectedGift}
+              onClick={() => {
+                if (selectedGift) setAnimGift(selectedGift);
+              }}
+              className={clsx(
+                "group relative w-14 h-14 flex items-center justify-center z-10",
+                !selectedGift && "opacity-50"
+              )}
+            >
+              <img
+                src="/circle.png"
+                className="absolute inset-0 block w-full h-full rounded-full bg-pink-800 transition-none group-active:rotate-180"
+                alt=""
+              />
+              <img
+                src="/giftboc.png"
+                className="relative w-8 h-8 object-contain transition-none group-active:scale-80"
+                alt="GIFT"
+              />
+            </button>
+          </>
+        )}
       </div>
     </>
+
+
+
+
   );
 }
 

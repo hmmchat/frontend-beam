@@ -38,7 +38,7 @@ export default function InboxHeader({
           {walletCoins != null && <span>{walletCoins} coins</span>}
           <span className="text-white/50 font-normal">1st msg ~{firstMessageCost} coins</span>
         </div> */}
-        <img src="/LOGO.png" alt="Logo" className="w-24 md:w-32" />
+        <img src="/logo.png" alt="Logo" className="w-24 md:w-32" />
       </div>
     </div>
   );

@@ -98,7 +98,10 @@ export default function MeetSomeoneDynamic() {
       }
     };
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 15000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchMetrics();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -124,7 +127,10 @@ export default function MeetSomeoneDynamic() {
     });
     const unsubscribeRealtime = subscribeNotificationRealtime();
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchNotifications();
+    }, 30000);
     const onFocus = () => void getNotificationCountThrottled({ force: true, minGapMs: 5000 });
     const onVisible = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
@@ -456,8 +462,9 @@ export default function MeetSomeoneDynamic() {
     }
     void refreshSquadLobby();
     squadPollRef.current = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       void refreshSquadLobby();
-    }, 1500);
+    }, 4000);
     return () => {
       if (squadPollRef.current) {
         clearInterval(squadPollRef.current);
@@ -631,8 +638,9 @@ export default function MeetSomeoneDynamic() {
     };
     void tick();
     const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       void tick();
-    }, 2000);
+    }, 4000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -1662,8 +1670,9 @@ export default function MeetSomeoneDynamic() {
     }
 
     discoveryPollRef.current = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchCardSilently(sessionId || null, mode === 'solo');
-    }, 2000);
+    }, 5000);
 
     return () => {
       if (discoveryPollRef.current) {
@@ -1705,6 +1714,7 @@ export default function MeetSomeoneDynamic() {
               coins={coins}
               activeUsers={activeMeetingCount}
               myProfile={myProfile}
+              unreadCount={unreadCount}
 
               // Squad props
               squadLobby={squadLobby}

@@ -4,10 +4,11 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
   const videoRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const streamRef = useRef(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const videoEl = videoRef.current;
     async function startCamera() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -18,9 +19,9 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
           }, 
           audio: false 
         });
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
+        streamRef.current = mediaStream;
+        if (videoEl) {
+          videoEl.srcObject = mediaStream;
         }
       } catch (err) {
         console.error("Error accessing camera:", err);
@@ -31,9 +32,11 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
     startCamera();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (videoEl) {
+        videoEl.srcObject = null;
       }
+      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     };
   }, []);
 

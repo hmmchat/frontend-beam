@@ -95,22 +95,24 @@ const MyComponent = () => {
 
 
 
-return (
-  <>
-    <div className={isLoggedIn && profileComplete ? "hidden" : ""}>
+  if (!isMounted || !authChecked || !profileChecked) {
+    return <HomeSkeleton />;
+  }
+
+  if (isLoggedIn && profileComplete) {
+    return <MeetSomeoneDynamic />;
+  }
+
+  return (
+    <>
       <div className="hidden md:block">
         <DesktopHome />
       </div>
       <div className="block md:hidden">
         <MobileHome />
       </div>
-    </div>
-
-    <div className={isLoggedIn && profileComplete ? "block" : "hidden"}>
-      <MeetSomeoneDynamic />
-    </div>
-  </>
-);
+    </>
+  );
 };
 
 export default MyComponent;

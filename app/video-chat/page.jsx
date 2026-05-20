@@ -46,6 +46,54 @@ const PULL_STRANGER_WINDOW_SECONDS = (() => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 60;
 })();
 
+const isRealtimeDebugEnabled = () =>
+  process.env.NEXT_PUBLIC_REALTIME_DEBUG === 'true';
+
+const realtimeDebug = (...args) => {
+  if (isRealtimeDebugEnabled()) console.log(...args);
+};
+
+const isMobileRuntime = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(max-width: 767px)').matches ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator?.userAgent || '')
+  );
+};
+
+const getCameraConstraints = () => {
+  if (!isMobileRuntime()) {
+    return {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, max: 30 }
+    };
+  }
+
+  // Mobile devices sustain long calls better at qHD/24fps; simulcast still lets strong devices receive sharp video.
+  return {
+    width: { ideal: 960, max: 1280 },
+    height: { ideal: 540, max: 720 },
+    frameRate: { ideal: 24, max: 24 }
+  };
+};
+
+const getVideoEncodings = () => {
+  if (!isMobileRuntime()) {
+    return [
+      { rid: 'r0', maxBitrate: 200_000, scaleResolutionDownBy: 4 },
+      { rid: 'r1', maxBitrate: 700_000, scaleResolutionDownBy: 2 },
+      { rid: 'r2', maxBitrate: 2_500_000, scaleResolutionDownBy: 1 }
+    ];
+  }
+
+  return [
+    { rid: 'r0', maxBitrate: 160_000, scaleResolutionDownBy: 3 },
+    { rid: 'r1', maxBitrate: 450_000, scaleResolutionDownBy: 1.8 },
+    { rid: 'r2', maxBitrate: 1_200_000, scaleResolutionDownBy: 1 }
+  ];
+};
+
 /** Module-level so React identity is stable — avoids remounting <video> on every parent re-render (e.g. 1s pull-stranger cooldown tick). */
 
 export default function VideoChat() {
@@ -148,6 +196,9 @@ function VideoChatContent() {
   const suppressAutoResumeUntilRef = useRef(0);
   const prevRemoteStreamCountRef = useRef(0);
   const getProducersRetryTimeoutsRef = useRef([]);
+  const consumeRetryTimeoutsRef = useRef(new Map());
+  const consumingProducerIdsRef = useRef(new Set());
+  const consumedProducerIdsRef = useRef(new Set());
   /** Next outbound video produce: camera (default) or screen (getDisplayMedia). */
   const pendingVideoProduceSourceRef = useRef('camera');
   const localScreenStreamRef = useRef(null);
@@ -202,6 +253,10 @@ function VideoChatContent() {
     pendingProducersRef.current = [];
     getProducersRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
     getProducersRetryTimeoutsRef.current = [];
+    consumeRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
+    consumeRetryTimeoutsRef.current.clear();
+    consumingProducerIdsRef.current.clear();
+    consumedProducerIdsRef.current.clear();
     myProducerIdsRef.current.clear();
     pendingVideoProduceSourceRef.current = 'camera';
     producerIdToMetaRef.current.clear();
@@ -212,7 +267,31 @@ function VideoChatContent() {
     } catch (_) {}
     localScreenMsProducerRef.current = null;
     setIsScreenSharing(false);
-    // Nullify mediasoup refs (don't call .close() — it throws AwaitQueueStoppedError async)
+    Object.values(consumersRef.current || {}).forEach((consumer) => {
+      try {
+        consumer?.track?.stop?.();
+        consumer?.close?.();
+      } catch (_) {}
+    });
+    Object.values(producersRef.current || {}).forEach((producer) => {
+      if (producer && typeof producer.close === 'function') {
+        try {
+          producer.close();
+        } catch (_) {}
+      }
+    });
+    try {
+      sendTransportRef.current?.close?.();
+    } catch (_) {}
+    try {
+      recvTransportRef.current?.close?.();
+    } catch (_) {}
+    remoteStreamsRef.current?.forEach((s) => {
+      s?.stream?.getTracks?.().forEach((t) => t.stop());
+      s?.screenStream?.getTracks?.().forEach((t) => t.stop());
+    });
+    remoteStreamsRef.current = [];
+    setRemoteStreams([]);
     producersRef.current = {};
     consumersRef.current = {};
     consumerIdsByUserRef.current = {};
@@ -606,13 +685,15 @@ function VideoChatContent() {
     return () => clearInterval(id);
   }, []);
 
+  const isPullStrangerCooldownActive = pullStrangerCooldownSec > 0;
+
   useEffect(() => {
-    if (pullStrangerCooldownSec <= 0) return;
+    if (!isPullStrangerCooldownActive) return;
     const id = setInterval(() => {
       setPullStrangerCooldownSec((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(id);
-  }, [pullStrangerCooldownSec]);
+  }, [isPullStrangerCooldownActive]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1139,11 +1220,7 @@ function VideoChatContent() {
   const startMediaAndSignaling = async (info, userId) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 30 }
-        },
+        video: getCameraConstraints(),
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -1169,7 +1246,7 @@ function VideoChatContent() {
     ws.onopen = () => send({ type: 'join-room', data: { roomId: info.roomId } });
     ws.onmessage = async (e) => {
       const msg = JSON.parse(e.data);
-      console.log('[WebSocket] Received message:', msg.type, msg);
+      realtimeDebug('[WebSocket] Received message:', msg.type, msg);
       if (msg.type === 'error') {
         console.warn('[WS] Error:', msg.data?.error);
         if (msg.data?.error?.includes('not found')) handleStaleRoom();
@@ -1198,7 +1275,7 @@ function VideoChatContent() {
 
   const handleSignal = async (msg, info, userId) => {
     const { type, data } = msg;
-    console.log('[WebRTC] Handling signal:', type, data);
+    realtimeDebug('[WebRTC] Handling signal:', type, data);
 
     switch (type) {
       case 'room-joined': {
@@ -1230,29 +1307,29 @@ function VideoChatContent() {
       }
 
       case 'producers-list': {
-        console.log('[WebRTC] Received producers list:', data);
+        realtimeDebug('[WebRTC] Received producers list:', data);
         if (!data || !Array.isArray(data)) {
           console.log('[WebRTC] No producers in room yet');
           return;
         }
         
-        console.log(`[WebRTC] Found ${data.length} existing producer(s) in room`);
+        realtimeDebug(`[WebRTC] Found ${data.length} existing producer(s) in room`);
         data.forEach(p => {
           const isSameUser = sameParticipantId(p.userId, userIdRef.current);
           const isMyProducer = myProducerIdsRef.current.has(String(p.producerId));
           // Only skip if this is both "me" and "my producer" (prevents false positives when
           // backend mis-labels userId for a remote producer on one client).
           if (!isSameUser || !isMyProducer) {
-            console.log('[WebRTC] Consuming existing producer:', p.producerId, 'kind:', p.kind, 'from user:', p.userId);
+            realtimeDebug('[WebRTC] Consuming existing producer:', p.producerId, 'kind:', p.kind, 'from user:', p.userId);
             if (!recvTransportRef.current) {
               // Still not ready — queue it (shouldn't happen if we send get-producers after transport ready, but be safe)
-              console.log('[WebRTC] Recv transport still not ready, queuing from producers-list:', p.producerId);
+              realtimeDebug('[WebRTC] Recv transport still not ready, queuing from producers-list:', p.producerId);
               pendingProducersRef.current.push({ producerId: p.producerId, remoteUserId: p.userId });
             } else {
               consume(p.producerId, p.userId);
             }
           } else {
-            console.log('[WebRTC] Skipping own producer:', p.producerId);
+            realtimeDebug('[WebRTC] Skipping own producer:', p.producerId);
           }
         });
         break;
@@ -1308,16 +1385,15 @@ function VideoChatContent() {
                 try {
                   await transport.produce({
                     track: vTrack,
-                    encodings: [
-                      { rid: 'r0', maxBitrate: 200_000, scaleResolutionDownBy: 4 },
-                      { rid: 'r1', maxBitrate: 700_000, scaleResolutionDownBy: 2 },
-                      { rid: 'r2', maxBitrate: 2_500_000, scaleResolutionDownBy: 1 }
-                    ],
+                    encodings: getVideoEncodings(),
                     codecOptions: { videoGoogleStartBitrate: 600 }
                   });
                 } catch (e) {
                   console.warn('[WebRTC] Simulcast produce failed, using single layer', e);
-                  await transport.produce({ track: vTrack, encodings: [{ maxBitrate: 2_500_000 }] }).catch(console.error);
+                  await transport.produce({
+                    track: vTrack,
+                    encodings: [{ maxBitrate: isMobileRuntime() ? 1_200_000 : 2_500_000 }]
+                  }).catch(console.error);
                 }
               }
               if (aTrack) {
@@ -1371,17 +1447,17 @@ function VideoChatContent() {
       }
 
       case 'new-producer': {
-        console.log('[WebRTC] New producer available:', data.producerId, 'from user:', data.userId);
+        realtimeDebug('[WebRTC] New producer available:', data.producerId, 'from user:', data.userId);
         const isSameUser = sameParticipantId(data.userId, userIdRef.current);
         const isMyProducer = myProducerIdsRef.current.has(String(data.producerId));
         if (isSameUser && isMyProducer) {
-          console.log('[WebRTC] Ignoring new-producer (own track)');
+          realtimeDebug('[WebRTC] Ignoring new-producer (own track)');
           return;
         }
         scheduleCallRoleRefresh();
         if (!recvTransportRef.current) {
           // Recv transport not ready yet — queue for drain when it becomes ready
-          console.log('[WebRTC] Recv transport not ready, queuing producer:', data.producerId);
+          realtimeDebug('[WebRTC] Recv transport not ready, queuing producer:', data.producerId);
           pendingProducersRef.current.push({ producerId: data.producerId, remoteUserId: data.userId });
           return;
         }
@@ -1390,8 +1466,13 @@ function VideoChatContent() {
       }
 
       case 'consumed': {
-        console.log('[WebRTC] Consumer created:', data.kind, 'from user:', data.userId);
+        realtimeDebug('[WebRTC] Consumer created:', data.kind, 'from user:', data.userId);
         const { id, producerId, kind, rtpParameters, userId: remoteId, source: remoteSource } = data;
+        const producerKey = String(producerId || '');
+        if (producerKey) {
+          consumingProducerIdsRef.current.delete(producerKey);
+          consumedProducerIdsRef.current.add(producerKey);
+        }
         if (remoteId == null || remoteId === '') {
           console.warn('[WebRTC] consumed missing remote userId; using producerId for grouping', { producerId, kind });
         }
@@ -1433,7 +1514,10 @@ function VideoChatContent() {
               ];
             }
           } else if (existing) {
-            const newStream = new MediaStream([...existing.stream.getTracks(), consumer.track]);
+            const existingTracks = existing.stream
+              .getTracks()
+              .filter((track) => track.readyState !== 'ended' && track.kind !== consumer.track.kind);
+            const newStream = new MediaStream([...existingTracks, consumer.track]);
             next = prev.map((s) => (sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: newStream } : s));
           } else {
             next = [
@@ -1453,7 +1537,7 @@ function VideoChatContent() {
           if (next.length > 0) hadRemotePeerInSessionRef.current = true;
           return next;
         });
-        console.log('[WebRTC] Remote stream updated for user:', uiRemoteId, '| kind:', kind, vSource === 'screen' ? '(screen)' : '');
+        realtimeDebug('[WebRTC] Remote stream updated for user:', uiRemoteId, '| kind:', kind, vSource === 'screen' ? '(screen)' : '');
         break;
       }
 
@@ -1461,6 +1545,11 @@ function VideoChatContent() {
         const { producerId: closedPid } = data || {};
         if (!closedPid) break;
         const pid = String(closedPid);
+        consumingProducerIdsRef.current.delete(pid);
+        consumedProducerIdsRef.current.delete(pid);
+        const retryTid = consumeRetryTimeoutsRef.current.get(pid);
+        if (retryTid) clearTimeout(retryTid);
+        consumeRetryTimeoutsRef.current.delete(pid);
         const meta = producerIdToMetaRef.current.get(pid);
         const trackByConsumer = (() => {
           for (const cid of Object.keys(consumersRef.current)) {
@@ -1614,19 +1703,32 @@ function VideoChatContent() {
   };
 
   const consume = (producerId, remoteUserId) => {
-    // If receiving transport isn't ready yet, wait and retry
-    if (!recvTransportRef.current) {
-      console.log('[WebRTC] Recv transport not ready, retrying consume in 1s...');
-      setTimeout(() => consume(producerId, remoteUserId), 1000);
+    const producerKey = String(producerId || '');
+    if (!producerKey) return;
+    if (consumedProducerIdsRef.current.has(producerKey) || consumingProducerIdsRef.current.has(producerKey)) {
       return;
     }
 
+    // If receiving transport isn't ready yet, wait and retry
+    if (!recvTransportRef.current) {
+      if (!consumeRetryTimeoutsRef.current.has(producerKey)) {
+        realtimeDebug('[WebRTC] Recv transport not ready, retrying consume in 1s...');
+        const tid = setTimeout(() => {
+          consumeRetryTimeoutsRef.current.delete(producerKey);
+          consume(producerId, remoteUserId);
+        }, 1000);
+        consumeRetryTimeoutsRef.current.set(producerKey, tid);
+      }
+      return;
+    }
+
+    consumingProducerIdsRef.current.add(producerKey);
     send({
       type: 'consume',
       data: {
         roomId: roomInfoRef.current.roomId,
         transportId: recvTransportRef.current.id,
-        producerId,
+        producerId: producerKey,
         rtpCapabilities: deviceRef.current.rtpCapabilities
       }
     });
@@ -1774,7 +1876,10 @@ function VideoChatContent() {
   useEffect(() => {
     if (!isBroadcasting) return;
     refreshBroadcastHud();
-    const id = setInterval(() => refreshBroadcastHud(), 2500);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      refreshBroadcastHud();
+    }, 5000);
     return () => clearInterval(id);
   }, [isBroadcasting, refreshBroadcastHud]);
 
@@ -1827,7 +1932,10 @@ function VideoChatContent() {
   useEffect(() => {
     if (!showWaitlist) return;
     refreshWaitlist();
-    const id = setInterval(() => refreshWaitlist(), 3000);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      refreshWaitlist();
+    }, 5000);
     return () => clearInterval(id);
   }, [showWaitlist, refreshWaitlist]);
 

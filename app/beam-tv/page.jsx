@@ -32,6 +32,13 @@ const getWsUrl = () => {
   }
 };
 
+const isRealtimeDebugEnabled = () =>
+  process.env.NEXT_PUBLIC_REALTIME_DEBUG === 'true';
+
+const realtimeDebug = (...args) => {
+  if (isRealtimeDebugEnabled()) console.log(...args);
+};
+
 
 
 function BeamTVInner() {
@@ -77,6 +84,9 @@ function BeamTVInner() {
   const deviceRef = useRef(null);
   const recvTransportRef = useRef(null);
   const consumersRef = useRef({});
+  const consumingProducerIdsRef = useRef(new Set());
+  const consumedProducerIdsRef = useRef(new Set());
+  const consumeRetryTimeoutsRef = useRef(new Map());
   const producerUserIdByProducerIdRef = useRef({});
   const producerIdToMetaRef = useRef(new Map());
   const remoteStreamsRef = useRef([]);
@@ -97,6 +107,26 @@ function BeamTVInner() {
       wsRef.current.close();
       wsRef.current = null;
     }
+    Object.values(consumersRef.current || {}).forEach((consumer) => {
+      try {
+        consumer?.track?.stop?.();
+        consumer?.close?.();
+      } catch (_) {}
+    });
+    try {
+      recvTransportRef.current?.close?.();
+    } catch (_) {}
+    consumeRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
+    consumeRetryTimeoutsRef.current.clear();
+    consumingProducerIdsRef.current.clear();
+    consumedProducerIdsRef.current.clear();
+    if (!preserveStreams) {
+      remoteStreamsRef.current?.forEach((s) => {
+        s?.stream?.getTracks?.().forEach((t) => t.stop());
+        s?.screenStream?.getTracks?.().forEach((t) => t.stop());
+      });
+      remoteStreamsRef.current = [];
+    }
     recvTransportRef.current = null;
     consumersRef.current = {};
     producerUserIdByProducerIdRef.current = {};
@@ -113,6 +143,37 @@ function BeamTVInner() {
       wsRef.current.send(JSON.stringify(msg));
     }
   }, []);
+
+  const consumeBroadcastProducer = useCallback((roomId, producerId, rtpCapabilities) => {
+    const producerKey = String(producerId || '');
+    if (!roomId || !producerKey || !rtpCapabilities) return;
+    if (consumedProducerIdsRef.current.has(producerKey) || consumingProducerIdsRef.current.has(producerKey)) {
+      return;
+    }
+
+    const transport = recvTransportRef.current;
+    if (!transport) {
+      if (!consumeRetryTimeoutsRef.current.has(producerKey)) {
+        const tid = setTimeout(() => {
+          consumeRetryTimeoutsRef.current.delete(producerKey);
+          consumeBroadcastProducer(roomId, producerKey, rtpCapabilities);
+        }, 750);
+        consumeRetryTimeoutsRef.current.set(producerKey, tid);
+      }
+      return;
+    }
+
+    consumingProducerIdsRef.current.add(producerKey);
+    send({
+      type: 'consume-broadcast',
+      data: {
+        roomId,
+        transportId: transport.id,
+        producerId: producerKey,
+        rtpCapabilities
+      }
+    });
+  }, [send]);
 
   // Hydrate session id on mount
   useEffect(() => {
@@ -380,7 +441,7 @@ function BeamTVInner() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('[BeamTV] WS connected, joining as viewer...');
+      realtimeDebug('[BeamTV] WS connected, joining as viewer...');
       // Guard against accidental re-joins to the same room (can happen during fast UI transitions)
       const conn = wsRef.current;
       if (conn && conn.__joinedRoomId === roomId) return;
@@ -390,7 +451,7 @@ function BeamTVInner() {
 
     ws.onmessage = async (e) => {
       const msg = JSON.parse(e.data);
-      console.log('[BeamTV] WS message:', msg.type, msg);
+      realtimeDebug('[BeamTV] WS message:', msg.type, msg);
 
       if (msg.type === 'error') {
         console.error('[BeamTV] WS Error:', msg.data);
@@ -413,7 +474,7 @@ function BeamTVInner() {
     };
 
     ws.onclose = () => {
-      console.log('[BeamTV] WebSocket closed');
+      realtimeDebug('[BeamTV] WebSocket closed');
     };
   };
 
@@ -847,7 +908,7 @@ function BeamTVInner() {
         deviceRef.current = device;
 
         setStatus('connected');
-        console.log('[BeamTV] Device loaded. Creating viewer transport...');
+        realtimeDebug('[BeamTV] Device loaded. Creating viewer transport...');
         send({ type: 'create-viewer-transport', data: { roomId } });
         break;
       }
@@ -865,7 +926,7 @@ function BeamTVInner() {
 
         recvTransportRef.current = transport;
 
-        console.log('[BeamTV] Transport created, fetching broadcast producers...');
+        realtimeDebug('[BeamTV] Transport created, fetching broadcast producers...');
         send({ type: 'get-broadcast-producers', data: { roomId } });
 
         // Producers can race with broadcast start / produce. Retry a few times if none arrive.
@@ -888,7 +949,7 @@ function BeamTVInner() {
         break;
       }
       case 'broadcast-producers': {
-        console.log('[BeamTV] Producers found:', data.producers);
+        realtimeDebug('[BeamTV] Producers found:', data.producers);
         const transport = recvTransportRef.current;
         const d = deviceRef.current;
         if (!transport || !d) return;
@@ -907,19 +968,16 @@ function BeamTVInner() {
           if (p?.producerId && p?.userId) {
             producerUserIdByProducerIdRef.current[p.producerId] = p.userId;
           }
-          send({
-            type: 'consume-broadcast',
-            data: {
-              roomId,
-              transportId: transport.id,
-              producerId: p.producerId,
-              rtpCapabilities: d.rtpCapabilities
-            }
-          });
+          consumeBroadcastProducer(roomId, p.producerId, d.rtpCapabilities);
         });
         break;
       }
       case 'broadcast-consumed': {
+        const producerKey = String(data.producerId || '');
+        if (producerKey) {
+          consumingProducerIdsRef.current.delete(producerKey);
+          consumedProducerIdsRef.current.add(producerKey);
+        }
         const transport = recvTransportRef.current;
         const consumer = await transport.consume({
           id: data.id,
@@ -965,9 +1023,12 @@ function BeamTVInner() {
             return [...prev, newEntry];
           }
           if (streamInfo) {
+            const existingTracks = streamInfo.stream
+              .getTracks()
+              .filter((existingTrack) => existingTrack.readyState !== 'ended' && existingTrack.kind !== track.kind);
             const next = prev.map((s) =>
               s.userId === remoteUserId
-                ? { ...s, stream: new MediaStream([...s.stream.getTracks(), track]) }
+                ? { ...s, stream: new MediaStream([...existingTracks, track]) }
                 : s
             );
             return next;
@@ -993,6 +1054,11 @@ function BeamTVInner() {
       case 'producer-closed': {
         const closedPid = data?.producerId != null ? String(data.producerId) : '';
         if (!closedPid) break;
+        consumingProducerIdsRef.current.delete(closedPid);
+        consumedProducerIdsRef.current.delete(closedPid);
+        const retryTid = consumeRetryTimeoutsRef.current.get(closedPid);
+        if (retryTid) clearTimeout(retryTid);
+        consumeRetryTimeoutsRef.current.delete(closedPid);
         const meta = producerIdToMetaRef.current.get(closedPid);
         let foundCid = null;
         let foundConsumer = null;
@@ -1074,6 +1140,11 @@ function BeamTVInner() {
   };
 
   // Profile hydration for the newly added remoteStreams
+  const remoteUserIdsKey = useMemo(
+    () => remoteStreams.map((s) => String(s.userId || '')).filter(Boolean).sort().join('|'),
+    [remoteStreams]
+  );
+
   useEffect(() => {
     const fetchProfiles = async () => {
       const needed = remoteStreams.filter(s => !s.profileFetched && s.userId !== 'broadcaster' && !s.userId.startsWith('producer:'));
@@ -1106,7 +1177,9 @@ function BeamTVInner() {
       }
     };
     fetchProfiles();
-  }, [remoteStreams]);
+    // Profile hydration should run when the participant set changes, not when tracks are appended.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteUserIdsKey]);
 
   // Keep a ref in sync for retry logic (avoid stale closures)
   useEffect(() => {
@@ -1118,6 +1191,7 @@ function BeamTVInner() {
     if (!sessionId) return;
     if (status !== 'empty') return;
     const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchNextBroadcast(sessionId, { preserveUi: true });
     }, 3000);
     return () => clearInterval(id);
@@ -1155,6 +1229,7 @@ function BeamTVInner() {
     if (!isLoggedIn()) return;
     refreshFavouriteProfiles();
     const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       refreshFavouriteProfiles();
     }, 8000);
     return () => clearInterval(id);

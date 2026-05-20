@@ -32,6 +32,7 @@ export default function MeetSomeoneNew({
   coins: externalCoins,
   activeUsers: externalActiveUsers,
   myProfile: externalMyProfile,
+  unreadCount: externalUnreadCount,
 
   // Squad props
   squadLobby,
@@ -65,7 +66,7 @@ export default function MeetSomeoneNew({
   const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [internalUnreadCount, setInternalUnreadCount] = useState(0);
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [isSquadInviteOpen, setIsSquadInviteOpen] = useState(false);
 
@@ -75,6 +76,7 @@ export default function MeetSomeoneNew({
   const coins = externalCoins !== undefined ? externalCoins : internalCoins;
   const activeUsers = externalActiveUsers !== undefined ? externalActiveUsers : internalActiveUsers;
   const myProfile = externalMyProfile || internalMyProfile;
+  const unreadCount = externalUnreadCount !== undefined ? externalUnreadCount : internalUnreadCount;
 
   async function fetchMyProfile() {
     try {
@@ -114,6 +116,10 @@ export default function MeetSomeoneNew({
     if (!externalMyProfile) void Promise.resolve().then(() => fetchMyProfile());
     if (externalCoins === undefined) void Promise.resolve().then(() => fetchWalletBalance());
 
+    if (externalUnreadCount !== undefined) {
+      return undefined;
+    }
+
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('accessToken');
@@ -121,7 +127,7 @@ export default function MeetSomeoneNew({
         const notifRes = await getNotificationCountThrottled();
         if (notifRes) {
           const count = getNotificationBadgeCount(notifRes);
-          setUnreadCount(count);
+          setInternalUnreadCount(count);
         }
       } catch (e) {
         // silent failure
@@ -129,7 +135,7 @@ export default function MeetSomeoneNew({
     };
 
     const unsubscribe = subscribeNotificationCount((notifRes) => {
-      setUnreadCount(getNotificationBadgeCount(notifRes));
+      setInternalUnreadCount(getNotificationBadgeCount(notifRes));
     });
     const unsubscribeRealtime = subscribeNotificationRealtime();
     fetchNotifications();
@@ -151,7 +157,7 @@ export default function MeetSomeoneNew({
       unsubscribeRealtime();
       clearInterval(notifInterval);
     };
-  }, [externalMyProfile, externalCoins, externalActiveUsers]);
+  }, [externalMyProfile, externalCoins, externalActiveUsers, externalUnreadCount]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');

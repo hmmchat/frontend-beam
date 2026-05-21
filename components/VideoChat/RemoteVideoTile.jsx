@@ -37,6 +37,11 @@ export default function RemoteVideoTile({
   const pipRef = useRef(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
+  const playSafely = (el) => {
+    const pr = el?.play?.();
+    if (pr && typeof pr.catch === 'function') pr.catch(() => {});
+  };
+
   useEffect(() => {
     if (screenShareStream) return;
     const v = videoRef.current;
@@ -44,6 +49,40 @@ export default function RemoteVideoTile({
     if (v.srcObject !== stream) {
       v.srcObject = stream;
     }
+    playSafely(v);
+
+    const videoTrack = stream?.getVideoTracks?.()[0];
+    const recoverPlayback = () => {
+      if (!videoRef.current || !stream || videoTrack?.readyState === 'ended') return;
+      const el = videoRef.current;
+      if (el.srcObject !== stream) el.srcObject = stream;
+      playSafely(el);
+    };
+
+    videoTrack?.addEventListener?.('unmute', recoverPlayback);
+    videoTrack?.addEventListener?.('mute', recoverPlayback);
+    document.addEventListener('visibilitychange', recoverPlayback);
+    window.addEventListener('focus', recoverPlayback);
+    window.addEventListener('pageshow', recoverPlayback);
+
+    // Chrome/Safari can occasionally stall a WebRTC <video> while the track is still live.
+    // Re-playing the same stream is cheap and avoids black remote tiles until a remount.
+    const intervalId = window.setInterval(() => {
+      const el = videoRef.current;
+      if (!el || !stream || videoTrack?.readyState === 'ended') return;
+      if (el.paused || el.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        recoverPlayback();
+      }
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      videoTrack?.removeEventListener?.('unmute', recoverPlayback);
+      videoTrack?.removeEventListener?.('mute', recoverPlayback);
+      document.removeEventListener('visibilitychange', recoverPlayback);
+      window.removeEventListener('focus', recoverPlayback);
+      window.removeEventListener('pageshow', recoverPlayback);
+    };
   }, [stream, screenShareStream]);
 
   useEffect(() => {
@@ -52,12 +91,8 @@ export default function RemoteVideoTile({
     const p = pipRef.current;
     if (s && s.srcObject !== screenShareStream) s.srcObject = screenShareStream;
     if (p && p.srcObject !== stream) p.srcObject = stream;
-    const play = (el) => {
-      const pr = el?.play?.();
-      if (pr && typeof pr.catch === 'function') pr.catch(() => {});
-    };
-    if (s) play(s);
-    if (p) play(p);
+    if (s) playSafely(s);
+    if (p) playSafely(p);
   }, [stream, screenShareStream]);
 
   return (
@@ -86,6 +121,7 @@ export default function RemoteVideoTile({
           autoPlay
           playsInline
           className="h-full w-full min-h-0 object-cover md:rounded-[60px] " 
+          style={{ transform: 'translateZ(0)' }}
         />
       )}
 

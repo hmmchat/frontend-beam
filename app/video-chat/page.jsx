@@ -81,12 +81,14 @@ const isMobileRuntime = () => {
   );
 };
 
-const getCameraConstraints = () => {
+const getCameraConstraints = ({ exactFrontCamera = false } = {}) => {
+  const facingMode = exactFrontCamera ? { exact: 'user' } : { ideal: 'user' };
   if (!isMobileRuntime()) {
     return {
       width: { ideal: 1280 },
       height: { ideal: 720 },
-      frameRate: { ideal: 30, max: 30 }
+      frameRate: { ideal: 30, max: 30 },
+      facingMode
     };
   }
 
@@ -94,7 +96,8 @@ const getCameraConstraints = () => {
   return {
     width: { ideal: 960, max: 1280 },
     height: { ideal: 540, max: 720 },
-    frameRate: { ideal: 24, max: 24 }
+    frameRate: { ideal: 24, max: 24 },
+    facingMode
   };
 };
 
@@ -278,11 +281,27 @@ function VideoChatContent() {
       const videoProducer = producersRef.current.video;
       const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
       if (document.hidden) {
-        try { videoProducer?.pause?.(); } catch (_) {}
-        if (videoTrack && !isCamOffRef.current) videoTrack.enabled = false;
-      } else if (!isCamOffRef.current) {
+        return;
+      }
+
+      if (!isCamOffRef.current) {
         if (videoTrack) videoTrack.enabled = true;
         try { videoProducer?.resume?.(); } catch (_) {}
+        Object.values(consumersRef.current || {}).forEach((consumer) => {
+          if (consumer?.kind !== 'video') return;
+          try { consumer.resume?.(); } catch (_) {}
+        });
+        setRemoteStreams((prev) => {
+          const next = prev.map((remote) => ({
+            ...remote,
+            stream: remote.stream ? new MediaStream(remote.stream.getTracks().filter((t) => t.readyState !== 'ended')) : remote.stream,
+            screenStream: remote.screenStream
+              ? new MediaStream(remote.screenStream.getTracks().filter((t) => t.readyState !== 'ended'))
+              : remote.screenStream
+          }));
+          remoteStreamsRef.current = next;
+          return next;
+        });
         if (roomInfoRef.current?.roomId && wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'get-producers', data: { roomId: roomInfoRef.current.roomId } }));
         }
@@ -1281,14 +1300,25 @@ function VideoChatContent() {
 
   const startMediaAndSignaling = async (info, userId) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: getCameraConstraints(),
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          channelCount: 1
-        }
-      });
+      const audioConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        channelCount: 1
+      };
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: getCameraConstraints({ exactFrontCamera: isMobileRuntime() }),
+          audio: audioConstraints
+        });
+      } catch (frontCameraError) {
+        // Some Android browsers reject exact facingMode despite having a front camera.
+        // Fall back to an ideal preference rather than failing the whole call.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: getCameraConstraints({ exactFrontCamera: false }),
+          audio: audioConstraints
+        });
+      }
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
     } catch (err) {

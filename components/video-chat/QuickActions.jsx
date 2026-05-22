@@ -13,6 +13,7 @@ export default function QuickActions({
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
   const [isRolling, setIsRolling] = useState(false);
+  const [isBroken, setIsBroken] = useState(false);
 
   const diceImages = [
     '/dice/dice11.png',
@@ -79,13 +80,17 @@ export default function QuickActions({
   </div> */}
       {/* CENTER-RIGHT (Icecream) - Positioned at the right side of the left video (near 50% mark) */}
       <button
-        onClick={handleIcebreaker}
+        onClick={() => {
+          setIsBroken(true);
+          handleIcebreaker?.();
+          setTimeout(() => setIsBroken(false), 3000);
+        }}
         className={clsx(
-          "absolute bottom-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl",
+          "absolute bottom-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto ",
           "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
         )}
       >
-        <img src="/icecream.png" className="w-5 h-6" />
+        <img src={isBroken ? "/icecreambreak.png" : "/icecream.png"} className={clsx(isBroken ? "w-5 h-6  transition-transform" : "w-5 h-6 transition-transform")} />
       </button>
 
     </div>

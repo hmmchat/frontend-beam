@@ -2105,7 +2105,7 @@ export default function MeetSomeoneDynamic() {
                         await fetchCard(null, true);
                       }}
                       isSearching={isSearching}
-                      className="mt-40 w-[79%] h-30"
+                      className="mt-40 w-[79%] h-28"
                       iconClass="md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
                       borderClass="md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
                       isVideoOn={isVideoOn}

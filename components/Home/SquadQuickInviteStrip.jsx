@@ -22,7 +22,7 @@ export default function SquadQuickInviteStrip({
   return (
     <div
       className={clsx(
-        'flex w-full  mt-5    ',
+        'flex md:w-[50%]  mt-5    ',
 
 
       )}

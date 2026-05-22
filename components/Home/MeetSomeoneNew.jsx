@@ -259,8 +259,8 @@ export default function MeetSomeoneNew({
             <div className="flex border border-white/50 rounded-full w-[40vw] relative shadow-inner h-[4.5vh] pointer-events-auto z-50 cursor-pointer">
               <div
                 className={clsx(
-                  "absolute top-1 bottom-1 w-[calc(50%-4px)] border bg-black/10 border-white/60 rounded-full transition-all duration-500",
-                  mode === 'solo' ? "left-1" : "left-[calc(50%+2px)]"
+                  "absolute top-0.5 bottom-0.5 w-[calc(50%-4px)] border bg-black/10  border-white/60 rounded-full transition-all duration-500",
+                  mode === 'solo' ? "left-0.5" : "left-[calc(50%+2px)]"
                 )}
               />
               <button
@@ -399,25 +399,27 @@ export default function MeetSomeoneNew({
 
       {/* {only solo tab buttons} */}
  {mode !== 'squad' && (
-  <div
-    className="
-      absolute
-      bottom-[23%]
-      left-1/2
-      -translate-x-1/2
-      z-40
-      pointer-events-none
-      w-[94%]
-      max-w-[520px]
-      px-4
-    "
-  >
+<div
+  className="
+    absolute
+    bottom-[25%]
+    sm:bottom-[20%]
+    left-1/2
+    -translate-x-1/2
+    z-40
+    pointer-events-none
+    w-full
+    max-w-[520px]
+    px-3
+    sm:px-4
+  "
+>
     <div className="w-full pointer-events-auto flex justify-center">
       <MeetNowButton
         onClick={handleMeetNow}
         className="
           w-[clamp(300px,85vw,520px)]
-          aspect-[24/5]
+          aspect-[23/5]
         "
         iconClass="
           transition-all
@@ -534,11 +536,11 @@ export default function MeetSomeoneNew({
           <div className="flex flex-col gap-6 mx-auto">
 
             {/* Avatars */}
-            <div className="flex items-center justify-center gap-5 flex-nowrap overflow-x-auto">
+  <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
 
               {/* Me */}
               <div className="flex flex-col items-center gap-1">
-                <div className="w-[72px] h-[72px] rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
+                <div className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
                   <img
                     src={myProfile?.displayPictureUrl || '/assets/avatar1.png'}
                     alt="me"
@@ -562,7 +564,7 @@ export default function MeetSomeoneNew({
 
                   <div className="flex flex-col items-center gap-1">
 
-                    <div className="relative w-18 h-18">
+   <div className="relative w-[60px] h-[60px] sm:w-18 sm:h-18">
 
                       <div className="w-full h-full rounded-full border-[3px] border-white/90 flex items-center justify-center overflow-hidden bg-black/10">
 
@@ -693,7 +695,7 @@ export default function MeetSomeoneNew({
                 isVideoOn
               />
             ) : (
-              <div className="w-[75%] mx-auto">
+              <div className="w-full max-w-[280px] mx-auto">
 
                 <SquadQuickInviteStrip
                   friends={quickInviteFriends}

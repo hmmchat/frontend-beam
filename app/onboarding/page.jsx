@@ -7,16 +7,10 @@ import Onboarding from '../../components/Home/Onboarding';
 
 
 const OnboardingPage = () => {
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   return (
-
-          <Onboarding />
-
-
-
-
-
-   
+    <div className="min-h-[100svh] overflow-x-hidden">
+      <Onboarding />
+    </div>
   );
 };
 

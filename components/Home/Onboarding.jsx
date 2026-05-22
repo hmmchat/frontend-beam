@@ -54,7 +54,7 @@ export default function Onboarding() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOverlayMode, setIsOverlayMode] = useState(false);
   const [showCityModal, setShowCityModal] = useState(false);
-const [tempCity, setTempCity] = useState(city || "Anywhere");
+  const [tempCity, setTempCity] = useState(city || "Anywhere");
 
 
   const [showGenderModal, setShowGenderModal] = useState(false);
@@ -105,7 +105,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
       const intent = sp.get('intent') === '1';
       if (overlay) setIsOverlayMode(true);
       if (intent) setStep(2);
-    } catch (_) {}
+    } catch (_) { }
 
     const checkUserProfile = async () => {
       setLoading(true);
@@ -184,7 +184,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
           setIsEditing(false);
           setLoading(false);
         }
-        
+
       } catch (error) {
         console.error('Error checking profile:', error);
         setApiError('Invalid session. Please login again.');
@@ -201,11 +201,11 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
         if (response.ok) {
           const data = await response.json();
           // Data is { prompts: [{ id, text }, ...] }
- setSuggestions(
-  data.prompts
-    ?.map(p => p.text)
-    .slice(0,6) // 👈 yaha control kar number
-);
+          setSuggestions(
+            data.prompts
+              ?.map(p => p.text)
+              .slice(0, 6) // 👈 yaha control kar number
+          );
         }
       } catch (err) {
         console.error('Error fetching suggestions:', err);
@@ -330,7 +330,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
 
   const validate = () => {
     const e = {};
-    
+
     const username = normalizeDisplayNameWhitespace(name).trim();
     if (!username) {
       e.name = "Please enter your name.";
@@ -339,12 +339,12 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
     } else if (username.length > DISPLAY_NAME_MAX_LEN) {
       e.name = `Name must be at most ${DISPLAY_NAME_MAX_LEN} characters.`;
     }
-    
+
     const { day, month, year } = dob;
     if (!day || isNaN(Number(day)) || Number(day) < 1 || Number(day) > 31) e.day = "Invalid day";
     if (!month || isNaN(Number(month)) || Number(month) < 1 || Number(month) > 12) e.month = "Invalid month";
     if (!year || isNaN(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear()) e.year = "Invalid year";
-    
+
     if (day && month && year && !e.day && !e.month && !e.year) {
       const dobDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const age = Math.floor((new Date() - dobDate) / (365.25 * 24 * 60 * 60 * 1000));
@@ -352,10 +352,10 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
         e.year = "You must be at least 18 years old";
       }
     }
-    
+
     if (!gender && !preferNotToSay) e.gender = "Select gender";
     if (!city || city === "Anywhere" || city === "ANYWHERE_IN_INDIA") e.city = "Please select a city";
-    
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -369,7 +369,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
     if (!userId) {
@@ -403,7 +403,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
         'female': 'FEMALE',
         'nonbinary': 'NON_BINARY'
       };
-      
+
       const backendGender = preferNotToSay ? 'PREFER_NOT_TO_SAY' : (genderMap[gender] || 'PREFER_NOT_TO_SAY');
 
       const profileData = {
@@ -431,7 +431,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
         if (!response.ok) {
           const errorData = await response.json();
           const errorMessage = errorData.message || errorData.error || "";
-          
+
           if (errorMessage.toLowerCase().includes('already exists')) {
             console.warn('Profile already exists, proceeding with updates...');
           } else if (errorMessage.toLowerCase().includes('unique constraint') && errorMessage.toLowerCase().includes('username')) {
@@ -454,7 +454,7 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
         await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
           method: 'PATCH',
           body: JSON.stringify({ city })
-        }).catch(() => {}); // non-critical
+        }).catch(() => { }); // non-critical
       }
 
       // 3. Add extra photos if any
@@ -472,25 +472,25 @@ const [tempCity, setTempCity] = useState(city || "Anywhere");
       }
 
       // 4. Update Intent/Prompt if present
-if (prompt.trim() && accessToken) {
-  const res = await fetch(API.USERS.UPDATE_INTENT, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify({ intent: prompt.trim() })
-  });
+      if (prompt.trim() && accessToken) {
+        const res = await fetch(API.USERS.UPDATE_INTENT, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ intent: prompt.trim() })
+        });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("Intent update failed:", err);
-    throw new Error("Intent update failed");
-  } else {
-    const data = await res.json();
-    console.log("Intent updated:", data);
-  }
-}
+        if (!res.ok) {
+          const err = await res.text();
+          console.error("Intent update failed:", err);
+          throw new Error("Intent update failed");
+        } else {
+          const data = await res.json();
+          console.log("Intent updated:", data);
+        }
+      }
 
       router.push('/facecard');
 
@@ -506,7 +506,7 @@ if (prompt.trim() && accessToken) {
 
   const handleDobChange = (e, field) => {
     let val = e.target.value.replace(/\D/g, "");
-    
+
     if (field === "day") {
       val = val.slice(0, 2);
       const num = parseInt(val);
@@ -514,10 +514,10 @@ if (prompt.trim() && accessToken) {
       if (val.length === 1 && num > 3) return;
       // Validate full 2-digit value (must be 01 - 31)
       if (val.length === 2 && (num < 1 || num > 31)) return;
-      
+
       setDob((prev) => ({ ...prev, day: val }));
       if (val.length === 2) monthRef.current?.focus();
-    } 
+    }
     else if (field === "month") {
       val = val.slice(0, 2);
       const num = parseInt(val);
@@ -525,10 +525,10 @@ if (prompt.trim() && accessToken) {
       if (val.length === 1 && num > 1) return;
       // Validate full 2-digit value (must be 01 - 12)
       if (val.length === 2 && (num < 1 || num > 12)) return;
-      
+
       setDob((prev) => ({ ...prev, month: val }));
       if (val.length === 2) yearRef.current?.focus();
-    } 
+    }
     else if (field === "year") {
       val = val.slice(0, 4);
       setDob((prev) => ({ ...prev, year: val }));
@@ -537,7 +537,7 @@ if (prompt.trim() && accessToken) {
 
   if (loading && !apiError && !name) {
     return (
-      <div 
+      <div
         className="w-full flex h-screen items-center justify-center bg-purple-950 p-4"
         style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
@@ -570,7 +570,7 @@ if (prompt.trim() && accessToken) {
                 <Skeleton className="h-4 w-32 mb-2 ml-1 opacity-50" />
                 <Skeleton className="h-14 w-full border border-white/20 rounded-xl" />
               </div>
-              
+
               <div>
                 <Skeleton className="h-4 w-32 mb-2 ml-1 opacity-50" />
                 <div className="grid grid-cols-3 gap-2">
@@ -600,7 +600,7 @@ if (prompt.trim() && accessToken) {
 
   return (
 
-<div className="w-full h-[100dvh] overflow-hidden relative outfit-font text-white"
+    <div className="w-full min-h-[100svh] overflow-x-hidden relative outfit-font text-white"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -618,528 +618,552 @@ if (prompt.trim() && accessToken) {
 
 
 
-<main className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen overflow-hidden p-6">
+        <main className="
+  grid
+  grid-cols-1
+  lg:grid-cols-2
+  gap-4
+  min-h-screen
+  overflow-hidden
+  p-3
+  md:p-6
+">
 
-            {step === 1 && (
-    <>
+          {step === 1 && (
+            <>
 
 
-           {/* <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
+              {/* <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
   <img src="/logo.png" className="w-40 mx-auto" />
   <p className="text-white text-lg font-medium mt-1">
     Meet someone here
   </p>
 </div> */}
-          {/* Left */} 
-          <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto md:border md:border-white/30 md:rounded-[60px] hidden md:flex ">
-            <div className="mx-auto ">
+              {/* Left */}
+              <div className="bg-gradient-purple-dark flex items-center justify-center text-center w-full mx-auto md:border md:border-white/30 md:rounded-[60px] hidden md:flex ">
+                <div className="mx-auto ">
 
-            <h3 className="text-3xl font-bold ">Welcome onboard,</h3>
-              <p className="md:text-lg text-sm md:mt-3  opacity-95 font-outfit">Okeeyy! Let's get you started,</p>
-              <p className="md:text-lg text-sm  opacity-95 font-outfit">Just get done with the itsy bitsy stuff first</p>
-            </div>
-          </div>
-
-
-
-
-          {/* Right - Form */}
-
-<div className=" items-center   ">
-
-<div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
-            <div className="w-full  sm:max-w-[420px] md:max-w-[520px] rounded-2xl  mx-auto ">
-
-
-
- <div className="mx-auto md:hidden  flex flex-col items-center text-center mb-6 ">
-  <img src="/logo.png" className="w-28 mx-auto" />
-
-            <p className="text-sm font-bold outfit-font">Welcome onboard!</p>
-              <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 outfit-font">getting your started now</p>
-
-            </div>
+                  <h3 className="text-3xl font-bold ">Welcome onboard,</h3>
+                  <p className="md:text-lg text-sm md:mt-3  opacity-95 font-outfit">Okeeyy! Let's get you started,</p>
+                  <p className="md:text-lg text-sm  opacity-95 font-outfit">Just get done with the itsy bitsy stuff first</p>
+                </div>
+              </div>
 
 
 
 
-<div className="flex flex-col justify-start h-auto mt-4">
+              {/* Right - Form */}
+
+              <div className=" items-center    ">
+
+                <div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
+                  <div className="
+  w-full
+  sm:max-w-[420px]
+  md:max-w-[520px]
+  rounded-2xl
+  mx-auto
+  compact-on-short
+">
 
 
-  <div
-    className="
+
+                    <div className="mx-auto md:hidden  flex flex-col items-center text-center mb-6 ">
+                      <img src="/logo.png" className="w-28 mx-auto" />
+
+                      <p className="text-sm font-bold outfit-font">Welcome onboard!</p>
+                      <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 outfit-font">getting your started now</p>
+
+                    </div>
+
+
+
+
+                    <div className="flex flex-col justify-start h-auto mt-4">
+
+
+                      <div
+                        className="
  
       origin-top
       transition-all
     "
-  >
+                      >
 
-    <div className="flex items-center justify-center ">
-  <div className="w-full md:border md:border-white/30 md:p-2   md:pb-3  md:rounded-[60px] ">
-<form onSubmit={handleSubmit} className="space-y-5 md:space-y-6  md:p-2">
-                
-                {/* 2️⃣ Photo upload UI */}
-                <div className=" border border-white/30 py-3 md:p-5 md:rounded-[44px]  rounded-[20px] ">
-                
+                        <div className="flex items-center justify-center ">
+                          <div className="w-full md:border md:border-white/30 md:p-2   md:pb-3  md:rounded-[60px] ">
+                            <form
+                              onSubmit={handleSubmit}
+                              className="
+                                space-y-3
+                                md:space-y-5
+                                md:p-2
+                              
+                              "
+                            >
 
-                  <div className="flex justify-center md:gap-4 gap-2">
-                    {[0, 1, 2].map((i) => {
-                      // Only show the slot if it's the first one OR the previous one is filled
-                      const isVisible = i === 0 || !!photos[i - 1];
-                      if (!isVisible) return null;
+                              {/* 2️⃣ Photo upload UI */}
+                              <div className=" border border-white/30 w-[95%] mx-auto py-2 md:p-5 md:rounded-[44px]  rounded-[20px] ">
 
-                      return (
-                        <div
-                          key={i}
-className="
+                                <div className="flex justify-center md:gap-4 gap-2">
+                                  {[0, 1, 2].map((i) => {
+                                    // Only show the slot if it's the first one OR the previous one is filled
+                                    const isVisible = i === 0 || !!photos[i - 1];
+                                    if (!isVisible) return null;
+
+                                    return (
+                                      <div
+                                        key={i}
+                                        className="
   relative 
-  w-[110px] sm:w-[110px] md:w-32 
-  aspect-[2/3] md:aspect-[2/3] 
+  w-[92px] sm:w-[110px] md:w-32 
+  max-h-[140px] sm:max-h-[160px] md:max-h-full
+  aspect-[4/6] md:aspect-[2/3] 
   rounded-[1rem] md:rounded-[1.5rem]
   border border-b-[3px] md:border-2 md:border-b-4 
   border-white/40 overflow-hidden 
   animate-in fade-in zoom-in duration-300
 "
-                          onClick={() => fileRefs.current[i]?.click()}
-                        >
-                          {photos[i] ? (
-                            <>
-                              <img src={photos[i]} className="w-full h-full object-cover" alt={`upload-${i}`} />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removePhoto(i);
-                                }}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-whitetext-sm flex items-center justify-center "
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-white">
-                       <CiCirclePlus className="text-[50px] opacity-60  rounded-full "/>
+                                        onClick={() => fileRefs.current[i]?.click()}
+                                      >
+                                        {photos[i] ? (
+                                          <>
+                                            <img src={photos[i]} className="w-full h-full object-cover" alt={`upload-${i}`} />
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                removePhoto(i);
+                                              }}
+                                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-whitetext-sm flex items-center justify-center "
+                                            >
+                                              ✕
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <div className="flex flex-col items-center justify-center h-full text-white">
+                                            <CiCirclePlus className="text-[50px] opacity-60  rounded-full " />
 
-                            </div>
-                          )}
+                                          </div>
+                                        )}
 
-                          <input
-                            ref={(el) => (fileRefs.current[i] = el)}
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={(e) => onPhotoInputChange(e, i)}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                    <p className="text-white/50 text-sm text-center font-outfit mt-3">
-                    Upload your niceeee pictures
-                  </p>
-                </div>
+                                        <input
+                                          ref={(el) => (fileRefs.current[i] = el)}
+                                          type="file"
+                                          accept="image/*"
+                                          hidden
+                                          onChange={(e) => onPhotoInputChange(e, i)}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-white/50 text-sm text-center font-outfit mt-3">
+                                  Upload your niceeee pictures
+                                </p>
+                              </div>
 
-                {/* 3️⃣ Name input */}
+                              {/* 3️⃣ Name input */}
 
 
-                <div className="md:px-4 px-2 font-outfit">
-                  <label className="text-white text-sm mb-1 block">
-                    Enter name/ username
-                  </label>
-                  <input
-                    value={name}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    maxLength={DISPLAY_NAME_MAX_LEN}
-                    className="w-full bg-black/20 border-2 border-white/30 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
-                    placeholder="Your name"
-                  />
-                  {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
-                  {apiError && apiError.includes('username') && <div className="text-xs text-rose-400 mt-1">{apiError}</div>}
-                </div>
+                              <div className="md:px-4 px-2 font-outfit">
+                                <label className="text-white text-sm mb-1 block">
+                                  Enter name/ username
+                                </label>
+                                <input
+                                  value={name}
+                                  onChange={(e) => handleNameChange(e.target.value)}
+                                  maxLength={DISPLAY_NAME_MAX_LEN}
+                                  className="w-full bg-black/20 border-2 border-white/30 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                                  placeholder="Your name"
+                                />
+                                {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
+                                {apiError && apiError.includes('username') && <div className="text-xs text-rose-400 mt-1">{apiError}</div>}
+                              </div>
 
-                {/* 4️⃣ DOB inputs */}
-                <div className="md:px-4 px-2 font-outfit">
-                  <label className="text-white text-sm mb-1 block">Date of birth</label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <input
-                      name="day"
-                      value={dob.day}
-                      onChange={(e) => handleDobChange(e, 'day')}
-                      placeholder="Day"
-                      maxLength={2}
-                      inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
-                    />
-                    <input
-                      name="month"
-                      ref={monthRef}
-                      value={dob.month}
-                      onChange={(e) => handleDobChange(e, 'month')}
-                      placeholder="Month"
-                      maxLength={2}
-                      inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
-                    />
-                    <input
-                      name="year"
-                      ref={yearRef}
-                      value={dob.year}
-                      onChange={(e) => handleDobChange(e, 'year')}
-                      placeholder="Year"
-                      maxLength={4}
-                      inputMode="numeric"
-                      className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
-                    />
-                  </div>
-                  {(errors.day || errors.month || errors.year) && (
-                    <div className="text-xs text-rose-400 mt-1">
-                      {errors.day || errors.month || errors.year}
-                    </div>
-                  )}
-                </div>
+                              {/* 4️⃣ DOB inputs */}
+                              <div className="md:px-4 px-2 font-outfit">
+                                <label className="text-white text-sm mb-1 block">Date of birth</label>
+                                <div className="grid grid-cols-3 gap-4">
+                                  <input
+                                    name="day"
+                                    value={dob.day}
+                                    onChange={(e) => handleDobChange(e, 'day')}
+                                    placeholder="Day"
+                                    maxLength={2}
+                                    inputMode="numeric"
+                                    className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
+                                  />
+                                  <input
+                                    name="month"
+                                    ref={monthRef}
+                                    value={dob.month}
+                                    onChange={(e) => handleDobChange(e, 'month')}
+                                    placeholder="Month"
+                                    maxLength={2}
+                                    inputMode="numeric"
+                                    className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
+                                  />
+                                  <input
+                                    name="year"
+                                    ref={yearRef}
+                                    value={dob.year}
+                                    onChange={(e) => handleDobChange(e, 'year')}
+                                    placeholder="Year"
+                                    maxLength={4}
+                                    inputMode="numeric"
+                                    className="bg-black/20 border-2 border-white/30 rounded-xl px-4 py-3  md:px-5 md:py-5 text-white text-start focus:outline-none focus:border-white/60"
+                                  />
+                                </div>
+                                {(errors.day || errors.month || errors.year) && (
+                                  <div className="text-xs text-rose-400 mt-1">
+                                    {errors.day || errors.month || errors.year}
+                                  </div>
+                                )}
+                              </div>
 
-                {/* 5️⃣ Gender identity */}
-{/* 5️⃣ Gender + City (Row UI) */}
-<div className="md:px-4 px-2 font-outfit grid grid-cols-2 gap-3">
+                              {/* 5️⃣ Gender identity */}
+                              {/* 5️⃣ Gender + City (Row UI) */}
+                              <div className="md:px-4 px-2 font-outfit grid grid-cols-2 gap-3">
 
-  {/* Gender */}
-  <div>
-    <label className="text-white text-sm mb-2 block">
-      Gender Identity
-    </label>
-<div onClick={() => setShowGenderModal(true)}
-  className="w-full border border-white/40 border-b-[3px]
-  rounded-[1rem] px-5 py-4 text-white text-lg 
+                                {/* Gender */}
+                                <div>
+                                  <label className="text-white text-sm mb-2 block">
+                                    Gender Identity
+                                  </label>
+                                  <div onClick={() => setShowGenderModal(true)}
+                                    className="w-full border border-white/40 border-b-[3px]
+  rounded-[1rem] px-5 py-3 md:py-5 text-white text-lg 
   flex justify-between items-center cursor-pointer gap-2"
->
-  <span className="flex items-center gap-2 truncate min-w-0">
-    {gender === 'male' ? '♂ Male' : gender === 'female' ? '♀ Female' : gender === 'nonbinary' ? '⚧ Non Binary' : preferNotToSay ? '🙂 Prefer not to say' : 'Select'}
-  </span>
-  <span className="shrink-0">▼</span>
-</div>
-{errors.gender && <div className="text-xs text-rose-400 mt-1">{errors.gender}</div>}
+                                  >
+                                    <span className="flex items-center gap-2 truncate min-w-0">
+                                      {gender === 'male' ? '♂ Male' : gender === 'female' ? '♀ Female' : gender === 'nonbinary' ? '⚧ Non Binary' : preferNotToSay ? '🙂 Prefer not to say' : 'Select'}
+                                    </span>
+                                    <span className="shrink-0">▼</span>
+                                  </div>
+                                  {errors.gender && <div className="text-xs text-rose-400 mt-1">{errors.gender}</div>}
 
 
-{showGenderModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-72  ">
+                                  {showGenderModal && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-72  ">
 
-    <div
-      className="w-[90%] max-w-xs text-white rounded-[2rem] p-6  relative overflow-hidden "
-      style={{
-        backgroundImage: "url('/assets/mb.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+                                      <div
+                                        className="w-[90%] max-w-xs text-white rounded-[2rem] p-6  relative overflow-hidden "
+                                        style={{
+                                          backgroundImage: "url('/assets/mb.jpg')",
+                                          backgroundSize: "cover",
+                                          backgroundPosition: "center",
+                                        }}
+                                      >
 
-<div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
+                                        <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
 
-          <div 
-      className=" w-full relative outfit-font text-white" 
-      style={{
-        backgroundImage: "url('/assets/mb.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center"
-      }}
-    />
+                                        <div
+                                          className=" w-full relative outfit-font text-white"
+                                          style={{
+                                            backgroundImage: "url('/assets/mb.jpg')",
+                                            backgroundSize: "cover",
+                                            backgroundPosition: "center"
+                                          }}
+                                        />
 
-      <h2 className="text-xl font-semibold">Select Gender</h2>
-      <p className="text-sm text-white/60 mb-4">
-        Gender is not visible on your profile
-      </p>
+                                        <h2 className="text-xl font-semibold">Select Gender</h2>
+                                        <p className="text-sm text-white/60 mb-4">
+                                          Gender is not visible on your profile
+                                        </p>
 
-      <div className="space-y-5 z-50">
+                                        <div className="space-y-5 z-50">
 
-        {[
-          { label: "Male", value: "male", icon: "♂" },
-          { label: "Female", value: "female", icon: "♀" },
-          { label: "Non Binary", value: "nonbinary", icon: "⚧" },
-          { label: "Prefer not to say", value: "none", icon: "🙂" },
-        ].map((g) => (
-          <div
-            key={g.value}
-            onClick={() => setTempGender(g.value)}
-            className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <span>{g.icon}</span>
-              <span>{g.label}</span>
-            </div>
+                                          {[
+                                            { label: "Male", value: "male", icon: "♂" },
+                                            { label: "Female", value: "female", icon: "♀" },
+                                            { label: "Non Binary", value: "nonbinary", icon: "⚧" },
+                                            { label: "Prefer not to say", value: "none", icon: "🙂" },
+                                          ].map((g) => (
+                                            <div
+                                              key={g.value}
+                                              onClick={() => setTempGender(g.value)}
+                                              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer"
+                                            >
+                                              <div className="flex items-center gap-3">
+                                                <span>{g.icon}</span>
+                                                <span>{g.label}</span>
+                                              </div>
 
-            <div className={`w-5 h-5 rounded-full border-2 
+                                              <div className={`w-5 h-5 rounded-full border-2 
               ${tempGender === g.value ? "border-white bg-white" : "border-white/50"}
             `}></div>
-          </div>
-        ))}
+                                            </div>
+                                          ))}
 
-      </div>
+                                        </div>
 
-      {/* Apply Button */}
-      <div className="flex justify-end mt-6">
-        <button
-          onClick={() => {
-            if (tempGender === 'none') {
-              setGender(null);
-              setPreferNotToSay(true);
-            } else {
-              setGender(tempGender);
-              setPreferNotToSay(false);
-            }
-            setShowGenderModal(false);
-          }}
-          className="border border-white/40 px-6 py-2 rounded-full hover:bg-white/5 transition-colors"
-        >
-          Apply
-        </button>
-      </div>
+                                        {/* Apply Button */}
+                                        <div className="flex justify-end mt-6">
+                                          <button
+                                            onClick={() => {
+                                              if (tempGender === 'none') {
+                                                setGender(null);
+                                                setPreferNotToSay(true);
+                                              } else {
+                                                setGender(tempGender);
+                                                setPreferNotToSay(false);
+                                              }
+                                              setShowGenderModal(false);
+                                            }}
+                                            className="border border-white/40 px-6 py-2 rounded-full hover:bg-white/5 transition-colors"
+                                          >
+                                            Apply
+                                          </button>
+                                        </div>
 
-    </div>
-  </div>
-)}
-  </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
 
-  {/* Preferred City */}
-  <div>
-    <label className="text-white text-sm mb-2 block">
-      Preferred City
-    </label>
+                                {/* Preferred City */}
+                                <div>
+                                  <label className="text-white text-sm mb-2 block">
+                                    Preferred City
+                                  </label>
 
-  <div
-  onClick={() => setShowCityModal(true)}
-  className="w-full border border-white/40 border-b-[3px] 
-  rounded-[1rem] px-5 py-4 text-white text-lg 
+                                  <div
+                                    onClick={() => setShowCityModal(true)}
+                                    className="w-full border border-white/40 border-b-[3px] 
+  rounded-[1rem] px-5 py-3 md:py-5 text-white text-lg 
   flex justify-between items-center cursor-pointer gap-2"
->
-  <span className="truncate min-w-0">{
-    city === 'ANYWHERE_IN_INDIA' ? 'Anywhere in India' : 
-    (cities.find(c => c.value === city)?.name || city || "Anywhere")
-  }</span>
-  <span className="shrink-0">▼</span>
-</div>
-{errors.city && <div className="text-xs text-rose-400 mt-1">{errors.city}</div>}
-  </div>
+                                  >
+                                    <span className="truncate min-w-0">{
+                                      city === 'ANYWHERE_IN_INDIA' ? 'Anywhere in India' :
+                                        (cities.find(c => c.value === city)?.name || city || "Anywhere")
+                                    }</span>
+                                    <span className="shrink-0">▼</span>
+                                  </div>
+                                  {errors.city && <div className="text-xs text-rose-400 mt-1">{errors.city}</div>}
+                                </div>
 
 
-  {showCityModal && (
-  <div className="fixed inset-0 z-50 flex items-center  justify-center md:justify-end md:pr-40 md:pb-14   ">
+                                {showCityModal && (
+                                  <div className="fixed inset-0 z-50 flex items-center  justify-center md:justify-end md:pr-40 md:pb-14   ">
 
-    <div
-      className="w-[90%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
-      style={{
-        backgroundImage: "url('/assets/mb.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+                                    <div
+                                      className="w-[90%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
+                                      style={{
+                                        backgroundImage: "url('/assets/mb.jpg')",
+                                        backgroundSize: "cover",
+                                        backgroundPosition: "center",
+                                      }}
+                                    >
 
-      {/* overlay */}
-      <div className="absolute inset-0 bg-black/20"></div>
+                                      {/* overlay */}
+                                      <div className="absolute inset-0 bg-black/20"></div>
 
-      <div className="relative z-10">
+                                      <div className="relative z-10">
 
-        <h2 className="text-xl font-semibold">Select city</h2>
-        <p className="text-sm text-white/60 mb-4">
-          We do not track your location
-        </p>
+                                        <h2 className="text-xl font-semibold">Select city</h2>
+                                        <p className="text-sm text-white/60 mb-4">
+                                          We do not track your location
+                                        </p>
 
-        {/* Search (UI only) */}
-        <div className="border border-white/30 rounded-full px-4 py-3 mb-4 flex items-center gap-2 focus-within:border-white/60 transition-colors">
-          🔍 <input
-            placeholder="Search city"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent outline-none text-white placeholder-white/50 w-full"
-          />
-        </div>
+                                        {/* Search (UI only) */}
+                                        <div className="border border-white/30 rounded-full px-4 py-3 mb-4 flex items-center gap-2 focus-within:border-white/60 transition-colors">
+                                          🔍 <input
+                                            placeholder="Search city"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="bg-transparent outline-none text-white placeholder-white/50 w-full"
+                                          />
+                                        </div>
 
-        {/* List */}
-        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-          {searchLoading && <div className="text-white/50 text-center py-4">Searching...</div>}
-          
-          {!searchLoading && cities.length === 0 && (
-            <div className="text-white/50 text-center py-4 italic">No cities found</div>
-          )}
+                                        {/* List */}
+                                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                          {searchLoading && <div className="text-white/50 text-center py-4">Searching...</div>}
 
-          {!searchLoading && cities.map((c) => (
-            <div
-              key={c.id || c.value}
-              onClick={() => setTempCity(c.value)}
-              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer hover:bg-white/5 transition-colors px-2"
-            >
-              <span>{c.name || c.label}</span>
+                                          {!searchLoading && cities.length === 0 && (
+                                            <div className="text-white/50 text-center py-4 italic">No cities found</div>
+                                          )}
 
-              <div className={`w-5 h-5 rounded-full border-2 transition-all
+                                          {!searchLoading && cities.map((c) => (
+                                            <div
+                                              key={c.id || c.value}
+                                              onClick={() => setTempCity(c.value)}
+                                              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer hover:bg-white/5 transition-colors px-2"
+                                            >
+                                              <span>{c.name || c.label}</span>
+
+                                              <div className={`w-5 h-5 rounded-full border-2 transition-all
                 ${tempCity === c.value ? "border-white bg-white" : "border-white/50"}
               `}></div>
-            </div>
-          ))}
-        </div>
+                                            </div>
+                                          ))}
+                                        </div>
 
-        {/* Apply */}
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={() => {
-              setCity(tempCity);
-              setShowCityModal(false);
-            }}
-            className="border border-white/40 px-6 py-2 rounded-full"
-          >
-            Apply
-          </button>
-        </div>
+                                        {/* Apply */}
+                                        <div className="flex justify-end mt-6">
+                                          <button
+                                            onClick={() => {
+                                              setCity(tempCity);
+                                              setShowCityModal(false);
+                                            }}
+                                            className="border border-white/40 px-6 py-2 rounded-full"
+                                          >
+                                            Apply
+                                          </button>
+                                        </div>
 
-      </div>
-    </div>
-  </div>
-)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
 
-</div>
+                              </div>
 
-                {/* Error Message */}
-                {apiError && !apiError.includes('username') && (
-                  <div className="text-red-400 text-sm mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
-                    {apiError}
+                              {/* Error Message */}
+                              {apiError && !apiError.includes('username') && (
+                                <div className="text-red-400 text-sm mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+                                  {apiError}
+                                </div>
+                              )}
+
+                              {/* 6️⃣ Bottom button */}
+
+
+                              <button
+                                type="button"
+                                disabled={loading}
+                                onClick={() => {
+                                  if (validate()) setStep(2);
+                                }}
+                                className="w-84 md:w-[456px] w-[85%] flex mx-auto justify-center items-center mt-6 md:mt-8 mx-auto border border-b-[3px] border-white/80 rounded-xl md:rounded-2xl py-3 md:py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
+                              >
+                                Step 2/2: Add Prompt
+                              </button>
+
+                            </form>
+
+
+                          </div>
+                        </div>
+
+
+                      </div>
+
+                    </div>
+
                   </div>
-                )}
-
-                {/* 6️⃣ Bottom button */}
+                </div>
 
 
-                             <button
-  type="button"
-  disabled={loading}
-  onClick={() => {
-    if (validate()) setStep(2);
-  }}
-  className="w-84 md:w-[456px] flex mx-auto justify-center items-center mt-4 md:mt-8 border-[2px] border-b-[4px] border-white/80 rounded-2xl py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
->
-  Step 2/2: Add Prompt
-</button>
-               
-              </form>
+              </div>
+            </>
+          )}
 
 
-  </div>
-</div>
-
-
-</div>
-
-</div>
-
-            </div>
-          </div>
-
-
-</div>
-                        </>
-  )}
-
-
-    {step === 2 && (
-    < >
-      {/* Left */}
-      <div className="flex items-center justify-center text-left border border-white/30 rounded-[3rem] px-12 hidden md:flex h-full]">
-        <div>
-          <h2 className="text-3xl font-bold mb-4 text-center">Add Prompt</h2>
-          <p className="text-md opacity-90 text-center font-outfit">
-        Promts Show Up as your opener
-            <br />
-            Say literally anything, it can be changed anytime
-          </p>
-        </div>
-      </div>
+          {step === 2 && (
+            < >
+              {/* Left */}
+              <div className="flex items-center justify-center text-left border border-white/30 rounded-[3rem] px-12 hidden md:flex h-full]">
+                <div>
+                  <h2 className="text-3xl font-bold mb-4 text-center">Add Prompt</h2>
+                  <p className="text-md opacity-90 text-center font-outfit">
+                    Promts Show Up as your opener
+                    <br />
+                    Say literally anything, it can be changed anytime
+                  </p>
+                </div>
+              </div>
 
 
 
-          <div className="md:flex md:flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
-      {/* Right */}
+              <div className="md:flex md:flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
+                {/* Right */}
 
-<div className="w-full max-w-lg  flex flex-col  ">
+                <div className="w-full max-w-lg  flex flex-col  ">
 
 
 
 
-<div className="md:hidden  text-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
- <div className="flex items-center gap-2  md:hidden font-outfit">
+                  <div className="md:hidden  text-[14px] font-[family-name:var(--font-otomanopee)]">Add Prompt</div>
+                  <div className="flex items-center gap-2  md:hidden font-outfit">
 
-       <p className="text-[10px] font-outfit text-white mt-1 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
-  Prompts show up as your opener<br/>
-  Say Literally anything, it can be changed anytime
-</p>
-            </div>
-
-
-            
-          {/* Bordered wrapper — matches step 1 form border */}
-<div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden  mt-6 sm:mt-0">
-
-          {/* Prompt box */}
-    <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
-<textarea
-  value={prompt}
-  onChange={(e) => {
-    setPrompt(e.target.value);
-    setSelectedPrompts([]);
-    if (apiError) setApiError("");
-  }}
-  placeholder="Type your own"
-  className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60 h-[72px] md:h-[96px]"
-/>
-  <div className="text-[10px] text-right opacity-40 mt-1">
-    {prompt.length}/255
-  </div>
-</div>
+                    <p className="text-[10px] font-outfit text-white mt-1 leading-tight font-light font-[family-name:var(--font-otomanopee)]">
+                      Prompts show up as your opener<br />
+                      Say Literally anything, it can be changed anytime
+                    </p>
+                  </div>
 
 
-          {/* Suggestions */}
-          <div className="border border-white/30 mt-3 md:rounded-[40px] rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
-            <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
-              <span className="opacity-90 text-[12px]">Suggestions</span>
-              <button 
-                type="button" 
-                onClick={async () => {
-                  setIsShuffleLoading(true);
-                  try {
-                    const response = await fetch(API.USERS.GET_INTENT_PROMPTS(7));
-                    if (response.ok) {
-                      const data = await response.json();
-                      setSuggestions(data.prompts?.map(p => p.text) || []);
-                    }
-                  } catch (err) {
-                    console.error('Error shuffling suggestions:', err);
-                  } finally {
-                    setIsShuffleLoading(false);
-                  }
-                }}
-                disabled={isShuffleLoading}
-                className={`opacity-70 hover:opacity-100 transition ${isShuffleLoading ? 'animate-spin' : ''}`}
-              >
-                ⟳
-              </button>
-            </div>
 
-<div
-  className="flex flex-wrap gap-2 h-[255px] md:h-[300px] content-start items-start mt-6 overflow-hidden"
+                  {/* Bordered wrapper — matches step 1 form border */}
+                  <div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden  mt-6 sm:mt-0">
 
->
-              {suggestions.map((text, i) => {
-                const isLong = text.length > 25;
-                const isSelected = selectedPrompts.includes(text);
+                    {/* Prompt box */}
+                    <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
+                      <textarea
+                        value={prompt}
+                        onChange={(e) => {
+                          setPrompt(e.target.value);
+                          setSelectedPrompts([]);
+                          if (apiError) setApiError("");
+                        }}
+                        placeholder="Type your own"
+                        className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60 h-[72px] md:h-[96px]"
+                      />
+                      <div className="text-[10px] text-right opacity-40 mt-1">
+                        {prompt.length}/255
+                      </div>
+                    </div>
 
-                return (
-<button
-  key={i}
-  type="button"
-  onClick={() => {
-    setSelectedPrompts(prev => {
-      const isSelected = prev.includes(text);
-      const newSelection = isSelected ? [] : [text];
-      setPrompt(newSelection[0] || "");
-      return newSelection;
-    });
-  }}
-  className={`
+
+                    {/* Suggestions */}
+                    <div className="border border-white/30 mt-3 md:rounded-[40px] rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
+                      <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
+                        <span className="opacity-90 text-[12px]">Suggestions</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsShuffleLoading(true);
+                            try {
+                              const response = await fetch(API.USERS.GET_INTENT_PROMPTS(7));
+                              if (response.ok) {
+                                const data = await response.json();
+                                setSuggestions(data.prompts?.map(p => p.text) || []);
+                              }
+                            } catch (err) {
+                              console.error('Error shuffling suggestions:', err);
+                            } finally {
+                              setIsShuffleLoading(false);
+                            }
+                          }}
+                          disabled={isShuffleLoading}
+                          className={`opacity-70 hover:opacity-100 transition ${isShuffleLoading ? 'animate-spin' : ''}`}
+                        >
+                          ⟳
+                        </button>
+                      </div>
+
+                      <div
+                        className="flex flex-wrap gap-2 h-[255px] md:h-[300px] content-start items-start mt-6 overflow-hidden"
+
+                      >
+                        {suggestions.map((text, i) => {
+                          const isLong = text.length > 25;
+                          const isSelected = selectedPrompts.includes(text);
+
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPrompts(prev => {
+                                  const isSelected = prev.includes(text);
+                                  const newSelection = isSelected ? [] : [text];
+                                  setPrompt(newSelection[0] || "");
+                                  return newSelection;
+                                });
+                              }}
+                              className={`
     border border-[1px]  border-white/40 border-b-[3px] rounded-xl px-4 md:py-4 py-3  text-xs transition
     hover:bg-white/5
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
@@ -1149,48 +1173,48 @@ className="
     
     max-w-full
   `}
->
-  {text}
-</button>
-                );
-              })}
-            </div>
+                            >
+                              {text}
+                            </button>
+                          );
+                        })}
+                      </div>
 
 
-           
-          </div>
 
-          {/* Bottom actions */}
-  <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex flex-col items-center">
-            
-            {apiError && !apiError.includes('username') && (
-              <div className="text-red-400 text-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center w-full">
-                {apiError}
+                    </div>
+
+                    {/* Bottom actions */}
+                    <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex flex-col items-center">
+
+                      {apiError && !apiError.includes('username') && (
+                        <div className="text-red-400 text-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center w-full">
+                          {apiError}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="flex-2  w-full mx-auto border-[2px] border-b-[4px] border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
+                      >
+                        {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
+                      </button>
+                    </div>
+
+                  </div>{/* end bordered wrapper */}
+
+                </div>
               </div>
-            )}
-            
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-2  w-full mx-auto border-[2px] border-b-[4px] border-white/30 rounded-2xl py-3 text-white text-lg hover:bg-white/5 transition disabled:opacity-50 "
-            >
-              {loading ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Facecard'}
-            </button>
-          </div>
 
-          </div>{/* end bordered wrapper */}
-          
-        </div>
+            </>
+          )}
+
+        </main>
       </div>
 
-    </>
-  )}
-
-    </main>
-  </div>
-
-  {/* Modal mounts only when showSignIn is true */}
-  {showSignIn && <SignInModal isOpen={showSignIn} onClose={closeSignIn} />}
-</div>
-);
+      {/* Modal mounts only when showSignIn is true */}
+      {showSignIn && <SignInModal isOpen={showSignIn} onClose={closeSignIn} />}
+    </div>
+  );
 }

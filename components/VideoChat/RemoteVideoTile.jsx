@@ -30,7 +30,9 @@ export default function RemoteVideoTile({
   hideNameOnMobile = false,
   multiUserAvatars = [],
   hideAddFriendOnMobile = false,
-  onClickMultiUserAvatars
+  hideReportOnMobile = false,
+  onClickMultiUserAvatars,
+  onReportClick
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
@@ -174,13 +176,14 @@ export default function RemoteVideoTile({
         </div>
       )}
 
-      {/* Report Button (always visible) */}
+      {/* Report Button */}
       <button
         type="button"
-        onClick={() => setShowReportModal(true)}
+        onClick={() => onReportClick ? onReportClick() : setShowReportModal(true)}
         className={clsx(
           "absolute md:top-13 top-6 z-20 md:w-12 md:h-12 w-10 h-10 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-[1.5px] outline-white/40 flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
-          (showLeaveNextButton && onLeaveOrNext) ? "md:right-25 right-18" : "md:right-10 right-6"
+          (showLeaveNextButton && onLeaveOrNext) ? "md:right-25 right-18" : "md:right-10 right-6",
+          hideReportOnMobile ? "hidden md:flex" : "flex"
         )}
       >
         <img

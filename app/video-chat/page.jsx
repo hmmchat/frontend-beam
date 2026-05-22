@@ -2216,12 +2216,30 @@ function VideoChatContent() {
         {remoteStreams.length === 0 ? (
           /* Landing/Loading state: Full peer section placeholder and local */
           isBroadcasting ? (
-            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
               <LocalVideoSection {...localVideoProps} />
             </div>
           ) : (
+
+
+            // loading  with meme loader
             <>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden')}>
+
+                <div
+                  className="
+    absolute inset-0
+    h-[95%] w-[95%]
+    border border-white/40
+    rounded-3xl md:rounded-[2rem]
+    pointer-events-none
+    z-20
+    transition-colors
+    box-border
+    mx-auto
+    my-auto
+  "
+                />
                 <div
                   className="absolute inset-0 z-0 "
                   style={{
@@ -2230,6 +2248,9 @@ function VideoChatContent() {
                     backgroundSize: 'cover',
                   }}
                 />
+
+
+
                 <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'p-6', 'text-white')}>
                   {loadingMeme?.imageUrl ? (
                     <img
@@ -2245,9 +2266,9 @@ function VideoChatContent() {
 
                 </div>
               </div>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
                 {!showChatInput && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden ">
                     <button
                       type="button"
                       onClick={() => setIsCoinModalOpen(true)}
@@ -2271,7 +2292,30 @@ function VideoChatContent() {
                     </button>
                   </div>
                 )}
-                <LocalVideoSection {...localVideoProps} />
+
+                <div
+                  className="
+                  md:hidden
+    absolute inset-0
+    h-[95%] w-[95%]
+    border border-white/40
+    rounded-3xl md:rounded-[2rem]
+    pointer-events-none
+    z-20
+    transition-colors
+    box-border
+    mx-auto
+    my-auto
+  "
+                />
+                <LocalVideoSection {...localVideoProps} hideAllControls={true} />
+
+
+
+
+
+
+
               </div>
             </>
           )
@@ -2668,14 +2712,16 @@ function VideoChatContent() {
           />
         )}
 
-        <QuickActions
-          showChatInput={showChatInput}
-          callRoles={callRoles}
-          toggleRandomness={toggleRandomness}
-          handleIcebreaker={handleIcebreaker}
-          isGiftModalOpen={isGiftModalOpen}
-          isDareOpen={isDareOpen}
-        />
+        {!(remoteStreams.length === 0 && !isBroadcasting) && (
+          <QuickActions
+            showChatInput={showChatInput}
+            callRoles={callRoles}
+            toggleRandomness={toggleRandomness}
+            handleIcebreaker={handleIcebreaker}
+            isGiftModalOpen={isGiftModalOpen}
+            isDareOpen={isDareOpen}
+          />
+        )}
 
         {/* In-call nav moved onto local tile */}
 

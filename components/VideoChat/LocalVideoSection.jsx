@@ -25,7 +25,8 @@ export default function LocalVideoSection({
   setIsDareOpen,
   setIsCoinModalOpen,
   coins,
-  hideMobileControlsRow = false
+  hideMobileControlsRow = false,
+  hideAllControls = false
 }) {
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const setLocalVideoEl = useCallback(
@@ -54,11 +55,11 @@ export default function LocalVideoSection({
         className={clsx(
           "relative flex-1 min-h-0 min-w-0 transition-all duration-500 md:rounded-[60px] overflow-hidden",
           (isGiftModalOpen || isDareOpen) &&
-            selectedGiftId &&
-            "shadow-2xl mb-2",
+          selectedGiftId &&
+          "shadow-2xl mb-2",
           (isGiftModalOpen || isDareOpen) &&
-            selectedGiftId &&
-            "shadow-2xl mb-2",
+          selectedGiftId &&
+          "shadow-2xl mb-2",
         )}
       >
         <video
@@ -154,7 +155,7 @@ export default function LocalVideoSection({
         />
 
         {/* Call Controls (only if gift or dare is not open) */}
-        {!isGiftModalOpen && !isDareOpen && (
+        {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
             className={clsx(
               "absolute",
@@ -190,9 +191,9 @@ export default function LocalVideoSection({
                   />
                 </form>
               )}
-{/* 3 button */}
+              {/* 3 button */}
               <div className={clsx("gap-1 md:gap-2 mb-2", hideMobileControlsRow ? "hidden md:flex flex-wrap" : "flex flex-wrap")}>
-                       <button
+                <button
                   type="button"
                   onClick={toggleCam}
                   className="w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
@@ -229,7 +230,7 @@ export default function LocalVideoSection({
                     </svg>
                   </button>
                 )}
-         
+
                 <button
                   type="button"
                   onClick={
@@ -245,18 +246,18 @@ export default function LocalVideoSection({
                   />
                 </button>
 
-{/* logo */}
-       <img src="/logotransparent.png" className=' z-10 md:hidden  mt-2 ml-2' />
-                
+                {/* logo */}
+                <img src="/logotransparent.png" className=' z-10 md:hidden  mt-2 ml-2' />
+
               </div>
             </div>
-            
-{/* 2 gift button  */}
+
+            {/* 2 gift button  */}
             <div className={clsx("gap-2 md:gap-2", hideMobileControlsRow ? "hidden md:flex" : "flex")}>
               <button
                 type="button"
                 onClick={() => setIsDareOpen(true)}
-                className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                className="relative w-14 h-14 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
               >
                 <img
                   src="/circle.png"
@@ -272,11 +273,11 @@ export default function LocalVideoSection({
               <button
                 type="button"
                 onClick={() => setIsGiftModalOpen(true)}
-                className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                className="relative w-14 h-14 flex items-center border-2 border-b-4 rounded-full border-[#13133b] justify-center transition-transform hover:scale-105 active:scale-95"
               >
                 <img
                   src="/circle.png"
-                  className="absolute inset-0 w-full h-full rounded-full bg-pink-800"                  
+                  className="absolute inset-0 w-full h-full rounded-full bg-pink-800"
                   alt=""
                 />
                 <img
@@ -300,7 +301,7 @@ export default function LocalVideoSection({
         />
       </div>
 
-  
+
     </div>
   );
 }

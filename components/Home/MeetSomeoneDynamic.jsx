@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import Button from '@/components/ui/Button';
+
 import FilterButtons from '@/components/ui/FilterButtons';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import GenderModal from '@/components/modals/GenderModal';
@@ -31,7 +31,7 @@ import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import Link from 'next/link';
 import Skeleton from '@/components/ui/Skeleton';
-import { IoIosArrowBack, IoIosArrowForward, IoIosArrowRoundBack,} from 'react-icons/io';
+import { IoIosArrowBack, IoIosArrowForward, IoIosArrowRoundBack, } from 'react-icons/io';
 import SearchingPopup from './SearchingPopup';
 
 const buildWsUrl = (baseUrl, params = {}) => {
@@ -86,7 +86,20 @@ export default function MeetSomeoneDynamic() {
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isVideoOn, setIsVideoOn] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('isVideoOn');
+      if (stored !== null) return stored === 'true';
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isVideoOn', String(isVideoOn));
+      localStorage.setItem('isCamOff', String(!isVideoOn));
+    }
+  }, [isVideoOn]);
 
 
   useEffect(() => {
@@ -256,18 +269,18 @@ export default function MeetSomeoneDynamic() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ userId })
-          }).catch(() => {}); // fire-and-forget; 404 = room already cleaned up, safe to ignore
+          }).catch(() => { }); // fire-and-forget; 404 = room already cleaned up, safe to ignore
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     clearGhostRoom();
 
     // 1) URL-based recovery (searching mode)
     const urlSearching = params?.get('searching') === '1';
     if (urlSearching) {
-        setIsSearching(true);
-        handleUpdateStatus('AVAILABLE');
-        fetchCard(null, true);
+      setIsSearching(true);
+      handleUpdateStatus('AVAILABLE');
+      fetchCard(null, true);
     }
 
     // 2) Original resume logic (rainchecks, sessions, etc.)
@@ -355,14 +368,14 @@ export default function MeetSomeoneDynamic() {
       return [null, null, null];
     }
     const others = squadLobby.memberIds.filter((id) => id && id !== myUserId).slice(0, 3);
-    return [0, 1, 2 ].map((i) => others[i] || null);
+    return [0, 1, 2].map((i) => others[i] || null);
   }, [squadLobby, myUserId]);
 
   const isInSquadLobby = Boolean(
     squadLobby &&
-      myUserId &&
-      Array.isArray(squadLobby?.memberIds) &&
-      squadLobby.memberIds.includes(myUserId),
+    myUserId &&
+    Array.isArray(squadLobby?.memberIds) &&
+    squadLobby.memberIds.includes(myUserId),
   );
   const canSquadMeet =
     isInSquadLobby &&
@@ -449,7 +462,7 @@ export default function MeetSomeoneDynamic() {
     const prev = prevModeSquadRef.current;
     prevModeSquadRef.current = mode;
     if (prev === 'squad' && mode === 'solo') {
-      void apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' }).catch(() => {});
+      void apiRequest(API.SQUAD.TOGGLE_SOLO, { method: 'POST' }).catch(() => { });
     }
     if (mode !== 'squad') {
       setSquadProductMessage('');
@@ -532,7 +545,7 @@ export default function MeetSomeoneDynamic() {
     Object.values(squadLobbyAudioElsRef.current || {}).forEach((el) => {
       el.muted = squadLobbyAudioOff;
       if (!squadLobbyAudioOff) {
-        el.play?.().catch(() => {});
+        el.play?.().catch(() => { });
       }
     });
   }, [squadLobbyAudioOff]);
@@ -1155,7 +1168,7 @@ export default function MeetSomeoneDynamic() {
       if (response.ok) {
         const data = await response.json();
         setMyProfile(data.user);
-        
+
         // "on boot" logic: if location is not set, open the modal
         if (!data.user.preferredCity || data.user.preferredCity === 'Anywhere') {
           setIsLocationModalOpen(true);
@@ -1418,7 +1431,7 @@ export default function MeetSomeoneDynamic() {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) throw new Error('No token found');
-      
+
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.sub || payload.uid || payload.id;
 
@@ -1485,9 +1498,9 @@ export default function MeetSomeoneDynamic() {
           matchedUserId: currentCard.userId,
         })
       });
-      
+
       console.log('Proceed Result:', data);
-      
+
       if (data.roomId) {
         // Perfect case: both accepted AND room created in one shot
         clearInterval(pollRef.current);
@@ -1535,7 +1548,7 @@ export default function MeetSomeoneDynamic() {
           }
         } catch (roomErr) {
           console.error("Frontend fallback room creation failed:", roomErr);
-          
+
           // If user is already in an active room, that IS the room — just use it
           if (roomErr.message && roomErr.message.includes("already in an active room")) {
             try {
@@ -1557,7 +1570,7 @@ export default function MeetSomeoneDynamic() {
                 router.push('/video-chat');
                 return;
               }
-            } catch (_) {}
+            } catch (_) { }
           }
 
           setError("Match found, but video servers are currently unreachable. Please try again.");
@@ -1615,7 +1628,7 @@ export default function MeetSomeoneDynamic() {
                 setTimeout(() => setError(''), 3000);
                 fetchCard(sessionId);
               }
-            } catch {}
+            } catch { }
           }, 3000);
         };
 
@@ -1704,327 +1717,327 @@ export default function MeetSomeoneDynamic() {
 
 
 
-    <div className={clsx('relative', 'md:min-h-screen','', 'h-[100dvh]', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
-      <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
+      <div className={clsx('relative', 'md:min-h-screen', '', 'h-[100dvh]', 'w-full', 'overflow-hidden', 'font-[family-name:var(--font-otomanopee)]')}>
+        <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
 
 
-      
-        {/* MOBILE VIEW (CONDITIONAL) */}
 
-      {!isSearching && (
-          <div className={clsx('block', 'md:hidden ')}>
-            <MeetSomeoneNew 
-              onMeetNow={async () => {
-                setIsSearching(true);
-                // Push state to browser history so back button returns to home interface
-                if (typeof window !== 'undefined') {
+          {/* MOBILE VIEW (CONDITIONAL) */}
+
+          {!isSearching && (
+            <div className={clsx('block', 'md:hidden ')}>
+              <MeetSomeoneNew
+                onMeetNow={async () => {
+                  setIsSearching(true);
+                  // Push state to browser history so back button returns to home interface
+                  if (typeof window !== 'undefined') {
                     const url = new URL(window.location.href);
                     url.searchParams.set('searching', '1');
                     window.history.pushState({ searching: true }, '', url.toString());
-                }
-                await handleUpdateStatus('AVAILABLE');
-                await fetchCard(null, true);
-              }}
-              mode={mode}
-              setMode={setMode}
-              coins={coins}
-              activeUsers={activeMeetingCount}
-              myProfile={myProfile}
-              unreadCount={unreadCount}
+                  }
+                  await handleUpdateStatus('AVAILABLE');
+                  await fetchCard(null, true);
+                }}
+                mode={mode}
+                setMode={setMode}
+                coins={coins}
+                activeUsers={activeMeetingCount}
+                myProfile={myProfile}
+                unreadCount={unreadCount}
 
-              // Squad props
-              squadLobby={squadLobby}
-              guestProfiles={guestProfiles}
-              squadGuestIds={squadGuestIds}
-              canSquadMeet={canSquadMeet}
-              handleSquadEnterCall={handleSquadEnterCall}
-              shareSquadInvite={shareSquadInvite}
-              squadShareBusy={squadShareBusy}
-              squadMeetBusy={squadMeetBusy}
-              handleRemoveSquadMember={handleRemoveSquadMember}
-              squadMemberActionBusyId={squadMemberActionBusyId}
-              squadLobbyMicMuted={squadLobbyMicMuted}
-              setSquadLobbyMicMuted={setSquadLobbyMicMuted}
-              squadLobbyAudioOff={squadLobbyAudioOff}
-              setSquadLobbyAudioOff={setSquadLobbyAudioOff}
-              quickInviteFriends={quickInviteFriends}
-              quickInviteBusyId={quickInviteBusyId}
-              quickInvitePendingIds={quickInvitePendingIds}
-              handleQuickSquadInvite={handleQuickSquadInvite}
-              handleQuickSquadCancelInvite={handleQuickSquadCancelInvite}
-              refreshSquadLobby={refreshSquadLobby}
-              loadQuickInviteFriends={loadQuickInviteFriends}
-              squadProductMessage={squadProductMessage}
-            />
-          </div>
-        )}
+                // Squad props
+                squadLobby={squadLobby}
+                guestProfiles={guestProfiles}
+                squadGuestIds={squadGuestIds}
+                canSquadMeet={canSquadMeet}
+                handleSquadEnterCall={handleSquadEnterCall}
+                shareSquadInvite={shareSquadInvite}
+                squadShareBusy={squadShareBusy}
+                squadMeetBusy={squadMeetBusy}
+                handleRemoveSquadMember={handleRemoveSquadMember}
+                squadMemberActionBusyId={squadMemberActionBusyId}
+                squadLobbyMicMuted={squadLobbyMicMuted}
+                setSquadLobbyMicMuted={setSquadLobbyMicMuted}
+                squadLobbyAudioOff={squadLobbyAudioOff}
+                setSquadLobbyAudioOff={setSquadLobbyAudioOff}
+                quickInviteFriends={quickInviteFriends}
+                quickInviteBusyId={quickInviteBusyId}
+                quickInvitePendingIds={quickInvitePendingIds}
+                handleQuickSquadInvite={handleQuickSquadInvite}
+                handleQuickSquadCancelInvite={handleQuickSquadCancelInvite}
+                refreshSquadLobby={refreshSquadLobby}
+                loadQuickInviteFriends={loadQuickInviteFriends}
+                squadProductMessage={squadProductMessage}
+              />
+            </div>
+          )}
 
 
-        {/* LEFT SIDE (DESKTOP) */}
-<div className={clsx('hidden', 'md:flex', 'relative', 'h-full', 'min-h-0', 'flex-col', 'items-center', 'justify-center', 'overflow-hidden', 'bg-gradient-purple-dark', 'px-6', 'py-10', 'md:py-16', 'lg:py-8')}>
+          {/* LEFT SIDE (DESKTOP) */}
+          <div className={clsx('hidden', 'md:flex', 'relative', 'h-full', 'min-h-0', 'flex-col', 'items-center', 'justify-center', 'overflow-hidden', 'bg-gradient-purple-dark', 'px-6', 'py-10', 'md:py-16', 'lg:py-8')}>
 
-  <div
-    className={clsx('absolute', 'inset-0', 'z-0')}
-    style={{
-      backgroundImage: 'url(/assets/mb.jpg)',
-      backgroundRepeat: 'repeat',
-      backgroundSize: 'cover',
-    }}
-  />
-
-  {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
-  <div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
-        
-          {isSearching ? (
             <div
-              className={clsx(
-                'relative',
-                'flex',
-                'h-full',
-                'min-h-0',
-                'w-full',
-                'flex-1',
-                'flex-col',
-                'items-center',
-                'justify-center',
-                'p-2'
-              )}
-            >
-              {!currentCard || isResumeLoading ? (
-                <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-                  <SearchingPopup 
-                    isVisible={true} 
-                    onCancel={() => {
-                      setIsSearching(false);
-                      setCurrentCard(null);
-                      if (typeof window !== 'undefined') {
-                        const url = new URL(window.location.href);
-                        url.searchParams.delete('searching');
-                        window.history.pushState({}, '', url.toString());
-                      }
-                    }} 
-                  />
-                </div>
-              ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
-                discoveryCityFaceUser ? (
+              className={clsx('absolute', 'inset-0', 'z-0')}
+              style={{
+                backgroundImage: 'url(/assets/mb.jpg)',
+                backgroundRepeat: 'repeat',
+                backgroundSize: 'cover',
+              }}
+            />
+
+            {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
+            <div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
+
+            {isSearching ? (
+              <div
+                className={clsx(
+                  'relative',
+                  'flex',
+                  'h-full',
+                  'min-h-0',
+                  'w-full',
+                  'flex-1',
+                  'flex-col',
+                  'items-center',
+                  'justify-center',
+                  'p-2'
+                )}
+              >
+                {!currentCard || isResumeLoading ? (
+                  <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
+                    <SearchingPopup
+                      isVisible={true}
+                      onCancel={() => {
+                        setIsSearching(false);
+                        setCurrentCard(null);
+                        if (typeof window !== 'undefined') {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete('searching');
+                          window.history.pushState({}, '', url.toString());
+                        }
+                      }}
+                    />
+                  </div>
+                ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
+                  discoveryCityFaceUser ? (
+                    <div className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}>
+                      <div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'justify-center', 'px-4')}>
+                        <FaceCard4
+                          user={discoveryCityFaceUser}
+                          hideArrows={true}
+                          currentIndex={currentImageIndex}
+                          onIndexChange={setCurrentImageIndex}
+                        />
+                      </div>
+                      <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
+                        <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
+                          <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                            <IoIosArrowBack />
+                          </button>
+                          <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
+                            <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+                              Raincheck!
+                            </button>
+                            <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+                              Meet rn
+                            </button>
+                          </div>
+                          <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                            <IoIosArrowForward />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                ) : (
                   <div className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}>
+
+                    {/* CENTER CONTENT */}
                     <div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'justify-center', 'px-4')}>
                       <FaceCard4
-                        user={discoveryCityFaceUser}
+                        user={currentCard}
                         hideArrows={true}
                         currentIndex={currentImageIndex}
                         onIndexChange={setCurrentImageIndex}
                       />
                     </div>
+
+                    {/* 🔥 FIXED BOTTOM BUTTONS */}
                     <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
                       <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
+
                         <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
                           <IoIosArrowBack />
                         </button>
+
                         <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
                           <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
                             Raincheck!
                           </button>
+
                           <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
                             Meet rn
                           </button>
                         </div>
+
                         <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
                           <IoIosArrowForward />
                         </button>
+
                       </div>
                     </div>
+
                   </div>
-                ) : null
-              ) : (
-             <div className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}>
+                )}
 
-  {/* CENTER CONTENT */}
-<div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'justify-center', 'px-4')}>
-    <FaceCard4
-      user={currentCard} 
-      hideArrows={true} 
-      currentIndex={currentImageIndex}
-      onIndexChange={setCurrentImageIndex}
-    />
-  </div>
-
-  {/* 🔥 FIXED BOTTOM BUTTONS */}
-  <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
-    <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
-
-      <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-        <IoIosArrowBack />
-      </button>
-
-      <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
-        <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-          Raincheck!
-        </button>
-
-        <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-          Meet rn
-        </button>
-      </div>
-
-      <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-        <IoIosArrowForward />
-      </button>
-
-    </div>
-  </div>
-
-</div>
-              )}
-
-                </div>
-          ) : (
-            <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
-              <div className={clsx( 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
-                <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-                  <img src="/LOGO.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
-                  <p className={clsx('text-white', 'text-[21px]', '-mt-2', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here</p>
-                  <div className={clsx('inline-flex', 'gap-1', 'mt-5', 'font-[family-name:var(--font-otomanopee)]')}>
-                    <img src="/assets/video-on.svg" alt="" className={clsx('w-5', 'h-5' )} />
-                    <p className='text-[14px] font-thin font-outfit '>
-                      {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} beaming now
-                    </p>
-                  </div>
-                </div>
-
-                {/* Searching Popup removed - no loading overlay on left side */}
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}>
+                <div className={clsx('w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex', 'rounded-[3rem]', 'relative')}>
+                  <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
+                    <img src="/LOGO.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
+                    <p className={clsx('text-white', 'text-[21px]', '-mt-2', 'font-[family-name:var(--font-otomanopee)]')}>Meet someone here</p>
+                    <div className={clsx('inline-flex', 'gap-1', 'mt-5', 'font-[family-name:var(--font-otomanopee)]')}>
+                      <img src="/assets/video-on.svg" alt="" className={clsx('w-5', 'h-5')} />
+                      <p className='text-[14px] font-thin font-outfit '>
+                        {activeMeetingCount !== null ? activeMeetingCount.toLocaleString() : '0'} beaming now
+                      </p>
+                    </div>
+                  </div>
 
-
-
-        {/* RIGHT SIDE (DESKTOP) */}
-<div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
-
-{/* 🔲 HUD BORDER FRAME (Desktop Right) */}
-<div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
-
-<div
-  className={clsx('absolute', 'inset-0',  'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
-  style={{
-    backgroundImage: 'url(/bg.jpg)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-
-  }}
-/>    
-
-      
-
-          {/* Overlay for better text visibility */}
-
-
-
-          {/* Coins pill (restore original placement) */}
-          <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-16', 'z-50', isSearching && 'hidden')}>
-            <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[20.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border-[2px]', 'border-b-[3px]', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
-              <img src="/assets/Coin-token.svg" className={clsx('w-5', 'h-5')} alt="" />
-              <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
-              <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
-            </button>
+                  {/* Searching Popup removed - no loading overlay on left side */}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Top Icons */}
-          <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[28px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[26px]', 'md:py-[9px]', isSearching && 'hidden')}>
 
 
+          {/* RIGHT SIDE (DESKTOP) */}
+          <div className={clsx("relative w-full h-full overflow-hidden", !isSearching && "hidden md:block")}>
 
-             <button 
-              onClick={() => {
-                if (isSearching) {
-                  setOverlay({ open: true, url: '/history', title: 'History' });
-                } else {
-                  router.push('/history');
-                }
+            {/* 🔲 HUD BORDER FRAME (Desktop Right) */}
+            <div className={clsx('hidden', 'md:block', 'absolute', 'inset-6', 'border-2', 'border-white/30', 'rounded-[60px]', 'pointer-events-none', 'z-30')} />
+
+            <div
+              className={clsx('absolute', 'inset-0', 'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
+              style={{
+                backgroundImage: 'url(/bg.jpg)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+
               }}
-              className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
-            >
-              <img src="/assets/history.svg" className={clsx('w-7', 'h-7')} alt="History" />
-            </button>
+            />
 
-            
-   <button
-  onClick={() => {
-    if (isSearching) {
-      setOverlay({ open: true, url: '/inbox', title: 'Messages' });
-    } else {
-      router.push('/inbox');
-    }
-  }}
-  className={clsx(
-    'w-10',
-    'md:w-[35.6px]',
-    'h-10',
-    'md:h-[35.6px]',
-    'flex',
-    'items-center',
-    'justify-center',
-    'hover:bg-white/20',
-    'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]',
-    'hover:scale-110',
-    'rounded-full',
-    'relative',
-    'transition-all',
-    'duration-300'
-  )}
->
-  <img
-    src="/assets/chattopicon.svg"
-    className={clsx('w-6', 'h-6')}
-    alt="Messages"
-  />
 
-  {unreadCount > 0 && (
-    <span
-      className={clsx(
-        'absolute',
-        'top-3',
-        '-right-2',
-        'w-[10px]',
-        'h-[10px]',
-        'bg-[#ACE723]',
-        'border-2',
-        'border-[#1ECB00]',
-        'rounded-full',
-        'shadow-[0_0_16px_8px_rgba(34,197,94,0.9),0_0_24px_8px_rgba(34,197,94,0.6),0_0_40px_12px_rgba(34,197,94,0.4)]'
-      )}
-    />
-  )}
-</button>
 
-         
-               {/* Profile — opens My Profile (/profile) */}
-<button 
-  type="button"
-  title="My profile"
-  onClick={() => {
-    if (isSearching) {
-      setOverlay({ open: true, url: '/profile/', title: 'My Profile' });
-    } else {
-      router.push('/profile/');
-    }
-  }}
-  className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}
->
-  {myProfile ? (
-    <img 
-      src={myProfile.displayPictureUrl} 
-      onError={(e) => e.currentTarget.src }
-      className={clsx('w-8', 'h-8', 'object-cover' , 'rounded-full')}
-    />
-  ) : (
-    <div className={clsx('w-full', 'h-full', 'bg-white/20', 'animate-pulse', 'rounded-full')} />
-  )}
-</button>
-    
-    {/* <button 
+            {/* Overlay for better text visibility */}
+
+
+
+            {/* Coins pill (restore original placement) */}
+            <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-16', 'z-50', isSearching && 'hidden')}>
+              <button className={clsx('inline-flex', 'items-center', 'justify-center', 'gap-3', 'px-[20.8px]', 'py-[15px]', 'rounded-full', 'text-base', 'font-semibold', 'border-[2px]', 'border-b-[3px]', 'border-white/50', 'transition-all', 'duration-300', 'ease-out', 'relative', 'overflow-hidden', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'hover:brightness-110')} onClick={() => setIsCoinModalOpen(true)}>
+                <img src="/assets/Coin-token.svg" className={clsx('w-5', 'h-5')} alt="" />
+                <div className={clsx('text-sm', 'font-semibold')}>{coins.toLocaleString()}</div>
+                <img src="/assets/plus.png" className={clsx('w-4', 'h-4')} alt="" />
+              </button>
+            </div>
+
+            {/* Top Icons */}
+            <div className={clsx('absolute', 'top-2', 'md:top-18', 'left-1/2', '-translate-x-1/2', 'flex', 'gap-2', 'md:gap-[28px]', 'z-50', 'border-2', 'border-white/40', 'rounded-full', 'px-4', 'md:px-[26px]', 'md:py-[9px]', isSearching && 'hidden')}>
+
+
+
+              <button
+                onClick={() => {
+                  if (isSearching) {
+                    setOverlay({ open: true, url: '/history', title: 'History' });
+                  } else {
+                    router.push('/history');
+                  }
+                }}
+                className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
+              >
+                <img src="/assets/history.svg" className={clsx('w-7', 'h-7')} alt="History" />
+              </button>
+
+
+              <button
+                onClick={() => {
+                  if (isSearching) {
+                    setOverlay({ open: true, url: '/inbox', title: 'Messages' });
+                  } else {
+                    router.push('/inbox');
+                  }
+                }}
+                className={clsx(
+                  'w-10',
+                  'md:w-[35.6px]',
+                  'h-10',
+                  'md:h-[35.6px]',
+                  'flex',
+                  'items-center',
+                  'justify-center',
+                  'hover:bg-white/20',
+                  'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]',
+                  'hover:scale-110',
+                  'rounded-full',
+                  'relative',
+                  'transition-all',
+                  'duration-300'
+                )}
+              >
+                <img
+                  src="/assets/chattopicon.svg"
+                  className={clsx('w-6', 'h-6')}
+                  alt="Messages"
+                />
+
+                {unreadCount > 0 && (
+                  <span
+                    className={clsx(
+                      'absolute',
+                      'top-3',
+                      '-right-2',
+                      'w-[10px]',
+                      'h-[10px]',
+                      'bg-[#ACE723]',
+                      'border-2',
+                      'border-[#1ECB00]',
+                      'rounded-full',
+                      'shadow-[0_0_16px_8px_rgba(34,197,94,0.9),0_0_24px_8px_rgba(34,197,94,0.6),0_0_40px_12px_rgba(34,197,94,0.4)]'
+                    )}
+                  />
+                )}
+              </button>
+
+
+              {/* Profile — opens My Profile (/profile) */}
+              <button
+                type="button"
+                title="My profile"
+                onClick={() => {
+                  if (isSearching) {
+                    setOverlay({ open: true, url: '/profile/', title: 'My Profile' });
+                  } else {
+                    router.push('/profile/');
+                  }
+                }}
+                className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}
+              >
+                {myProfile ? (
+                  <img
+                    src={myProfile.displayPictureUrl}
+                    onError={(e) => e.currentTarget.src}
+                    className={clsx('w-8', 'h-8', 'object-cover', 'rounded-full')}
+                  />
+                ) : (
+                  <div className={clsx('w-full', 'h-full', 'bg-white/20', 'animate-pulse', 'rounded-full')} />
+                )}
+              </button>
+
+              {/* <button 
       onClick={handleLogout}
       className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'hover:bg-red-500/20', 'rounded-full', 'transition-colors')}
       title="Logout"
@@ -2035,96 +2048,96 @@ export default function MeetSomeoneDynamic() {
 
 
 
-        
-
-          </div>
 
 
-          <div className={clsx('absolute', 'top-4', 'md:top-18', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
-
-  <Link href="/beam-tv">
-  <button className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-    <img src="/crown.svg" alt="crown" className={clsx('h-6', 'w-6')} />
-  </button>
-</Link>
+            </div>
 
 
+            <div className={clsx('absolute', 'top-4', 'md:top-18', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
-          <Link href="/onboarding?intent=1">
-            <button 
-              className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-              <img src="/icon1.svg" alt="Prompt" className={clsx('h-6', 'w-6')} />
-            </button>
-          </Link>
+              <Link href="/beam-tv">
+                <button className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+                  <img src="/crown.svg" alt="crown" className={clsx('h-6', 'w-6')} />
+                </button>
+              </Link>
 
 
 
-</div>
+              <Link href="/onboarding?intent=1">
+                <button
+                  className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+                  <img src="/icon1.svg" alt="Prompt" className={clsx('h-6', 'w-6')} />
+                </button>
+              </Link>
 
 
+
+            </div>
 
 
 
 
-          
-
-    
-          {mode === 'solo' ? (
-            /* SOLO VIEW */
-<div
-  className={clsx(
-    'relative z-10 w-full',
-    'flex flex-col items-center justify-center',
-    'gap-6 h-full mx-auto text-center', 
-  )}
->
-              {!isSearching ? (
-                <>
-              <MeetNowButton
-                onClick={async () => { 
-                  setIsSearching(true);
-                  if (typeof window !== 'undefined') {
-                      const url = new URL(window.location.href);
-                      url.searchParams.set('searching', '1');
-                      window.history.pushState({ searching: true }, '', url.toString());
-                  }
-                  await handleUpdateStatus('AVAILABLE');
-                  await fetchCard(null, true);
-                }}
-                isSearching={isSearching}
-                className="mt-40 w-[79%] h-30"
-               iconClass="md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
-                 borderClass = "md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
-                isVideoOn={isVideoOn}
-                onVideoClick={() => setIsVideoOn(!isVideoOn)}
-              />
 
 
-   
 
-                  <FilterButtons
-                    onGenderClick={() => setIsGenderModalOpen(true)}
-                    onLocationClick={() => setIsLocationModalOpen(true)}
-                    locationLabel={myProfile?.preferredCity === 'ANYWHERE_IN_INDIA' ? 'Anywhere' : (myProfile?.preferredCity || 'Anywhere')}
-                    className={clsx( 'text-white')}
-                  />
-                </>
-              ) : (
-                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden',  'shadow-2xl', 'flex flex-col md:block')}>
-                  
-                  {/* MOBILE VIEW LOGIC: 50/50 split during search/location, Fullscreen for FaceCard */}
-                  {(() => {
-                    const isSearchingState = !currentCard || isResumeLoading;
-                    const isLocationState = currentCard?.type === 'LOCATION' || currentCard?.isLocationCard;
-                    const isFaceCardState = !isSearchingState && !isLocationState;
 
-                    return (
+
+            {mode === 'solo' ? (
+              /* SOLO VIEW */
+              <div
+                className={clsx(
+                  'relative z-10 w-full',
+                  'flex flex-col items-center justify-center',
+                  'gap-6 h-full mx-auto text-center',
+                )}
+              >
+                {!isSearching ? (
+                  <>
+                    <MeetNowButton
+                      onClick={async () => {
+                        setIsSearching(true);
+                        if (typeof window !== 'undefined') {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set('searching', '1');
+                          window.history.pushState({ searching: true }, '', url.toString());
+                        }
+                        await handleUpdateStatus('AVAILABLE');
+                        await fetchCard(null, true);
+                      }}
+                      isSearching={isSearching}
+                      className="mt-40 w-[79%] h-30"
+                      iconClass="md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
+                      borderClass="md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
+                      isVideoOn={isVideoOn}
+                      onVideoClick={() => setIsVideoOn(!isVideoOn)}
+                    />
+
+
+
+
+                    <FilterButtons
+                      onGenderClick={() => setIsGenderModalOpen(true)}
+                      onLocationClick={() => setIsLocationModalOpen(true)}
+                      locationLabel={myProfile?.preferredCity === 'ANYWHERE_IN_INDIA' ? 'Anywhere' : (myProfile?.preferredCity || 'Anywhere')}
+                      className={clsx('text-white')}
+                    />
+                  </>
+                ) : (
+                  <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'shadow-2xl', 'flex flex-col md:block')}>
+
+                    {/* MOBILE VIEW LOGIC: 50/50 split during search/location, Fullscreen for FaceCard */}
+                    {(() => {
+                      const isSearchingState = !currentCard || isResumeLoading;
+                      const isLocationState = currentCard?.type === 'LOCATION' || currentCard?.isLocationCard;
+                      const isFaceCardState = !isSearchingState && !isLocationState;
+
+                      return (
                         <>
                           {/* TOP HALF (OR FULL SCREEN) */}
-                          <div 
+                          <div
                             className={clsx(
-                                "flex md:hidden w-full   relative z-20 items-center justify-center md:pt-14 md:pb-4 md:px-4 overflow-hidden transition-all duration-500",
-                                (isFaceCardState || isSearchingState || isLocationState) ? "h-full" : "h-1/2"
+                              "flex md:hidden w-full   relative z-20 items-center justify-center md:pt-14 md:pb-4 md:px-4 overflow-hidden transition-all duration-500",
+                              (isFaceCardState || isSearchingState || isLocationState) ? "h-full" : "h-1/2"
                             )}
                             style={{
                               backgroundImage: 'url(/assets/mb.jpg)',
@@ -2134,214 +2147,214 @@ export default function MeetSomeoneDynamic() {
                             }}
                           >
                             {/* 🔲 HUD BORDER FRAME (Mobile Top/Full) */}
-                            <div className={clsx('absolute', 'inset-0',' ' , 'rounded-[2rem]', 'pointer-events-none', 'z-30')} />
+                            <div className={clsx('absolute', 'inset-0', ' ', 'rounded-[2rem]', 'pointer-events-none', 'z-30')} />
 
                             <div className={clsx(
-                                "origin-center transition-transform duration-500 mb-16 sm:mb-0",
-                                isFaceCardState ? "scale-[1.1] sm:scale-[1]" : "scale-[1.1] sm:scale-[1]"
+                              "origin-center transition-transform duration-500 mb-16 sm:mb-0",
+                              isFaceCardState ? "scale-[1.1] sm:scale-[1]" : "scale-[1.1] sm:scale-[1]"
                             )}>
                               {isSearchingState ? (
                                 <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', '')}>
-                                {/* phone city */}
+                                  {/* phone city */}
                                 </div>
                               ) : isLocationState && discoveryCityFaceUser ? (
-                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing' , 'w-full', )}>
+                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing', 'w-full',)}>
                                   <FaceCard
                                     user={discoveryCityFaceUser}
                                     hideArrows={true}
                                     currentIndex={currentImageIndex}
                                     onIndexChange={setCurrentImageIndex}
                                   />
-                                 <div
-  className={clsx(
-    'relative',
-    'md:bottom-6',
-'px-4',
-    'w-full',
-    'flex',
-    'gap-1',
-    'items-center',
-    'justify-between',
-  'bottom-4',
-    
-  )}
->
-  
-  {/* LEFT ARROW */}
-  <button
-    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
-  >
-    <IoIosArrowBack />
-  </button>
+                                  <div
+                                    className={clsx(
+                                      'relative',
+                                      'md:bottom-6',
+                                      'px-4',
+                                      'w-full',
+                                      'flex',
+                                      'gap-1',
+                                      'items-center',
+                                      'justify-between',
+                                      'bottom-4',
 
-  {/* CENTER BUTTONS */}
-  <div className="flex items-center gap-2">
-    
-    <button
-      onClick={handleRaincheck}
-      className={clsx(
-        'w-[110px]',
-        'h-[42px]',
-        'flex',
-        'items-center',
-        'justify-center',
-        'rounded-full',
-        'border',
-        'border-white/30',
-        'text-white',
-        'text-[12px]',
-        'whitespace-nowrap',
-        'hover:bg-white/10',
-        'transition',
-        'active:scale-95'
-      )}
-    >
-      Raincheck!
-    </button>
+                                    )}
+                                  >
 
-    <button
-      onClick={handleProceed}
-      className={clsx(
-        'w-[110px]',
-        'h-[42px]',
-        'flex',
-        'items-center',
-        'justify-center',
-        'rounded-full',
-        'border',
-        'border-white/30',
-        'text-white',
-        'text-[12px]',
-        'whitespace-nowrap',
-        'hover:bg-white/10',
-        'transition',
-        'active:scale-95'
-      )}
-    >
-      Meet rn
-    </button>
+                                    {/* LEFT ARROW */}
+                                    <button
+                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
+                                    >
+                                      <IoIosArrowBack />
+                                    </button>
 
-  </div>
+                                    {/* CENTER BUTTONS */}
+                                    <div className="flex items-center gap-2">
 
-  {/* RIGHT ARROW */}
-  <button
-    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
-  >
-    <IoIosArrowForward />
-  </button>
+                                      <button
+                                        onClick={handleRaincheck}
+                                        className={clsx(
+                                          'w-[110px]',
+                                          'h-[42px]',
+                                          'flex',
+                                          'items-center',
+                                          'justify-center',
+                                          'rounded-full',
+                                          'border',
+                                          'border-white/30',
+                                          'text-white',
+                                          'text-[12px]',
+                                          'whitespace-nowrap',
+                                          'hover:bg-white/10',
+                                          'transition',
+                                          'active:scale-95'
+                                        )}
+                                      >
+                                        Raincheck!
+                                      </button>
 
-</div>
+                                      <button
+                                        onClick={handleProceed}
+                                        className={clsx(
+                                          'w-[110px]',
+                                          'h-[42px]',
+                                          'flex',
+                                          'items-center',
+                                          'justify-center',
+                                          'rounded-full',
+                                          'border',
+                                          'border-white/30',
+                                          'text-white',
+                                          'text-[12px]',
+                                          'whitespace-nowrap',
+                                          'hover:bg-white/10',
+                                          'transition',
+                                          'active:scale-95'
+                                        )}
+                                      >
+                                        Meet rn
+                                      </button>
+
+                                    </div>
+
+                                    {/* RIGHT ARROW */}
+                                    <button
+                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
+                                    >
+                                      <IoIosArrowForward />
+                                    </button>
+
+                                  </div>
                                 </div>
                               ) : (
 
-                                
+
                                 <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing')}>
                                   <FaceCard
-                                    user={currentCard} 
-                                    hideArrows={true} 
+                                    user={currentCard}
+                                    hideArrows={true}
                                     currentIndex={currentImageIndex}
                                     onIndexChange={setCurrentImageIndex}
                                   />
 
-                  <div
-  className={clsx(
-      'relative',
-    'md:bottom-6',
-'px-4',
-    'w-full',
-    'flex',
-    'gap-1',
-    'items-center',
-    'justify-between',
-    'bottom-4',
+                                  <div
+                                    className={clsx(
+                                      'relative',
+                                      'md:bottom-6',
+                                      'px-4',
+                                      'w-full',
+                                      'flex',
+                                      'gap-1',
+                                      'items-center',
+                                      'justify-between',
+                                      'bottom-4',
 
-  )}
->
+                                    )}
+                                  >
 
-  {/* LEFT ARROW */}
-  <button
-    onClick={handlePrevImage}
-    className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
-    <IoIosArrowBack />
-  </button>
+                                    {/* LEFT ARROW */}
+                                    <button
+                                      onClick={handlePrevImage}
+                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
+                                      <IoIosArrowBack />
+                                    </button>
 
-  {/* CENTER BUTTONS */}
-  <div className="flex items-center gap-2">
+                                    {/* CENTER BUTTONS */}
+                                    <div className="flex items-center gap-2">
 
-    <button
-      onClick={handleRaincheck}
-      className={clsx(
-        'w-[110px]',
-        'h-[42px]',
-        'flex',
-        'items-center',
-        'justify-center',
-        'rounded-full',
-        'border',
-        'border-white/30',
-        'text-white',
-        'text-xs',
-        'whitespace-nowrap',
-        'hover:bg-white/10',
-        'transition',
-        'active:scale-95'
-      )}
-    >
-      Raincheck!
-    </button>
+                                      <button
+                                        onClick={handleRaincheck}
+                                        className={clsx(
+                                          'w-[110px]',
+                                          'h-[42px]',
+                                          'flex',
+                                          'items-center',
+                                          'justify-center',
+                                          'rounded-full',
+                                          'border',
+                                          'border-white/30',
+                                          'text-white',
+                                          'text-xs',
+                                          'whitespace-nowrap',
+                                          'hover:bg-white/10',
+                                          'transition',
+                                          'active:scale-95'
+                                        )}
+                                      >
+                                        Raincheck!
+                                      </button>
 
-    <button
-      onClick={handleProceed}
-      className={clsx(
-        'w-[110px]',
-        'h-[42px]',
-        'flex',
-        'items-center',
-        'justify-center',
-        'rounded-full',
-        'border',
-        'border-white/30',
-        'text-white',
-        'text-xs',
-        'whitespace-nowrap',
-        'hover:bg-white/10',
-        'transition',
-        'active:scale-95'
-      )}
-    >
-      Meet rn
-    </button>
+                                      <button
+                                        onClick={handleProceed}
+                                        className={clsx(
+                                          'w-[110px]',
+                                          'h-[42px]',
+                                          'flex',
+                                          'items-center',
+                                          'justify-center',
+                                          'rounded-full',
+                                          'border',
+                                          'border-white/30',
+                                          'text-white',
+                                          'text-xs',
+                                          'whitespace-nowrap',
+                                          'hover:bg-white/10',
+                                          'transition',
+                                          'active:scale-95'
+                                        )}
+                                      >
+                                        Meet rn
+                                      </button>
 
-  </div>
+                                    </div>
 
-  {/* RIGHT ARROW */}
-  <button
-    onClick={handleNextImage}
-    className={clsx(
-      'relative',
-      'z-[110]',
-      'w-10',
-      'h-10',
-      'rounded-full',
-      'border',
-      'border-white/40',
-      'flex',
-      'items-center',
-      'justify-center',
-      'text-white',
-      'text-2xl',
-      'hover:bg-white/10',
-      'transition',
-      'active:scale-75',
-      'cursor-pointer',
-      'backdrop-blur-sm',
-      'shrink-0'
-    )}
-  >
-    <IoIosArrowForward />
-  </button>
+                                    {/* RIGHT ARROW */}
+                                    <button
+                                      onClick={handleNextImage}
+                                      className={clsx(
+                                        'relative',
+                                        'z-[110]',
+                                        'w-10',
+                                        'h-10',
+                                        'rounded-full',
+                                        'border',
+                                        'border-white/40',
+                                        'flex',
+                                        'items-center',
+                                        'justify-center',
+                                        'text-white',
+                                        'text-2xl',
+                                        'hover:bg-white/10',
+                                        'transition',
+                                        'active:scale-75',
+                                        'cursor-pointer',
+                                        'backdrop-blur-sm',
+                                        'shrink-0'
+                                      )}
+                                    >
+                                      <IoIosArrowForward />
+                                    </button>
 
-</div>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -2349,59 +2362,38 @@ export default function MeetSomeoneDynamic() {
                           </div>
 
                           {/* BOTTOM HALF (CAM PREVIEW) - Hidden when FaceCard, Searching, or Location is shown on mobile */}
-                          {(!isFaceCardState && !isSearchingState && !isLocationState) && (                            <div className={clsx('flex', 'md:hidden', 'h-1/2', 'w-full', 'relative', 'z-[1]', 'min-h-0')}>
-                                <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
-                                <LocalVideo 
-                                    showSoloCheckbox={false} 
-                                    onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
-                                />
-                            </div>
+                          {(!isFaceCardState && !isSearchingState && !isLocationState) && (<div className={clsx('flex', 'md:hidden', 'h-1/2', 'w-full', 'relative', 'z-[1]', 'min-h-0')}>
+                            <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
+                            <LocalVideo
+                              showSoloCheckbox={false}
+                              onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
+                              isVideoOn={isVideoOn}
+                            />
+                          </div>
                           )}
                         </>
-                    );
-                  })()}
+                      );
+                    })()}
 
-                  <div className={clsx('hidden', 'md:block', 'relative', 'flex-1', 'md:absolute', 'md:inset-0', 'z-[1]', 'w-full', 'min-h-0')}>
-                    {/* 🎥 VIDEO (Desktop only - Mobile video handled above) */}
-                    <LocalVideo 
-                      showSoloCheckbox={false} 
-                      onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')} 
-                    />
-                    
-                    {/* 🌫 LIGHT OVERLAY (Desktop only) */}
-           
+                    <div className={clsx('hidden', 'md:block', 'relative', 'flex-1', 'md:absolute', 'md:inset-0', 'z-[1]', 'w-full', 'min-h-0')}>
+                      {/* 🎥 VIDEO (Desktop only - Mobile video handled above) */}
+                      <LocalVideo
+                        showSoloCheckbox={false}
+                        onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
+                        isVideoOn={isVideoOn}
+                      />
 
-                    {/* 🔲 BORDER FRAME (Desktop only) */}
-                    <div className={clsx('hidden', 'md:block', 'absolute', 'inset-4', 'pointer-events-none')} />
+                      {/* 🌫 LIGHT OVERLAY (Desktop only) */}
+
+
+                      {/* 🔲 BORDER FRAME (Desktop only) */}
+                      <div className={clsx('hidden', 'md:block', 'absolute', 'inset-4', 'pointer-events-none')} />
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* SQUAD VIEW — stack gap-6 + justify-end (widgets sit low, near bottom bar); Invite/Meet w-[79%] + mt-40 when sole CTA like solo */
-            <div
-              className={clsx(
-                'relative',
-                'z-10',
-                'flex',
-                'h-full',
-                'min-h-0',
-                'w-full',
-                'flex-col',
-                'items-center',
-                'overflow-y-auto',
-                'overflow-x-hidden',
-                'overscroll-y-contain',
-              )}
-            >
-
-              {/* Video background for squad mode */}
-              <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl')}>
-                
-
-
+                )}
               </div>
-
+            ) : (
+              /* SQUAD VIEW — stack gap-6 + justify-end (widgets sit low, near bottom bar); Invite/Meet w-[79%] + mt-40 when sole CTA like solo */
               <div
                 className={clsx(
                   'relative',
@@ -2412,364 +2404,387 @@ export default function MeetSomeoneDynamic() {
                   'w-full',
                   'flex-col',
                   'items-center',
-
-                  'pb-36',
-                  'md:pb-40',
-                  'px-2',
+                  'overflow-y-auto',
+                  'overflow-x-hidden',
+                  'overscroll-y-contain',
                 )}
               >
-                {squadProductMessage ? (
-                  <div
-                    role="alert"
-                    className={clsx(
-                      'mx-auto',
-                      'mb-2',
-                      'mt-4',
-                      'w-full',
-                      'max-w-lg',
-                      'shrink-0',
-                      'rounded-2xl',
-                      'border',
-                      'border-red-400/40',
-                      'bg-red-950/45',
-                      'px-4',
-                      'py-3',
-                      'text-left',
-                      'text-sm',
-                      'font-medium',
-                      'text-red-50',
-                    )}
-                  >
-                    {squadProductMessage}
-                  </div>
-                ) : null}
 
-            <div
+                {/* Video background for squad mode */}
+                <div className={clsx('absolute', 'inset-0', 'z-0', 'overflow-hidden', 'rounded-2xl')}>
+
+
+
+                </div>
+
+                <div
                   className={clsx(
-                    'relative z-10 flex w-full max-w-4xl flex-1 mt-60 flex-col items-center justify-center gap-10 pb-3 text-center',
+                    'relative',
+                    'z-10',
+                    'flex',
+                    'h-full',
                     'min-h-0',
+                    'w-full',
+                    'flex-col',
+                    'items-center',
+
+                    'pb-36',
+                    'md:pb-40',
+                    'px-2',
                   )}
                 >
-                {/* Circles + Share: one column, small gap so the two stacks read as one unit above Invite */}
-                <div className={clsx('flex w-full shrink-0 flex-col items-center gap-2 text-center md:gap-2.5')}>
-                <div className={clsx('w-full shrink-0 text-center')}>
-                <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-4')}>
-                  {/* Me */}
-                  <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
-                    <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                      <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
-                        <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                          <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
-                        </div>
-                      </div>
-                      <span className="text-xs">Me</span>
-                    </div>
-                  </div>
-                  {squadGuestIds.map((guestId, i) => (
-                    <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
-                      <div className={clsx('flex shrink-0 items-center self-center')}>
-                        <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
-                      </div>
-                      <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                        <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
-                          <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                            {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
-                              <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
-                            ) : guestId ? (
-                              <span className="text-xl md:text-3xl text-white/60">…</span>
-                            ) : (
-                              <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
-                            )}
-                          </div>
-                          {guestId ? (
-                            <button
-                              type="button"
-                              disabled={squadMemberActionBusyId === guestId}
-                              onClick={() => handleRemoveSquadMember(guestId)}
-                              className={clsx(
-                                'absolute',
-                                '-top-1',
-                                '-right-1',
-                                'z-20',
-                                'w-6',
-                                'h-6',
-                                'rounded-full',
-                                'bg-red-600',
-                                'border',
-                                'border-white/90',
-                                'text-white',
-                                'text-[10px]',
-                                'font-bold',
-                                'flex',
-                                'items-center',
-                                'justify-center',
-                                'shadow-md',
-                                'disabled:opacity-40'
-                              )}
-                              title="Remove from squad"
-                            >
-                              x
-                            </button>
-                          ) : null}
-                        </div>
-                        <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                </div>
-
-                <div className={clsx('flex w-full shrink-0 flex-col items-center')}>
-                  {canSquadMeet ? (
+                  {squadProductMessage ? (
                     <div
+                      role="alert"
                       className={clsx(
+                        'mx-auto',
                         'mb-2',
-                        'inline-flex',
-                        'items-center',
-                        'gap-2',
-                        'rounded-full',
+                        'mt-4',
+                        'w-full',
+                        'max-w-lg',
+                        'shrink-0',
+                        'rounded-2xl',
                         'border',
-                        'border-white/20',
-                        'bg-[#0A032D]/45',
-                        'px-2',
-                        'py-1.5',
-                        'backdrop-blur-sm',
+                        'border-red-400/40',
+                        'bg-red-950/45',
+                        'px-4',
+                        'py-3',
+                        'text-left',
+                        'text-sm',
+                        'font-medium',
+                        'text-red-50',
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => setSquadLobbyMicMuted((prev) => !prev)}
-                        className={clsx(
-                          'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
-                          squadLobbyMicMuted
-                            ? 'border-red-300/70 bg-red-500/20 text-red-100'
-                            : 'border-white/40 text-white hover:bg-white/10',
-                        )}
-                        title={squadLobbyMicMuted ? 'Unmute microphone' : 'Mute microphone'}
-                      >
-                        {squadLobbyMicMuted ? <IoMicOff className="text-lg" /> : <IoMic className="text-lg" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSquadLobbyAudioOff((prev) => !prev)}
-                        className={clsx(
-                          'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
-                          squadLobbyAudioOff
-                            ? 'border-yellow-300/70 bg-yellow-500/20 text-yellow-100'
-                            : 'border-white/40 text-white hover:bg-white/10',
-                        )}
-                        title={squadLobbyAudioOff ? 'Turn audio on' : 'Turn audio off'}
-                      >
-                        {squadLobbyAudioOff ? <IoVolumeMute className="text-lg" /> : <IoVolumeHigh className="text-lg" />}
-                      </button>
+                      {squadProductMessage}
                     </div>
                   ) : null}
+
                   <div
                     className={clsx(
-                      'inline-flex',
-                      'shrink-0',
-                      'mt-2',
-                      'items-center',
-                      'gap-7',
-                      'rounded-full',
-                      'border',
-                      'border-white/15',
-                      'bg-[#0A032D]/50',
-                      'px-8',
-                      'py-2.5',
-                      'font-sans',
-
-                      'md:gap-6',
-                      'md:px-16',
-                      'md:py-2.5',
+                      'relative z-10 flex w-full max-w-4xl flex-1 mt-60 flex-col items-center justify-center gap-10 pb-3 text-center',
+                      'min-h-0',
                     )}
                   >
-                    <span className={clsx('text-white', 'text-xs', 'font-medium', 'mr-1' ,'font-outfit')}>Share to</span>
-                    <button
-                      type="button"
-                      disabled={squadShareBusy}
-                      onClick={() => void shareSquadInvite('generic')}
-                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                    >
-                      <img src="/shareicon4.png" className={clsx('w-8', 'h-8')} alt="" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={squadShareBusy}
-                      onClick={() => void shareSquadInvite('generic')}
-                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                    >
-                      <img src="/shareicon2.png" className={clsx('w-7', 'h-7')} alt="" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={squadShareBusy}
-                      onClick={() => void shareSquadInvite('whatsapp')}
-                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                    >
-                      <img src="/shareicon1.png" className={clsx('w-7', 'h-7')} alt="" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={squadShareBusy}
-                      onClick={() => void shareSquadInvite('copy')}
-                      className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
-                    >
-                      <img src="/shareicon3.png" className={clsx('w-7', 'h-7')} alt="" />
-                    </button>
+                    {/* Circles + Share: one column, small gap so the two stacks read as one unit above Invite */}
+                    <div className={clsx('flex w-full shrink-0 flex-col items-center gap-2 text-center md:gap-2.5')}>
+                      <div className={clsx('w-full shrink-0 text-center')}>
+                        <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-4')}>
+                          {/* Me */}
+                          <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
+                            <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
+                              <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                                <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                                  <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
+                                </div>
+                              </div>
+                              <span className="text-xs">Me</span>
+                            </div>
+                          </div>
+                          {squadGuestIds.map((guestId, i) => (
+                            <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
+                              <div className={clsx('flex shrink-0 items-center self-center')}>
+                                <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
+                              </div>
+                              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
+                                <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                                  <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
+                                    {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
+                                      <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
+                                    ) : guestId ? (
+                                      <span className="text-xl md:text-3xl text-white/60">…</span>
+                                    ) : (
+                                      <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
+                                    )}
+                                  </div>
+                                  {guestId ? (
+                                    <button
+                                      type="button"
+                                      disabled={squadMemberActionBusyId === guestId}
+                                      onClick={() => handleRemoveSquadMember(guestId)}
+                                      className={clsx(
+                                        'absolute',
+                                        '-top-1',
+                                        '-right-1',
+                                        'z-20',
+                                        'w-6',
+                                        'h-6',
+                                        'rounded-full',
+                                        'bg-red-600',
+                                        'border',
+                                        'border-white/90',
+                                        'text-white',
+                                        'text-[10px]',
+                                        'font-bold',
+                                        'flex',
+                                        'items-center',
+                                        'justify-center',
+                                        'shadow-md',
+                                        'disabled:opacity-40'
+                                      )}
+                                      title="Remove from squad"
+                                    >
+                                      x
+                                    </button>
+                                  ) : null}
+                                </div>
+                                <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={clsx('flex w-full shrink-0 flex-col items-center')}>
+                        {canSquadMeet ? (
+                          <div
+                            className={clsx(
+                              'mb-2',
+                              'inline-flex',
+                              'items-center',
+                              'gap-2',
+                              'rounded-full',
+                              'border',
+                              'border-white/20',
+                              'bg-[#0A032D]/45',
+                              'px-2',
+                              'py-1.5',
+                              'backdrop-blur-sm',
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setSquadLobbyMicMuted((prev) => !prev)}
+                              className={clsx(
+                                'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
+                                squadLobbyMicMuted
+                                  ? 'border-red-300/70 bg-red-500/20 text-red-100'
+                                  : 'border-white/40 text-white hover:bg-white/10',
+                              )}
+                              title={squadLobbyMicMuted ? 'Unmute microphone' : 'Mute microphone'}
+                            >
+                              {squadLobbyMicMuted ? <IoMicOff className="text-lg" /> : <IoMic className="text-lg" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSquadLobbyAudioOff((prev) => !prev)}
+                              className={clsx(
+                                'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
+                                squadLobbyAudioOff
+                                  ? 'border-yellow-300/70 bg-yellow-500/20 text-yellow-100'
+                                  : 'border-white/40 text-white hover:bg-white/10',
+                              )}
+                              title={squadLobbyAudioOff ? 'Turn audio on' : 'Turn audio off'}
+                            >
+                              {squadLobbyAudioOff ? <IoVolumeMute className="text-lg" /> : <IoVolumeHigh className="text-lg" />}
+                            </button>
+                          </div>
+                        ) : null}
+                        <div
+                          className={clsx(
+                            'inline-flex',
+                            'shrink-0',
+                            'mt-2',
+                            'items-center',
+                            'gap-7',
+                            'rounded-full',
+                            'border',
+                            'border-white/15',
+                            'bg-[#0A032D]/50',
+                            'px-8',
+                            'py-2.5',
+                            'font-sans',
+
+                            'md:gap-6',
+                            'md:px-16',
+                            'md:py-2.5',
+                          )}
+                        >
+                          <span className={clsx('text-white', 'text-xs', 'font-medium', 'mr-1', 'font-outfit')}>Share to</span>
+                          <button
+                            type="button"
+                            disabled={squadShareBusy}
+                            onClick={() => void shareSquadInvite('generic')}
+                            className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                          >
+                            <img src="/shareicon4.png" className={clsx('w-8', 'h-8')} alt="" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={squadShareBusy}
+                            onClick={() => void shareSquadInvite('generic')}
+                            className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                          >
+                            <img src="/shareicon2.png" className={clsx('w-7', 'h-7')} alt="" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={squadShareBusy}
+                            onClick={() => void shareSquadInvite('whatsapp')}
+                            className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                          >
+                            <img src="/shareicon1.png" className={clsx('w-7', 'h-7')} alt="" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={squadShareBusy}
+                            onClick={() => void shareSquadInvite('copy')}
+                            className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
+                          >
+                            <img src="/shareicon3.png" className={clsx('w-7', 'h-7')} alt="" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    {squadHomeInviteMeetSlotActive && canSquadMeet ? (
+                      <MeetNowButton
+                        onClick={handleSquadEnterCall}
+                        isSearching={squadMeetBusy}
+                        searchingText="Starting..."
+                        text="Meet Someone now"
+                        className="h-20 w-[50%]"
+                        iconClass="md:text-xl transition-all md:h-6 md:w-6 "
+                        borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[20px] rounded-[16px]"
+                        isVideoOn
+                      />
+                    ) : squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
+                      <SquadQuickInviteStrip
+                        friends={quickInviteFriends}
+                        busyId={quickInviteBusyId}
+                        pendingInviteeIds={quickInvitePendingIds}
+                        onInvite={(id) => void handleQuickSquadInvite(id)}
+                        onCancelInvite={(id) => void handleQuickSquadCancelInvite(id)}
+                        onSeeAll={() => setSquadInviteOpen(true)}
+                        className="w-[79%]  "
+                      />
+                    ) : null}
                   </div>
+
+
+
                 </div>
-                </div>
-
-
-                {squadHomeInviteMeetSlotActive && canSquadMeet ? (
-                  <MeetNowButton
-                    onClick={handleSquadEnterCall}
-                    isSearching={squadMeetBusy}
-                    searchingText="Starting..."
-                    text="Meet Someone now"
-                    className="h-20 w-[50%]"
-                   iconClass=  "md:text-xl transition-all md:h-6 md:w-6 "
-                    borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[20px] rounded-[16px]"
-                    isVideoOn
-                  />
-                ) : squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
-                  <SquadQuickInviteStrip
-                    friends={quickInviteFriends}
-                    busyId={quickInviteBusyId}
-                    pendingInviteeIds={quickInvitePendingIds}
-                    onInvite={(id) => void handleQuickSquadInvite(id)}
-                    onCancelInvite={(id) => void handleQuickSquadCancelInvite(id)}
-                    onSeeAll={() => setSquadInviteOpen(true)}
-                    className="w-[79%]  "
-                  />
-                ) : null}
-                </div>
-
-
-
-              </div>
-            </div>
-          )}
-
-          {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
-          <div className={clsx('absolute', 'px-5', 'bottom-16', 'left-11', 'right-11', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
-            {/* Left side — fixed height so toggle position never shifts */}
-            <div className={clsx('flex', 'items-center', 'h-[72px]')}>
-            {mode === 'solo' ? (
-              <div className={clsx('flex', 'gap-2', 'items-center')}>
-                <div className={clsx('border-2', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'border-white/40')}>
-                <Link href="/beam-tv">
-                <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
-  
-  {/* TV Frame (background) */}
-  <img 
-    src="/tvfame.png" 
-    className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')}
-  />
-
-  {/* Beam TV inside frame */}
-  <img 
-    src="/beamtv.png" 
-    className={clsx('absolute', 'inset-0', 'm-auto', 'w-6', 'h-6', 'object-contain', 'ml-1', 'mt-3')}
-  />
-
-</button>
-                </Link>
-</div>
-
-
-
- <div className={clsx('border-2', 'rounded-full', 'border-b-4', '', 'border-white/40')}>
-            <Link href="/cards">
-  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
-    <img src="/hugeiconscards.svg" alt="cards"  />
-  </button>
-</Link>
-
-    </div>
-        </div>
-            ) : (
-              <div className={clsx('flex', 'gap-4', 'items-center')}>
-                <button
-                  type="button"
-                  onClick={() => setSquadInviteOpen(true)}
-                  className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11', 'hover:bg-white/10', 'transition')}
-                  title="Invite friends"
-                >
-                  <img src="/assets/search-icon.svg" alt="" className="w-6 h-6 mx-auto" />
-                </button>
-                <img src="/assets/Vector.svg" alt="" className={clsx('border', 'rounded-full', 'p-[10px]', 'border-white/70', 'w-11', 'h-11')} />
               </div>
             )}
+
+            {/* SHARED BOTTOM BAR (ALWAYS VISIBLE) */}
+            <div className={clsx('absolute', 'px-5', 'bottom-16', 'left-11', 'right-11', 'flex', 'items-center', 'justify-between', 'z-[100]', isSearching && 'hidden')}>
+              {/* Left side — fixed height so toggle position never shifts */}
+              <div className={clsx('flex', 'items-center', 'h-[72px]')}>
+                {mode === 'solo' ? (
+                  <div className={clsx('flex', 'gap-2', 'items-center')}>
+                    <div className={clsx('border-2', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'border-white/40')}>
+                      <Link href="/beam-tv">
+                        <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
+
+                          {/* TV Frame (background) */}
+                          <img
+                            src="/tvfame.png"
+                            className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')}
+                          />
+
+                          {/* Beam TV inside frame */}
+                          <img
+                            src="/beamtv.png"
+                            className={clsx('absolute', 'inset-0', 'm-auto', 'w-6', 'h-6', 'object-contain', 'ml-1', 'mt-3')}
+                          />
+
+                        </button>
+                      </Link>
+                    </div>
+
+
+
+                    <div className={clsx('border-2', 'rounded-full', 'border-b-4', '', 'border-white/40')}>
+                      <Link href="/cards">
+                        <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
+                          <img src="/hugeiconscards.svg" alt="cards" />
+                        </button>
+                      </Link>
+
+                    </div>
+                  </div>
+                ) : (
+                  <div className={clsx('flex', 'gap-4', 'items-center')}>
+                    <button
+                      type="button"
+                      onClick={() => setSquadInviteOpen(true)}
+                      className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11', 'hover:bg-white/10', 'transition')}
+                      title="Invite friends"
+                    >
+                      <img src="/assets/search-icon.svg" alt="" className="w-6 h-6 mx-auto" />
+                    </button>
+                    <img src="/assets/Vector.svg" alt="" className={clsx('border', 'rounded-full', 'p-[10px]', 'border-white/70', 'w-11', 'h-11')} />
+                  </div>
+                )}
+              </div>
+
+              <div className={clsx('relative', 'w-fit', 'flex', 'gap-2', 'border-white/60', 'border', 'rounded-full', 'p-1', 'bg-black/10')}>
+                {/* Sliding Pill */}
+                <div
+                  className={clsx(
+                    "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) border-[1.5px] border-white/70 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
+                    mode === 'solo' ? "left-1 bg-black/20" : "left-[calc(50%+2px)] bg-black/40"
+                  )}
+                />
+
+                <button
+                  onClick={() => setMode('solo')}
+                  className={clsx(
+                    'px-7 py-2 rounded-full text-[14px] transition-all duration-300 hover:scale-105 z-10 relative',
+                    mode === 'solo' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                  )}
+                >
+                  Solo
+                </button>
+
+                <button
+                  onClick={() => setMode('squad')}
+                  className={clsx(
+                    'px-7 py-2 rounded-full text-[14px]  transition-all duration-300 hover:scale-105 z-10 relative',
+                    mode === 'squad' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                  )}
+                >
+                  Squad
+                </button>
+              </div>
             </div>
 
-            <div className={clsx('relative', 'w-fit', 'flex', 'gap-2', 'border-white/60', 'border', 'rounded-full', 'p-1', 'bg-black/10')}>
-              {/* Sliding Pill */}
-              <div 
-                className={clsx(
-                  "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) border-[1.5px] border-white/70 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
-                  mode === 'solo' ? "left-1 bg-black/20" : "left-[calc(50%+2px)] bg-black/40"
-                )}
-              />
-              
-              <button
-                onClick={() => setMode('solo')}
-                className={clsx(
-                  'px-7 py-2 rounded-full text-[14px] transition-all duration-300 hover:scale-105 z-10 relative',
-                  mode === 'solo' ? 'text-white' : 'text-white/40 hover:text-white/60'
-                )}
-              >
-                Solo
-              </button>
 
-              <button
-                onClick={() => setMode('squad')}
-                className={clsx(
-                  'px-7 py-2 rounded-full text-[14px]  transition-all duration-300 hover:scale-105 z-10 relative',
-                  mode === 'squad' ? 'text-white' : 'text-white/40 hover:text-white/60'
-                )}
-              >
-                Squad
-              </button>
-            </div>
+
+
           </div>
 
 
+        </main>
 
-          
-        </div>
+        <OverlayLayer
+          open={overlay.open}
+          url={overlay.url}
+          title={overlay.title}
+          onClose={() => setOverlay({ open: false, url: '', title: '' })}
+        />
 
-
-      </main>
-
-      <OverlayLayer
-        open={overlay.open}
-        url={overlay.url}
-        title={overlay.title}
-        onClose={() => setOverlay({ open: false, url: '', title: '' })}
-      />
-
-      {/* Modals */}
-      <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
-      <LocationModal 
-        isOpen={isLocationModalOpen} 
-        onClose={() => {
-          setIsLocationModalOpen(false);
-          fetchMyProfile();
-        }} 
-      />
-      <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
-      <SquadInviteFriendsModal
-        open={squadInviteOpen}
-        onClose={() => setSquadInviteOpen(false)}
-        onInviteSent={() => {
-          void refreshSquadLobby();
-          void loadQuickInviteFriends();
-        }}
-        squadMemberIds={squadLobby?.memberIds || []}
-      />
-    </div>
+        {/* Modals */}
+        <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
+        <LocationModal
+          isOpen={isLocationModalOpen}
+          onClose={() => {
+            setIsLocationModalOpen(false);
+            fetchMyProfile();
+          }}
+        />
+        <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+        <SquadInviteFriendsModal
+          open={squadInviteOpen}
+          onClose={() => setSquadInviteOpen(false)}
+          onInviteSent={() => {
+            void refreshSquadLobby();
+            void loadQuickInviteFriends();
+          }}
+          squadMemberIds={squadLobby?.memberIds || []}
+        />
+      </div>
 
 
 

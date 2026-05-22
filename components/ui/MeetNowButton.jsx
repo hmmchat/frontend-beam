@@ -61,19 +61,19 @@ export default function MeetNowButton({
       {!isSearching && (
         <div className={clsx('absolute', 'inset-0', 'bg-gradient-to-r', 'from-purple-500/10', 'via-pink-500/10', 'to-purple-500/10', 'opacity-50')} />
       )}
-      <div
-        onClick={(e) => {
-          if (onVideoClick) {
-            e.stopPropagation();
-            onVideoClick();
-          }
-        }}
-        className={clsx(
-          "md:w-11 md:h-11 w-9 h-9 rounded-full border flex items-center justify-center hover:scale-110 transition-transform z-10",
-          onVideoClick ? "cursor-pointer active:scale-95" : "",
-          isSearching ? "border-black" : "border-white/60"
-        )}
-      >
+   <div
+  onClick={(e) => {
+    if (onVideoClick) {
+      e.stopPropagation();
+      onVideoClick();
+    }
+  }}
+  className={clsx(
+    "w-[clamp(36px,10vw,46px)] h-[clamp(36px,10vw,46px)] rounded-full border flex items-center justify-center hover:scale-110 transition-transform z-10",
+    onVideoClick ? "cursor-pointer active:scale-95" : "",
+    isSearching ? "border-black" : "border-white/60"
+  )}
+>
 
 
 
@@ -87,10 +87,14 @@ export default function MeetNowButton({
           alt="video toggle"
         />
       </div>
-      <span className={clsx(
-        "md:text-xl md:font-bold z-10 text-[16px]",
-        isSearching ? "text-black" : "text-white"
-      )}>
+    <span
+  className={clsx(
+    "z-10 font-bold leading-none",
+    "text-[clamp(14px,4vw,22px)]",
+    isSearching ? "text-black" : "text-white",
+    textClass
+  )}
+>
         {isSearching ? searchingText : text}
       </span>
     </button>

@@ -8,8 +8,8 @@ export default function QuickActions({
   callRoles,
   toggleRandomness,
   handleIcebreaker,
-  isGiftModalOpen,
-  isDareOpen
+  isDareOpen,
+  isGiftModalOpen
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
   const [isRolling, setIsRolling] = useState(false);

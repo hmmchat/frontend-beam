@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
+const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [error, setError] = useState(null);
@@ -23,6 +23,8 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
         if (videoEl) {
           videoEl.srcObject = mediaStream;
         }
+        const track = mediaStream.getVideoTracks()[0];
+        if (track) track.enabled = isVideoOn;
       } catch (err) {
         console.error("Error accessing camera:", err);
         setError("Camera access denied. Please enable camera permissions.");
@@ -38,7 +40,14 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange }) => {
       streamRef.current?.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, []); // removed isVideoOn from dependency array to avoid restarting camera
+
+  useEffect(() => {
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track) track.enabled = isVideoOn;
+    }
+  }, [isVideoOn]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-gray-900 overflow-hidden">

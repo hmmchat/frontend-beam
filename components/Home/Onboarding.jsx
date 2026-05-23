@@ -654,10 +654,10 @@ export default function Onboarding() {
 
               {/* Right - Form */}
 
-              <div className=" items-center    ">
+              <div className=" items-center h-[100dvh] overflow-hidden   ">
 
-                <div className="flex flex-col items-center md:justify-center h-full overflow-y-auto md:min-h-full  md:border md:border-white/30 md:rounded-[60px]">
-                  <div className="
+                <div className="flex flex-col items-center md:justify-center h-full  h-dvh overflow-hidden md:min-h-full 'h-screen',  md:border md:border-white/30 md:rounded-[60px]">
+                  <div className=" overflow-hidden
   w-full
   sm:max-w-[420px]
   md:max-w-[520px]
@@ -1035,7 +1035,7 @@ export default function Onboarding() {
                                 onClick={() => {
                                   if (validate()) setStep(2);
                                 }}
-                                className="w-84 md:w-[456px] w-[85%] flex mx-auto justify-center items-center mt-6 md:mt-8 mx-auto border border-b-[3px] border-white/80 rounded-xl md:rounded-2xl py-3 md:py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
+                                className="w-84  md:w-[456px] w-[85%] flex mx-auto justify-center items-center mt-6 md:mt-8 mx-auto border border-b-[3px] border-white/80 rounded-xl md:rounded-2xl py-3 md:py-4 text-white text-md opacity-70 hover:opacity-100 transition hover:bg-white/5"
                               >
                                 Step 2/2: Add Prompt
                               </button>

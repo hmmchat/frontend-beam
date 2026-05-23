@@ -398,9 +398,9 @@ export default function MeetSomeoneNew({
 
 
       {/* {only solo tab buttons} */}
- {mode !== 'squad' && (
-<div
-  className="
+      {mode !== 'squad' && (
+        <div
+          className="
     absolute
     bottom-[25%]
     sm:bottom-[20%]
@@ -413,22 +413,22 @@ export default function MeetSomeoneNew({
     px-3
     sm:px-4
   "
->
-    <div className="w-full pointer-events-auto flex justify-center">
-      <MeetNowButton
-        onClick={handleMeetNow}
-        className="
+        >
+          <div className="w-full pointer-events-auto flex justify-center">
+            <MeetNowButton
+              onClick={handleMeetNow}
+              className="
           w-[clamp(300px,85vw,520px)]
           aspect-[23/5]
         "
-        iconClass="
+              iconClass="
           transition-all
           w-[clamp(18px,5vw,30px)]
           h-[clamp(18px,5vw,30px)]
           md:w-8
           md:h-8
         "
-        borderClass="
+              borderClass="
           border
           border-b-[3px]
           md:border-b-[5px]
@@ -436,16 +436,16 @@ export default function MeetSomeoneNew({
           rounded-[16px]
           md:rounded-[26px]
         "
-      />
-    </div>
+            />
+          </div>
 
-    <FilterButtons
-      onGenderClick={() => setIsGenderModalOpen(true)}
-      onLocationClick={() => setIsLocationModalOpen(true)}
-      className="mt-6 pointer-events-auto"
-    />
-  </div>
-)}
+          <FilterButtons
+            onGenderClick={() => setIsGenderModalOpen(true)}
+            onLocationClick={() => setIsLocationModalOpen(true)}
+            className="mt-6 pointer-events-auto"
+          />
+        </div>
+      )}
 
 
 
@@ -536,7 +536,7 @@ export default function MeetSomeoneNew({
           <div className="flex flex-col gap-6 mx-auto">
 
             {/* Avatars */}
-  <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
+            <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
 
               {/* Me */}
               <div className="flex flex-col items-center gap-1">
@@ -564,7 +564,7 @@ export default function MeetSomeoneNew({
 
                   <div className="flex flex-col items-center gap-1">
 
-   <div className="relative w-[60px] h-[60px] sm:w-18 sm:h-18">
+                    <div className="relative w-[60px] h-[60px] sm:w-18 sm:h-18">
 
                       <div className="w-full h-full rounded-full border-[3px] border-white/90 flex items-center justify-center overflow-hidden bg-black/10">
 

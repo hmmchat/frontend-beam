@@ -21,6 +21,9 @@ import RandomnessModal from '@/components/VideoChat/RandomnessModal';
 import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
 import QuickActions from '@/components/video-chat/QuickActions';
 import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserControls';
+import GiftOverlay from '@/components/VideoChat/GiftOverlay';
+import DareOverlay from '@/components/VideoChat/DareOverlay';
+import DareProposalOverlay from '@/components/VideoChat/DareProposalOverlay';
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
 // routes /streaming/ws directly (not /v1/streaming/ws on the streaming host)
@@ -194,6 +197,11 @@ function VideoChatContent() {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isDareOpen, setIsDareOpen] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState(null);
+  const [activeRemoteGift, setActiveRemoteGift] = useState(null);
+  const [activeLocalGift, setActiveLocalGift] = useState(null);
+  const [activeDareProposal, setActiveDareProposal] = useState(null);
+  const [dareAcceptanceStatus, setDareAcceptanceStatus] = useState("idle");
   const [waitlist, setWaitlist] = useState([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
@@ -217,6 +225,7 @@ function VideoChatContent() {
   // Track producer ids we created locally so we can safely skip "self" tracks even
   // if the backend occasionally mis-labels userId on producer events.
   const myProducerIdsRef = useRef(new Set());
+  const processedGiftIdsRef = useRef(new Set());
   /** mediasoup consumer id → departed user cleanup */
   const consumerIdsByUserRef = useRef({});
   const callRoleRefreshTimerRef = useRef(null);
@@ -1820,6 +1829,96 @@ function VideoChatContent() {
         const pInfo = partnerInfoRef.current;
         const remotes = remoteStreamsRef.current;
 
+        // Try to parse message as JSON gift reaction or dismissal
+        let isGift = false;
+        let isGiftDismiss = false;
+        let isDareSync = false;
+        let isDareResponse = false;
+        let giftData = null;
+        let dismissData = null;
+        let dareSyncData = null;
+        let dareResponseData = null;
+        try {
+          if (data.message && data.message.startsWith('{')) {
+            const parsed = JSON.parse(data.message);
+            if (parsed && parsed.isGift) {
+              isGift = true;
+              giftData = parsed;
+            } else if (parsed && parsed.isGiftDismissed) {
+              isGiftDismiss = true;
+              dismissData = parsed;
+            } else if (parsed && parsed.isDareSync) {
+              isDareSync = true;
+              dareSyncData = parsed;
+            } else if (parsed && parsed.isDareResponse) {
+              isDareResponse = true;
+              dareResponseData = parsed;
+            }
+          }
+        } catch (e) { }
+
+        if (isDareSync && dareSyncData) {
+          // If we are the target of this dare sync, update our proposal UI
+          if (String(dareSyncData.targetUserId) === String(myId)) {
+            setActiveDareProposal({
+              dareText: dareSyncData.dareText,
+              giftId: dareSyncData.giftId,
+              giftImg: dareSyncData.giftImg,
+              giftPrice: dareSyncData.giftPrice,
+              senderId: dareSyncData.senderId,
+              senderName: dareSyncData.senderName
+            });
+          }
+          break;
+        }
+
+        if (isDareResponse && dareResponseData) {
+          if (String(dareResponseData.targetUserId) === String(myId)) {
+            setDareAcceptanceStatus(dareResponseData.accepted ? "accepted" : "rejected");
+            if (!dareResponseData.accepted) {
+              // Automatically reset selection or close if rejected?
+              // The plan leaves the user on stage 1
+            }
+          }
+          break;
+        }
+
+        if (isGiftDismiss && dismissData) {
+          const { messageId } = dismissData;
+          setActiveRemoteGift((prev) =>
+            prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev
+          );
+          break; // Stop execution, don't display in regular chat history
+        }
+
+        if (isGift && giftData) {
+          const messageId = data.id || data.messageId || giftData.messageId || Date.now().toString();
+          if (messageId) {
+            if (processedGiftIdsRef.current.has(messageId)) {
+              break;
+            }
+            processedGiftIdsRef.current.add(messageId);
+          }
+
+          const { gift, targetUserId, senderId } = giftData;
+          const giftObj = {
+            ...gift,
+            messageId,
+            targetUserId,
+            senderId
+          };
+
+          // Gift animation always shows on a REMOTE tile — never on local.
+          // - If I'm the recipient (targetUserId === me): show on the sender's remote tile
+          // - Otherwise: show on the recipient's remote tile
+          const tileUserId = String(targetUserId) === String(myId)
+            ? String(senderId)      // I received it → show on sender's tile
+            : String(targetUserId); // I'm 3rd party or sender → show on recipient's tile
+
+          setActiveRemoteGift({ gift: giftObj, targetUserId: tileUserId, isDismissed: false });
+          break; // Stop execution, don't display in regular chat history
+        }
+
         console.log('[Chat] Received:', data.message, { myId, remoteIds: remotes.map(s => s.userId) });
 
         let name = 'Unknown';
@@ -2139,6 +2238,114 @@ function VideoChatContent() {
     router.push('/');
   };
 
+  const handleLocalGiftComplete = useCallback(() => {
+    if (activeLocalGift?.messageId && roomInfoRef.current?.roomId) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomInfoRef.current.roomId,
+          message: JSON.stringify({
+            isGiftDismissed: true,
+            messageId: activeLocalGift.messageId,
+            targetUserId: activeLocalGift.targetUserId
+          })
+        }
+      });
+    }
+    setActiveLocalGift(null);
+  }, [activeLocalGift]);
+
+  const handleRemoteGiftComplete = useCallback(() => {
+    // If we were the recipient, send dismiss sync so sender's animation also stops
+    if (activeRemoteGift?.gift?.messageId && activeRemoteGift?.gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomInfoRef.current.roomId,
+          message: JSON.stringify({
+            isGiftDismissed: true,
+            messageId: activeRemoteGift.gift.messageId,
+            targetUserId: activeRemoteGift.gift.targetUserId
+          })
+        }
+      });
+    }
+    setActiveRemoteGift(null);
+  }, [activeRemoteGift]);
+
+  const handleDareSync = useCallback((syncData) => {
+    if (!roomInfo?.roomId || !remoteStreams[0]?.userId) return;
+    const targetId = remoteStreams[0].userId;
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfo.roomId,
+        message: JSON.stringify({
+          isDareSync: true,
+          dareText: syncData.dareText,
+          giftId: syncData.gift?.id,
+          giftImg: syncData.gift?.img,
+          giftPrice: syncData.gift?.price,
+          targetUserId: targetId,
+          senderId: userIdRef.current,
+          senderName: 'You'
+        })
+      }
+    });
+  }, [roomInfo, remoteStreams]);
+
+  const handleDareResponse = useCallback((accepted) => {
+    if (!activeDareProposal || !roomInfo?.roomId) return;
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfo.roomId,
+        message: JSON.stringify({
+          isDareResponse: true,
+          accepted,
+          targetUserId: activeDareProposal.senderId,
+          senderId: userIdRef.current
+        })
+      }
+    });
+    setActiveDareProposal(null); // hide popup
+  }, [activeDareProposal, roomInfo]);
+
+  const dareGiftItems = [
+    { id: 1, name: "Monkey", price: 50, img: "🐒" },
+    { id: 2, name: "Pika", price: 250, img: "⚡" },
+    { id: 3, name: "Super", price: 2000, img: "🦸" },
+    { id: 4, name: "Iron", price: 25000, img: "🤖" },
+  ];
+
+  const handleSendDare = useCallback(() => {
+    const targetId = remoteStreamsRef.current[0]?.userId;
+    if (!targetId || !roomInfoRef.current?.roomId || !selectedGiftId) return;
+
+    const giftObj = dareGiftItems.find(g => g.id === selectedGiftId);
+    if (!giftObj || coins < giftObj.price) return;
+    setCoins(prev => prev - giftObj.price);
+
+    const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfoRef.current.roomId,
+        message: JSON.stringify({
+          isGift: true,
+          isDare: true,
+          messageId: msgId,
+          gift: giftObj,
+          targetUserId: targetId,
+          senderId: userIdRef.current
+        })
+      }
+    });
+    setIsDareOpen(false);
+    setSelectedGiftId(null);
+    setDareAcceptanceStatus("idle");
+  }, [coins, selectedGiftId]);
+
   // --- Render Helpers ---
   const isRoomFull = (remoteStreams.length + 1) >= 4;
   const isPullStrangerDisabled = isRoomFull || isEnablingPullStranger || pullStrangerCooldownSec > 0;
@@ -2161,7 +2368,10 @@ function VideoChatContent() {
     isDareOpen,
     setIsDareOpen,
     setIsCoinModalOpen,
-    coins
+    coins,
+    selectedGiftId,
+    gift: activeLocalGift,
+    onGiftAnimationComplete: handleLocalGiftComplete
   };
   const getRemoteFriendTileProps = (streamInfo) => {
     const uid = String(streamInfo.userId ?? '');
@@ -2223,7 +2433,7 @@ function VideoChatContent() {
         {remoteStreams.length === 0 ? (
           /* Landing/Loading state: Full peer section placeholder and local */
           isBroadcasting ? (
-            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+            <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
               <LocalVideoSection {...localVideoProps} />
             </div>
           ) : (
@@ -2231,14 +2441,14 @@ function VideoChatContent() {
 
             // loading  with meme loader
             <>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden')}>
 
                 <div
                   className="
     absolute inset-0
     h-[95%] w-[95%]
     border border-white/40
-    rounded-3xl md:rounded-[2rem]
+    rounded-3xl md:rounded-[60px]
     pointer-events-none
     z-20
     transition-colors
@@ -2266,14 +2476,14 @@ function VideoChatContent() {
                       className={clsx('h-[200px]', 'max-h-[42%]', 'w-48', 'max-w-xl', 'rounded-[1.5rem]', 'object-contain')}
                     />
                   ) : (
-                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'p-8', 'text-center', 'shadow-2xl')}>
+                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'p-8', 'text-center',)}>
                       <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
                     </div>
                   )}
 
                 </div>
               </div>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
                 {!showChatInput && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden ">
                     <button
@@ -2306,7 +2516,7 @@ function VideoChatContent() {
     absolute inset-0
     h-[95%] w-[95%]
     border border-white/40
-    rounded-3xl md:rounded-[2rem]
+    rounded-3xl md:rounded-[60px]
     pointer-events-none
     z-20
     transition-colors
@@ -2347,7 +2557,7 @@ function VideoChatContent() {
 
 
             <RemoteVideoTile
-              className="h-[60%] md:h-auto md:flex-1"
+              className="h-[58%] md:h-auto md:flex-1"
               key={`remote-${remoteStreams[0].userId}`}
               {...getRemoteFriendTileProps(remoteStreams[0])}
               stream={remoteStreams[0].stream}
@@ -2360,10 +2570,13 @@ function VideoChatContent() {
               leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
+              gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift.gift : null}
+              onGiftAnimationComplete={handleRemoteGiftComplete}
+              forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift.isDismissed}
             />
 
 
-            <div className={clsx('h-[45%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
+            <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
               {!showChatInput && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                   <button
@@ -2471,6 +2684,9 @@ function VideoChatContent() {
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
               hideNameOnMobile={true}
+              gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift.gift : null}
+              onGiftAnimationComplete={handleRemoteGiftComplete}
+              forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift.isDismissed}
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
               onReportClick={() => setShowGroupMembersModal(true)}
@@ -2490,8 +2706,10 @@ function VideoChatContent() {
                 hideNameOnMobile={true}
                 hideAddFriendOnMobile={true}
                 hideReportOnMobile={true}
+                gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift.gift : null}
+                onGiftAnimationComplete={handleRemoteGiftComplete}
               />
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950',)}>
                 {!showChatInput && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
                     <button
@@ -2609,6 +2827,8 @@ function VideoChatContent() {
                 isRainchecking={isRainchecking}
                 borderBottomClass="md:bottom-4"
                 hideNameOnMobile={true}
+                gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift.gift : null}
+                onGiftAnimationComplete={handleRemoteGiftComplete}
                 multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
                 hideReportOnMobile={true}
@@ -2630,6 +2850,8 @@ function VideoChatContent() {
                 borderBottomClass="md:bottom-4"
                 hideNameOnMobile={true}
                 hideAddFriendOnMobile={true}
+                gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift.gift : null}
+                onGiftAnimationComplete={handleRemoteGiftComplete}
               />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[2].userId}`}
@@ -2643,8 +2865,10 @@ function VideoChatContent() {
                 hideNameOnMobile={true}
                 hideAddFriendOnMobile={true}
                 hideReportOnMobile={true}
+                gift={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId ? activeRemoteGift.gift : null}
+                onGiftAnimationComplete={handleRemoteGiftComplete}
               />
-              <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'shadow-2xl')}>
+              <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
                 {/* Tile-attached nav + coins */}
                 {!showChatInput && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden">
@@ -2735,6 +2959,63 @@ function VideoChatContent() {
         {/* In-call nav moved onto local tile */}
 
         <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+
+        <GiftOverlay
+          isOpen={isGiftModalOpen}
+          onClose={() => {
+            setIsGiftModalOpen(false);
+            setSelectedGiftId(null);
+          }}
+          onOpenCoinModal={() => setIsCoinModalOpen(true)}
+          onSelectGift={(gift) => setSelectedGiftId(gift.id)}
+          selectedGiftId={selectedGiftId}
+          coins={coins}
+          onSendGift={(gift) => {
+            const targetId = remoteStreamsRef.current[0]?.userId;
+            if (targetId && roomInfoRef.current?.roomId) {
+              const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+              send({
+                type: 'chat-message',
+                data: {
+                  roomId: roomInfoRef.current.roomId,
+                  message: JSON.stringify({
+                    isGift: true,
+                    messageId: msgId,
+                    gift: gift,
+                    targetUserId: targetId,
+                    senderId: userIdRef.current
+                  })
+                }
+              });
+            }
+            setIsGiftModalOpen(false);
+            setSelectedGiftId(null);
+          }}
+        />
+
+        <DareOverlay
+          isOpen={isDareOpen}
+          onClose={() => {
+            setIsDareOpen(false);
+            setSelectedGiftId(null);
+            setDareAcceptanceStatus("idle");
+          }}
+          selectedGiftId={selectedGiftId}
+          onSelectGift={(giftId) => setSelectedGiftId(giftId)}
+          onDareSync={handleDareSync}
+          dareAcceptanceStatus={dareAcceptanceStatus}
+          onSendDare={handleSendDare}
+          coins={coins}
+          onOpenCoinModal={() => setIsCoinModalOpen(true)}
+          recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || "Stranger") : "Sanya"}
+        />
+
+        <DareProposalOverlay
+          isOpen={!!activeDareProposal}
+          proposal={activeDareProposal}
+          onAccept={() => handleDareResponse(true)}
+          onReject={() => handleDareResponse(false)}
+        />
 
         <OverlayLayer
           open={overlay.open}

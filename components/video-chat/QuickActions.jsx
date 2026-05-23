@@ -57,7 +57,7 @@ export default function QuickActions({
 
   return (
     <div className={clsx(
-      "absolute bottom-[39.5%] md:bottom-8 left-0 w-full z-40 pointer-events-none px-10",
+      "absolute bottom-[39%] md:bottom-8 left-0 w-full z-40 pointer-events-none px-10",
       isOverlayOpen && "hidden md:block"
     )}>
 

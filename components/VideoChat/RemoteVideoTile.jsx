@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
+import GiftAnimation from './GiftAnimation';
 
 export default function RemoteVideoTile({
   stream,
@@ -34,7 +35,10 @@ export default function RemoteVideoTile({
   showNextButton,
   onNext,
   onClickMultiUserAvatars,
-  onReportClick
+  onReportClick,
+  gift,
+  onGiftAnimationComplete,
+  forceDismiss
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
@@ -299,7 +303,7 @@ export default function RemoteVideoTile({
                 </div>
               )}
             </div>
-            <div className="absolute left-5 bottom-0 w-10 md:w-11 pointer-events-none">
+            <div className="absolute left-5 top-5 w-10 md:w-11 pointer-events-none">
               <img
                 src="/your-sticker.png"
                 className="w-full h-auto"
@@ -404,6 +408,13 @@ export default function RemoteVideoTile({
         "absolute hidden md:block md:top-4 top-2 md:left-4 left-2 md:right-4 right-2 border md:border-white/30 border-white/50 md:rounded-[60px] rounded-3xl pointer-events-none z-20",
         borderBottomClass
       )} />
+
+      <GiftAnimation
+        gift={gift}
+        onComplete={onGiftAnimationComplete}
+        persistUntilDismissed={true}
+        forceDismiss={forceDismiss}
+      />
     </div>
   );
 }

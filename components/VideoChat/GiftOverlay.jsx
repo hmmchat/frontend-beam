@@ -14,6 +14,7 @@ export default function GiftOverlay({
   onSelectGift,
   selectedGiftId,
   coins,
+  onSendGift,
 }) {
   const [giftItems, setGiftItems] = useState([]);
   const [animGift, setAnimGift] = useState(null);
@@ -61,16 +62,26 @@ export default function GiftOverlay({
   const currentPrice = selectedGift ? selectedGift.price : 0;
   const hasSufficientCoins = coins >= currentPrice;
 
+  const handleSend = () => {
+    if (selectedGift) {
+      if (typeof onSendGift === 'function') {
+        onSendGift(selectedGift);
+      } else {
+        setAnimGift(selectedGift);
+      }
+    }
+  };
+
   return (
     <>
       {/* Animation Layer */}
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
       <div className="fixed inset-0 z-20 " onClick={onClose} />
       {/* Main UI */}
-      <div className="absolute md:bottom-3  md:right-5  md:-translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
+      <div className="absolute md:bottom-3 right-0 bottom-26  md:right-5  md:-translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="border-2 border-white md:rounded-[40px] rounded-[36px] w-full max-w-[500px] md:p-8 p-6 shadow-2xl relative overflow-hidden"
+          className="border-2 border-white md:rounded-[40px] rounded-[32px] w-full max-w-[500px] md:p-8 p-6  relative overflow-hidden"
         >
           {/* Background */}
           <div
@@ -163,9 +174,7 @@ export default function GiftOverlay({
               </span>
             </div>
             <button
-              onClick={() => {
-                if (selectedGift) setAnimGift(selectedGift);
-              }}
+              onClick={handleSend}
               className={clsx(
                 "bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white active:scale-95 transition-all",
                 !selectedGift ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"
@@ -179,14 +188,14 @@ export default function GiftOverlay({
       </div>
 
 
- 
+
 
 
 
 
 
       {/* Bottom Bar Mobile */}
-      <div className="absolute w-full px-4 flex items-center py-7 md:hidden bottom-0 z-50 justify-between">
+      <div className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
         <div
           className="absolute inset-0 z-0"
           style={{
@@ -195,22 +204,31 @@ export default function GiftOverlay({
             opacity: 0.9,
           }}
         />
+
         {!hasSufficientCoins ? (
           <>
-            <div className="text-white z-10 text-sm">Insufficient balance</div>
+            <div className="z-10 text-sm text-white">
+              Insufficient balance
+            </div>
+
             <button
               onClick={onOpenCoinModal}
-              className="z-10 bg-black/40 border border-white/50 border-b-2 px-6 py-3 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
+              className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95"
             >
               Buy Coins
             </button>
           </>
         ) : (
           <>
-            <div className="text-white z-10 text-sm flex items-center gap-2">
-              Spend Coin:
-              <span className="flex justify-center items-center gap-1 font-semibold">
-                <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
+            <div className="z-10 flex items-center gap-2 text-sm text-white">
+              <span>Spend Coin:</span>
+
+              <span className="flex items-center justify-center gap-1 font-semibold">
+                <img
+                  src="/Coins/coin10.png"
+                  className="w-4 rounded-full"
+                  alt=""
+                />
                 {currentPrice}
               </span>
             </div>
@@ -218,22 +236,21 @@ export default function GiftOverlay({
             <button
               type="button"
               disabled={!selectedGift}
-              onClick={() => {
-                if (selectedGift) setAnimGift(selectedGift);
-              }}
+              onClick={handleSend}
               className={clsx(
-                "group relative w-14 h-14 flex items-center justify-center z-10",
+                "group relative z-10 flex items-center justify-center w-14 h-14",
                 !selectedGift && "opacity-50"
               )}
             >
               <img
                 src="/circle.png"
-                className="absolute inset-0 block w-full h-full rounded-full bg-pink-800 transition-none group-active:rotate-180"
+                className="absolute inset-0 block w-full h-full transition-none rounded-full bg-pink-800 group-active:rotate-180"
                 alt=""
               />
+
               <img
                 src="/giftboc.png"
-                className="relative w-8 h-8 object-contain transition-none group-active:scale-80"
+                className="relative object-contain w-8 h-8 transition-none group-active:scale-80"
                 alt="GIFT"
               />
             </button>

@@ -8,7 +8,7 @@ import Onboarding from '../../components/Home/Onboarding';
 
 const OnboardingPage = () => {
   return (
-    <div className="min-h-[100svh] overflow-x-hidden">
+    <div className="h-[100dvh] overflow-hidden overflow-x-hidden">
       <Onboarding />
     </div>
   );

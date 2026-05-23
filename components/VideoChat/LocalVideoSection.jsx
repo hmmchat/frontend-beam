@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from "react";
 import clsx from "clsx";
-import GiftOverlay from "./GiftOverlay";
-import DareOverlay from "./DareOverlay";
+import GiftAnimation from "./GiftAnimation";
+
 export default function LocalVideoSection({
   localVideoRef,
   localStreamRef,
@@ -26,9 +26,12 @@ export default function LocalVideoSection({
   setIsCoinModalOpen,
   coins,
   hideMobileControlsRow = false,
-  hideAllControls = false
+  hideAllControls = false,
+  selectedGiftId,
+  gift,
+  onGiftAnimationComplete,
+  forceDismiss
 }) {
-  const [selectedGiftId, setSelectedGiftId] = useState(null);
   const setLocalVideoEl = useCallback(
     (el) => {
       localVideoRef.current = el;
@@ -73,6 +76,13 @@ export default function LocalVideoSection({
           )}
         />
 
+        <GiftAnimation
+          gift={gift}
+          onComplete={onGiftAnimationComplete}
+          persistUntilDismissed={true}
+          forceDismiss={forceDismiss}
+        />
+
         {isCamOff && (
           <div
             className={clsx(
@@ -98,11 +108,12 @@ export default function LocalVideoSection({
         <div
           className={clsx(
             "absolute",
-            "left-1",
+            "left-3",
             "flex",
             "flex-col",
             "gap-1",
             "max-w-[70%]",
+
             "max-h-[36vh]",
             "overflow-y-auto",
             "pr-1",
@@ -131,41 +142,14 @@ export default function LocalVideoSection({
           ))}
         </div>
 
-        {/* Gift Selection Grid Overlay */}
-        <GiftOverlay
-          isOpen={isGiftModalOpen}
-          onClose={() => {
-            setIsGiftModalOpen(false);
-            setSelectedGiftId(null);
-          }}
-          onOpenCoinModal={() => setIsCoinModalOpen(true)}
-          onSelectGift={(gift) => setSelectedGiftId(gift.id)}
-          selectedGiftId={selectedGiftId}
-          coins={coins}
-        />
 
-        <DareOverlay
-          isOpen={isDareOpen}
-          onClose={() => {
-            setIsDareOpen(false);
-            setSelectedGiftId(null);
-          }}
-          selectedGiftId={selectedGiftId}
-          onSelectGift={(giftId) => setSelectedGiftId(giftId)}
-        />
 
         {/* Call Controls (only if gift or dare is not open) */}
         {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
             className={clsx(
-              "absolute",
-              "bottom-6",
-              "left-5",
-              "right-6",
-              "flex",
-              "items-end",
-              "justify-between",
-              "z-20",
+              "absolute bottom-4 left-2 right-2 z-20",
+              "flex items-end justify-center gap-3"
             )}
           >
             <div
@@ -173,26 +157,36 @@ export default function LocalVideoSection({
                 "flex",
                 "flex-col",
                 "gap-4",
-                "w-full",
-                "max-w-[240px]",
+                "w-full md:w-[80%]",
+                "max-w-[240px] md:max-w-none",
+                "md:px-4",
               )}
             >
               {showChatInput && (
                 <form
                   onSubmit={sendChatMessage}
-                  className="animate-in slide-in-from-bottom-6"
+                  className="animate-in mb-4 ml-1 "
                 >
                   <input
                     autoFocus
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..."
-                    className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-7 outline-none ml-4"
+                    className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-2 outline-none"
                   />
                 </form>
               )}
+
+
+
               {/* 3 button */}
-              <div className={clsx("gap-1 md:gap-2 mb-2", hideMobileControlsRow ? "hidden md:flex flex-wrap" : "flex flex-wrap")}>
+              <div
+                className={clsx(
+                  "flex items-center flex-nowrap gap-1 sm:gap-2 w-full",
+                  "overflow-hidden",
+                  hideMobileControlsRow ? "hidden md:flex" : "flex"
+                )}
+              >
                 <button
                   type="button"
                   onClick={toggleCam}
@@ -247,7 +241,10 @@ export default function LocalVideoSection({
                 </button>
 
                 {/* logo */}
-                <img src="/logotransparent.png" className=' z-10 md:hidden  mt-2 ml-2' />
+                <img
+                  src="/logotransparent.png"
+                  className="z-10 md:hidden h-8 w-auto shrink-0"
+                />
 
               </div>
             </div>

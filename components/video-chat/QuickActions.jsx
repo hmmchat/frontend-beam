@@ -57,7 +57,7 @@ export default function QuickActions({
 
   return (
     <div className={clsx(
-      "absolute bottom-[39%] md:bottom-8 left-0 w-full z-40 pointer-events-none px-10",
+      "absolute top-[58%] -translate-y-1/2 md:top-auto md:bottom-0 left-0 w-full h-14 z-40 pointer-events-none px-10",
       isOverlayOpen && "hidden md:block"
     )}>
 
@@ -65,7 +65,7 @@ export default function QuickActions({
       {callRoles.isLocalHost && (
         <button
           onClick={handleDiceClick}
-          className="absolute bottom-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl"
+          className="absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl"
         >
           <img
             src={isRolling ? diceImages[diceIndex] : '/dice.png'}
@@ -86,7 +86,7 @@ export default function QuickActions({
           setTimeout(() => setIsBroken(false), 3000);
         }}
         className={clsx(
-          "absolute bottom-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto ",
+          "absolute top-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto ",
           "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
         )}
       >

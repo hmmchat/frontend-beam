@@ -148,7 +148,7 @@ export default function LocalVideoSection({
         {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
             className={clsx(
-              "absolute bottom-4 left-2 right-2 z-20",
+              "absolute bottom-[3%] left-2 right-2 z-20",
               "flex items-end justify-center gap-3"
             )}
           >
@@ -241,14 +241,16 @@ export default function LocalVideoSection({
                 </button>
 
                 {/* logo */}
-                <img
-                  src="/logotransparent.png"
-                  className="z-10 md:hidden h-8 w-auto shrink-0"
-                />
+
 
               </div>
-            </div>
 
+
+            </div>
+            <img
+              src="/logotransparent.png"
+              className="z-10 md:hidden h-6 w-auto shrink-0 mb-[3%]"
+            />
             {/* 2 gift button  */}
             <div className={clsx("gap-2 md:gap-2", hideMobileControlsRow ? "hidden md:flex" : "flex")}>
               <button

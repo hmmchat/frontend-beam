@@ -795,26 +795,7 @@ function VideoChatContent() {
 
   useEffect(() => {
     let cancelled = false;
-
-    const pickLoadingMeme = (memes) => {
-      const activeMemes = Array.isArray(memes)
-        ? memes.filter((meme) => meme && (meme.imageUrl || meme.text))
-        : [];
-      if (activeMemes.length === 0) return null;
-
-      const orderedMemes = activeMemes
-        .filter((meme) => Number.isFinite(Number(meme.order)))
-        .sort((a, b) => Number(a.order) - Number(b.order));
-      if (orderedMemes.length > 0) {
-        const key = 'beam_loading_meme_order_index';
-        const previousIndex = Number.parseInt(localStorage.getItem(key) || '0', 10);
-        const safeIndex = Number.isFinite(previousIndex) ? previousIndex % orderedMemes.length : 0;
-        localStorage.setItem(key, String((safeIndex + 1) % orderedMemes.length));
-        return orderedMemes[safeIndex];
-      }
-
-      return activeMemes[Math.floor(Math.random() * activeMemes.length)];
-    };
+    let cycleInterval = null;
 
     const normalizeMeme = (meme) => {
       if (!meme) return null;
@@ -828,9 +809,36 @@ function VideoChatContent() {
       try {
         const response = await apiRequest(API.STREAMING.GET_LOADING_MEMES);
         if (cancelled) return;
-        const selected = pickLoadingMeme(response?.memes || []);
-        if (selected) {
-          setLoadingMeme(normalizeMeme(selected));
+
+        const activeMemes = Array.isArray(response?.memes)
+          ? response.memes.filter((meme) => meme && (meme.imageUrl || meme.text))
+          : [];
+
+        if (activeMemes.length > 0) {
+          const orderedMemes = activeMemes
+            .filter((meme) => Number.isFinite(Number(meme.order)))
+            .sort((a, b) => Number(a.order) - Number(b.order));
+
+          const memesToCycle = orderedMemes.length > 0 ? orderedMemes : activeMemes;
+
+          let currentIndex = 0;
+          if (orderedMemes.length > 0) {
+            const key = 'beam_loading_meme_order_index';
+            const previousIndex = Number.parseInt(localStorage.getItem(key) || '0', 10);
+            currentIndex = Number.isFinite(previousIndex) ? previousIndex % memesToCycle.length : 0;
+            localStorage.setItem(key, String((currentIndex + 1) % memesToCycle.length));
+          } else {
+            currentIndex = Math.floor(Math.random() * memesToCycle.length);
+          }
+
+          setLoadingMeme(normalizeMeme(memesToCycle[currentIndex]));
+
+          if (memesToCycle.length > 1) {
+            cycleInterval = setInterval(() => {
+              currentIndex = (currentIndex + 1) % memesToCycle.length;
+              setLoadingMeme(normalizeMeme(memesToCycle[currentIndex]));
+            }, 2000);
+          }
           return;
         }
       } catch (_) { }
@@ -851,6 +859,7 @@ function VideoChatContent() {
 
     return () => {
       cancelled = true;
+      if (cycleInterval) clearInterval(cycleInterval);
     };
   }, []);
 
@@ -2468,22 +2477,87 @@ function VideoChatContent() {
 
 
 
-                <div className={clsx('absolute', 'inset-0', 'flex', 'flex-col', 'items-center', 'justify-center', 'p-6', 'text-white')}>
+                <div
+                  className={clsx(
+                    'absolute',
+                    'inset-0',
+                    'flex',
+                    'flex-col',
+                    'items-center',
+                    'justify-center',
+                    'px-4',
+                    'py-6',
+                    'text-white'
+                  )}
+                >
+                  {/* Beam Logo */}
+                  <img
+                    src="/logo.png"
+                    alt="Beam Logo"
+                    className="h-8 md:h-16 md:w-40 md:mb-2 object-contain"
+                  />
+
+                  {/* Meme API text */}
+                  {loadingMeme?.text && (
+                    <p className="text-[11px] md:text-sm text-center max-w-[90%] md:max-w-md mb-4 md:mb-10 leading-relaxed">
+                      {loadingMeme.text}
+                    </p>
+                  )}
+
                   {loadingMeme?.imageUrl ? (
                     <img
                       src={loadingMeme.imageUrl}
                       alt={loadingMeme.text || 'Loading meme'}
-                      className={clsx('h-[200px]', 'max-h-[42%]', 'w-48', 'max-w-xl', 'rounded-[1.5rem]', 'object-contain')}
+                      className={clsx(
+                        'w-32 sm:w-40 md:w-48',
+                        'max-w-[75%] md:max-w-xl',
+                        'rounded-2xl md:rounded-[1.5rem]',
+                        'object-contain',
+                        'border-2 md:border-4',
+                        'border-white'
+                      )}
                     />
                   ) : (
-                    <div className={clsx('flex', 'h-full', 'max-h-[72%]', 'w-full', 'max-w-2xl', 'items-center', 'justify-center', 'rounded-[1.5rem]', 'p-8', 'text-center',)}>
-                      <p className={clsx('text-2xl', 'font-black', 'leading-tight', 'tracking-tight', 'text-white')}>{loadingMeme?.text || 'Finding someone who matches your energy...'}</p>
+                    <div
+                      className={clsx(
+                        'flex',
+                        'h-full',
+                        'max-h-[60%] md:max-h-[72%]',
+                        'w-full',
+                        'max-w-2xl',
+                        'items-center',
+                        'justify-center',
+                        'rounded-[1.5rem]',
+                        'text-center'
+                      )}
+                    >
+                      <p
+                        className={clsx(
+                          'text-base sm:text-lg md:text-xl',
+                          'leading-tight',
+                          'tracking-tight',
+                          'text-white',
+                          'px-4'
+                        )}
+                      >
+                        {loadingMeme?.text || 'Finding someone who matches your energy...'}
+                      </p>
                     </div>
                   )}
 
+                  {/* Delivering Text */}
+                  <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mt-4 md:mt-6" />
+                  <p className="text-[8px] md:text-[9px] text-white mt-3 text-center">
+                    Delivering you a human now
+                  </p>
                 </div>
+
+
               </div>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
+
+
+
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden',)}>
                 {!showChatInput && (
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] items-center gap-3 hidden ">
                     <button
@@ -2540,7 +2614,7 @@ function VideoChatContent() {
           /* 1:1 Matched Layout: Peer 1 | Local */
           <>
 
-            <div className="absolute inset-3 bottom-23 flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"
@@ -2646,7 +2720,7 @@ function VideoChatContent() {
           <>
 
 
-            <div className="absolute inset-3 bottom-23 flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"
@@ -2788,7 +2862,7 @@ function VideoChatContent() {
 
           <>
 
-            <div className="absolute inset-3 bottom-23 flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"

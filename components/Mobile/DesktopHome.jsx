@@ -17,7 +17,7 @@ export default function DesktopHome() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-const [isVideoOn, setIsVideoOn] = useState(false);
+  const [isVideoOn, setIsVideoOn] = useState(false);
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -64,23 +64,23 @@ const [isVideoOn, setIsVideoOn] = useState(false);
               </p>
 
               <div className={clsx('inline-flex', 'gap-2', 'mt-3')}>
-               <div
-  onClick={() => setIsVideoOn(!isVideoOn)}
-  className={clsx('flex', 'items-center', 'gap-2', 'mt-2', 'cursor-pointer', 'select-none')}
->
-  <img
-    src={isVideoOn ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-    alt="video toggle"
-    className={clsx('w-5', 'h-5', 'transition-transform', 'duration-200', 'active:scale-90')}
-  />
+                <div
+                  onClick={() => setIsVideoOn(!isVideoOn)}
+                  className={clsx('flex', 'items-center', 'gap-2', 'mt-2', 'cursor-pointer', 'select-none')}
+                >
+                  <img
+                    src={isVideoOn ? "/assets/video-on.svg" : "/assets/video-off.svg"}
+                    alt="video toggle"
+                    className={clsx('w-5', 'h-5', 'transition-transform', 'duration-200', 'active:scale-90')}
+                  />
 
-  <p className={clsx('text-sm', 'font-outfit')}>
-    {activeMeetingCount !== null
-      ? activeMeetingCount.toLocaleString()
-      : "0"}{" "}
-    meeting now
-  </p>
-</div>
+                  <p className={clsx('text-sm', 'font-outfit')}>
+                    {activeMeetingCount !== null
+                      ? activeMeetingCount.toLocaleString()
+                      : "0"}{" "}
+                    meeting now
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -185,8 +185,8 @@ const [isVideoOn, setIsVideoOn] = useState(false);
               <div className={clsx('flex-1', 'flex', 'items-center', 'justify-center', 'mt-44')}>
                 <MeetNowButton
                   className={clsx('w-[90%]', 'py-8')}
-                                   borderClass = "md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
-                                     iconClass=  "md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
+                  borderClass="md:border-[1.89px] md:border-b-[5.4px] border border-b-[3px] md:rounded-[26px] rounded-[16px]"
+                  iconClass="md:text-xl transition-all md:h-8 md:w-8 h-6 w-6"
                   onClick={() => setIsSignUpOpen(true)}
                   isVideoOn={isVideoOn}
                   onVideoClick={() => setIsVideoOn(!isVideoOn)}
@@ -195,9 +195,9 @@ const [isVideoOn, setIsVideoOn] = useState(false);
 
               {/* BOTTOM SECTION */}
               <div className={clsx('mb-10', 'flex', 'justify-between', 'items-center', 'px-2')}>
-                <div className={clsx('border-2', 'border-white/50', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4' ,  'hover:scale-110','active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300' )}>
+                <div className={clsx('border-2', 'border-white/50', 'p-3', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border-b-4', 'hover:scale-110', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
                   <Link href="/beam-tv">
-                    <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white','hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]', )}>
+                    <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]',)}>
                       {/* TV Frame (background) */}
                       <img
                         src="/tvfame.png"

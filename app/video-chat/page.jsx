@@ -8,6 +8,7 @@ import {
   exitCallToHome,
   exitCallToHomeKeepalive,
   exitCallResumeDiscovery,
+  clearDiscoveryResumeIntent,
   enablePullStrangerDiscovery,
   disablePullStrangerDiscovery,
   enableBeamcastDiscovery,
@@ -692,15 +693,7 @@ function VideoChatContent() {
       }
       cleanup();
     };
-
-  // Browser back from video call → home: leave room and reset presence reliably.
-  useEffect(() => {
-    const onPopState = () => {
-      void beginLeaveCallToHomeReliable();
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [router]);
 
   // Safety watcher: if peer-leave websocket signal is missed, auto-resume discovery from stuck 1:1 call.
   useEffect(() => {
@@ -1009,6 +1002,22 @@ function VideoChatContent() {
     return leaveRoomAndSetStatusReliable('ONLINE');
   }
 
+  const goHomeIdleFromCall = useCallback(async () => {
+    await beginLeaveCallToHomeReliable();
+    cleanup();
+    clearDiscoveryResumeIntent();
+    router.replace('/', { scroll: false });
+  }, [router]);
+
+  // Browser back from video call → idle homepage (not matchmaking / resume-discovery URL).
+  useEffect(() => {
+    const onPopState = () => {
+      void goHomeIdleFromCall();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [goHomeIdleFromCall]);
+
   function leaveRoomAndSetOnline(nextStatus = 'ONLINE') {
     try {
       const token = localStorage.getItem('accessToken');
@@ -1110,7 +1119,7 @@ function VideoChatContent() {
       pathname: typeof window !== 'undefined' ? window.location.pathname : '',
       search: typeof window !== 'undefined' ? window.location.search : ''
     });
-    router.push(`/?resumeDiscovery=1&sessionId=${encodeURIComponent(sid)}`);
+    router.replace(`/?resumeDiscovery=1&sessionId=${encodeURIComponent(sid)}`);
   };
 
   const handleRaincheckNext = async () => {
@@ -2285,9 +2294,7 @@ function VideoChatContent() {
 
   const handleLeave = async () => {
     flowLog('handleLeave_clicked', { roomId: roomInfo?.roomId || null });
-    await beginLeaveCallToHomeReliable();
-    cleanup();
-    router.push('/');
+    await goHomeIdleFromCall();
   };
 
   const handleLocalGiftComplete = useCallback(() => {
@@ -3271,6 +3278,3 @@ function VideoChatContent() {
     </div>
   );
 }
-
-
-const styles = {};

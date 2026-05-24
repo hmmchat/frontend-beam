@@ -20,6 +20,7 @@ import {
   isDiscoveryActiveElsewhere,
   isDiscoveryLeader,
   exitCallToHome,
+  clearDiscoveryResumeIntent,
 } from '@/lib/discovery-presence';
 import { setPresenceStatusKeepalive } from '@/lib/presence-status';
 import { subscribePresenceRealtime } from '@/lib/presence-realtime';
@@ -341,7 +342,26 @@ export default function MeetSomeoneDynamic() {
         if (leftCallToHome) sessionStorage.removeItem('hmm:leftCallToHome');
       } catch (_) {}
 
-      if (shouldResumeDiscovery) {
+      if (leftCallToHome) {
+        flowLog('home_idle_after_back_from_call');
+        clearDiscoveryResumeIntent();
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('resumeDiscovery');
+          url.searchParams.delete('sessionId');
+          url.searchParams.delete('searching');
+          const nextPath = url.pathname || '/';
+          const nextSearch = url.search || '';
+          window.history.replaceState({}, '', nextSearch ? `${nextPath}${nextSearch}` : nextPath);
+        }
+        setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
+        void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
+        setIsSearching(false);
+        setCurrentCard(null);
+        setWaitingForMatch(false);
+        setWaitingMatchedUser(null);
+        setMatchedRoom(null);
+      } else if (shouldResumeDiscovery) {
         flowLog('resume_discovery_from_call', { resumeSessionId });
         localStorage.removeItem('forceDiscoveryResume');
         localStorage.removeItem('pendingRaincheckResume');
@@ -389,9 +409,15 @@ export default function MeetSomeoneDynamic() {
 
     const handlePopState = () => {
       const nextParams = new URLSearchParams(window.location.search);
-      if (nextParams.get('searching') !== '1') {
+      const resumeDiscovery = nextParams.get('resumeDiscovery') === '1';
+      const searching = nextParams.get('searching') === '1';
+      if (!searching && !resumeDiscovery) {
         setIsSearching(false);
         setCurrentCard(null);
+        setWaitingForMatch(false);
+        setWaitingMatchedUser(null);
+        setMatchedRoom(null);
+        clearDiscoveryResumeIntent();
         if (isDiscoveryLeader() || !isDiscoveryActiveElsewhere()) {
           void exitDiscovery();
         }
@@ -757,7 +783,7 @@ export default function MeetSomeoneDynamic() {
       );
       if (navigate) {
         squadVideoRoomNavKeyRef.current = roomKey;
-        router.push('/video-chat');
+        router.replace('/video-chat');
       }
     },
     [myUserId, router],
@@ -1613,7 +1639,7 @@ export default function MeetSomeoneDynamic() {
           }));
           isEnteringCallRef.current = true;
       void enterCall();
-          router.push('/video-chat');
+          router.replace('/video-chat');
           return;
         }
       } catch (err) {
@@ -1657,7 +1683,7 @@ export default function MeetSomeoneDynamic() {
         }));
         isEnteringCallRef.current = true;
       void enterCall();
-        router.push('/video-chat');
+        router.replace('/video-chat');
       } else if (data.success && !data.waiting && !data.roomId) {
         // Backend says both accepted, but failed to create the streaming room!
         // The backend specifically expects the frontend to create the room manually if this happens.
@@ -1685,7 +1711,7 @@ export default function MeetSomeoneDynamic() {
             }));
             isEnteringCallRef.current = true;
       void enterCall();
-            router.push('/video-chat');
+            router.replace('/video-chat');
             return;
           }
         } catch (roomErr) {
@@ -1710,7 +1736,7 @@ export default function MeetSomeoneDynamic() {
                 }));
                 isEnteringCallRef.current = true;
       void enterCall();
-                router.push('/video-chat');
+                router.replace('/video-chat');
                 return;
               }
             } catch (_) {}
@@ -1758,7 +1784,7 @@ export default function MeetSomeoneDynamic() {
                 }));
                 isEnteringCallRef.current = true;
       void enterCall();
-                router.push('/video-chat');
+                router.replace('/video-chat');
                 return;
               }
 

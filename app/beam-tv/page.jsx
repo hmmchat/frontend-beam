@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { exitBeamTvViewer, exitBeamTvViewerKeepalive } from '@/lib/discovery-presence';
 import clsx from 'clsx';
 import BroadcastSkeleton from '@/components/beam-tv/BroadcastSkeleton';
 import BroadcastHud from '@/components/VideoChat/BroadcastHud';
@@ -247,6 +248,7 @@ function BeamTVInner() {
 
     return () => {
       cleanup();
+      void exitBeamTvViewer();
     };
   }, [cleanup]);
 
@@ -964,6 +966,7 @@ function BeamTVInner() {
   // If user closes tab / navigates away while waitlisted, cancel request so waitlist count stays accurate.
   useEffect(() => {
     const onBeforeUnload = () => {
+      exitBeamTvViewerKeepalive();
       if (!requestedJoin.roomId || !requestedJoin.userId) return;
       try {
         const token = localStorage.getItem('accessToken');
@@ -979,7 +982,11 @@ function BeamTVInner() {
       } catch (_) {}
     };
     window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onBeforeUnload);
+    };
   }, [requestedJoin.roomId, requestedJoin.userId]);
 
   const handleSignal = async (msg, roomId, userId) => {

@@ -9,9 +9,9 @@ import GiftModal from '@/components/Home/GiftModal';
 import clsx from 'clsx';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 
-// Stable session ID for this page visit
+// Stable session ID for this page visit (backend adds offline- prefix)
 function makeSessionId() {
-  return `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 const PRESET_GIFT_IMAGES = [

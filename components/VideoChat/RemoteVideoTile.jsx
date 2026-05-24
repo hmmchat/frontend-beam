@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
+import { isMobileRuntime } from '@/lib/webrtc-media-utils';
 import GiftAnimation from './GiftAnimation';
 
 export default function RemoteVideoTile({
@@ -75,13 +76,15 @@ export default function RemoteVideoTile({
 
     // Chrome/Safari can occasionally stall a WebRTC <video> while the track is still live.
     // Re-playing the same stream is cheap and avoids black remote tiles until a remount.
+    const playbackWatchMs = isMobileRuntime() ? 8000 : 3000;
     const intervalId = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       const el = videoRef.current;
       if (!el || !stream || videoTrack?.readyState === 'ended') return;
       if (el.paused || el.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         recoverPlayback();
       }
-    }, 3000);
+    }, playbackWatchMs);
 
     return () => {
       window.clearInterval(intervalId);

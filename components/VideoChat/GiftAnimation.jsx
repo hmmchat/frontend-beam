@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { isMobileRuntime } from "@/lib/webrtc-media-utils";
 
 export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss }) {
   const containerRef = useRef(null);
@@ -49,8 +50,11 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     let rotation = 0;
     let initialized = false;
     let rafId;
+    let frame = 0;
+    const throttlePhysics = persistUntilDismissed && isMobileRuntime();
 
     const animate = () => {
+      frame += 1;
       if (!containerRef.current || !giftRef.current) {
         rafId = requestAnimationFrame(animate);
         return;
@@ -73,7 +77,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
         giftRef.current.style.opacity = "1";
       }
 
-      if (initialized) {
+      const runPhysics = initialized && !(throttlePhysics && frame % 2 === 1);
+      if (runPhysics) {
         x += vx;
         y += vy;
         rotation = (rotation + 1.2) % 360;
@@ -105,6 +110,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
         if (maxH > 0 && y > maxH) y = maxH;
 
         // Directly manipulate style transform to bypass React render lifecycle for 60fps performance
+        giftRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
+      } else if (initialized && giftRef.current) {
         giftRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
       }
 

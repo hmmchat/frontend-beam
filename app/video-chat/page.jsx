@@ -33,6 +33,20 @@ import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserContr
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import DareOverlay from '@/components/VideoChat/DareOverlay';
 import DareProposalOverlay from '@/components/VideoChat/DareProposalOverlay';
+import {
+  isMobileRuntime,
+  getCameraConstraints,
+  getPreferredConsumerLayers,
+  buildCameraVideoProduceOptions,
+  getScreenShareConstraints,
+  getScreenShareEncodings,
+  pruneEndedTracks,
+  replaceKindTrackInStream,
+  replaceScreenTrackInStream,
+  removeTrackFromStream,
+  pickH264VideoCodec
+} from '@/lib/webrtc-media-utils';
+
 // WS URL — always use the explicit env var (must be wss:// in production)
 // Fallback derives from STREAMING_SERVICE_URL but strips /v1 prefix since nginx
 // routes /streaming/ws directly (not /v1/streaming/ws on the streaming host)
@@ -83,66 +97,6 @@ const isRealtimeDebugEnabled = () =>
 
 const realtimeDebug = (...args) => {
   if (isRealtimeDebugEnabled()) console.log(...args);
-};
-
-const isMobileRuntime = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia?.('(max-width: 767px)').matches ||
-    /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator?.userAgent || '')
-  );
-};
-
-const getCameraConstraints = ({ exactFrontCamera = false } = {}) => {
-  const facingMode = exactFrontCamera ? { exact: 'user' } : { ideal: 'user' };
-  if (!isMobileRuntime()) {
-    return {
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      frameRate: { ideal: 30, max: 30 },
-      facingMode
-    };
-  }
-
-  // Mobile devices sustain long calls better at qHD/24fps; simulcast still lets strong devices receive sharp video.
-  return {
-    width: { ideal: 960, max: 1280 },
-    height: { ideal: 540, max: 720 },
-    frameRate: { ideal: 24, max: 24 },
-    facingMode
-  };
-};
-
-const getVideoEncodings = () => {
-  if (!isMobileRuntime()) {
-    return [
-      { rid: 'r0', maxBitrate: 200_000, scaleResolutionDownBy: 4 },
-      { rid: 'r1', maxBitrate: 700_000, scaleResolutionDownBy: 2 },
-      { rid: 'r2', maxBitrate: 2_500_000, scaleResolutionDownBy: 1 }
-    ];
-  }
-
-  return [
-    { rid: 'r0', maxBitrate: 160_000, scaleResolutionDownBy: 3 },
-    { rid: 'r1', maxBitrate: 450_000, scaleResolutionDownBy: 1.8 },
-    { rid: 'r2', maxBitrate: 1_200_000, scaleResolutionDownBy: 1 }
-  ];
-};
-
-const getPreferredConsumerLayers = ({ kind, source, remoteCount = 1 } = {}) => {
-  if (kind !== 'video') return undefined;
-  if (!isMobileRuntime()) {
-    return { spatialLayer: 2, temporalLayer: 2 };
-  }
-
-  // Mobile thermal budget: keep multi-party camera tiles on lower simulcast layers.
-  // Screen share stays one layer higher for readability.
-  if (source === 'screen') {
-    return { spatialLayer: 1, temporalLayer: 2 };
-  }
-  return remoteCount >= 2
-    ? { spatialLayer: 0, temporalLayer: 2 }
-    : { spatialLayer: 1, temporalLayer: 2 };
 };
 
 /** Module-level so React identity is stable — avoids remounting <video> on every parent re-render (e.g. 1s pull-stranger cooldown tick). */
@@ -273,6 +227,7 @@ function VideoChatContent() {
   const producerIdToMetaRef = useRef(new Map());
   const isBroadcastingRef = useRef(false);
   const isCamOffRef = useRef(false);
+  const mediaPausedForBackgroundRef = useRef(false);
   const sfuRerouteAttemptRef = useRef(0);
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
@@ -304,36 +259,74 @@ function VideoChatContent() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
-    const applyVisibilityPolicy = () => {
+
+    const pauseMediaForBackground = () => {
+      if (mediaPausedForBackgroundRef.current) return;
+      mediaPausedForBackgroundRef.current = true;
+      const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
+      if (videoTrack && !isCamOffRef.current) videoTrack.enabled = false;
+      try {
+        producersRef.current.video?.pause?.();
+      } catch (_) {}
+      Object.values(consumersRef.current || {}).forEach((consumer) => {
+        if (consumer?.kind !== 'video') return;
+        try {
+          consumer.pause?.();
+        } catch (_) {}
+      });
+    };
+
+    const resumeMediaFromBackground = () => {
+      const wasPaused = mediaPausedForBackgroundRef.current;
+      mediaPausedForBackgroundRef.current = false;
       const videoProducer = producersRef.current.video;
       const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
-      if (document.hidden) {
-        return;
-      }
 
       if (!isCamOffRef.current) {
         if (videoTrack) videoTrack.enabled = true;
-        try { videoProducer?.resume?.(); } catch (_) { }
+        try {
+          videoProducer?.resume?.();
+        } catch (_) {}
         Object.values(consumersRef.current || {}).forEach((consumer) => {
           if (consumer?.kind !== 'video') return;
-          try { consumer.resume?.(); } catch (_) { }
+          try {
+            consumer.resume?.();
+          } catch (_) {}
         });
-        setRemoteStreams((prev) => {
-          const next = prev.map((remote) => ({
-            ...remote,
-            stream: remote.stream ? new MediaStream(remote.stream.getTracks().filter((t) => t.readyState !== 'ended')) : remote.stream,
-            screenStream: remote.screenStream
-              ? new MediaStream(remote.screenStream.getTracks().filter((t) => t.readyState !== 'ended'))
-              : remote.screenStream
-          }));
-          remoteStreamsRef.current = next;
-          return next;
+      }
+
+      setRemoteStreams((prev) => {
+        const next = prev.map((remote) => {
+          pruneEndedTracks(remote.stream);
+          pruneEndedTracks(remote.screenStream);
+          return { ...remote };
         });
-        if (roomInfoRef.current?.roomId && wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'get-producers', data: { roomId: roomInfoRef.current.roomId } }));
-        }
+        remoteStreamsRef.current = next;
+        return next;
+      });
+
+      if (
+        wasPaused &&
+        roomInfoRef.current?.roomId &&
+        wsRef.current?.readyState === WebSocket.OPEN
+      ) {
+        wsRef.current.send(
+          JSON.stringify({
+            type: 'get-producers',
+            data: { roomId: roomInfoRef.current.roomId }
+          })
+        );
       }
     };
+
+    const applyVisibilityPolicy = () => {
+      if (document.hidden) {
+        pauseMediaForBackground();
+        return;
+      }
+      resumeMediaFromBackground();
+    };
+
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
     return () => document.removeEventListener('visibilitychange', applyVisibilityPolicy);
   }, []);
@@ -349,6 +342,7 @@ function VideoChatContent() {
   }, []);
 
   function cleanup() {
+    mediaPausedForBackgroundRef.current = false;
     // Close WebSocket
     if (wsRef.current) {
       wsRef.current.close();
@@ -789,8 +783,17 @@ function VideoChatContent() {
         });
       } catch (_) { }
     };
-    const id = setInterval(tick, 2500);
-    return () => clearInterval(id);
+    let timeoutId;
+    const scheduleRoomHealth = () => {
+      const delay =
+        (remoteStreamsRef.current?.length || 0) > 0 ? 8000 : 2500;
+      timeoutId = setTimeout(async () => {
+        await tick();
+        scheduleRoomHealth();
+      }, delay);
+    };
+    scheduleRoomHealth();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const isPullStrangerCooldownActive = pullStrangerCooldownSec > 0;
@@ -909,6 +912,7 @@ function VideoChatContent() {
     const intervalId = setInterval(async () => {
       if (intentionalExitRef.current || autoTransitioningRef.current) return;
       if (status !== 'connected') return;
+      if (typeof document !== 'undefined' && document.hidden) return;
 
       const remoteStream = remoteStreamsRef.current[0]?.stream || null;
       if (remoteStream) {
@@ -941,7 +945,7 @@ function VideoChatContent() {
           await handlePeerLeftAutoResume();
         }
       }
-    }, 1000);
+    }, 2000);
     return () => clearInterval(intervalId);
   }, [status]);
 
@@ -1224,10 +1228,7 @@ function VideoChatContent() {
     if (!sendTransportRef.current || !roomInfoRef.current?.roomId) return;
     if (localScreenMsProducerRef.current) return;
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { max: 30 } },
-        audio: false
-      });
+      const screenStream = await navigator.mediaDevices.getDisplayMedia(getScreenShareConstraints());
       localScreenStreamRef.current = screenStream;
       const track = screenStream.getVideoTracks()[0];
       if (!track) {
@@ -1239,11 +1240,14 @@ function VideoChatContent() {
         stopScreenShare();
       };
       pendingVideoProduceSourceRef.current = 'screen';
-      const producer = await sendTransportRef.current.produce({
+      const screenProduce = {
         track,
-        encodings: [{ maxBitrate: 3_000_000 }],
+        encodings: getScreenShareEncodings(),
         appData: { source: 'screen' }
-      });
+      };
+      const screenCodec = pickH264VideoCodec(deviceRef.current);
+      if (screenCodec) screenProduce.codec = screenCodec;
+      const producer = await sendTransportRef.current.produce(screenProduce);
       localScreenMsProducerRef.current = producer;
       setIsScreenSharing(true);
     } catch (e) {
@@ -1599,19 +1603,19 @@ function VideoChatContent() {
                 console.log('[WebRTC] Publishing video track (simulcast when supported)...');
                 pendingVideoProduceSourceRef.current = 'camera';
                 try {
-                  const videoProducer = await transport.produce({
-                    track: vTrack,
-                    encodings: getVideoEncodings(),
-                    codecOptions: { videoGoogleStartBitrate: 600 }
-                  });
+                  const videoProducer = await transport.produce(
+                    buildCameraVideoProduceOptions(device, vTrack)
+                  );
                   producersRef.current.video = videoProducer;
                 } catch (e) {
                   console.warn('[WebRTC] Simulcast produce failed, using single layer', e);
-                  const videoProducer = await transport.produce({
-                    track: vTrack,
-                    encodings: [{ maxBitrate: isMobileRuntime() ? 1_200_000 : 2_500_000 }]
-                  }).catch(console.error);
-                  if (videoProducer) producersRef.current.video = videoProducer;
+                  const fallback = await transport
+                    .produce({
+                      track: vTrack,
+                      encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }]
+                    })
+                    .catch(console.error);
+                  if (fallback) producersRef.current.video = fallback;
                 }
               }
               if (aTrack) {
@@ -1724,11 +1728,12 @@ function VideoChatContent() {
 
           if (kind === 'video' && vSource === 'screen') {
             if (existing) {
-              const oldScreen = existing.screenStream;
-              oldScreen?.getTracks().forEach((t) => t.stop());
               next = prev.map((s) =>
                 sameParticipantId(s.userId, uiRemoteId)
-                  ? { ...s, screenStream: new MediaStream([consumer.track]) }
+                  ? {
+                      ...s,
+                      screenStream: replaceScreenTrackInStream(s.screenStream, consumer.track)
+                    }
                   : s
               );
             } else {
@@ -1737,7 +1742,7 @@ function VideoChatContent() {
                 {
                   userId: uiRemoteId,
                   stream: new MediaStream(),
-                  screenStream: new MediaStream([consumer.track]),
+                  screenStream: replaceScreenTrackInStream(null, consumer.track),
                   name: '',
                   age: '',
                   displayPictureUrl: '/avatar-placeholder.png',
@@ -1747,17 +1752,17 @@ function VideoChatContent() {
               ];
             }
           } else if (existing) {
-            const existingTracks = existing.stream
-              .getTracks()
-              .filter((track) => track.readyState !== 'ended' && track.kind !== consumer.track.kind);
-            const newStream = new MediaStream([...existingTracks, consumer.track]);
-            next = prev.map((s) => (sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: newStream } : s));
+            next = prev.map((s) =>
+              sameParticipantId(s.userId, uiRemoteId)
+                ? { ...s, stream: replaceKindTrackInStream(s.stream, consumer.track) }
+                : s
+            );
           } else {
             next = [
               ...prev,
               {
                 userId: uiRemoteId,
-                stream: new MediaStream([consumer.track]),
+                stream: replaceKindTrackInStream(null, consumer.track),
                 name: '',
                 age: '',
                 displayPictureUrl: '/avatar-placeholder.png',
@@ -1813,13 +1818,15 @@ function VideoChatContent() {
             const next = prev.map((s) => {
               if (!sameParticipantId(s.userId, meta.uiRemoteId)) return s;
               if (meta.source === 'screen') {
-                const ss = s.screenStream;
-                ss?.getTracks().forEach((t) => t.stop());
-                return { ...s, screenStream: null };
+                if (s.screenStream && tr) {
+                  removeTrackFromStream(s.screenStream, tr);
+                }
+                const hasScreen = (s.screenStream?.getVideoTracks?.().length || 0) > 0;
+                return { ...s, screenStream: hasScreen ? s.screenStream : null };
               }
               if (tr) {
-                const kept = s.stream.getTracks().filter((t) => t.id !== tr.id);
-                return { ...s, stream: new MediaStream(kept) };
+                removeTrackFromStream(s.stream, tr);
+                return { ...s };
               }
               return s;
             });

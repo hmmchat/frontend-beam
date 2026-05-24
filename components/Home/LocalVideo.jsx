@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { getPreviewVideoConstraints } from '@/lib/webrtc-media-utils';
 
 const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
   const videoRef = useRef(null);
@@ -21,11 +22,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
 
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user'
-          },
+          video: getPreviewVideoConstraints(),
           audio: false
         });
         if (cancelled) {

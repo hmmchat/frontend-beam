@@ -98,8 +98,21 @@ export default function MeetSomeoneDynamic() {
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isVideoOn, setIsVideoOn] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('isVideoOn');
+      if (stored !== null) return stored === 'true';
+    }
+    return true;
+  });
   const [discoveryBlockedByOtherTab, setDiscoveryBlockedByOtherTab] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isVideoOn', String(isVideoOn));
+      localStorage.setItem('isCamOff', String(!isVideoOn));
+    }
+  }, [isVideoOn]);
 
 
   useEffect(() => {

@@ -19,6 +19,7 @@ import {
   enterCall,
   isDiscoveryActiveElsewhere,
   isDiscoveryLeader,
+  exitCallToHome,
 } from '@/lib/discovery-presence';
 import { setPresenceStatusKeepalive } from '@/lib/presence-status';
 import { subscribePresenceRealtime } from '@/lib/presence-realtime';
@@ -334,6 +335,12 @@ export default function MeetSomeoneDynamic() {
       await new Promise((resolve) => setTimeout(resolve, 50));
       if (aborted) return;
 
+      let leftCallToHome = false;
+      try {
+        leftCallToHome = sessionStorage.getItem('hmm:leftCallToHome') === '1';
+        if (leftCallToHome) sessionStorage.removeItem('hmm:leftCallToHome');
+      } catch (_) {}
+
       if (shouldResumeDiscovery) {
         flowLog('resume_discovery_from_call', { resumeSessionId });
         localStorage.removeItem('forceDiscoveryResume');
@@ -353,7 +360,9 @@ export default function MeetSomeoneDynamic() {
       } else {
         flowLog('home_idle_online');
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
-        if (!isDiscoveryActiveElsewhere() && (isDiscoveryLeader() || !localStorage.getItem('discoveryTabLeader'))) {
+        if (leftCallToHome) {
+          void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
+        } else if (!isDiscoveryActiveElsewhere() && (isDiscoveryLeader() || !localStorage.getItem('discoveryTabLeader'))) {
           void exitDiscovery().catch(() => setPresenceStatusKeepalive('ONLINE'));
         }
         setIsSearching(false);

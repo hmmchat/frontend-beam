@@ -289,7 +289,7 @@ export default function DareOverlay({
       </div>
 
       {/* Bottom Bar */}
-      <div className="absolute z-[60] bottom-0 left-0 right-0 flex items-center justify-between w-full px-3 py-2 sm:px-4 sm:py-3 pointer-events-none">
+      <div className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
         {/* Background */}
         <div
           className="absolute inset-0 z-0 pointer-events-auto"

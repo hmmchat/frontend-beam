@@ -401,7 +401,7 @@ className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-w
             ) : activeTab === "rewards" ? (
               <RewardsTab onBack={() => setActiveTab("default")} />
             ) : (
-              <StickersTab />
+              <StickersTab user={user} setUser={setUser} />
             )}
             </div>
           )}

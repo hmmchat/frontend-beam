@@ -6,6 +6,9 @@ import { isMobileRuntime } from '@/lib/webrtc-media-utils';
 import GiftAnimation from './GiftAnimation';
 
 export default function RemoteVideoTile({
+  userId,
+  isReported = false,
+  onReportUser,
   stream,
   /** Remote display/window share (camera+audio stay on `stream` for PiP). */
   screenShareStream,
@@ -33,18 +36,68 @@ export default function RemoteVideoTile({
   multiUserAvatars = [],
   hideAddFriendOnMobile = false,
   hideReportOnMobile = false,
+  hideReport = false,
   showNextButton,
   onNext,
   onClickMultiUserAvatars,
   onReportClick,
   gift,
   onGiftAnimationComplete,
-  forceDismiss
+  forceDismiss,
+  showMinusButton = false,
+  onMinus
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
   const pipRef = useRef(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+  const [areControlsVisible, setAreControlsVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = isMobileRuntime() || ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+      return !isMobile;
+    }
+    return true;
+  });
+  const timeoutRef = useRef(null);
+
+  const handleTouch = () => {
+    const isMobile = isMobileRuntime() ||
+      (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+    if (!isMobile) return;
+
+    setAreControlsVisible(true);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setAreControlsVisible(false);
+    }, 5000);
+  };
+
+  useEffect(() => {
+    const isMobile = isMobileRuntime() ||
+      (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+    if (!isMobile) {
+      setAreControlsVisible(true);
+      return;
+    }
+
+    const handleGlobalTouch = () => {
+      handleTouch();
+    };
+
+    window.addEventListener('touchstart', handleGlobalTouch, { passive: true });
+    window.addEventListener('touchmove', handleGlobalTouch, { passive: true });
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      window.removeEventListener('touchstart', handleGlobalTouch);
+      window.removeEventListener('touchmove', handleGlobalTouch);
+    };
+  }, []);
 
   const playSafely = (el) => {
     const pr = el?.play?.();
@@ -107,7 +160,11 @@ export default function RemoteVideoTile({
   }, [stream, screenShareStream]);
 
   return (
-    <div className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden', 'border', 'border-white/5', 'shadow-2xl')}>
+    <div
+      onTouchStart={handleTouch}
+      onTouchMove={handleTouch}
+      className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden', 'border', 'border-white/5', 'shadow-2xl')}
+    >
 
 
       {screenShareStream ? (
@@ -142,7 +199,11 @@ export default function RemoteVideoTile({
           type="button"
           onClick={onNext}
           disabled={isRainchecking}
-          className="absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40"
+          className={clsx(
+            "absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
+            "transition-all duration-300",
+            areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
         >
           <img
             src="/arrowright.png"
@@ -156,7 +217,9 @@ export default function RemoteVideoTile({
       {showLeaveNextButton && onLeaveOrNext && (
         <div className={clsx(
           "absolute md:top-13 top-6 z-20",
-          (showNextButton && onNext) ? "md:right-25 right-18" : "md:right-10 right-6"
+          (showNextButton && onNext) ? "md:right-25 right-18" : "md:right-10 right-6",
+          "transition-all duration-300",
+          areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
         )}>
           {leaveIconType === 'exit' ? (
             <button
@@ -168,7 +231,7 @@ export default function RemoteVideoTile({
               <svg
                 viewBox="0 0 32 32"
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-7 h-7"
+                className="w-5.5 h-5.5"
                 fill="none"
               >
                 <path
@@ -194,28 +257,75 @@ export default function RemoteVideoTile({
         </div>
       )}
 
+      {/* Minus Button */}
+      {showMinusButton && onMinus && (
+        <button
+          type="button"
+          onClick={onMinus}
+          disabled={isRainchecking}
+          className={clsx(
+            "absolute z-20 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
+            "md:top-13 md:w-12 md:h-12 md:left-auto md:translate-x-0 md:translate-y-0",
+            (showLeaveNextButton && onLeaveOrNext) ? "md:right-40" : "md:right-25",
+            "w-10 h-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+            "transition-all duration-300",
+            areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
+        >
+          {/* Arrow icon on desktop, minus icon on mobile */}
+          <img
+            src="/arrowright.png"
+            className="hidden md:block md:w-6 md:h-6 mt-1 md:mt-2 object-contain pointer-events-none"
+            alt="Next"
+          />
+          <svg
+            className="block md:hidden w-5 h-5 text-white"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      )}
+
       {/* Report Button */}
-      <button
-        type="button"
-        onClick={() => onReportClick ? onReportClick() : setShowReportModal(true)}
-        className={clsx(
-          "absolute md:top-13 top-6 z-20 md:w-12 md:h-12 w-10 h-10 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-[1.5px] outline-white/40 flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
-          ((showNextButton && onNext) && (showLeaveNextButton && onLeaveOrNext)) ? "md:right-40 right-30" :
-            ((showNextButton && onNext) || (showLeaveNextButton && onLeaveOrNext)) ? "md:right-25 right-18" :
-              "md:right-10 right-6",
-          hideReportOnMobile ? "hidden md:flex" : "flex"
-        )}
-      >
-        <img
-          src="/report-line.svg"
-          className="md:w-6 md:h-6 w-5 h-5 object-contain pointer-events-none"
-          alt="Report"
-        />
-      </button>
+      {!hideReport && (
+        <button
+          type="button"
+          disabled={isReported}
+          onClick={() => onReportClick ? onReportClick() : setShowReportModal(true)}
+          className={clsx(
+            "absolute md:top-13 top-6 z-20 md:w-12 md:h-12 w-10 h-10 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-[1.5px] outline-white/40 flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-50",
+            ((showNextButton && onNext) && (showLeaveNextButton && onLeaveOrNext)) ? "md:right-40 right-30" :
+              ((showNextButton && onNext) || (showLeaveNextButton && onLeaveOrNext)) ? "md:right-25 right-18" :
+                "md:right-10 right-6",
+            hideReportOnMobile ? "hidden md:flex" : "flex",
+            isReported && "bg-green-500/20 outline-green-500/40",
+            "transition-all duration-300",
+            areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
+        >
+          {isReported ? (
+            <svg className="w-5 h-5 md:w-6 md:h-6 text-green-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <img
+              src="/report-line.svg"
+              className="md:w-6 md:h-6 w-5 h-5 object-contain pointer-events-none"
+              alt="Report"
+            />
+          )}
+        </button>
+      )}
 
       {/* Report Modal */}
       {showReportModal && (
-        <div className="absolute  inset-0 top-14 md:top-0   z-50 flex items-center justify-center p-6 font-otomanopee " onClick={() => setShowReportModal(false)}>
+        <div className="absolute  inset-0 top-14 md:top-0   z-50 flex items-center justify-center p-6 font-otomanopee " onClick={() => !isReporting && setShowReportModal(false)}>
           <div className="w-full max-w-[320px]  space-y-1 animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
 
             {/* Pill Header */}
@@ -230,7 +340,7 @@ export default function RemoteVideoTile({
               />
               <div className="absolute inset-0 z-[1]" />
               <h2 className="relative z-10 text-white md:text-xl text-md font-black tracking-wider">
-                Report user
+                Report User
               </h2>
             </div>
 
@@ -247,18 +357,30 @@ export default function RemoteVideoTile({
               <div className="absolute inset-0 z-[1]" />
 
               <div className="relative z-10 space-y-2 ">
-                <h3 className="text-white md:text-2xl text-lg font-black">Report this user</h3>
-                <p className="text-white/70 md:text-sm text-sm font-outfit">report this user</p>
+                <h3 className="text-white md:text-2xl text-lg font-black">Report {name || "this user"}</h3>
+                <p className="text-white/70 md:text-sm text-xs font-outfit px-2 leading-relaxed">
+                  Are you sure you want to <br /> report this user?
+                </p>
               </div>
 
               <button
-                onClick={() => {
-                  console.log("Reported");
-                  setShowReportModal(false);
+                disabled={isReporting}
+                onClick={async () => {
+                  setIsReporting(true);
+                  try {
+                    if (onReportUser) {
+                      await onReportUser(userId);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  } finally {
+                    setIsReporting(false);
+                    setShowReportModal(false);
+                  }
                 }}
-                className="relative text-sm md:text-md z-10 mt-4 md:px-10 px-6 py-3.5 md:py-4 border border-white/40 border-b-[3px] rounded-2xl text-white font-black hover:bg-white/5 active:scale-95 transition-all"
+                className="relative text-sm md:text-md z-10 mt-4 md:px-10 px-6 py-3.5 md:py-4 border border-white/40 border-b-[3px] rounded-2xl text-white font-black hover:bg-white/5 active:scale-95 transition-all disabled:opacity-50"
               >
-                Report this user
+                {isReporting ? "Reporting..." : "Report this user"}
               </button>
             </div>
           </div>

@@ -1,13 +1,126 @@
 "use client";
 
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { API, apiRequest } from "@/lib/api";
+import { resolveStickerPath } from "../../Profile/Desktop/StickersTab";
 
 export default function ProfileMobileStickers({ 
   activeTab, 
   setActiveTab, 
-  selectedSticker, 
-  setSelectedSticker 
+  user,
+  setUser
 }) {
+  const [badges, setBadges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState(null);
+
+  const userId = user?.id || user?.userId;
+
+  useEffect(() => {
+    if (user?.activeBadgeId !== undefined) {
+      setSelectedGiftId(user.activeBadgeId);
+    }
+  }, [user?.activeBadgeId]);
+
+  useEffect(() => {
+    if (activeTab === "stickers" && userId) {
+      const fetchBadges = async () => {
+        try {
+          setLoading(true);
+
+          // Primary: GET /users/:userId/badges (syncs from wallet transactions first)
+          let data = await apiRequest(API.USERS.GET_BADGES(userId)).catch(() => null);
+
+          if (Array.isArray(data) && data.length > 0) {
+            setBadges(data);
+            return;
+          }
+
+          // Fallback: read directly from wallet gift transactions + gift catalog
+          const [txRes, catalogRes] = await Promise.all([
+            apiRequest(API.WALLET.GET_GIFTS).catch(() => null),
+            apiRequest(API.FRIENDS.GET_GIFT_CATALOG).catch(() => null),
+          ]);
+
+          const transactions = Array.isArray(txRes) ? txRes : [];
+          const catalogGifts = Array.isArray(catalogRes?.gifts) ? catalogRes.gifts : [];
+
+          const catalogMap = {};
+          catalogGifts.forEach(g => { if (g.giftId) catalogMap[g.giftId] = g; });
+
+          const seen = new Set();
+          const resolved = [];
+          for (const tx of transactions) {
+            if (!tx.giftId || seen.has(tx.giftId)) continue;
+            seen.add(tx.giftId);
+            const catalog = catalogMap[tx.giftId] || {};
+            resolved.push({
+              giftId: tx.giftId,
+              giftName: catalog.name || tx.giftId,
+              giftEmoji: catalog.emoji || '🎁',
+              imageUrl: catalog.imageUrl || null,
+              receivedAt: tx.createdAt,
+            });
+          }
+
+          setBadges(resolved);
+        } catch (err) {
+          console.error("Failed to fetch badges:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchBadges();
+    }
+  }, [activeTab, userId]);
+
+  const handleSelectSticker = (giftId) => {
+    setSelectedGiftId((prev) => (prev === giftId ? null : giftId));
+  };
+
+  const handleSaveSticker = async () => {
+    if (!userId) return;
+    try {
+      setSaving(true);
+      await apiRequest(API.USERS.SET_ACTIVE_BADGE(userId), {
+        method: "POST",
+        body: JSON.stringify({ giftId: selectedGiftId }),
+      });
+      if (setUser) {
+        setUser((prev) => prev ? { ...prev, activeBadgeId: selectedGiftId } : prev);
+      }
+      setActiveTab("main");
+    } catch (err) {
+      console.error("Failed to save active sticker:", err);
+      alert("Failed to save sticker: " + (err.message || err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveSticker = async () => {
+    if (!userId) return;
+    try {
+      setSaving(true);
+      await apiRequest(API.USERS.SET_ACTIVE_BADGE(userId), {
+        method: "POST",
+        body: JSON.stringify({ giftId: null }),
+      });
+      setSelectedGiftId(null);
+      if (setUser) {
+        setUser((prev) => prev ? { ...prev, activeBadgeId: null } : prev);
+      }
+      setActiveTab("main");
+    } catch (err) {
+      console.error("Failed to remove sticker:", err);
+      alert("Failed to remove sticker: " + (err.message || err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       {activeTab === "stickers" && (
@@ -21,24 +134,21 @@ export default function ProfileMobileStickers({
         className={`fixed bottom-0 w-full h-[62vh] bg-[#3D0075] rounded-[2.5rem] p-8 transition-transform duration-500 z-50 max-w-[400px] mx-auto ${
           activeTab === "stickers" ? "translate-y-0" : "translate-y-full"
         }`}
-       style={{
-  backgroundImage: `
-    linear-gradient( rgba(0,0,0,0.2),  rgba(0,0,0,0.2)),
-    url(/assets/mb.jpg)
-  `,
-  backgroundRepeat: "repeat",
-  backgroundSize: "cover",
-}}
-
-
-
+        style={{
+          backgroundImage: `
+            linear-gradient( rgba(0,0,0,0.2),  rgba(0,0,0,0.2)),
+            url(/assets/mb.jpg)
+          `,
+          backgroundRepeat: "repeat",
+          backgroundSize: "cover",
+        }}
       >
          
         {/* TITLE */}
         <div className="text-left mb-4">
           <p className="text-md font-semibold">Your Stickers</p>
           <p className="text-xs text-white/70 font-outfit mt-1 leading-snug">
-          Apply a sticker next to your profile photo.
+            Apply a sticker next to your profile photo.
             <br />
             Stickers expire 7 days after you receive them
           </p>
@@ -47,39 +157,49 @@ export default function ProfileMobileStickers({
         {/* INNER CARD */}
         <div className=" ">
           {/* GRID */}
-          <div className="grid grid-cols-4 gap-5 mb-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                onClick={() => setSelectedSticker(i)}
-                className={`relative flex h-20 w-20 items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
-                  selectedSticker === i
-                    ? "border-[3px] border-yellow-400 border-b-4"
-                    : "border border-white/50"
-                }`}
-              >
-                <Image
-                  src={`/stickers/s${(i % 6) + 1}.png`}
-                  width={50}
-                  height={50}
-                  alt=""
-                  className="object-contain"
-                />
-              </div>
-            ))}
-          </div>
+          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto pr-1">
+            {loading ? (
+              <p className="col-span-4 text-center text-sm text-white/60 py-8">Loading stickers...</p>
+            ) : badges.length === 0 ? (
+              <p className="col-span-4 text-center text-sm text-white/60 py-8">No stickers received yet</p>
+            ) : (
+              badges.map((badge) => {
+                const isSelected = selectedGiftId === badge.giftId;
+                const src = badge.imageUrl || resolveStickerPath(badge.giftId);
 
-          {/* PAGINATION DOTS */}
-          <div className="flex justify-center gap-2 mb-6">
-            <div className="w-2 h-2 bg-white rounded-full" />
-            <div className="w-2 h-2 bg-white/40 rounded-full" />
-            <div className="w-2 h-2 bg-white/40 rounded-full" />
+                return (
+                  <div
+                    key={badge.giftId}
+                    onClick={() => handleSelectSticker(badge.giftId)}
+                    title={badge.giftName || badge.giftId}
+                    className={`relative flex h-20 w-20 items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? "border-[3px] border-yellow-400 border-b-4"
+                        : "border border-white/50"
+                    }`}
+                  >
+                    <Image
+                      src={src}
+                      width={50}
+                      height={50}
+                      alt={badge.giftName || ""}
+                      className="object-contain"
+                    />
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* ACTIONS */}
           <div className="flex items-center justify-between">
             {/* REMOVE */}
-            <div className="flex items-center gap-3 text-white/90 cursor-pointer">
+            <div
+              onClick={handleRemoveSticker}
+              className={`flex items-center gap-3 text-white/90 cursor-pointer ${
+                saving || !userId ? "opacity-50 pointer-events-none" : ""
+              }`}
+            >
               <div className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center">
                 −
               </div>
@@ -87,8 +207,12 @@ export default function ProfileMobileStickers({
             </div>
 
             {/* SAVE BUTTON */}
-            <button className="px-10 py-4 border border-white/40 rounded-full text-white font-semibold hover:bg-white/10 transition">
-              Save
+            <button
+              onClick={handleSaveSticker}
+              disabled={saving || !userId}
+              className="px-10 py-4 border border-white/40 rounded-full text-white font-semibold hover:bg-white/10 transition disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </div>

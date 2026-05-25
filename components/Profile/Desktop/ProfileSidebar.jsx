@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { calculateAge } from "@/lib/facecard-utils";
 import { useRouter } from "next/navigation";
+import { resolveStickerPath } from "./StickersTab";
 
 export default function ProfileSidebar({
   activeTab,
@@ -26,23 +27,33 @@ export default function ProfileSidebar({
           />
         </div>
 
-        <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60">
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
-            <Image
-              src="/gift/gift8.png"
-              alt="gift"
-              fill
-              className="object-contain"
-            />
+        {user?.activeBadgeId ? (
+          <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm">
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
+              <Image
+                src={resolveStickerPath(user.activeBadgeId)}
+                alt="sticker"
+                fill
+                className="object-contain"
+              />
 
-            <div
-              onClick={() => setActiveTab("stickers")}
-              className="absolute bottom-8 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full"
-            >
-              <img src="/edit.png" alt="edit" className="h-4 w-4" />
+              <div
+                onClick={() => setActiveTab("stickers")}
+                className="absolute bottom-8 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full"
+              >
+                <img src="/edit.png" alt="edit" className="h-4 w-4" />
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            onClick={() => setActiveTab("stickers")}
+            className="absolute bottom-0 right-[-10px] flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-dashed border-white/60 bg-[#4f0b99]/40 hover:bg-white/10 hover:border-white transition-all shadow-lg"
+            title="Add sticker"
+          >
+            <img src="/edit.png" alt="edit" className="h-4 w-4 opacity-80" />
+          </div>
+        )}
       </div>
       <h2 className="mt-4 text-xl font-bold text-yellow-400">
         {firstName} {user?.age || calculateAge(user?.dateOfBirth) || ""}

@@ -153,7 +153,7 @@ export default function GiftOverlay({
 
       {/* Bottom Bar */}
       {/* Bottom Bar Desktop */}
-      <div className="absolute hidden md:flex bottom-6 left-10 right-10 z-50 flex justify-between items-center">
+      <div className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
         {!hasSufficientCoins ? (
           <>
             <div className="text-white text-sm">Insufficient balance</div>

@@ -296,6 +296,8 @@ export default function ProfileMobile() {
         setActiveTab={setActiveTab}
         selectedSticker={selectedSticker}
         setSelectedSticker={setSelectedSticker}
+        user={user}
+        setUser={setUser}
       />
     </div>
   );

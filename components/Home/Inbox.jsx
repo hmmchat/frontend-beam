@@ -286,6 +286,7 @@ export default function Inbox() {
   const [sendFriendBusy, setSendFriendBusy] = useState(false);
 
   const [walletCoins, setWalletCoins] = useState(null);
+  const [walletDiamonds, setWalletDiamonds] = useState(0);
   const [firstMessageCost, setFirstMessageCost] = useState(
     DEFAULT_FIRST_MSG_COST,
   );
@@ -376,8 +377,10 @@ export default function Inbox() {
     try {
       const b = await apiRequest(API.WALLET.GET_BALANCE);
       setWalletCoins(typeof b?.balance === "number" ? b.balance : null);
+      setWalletDiamonds(Number(b?.diamonds) || 0);
     } catch {
       setWalletCoins(null);
+      setWalletDiamonds(0);
     }
   }, []);
 
@@ -1562,21 +1565,37 @@ export default function Inbox() {
     }
     try {
       setSending(true);
+
+      // Auto-purchase diamonds with coins if sender doesn't have enough diamonds for the gift
+      if (resolvedGift) {
+        const giftAmount = Number(resolvedGift.price) || 0;
+        if (walletDiamonds < giftAmount) {
+          const neededDiamonds = giftAmount - walletDiamonds;
+          const neededCoins = neededDiamonds * 100;
+          if (walletCoins === null || walletCoins < neededCoins) {
+            throw new Error(`Insufficient balance. Gift costs 💎 ${giftAmount}. You have 💎 ${walletDiamonds} and need ${neededDiamonds} more (costs ${neededCoins} coins, available: ${walletCoins || 0} coins).`);
+          }
+          // Call purchase endpoint
+          await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+            method: "POST",
+            body: JSON.stringify({ diamondAmount: neededDiamonds }),
+          });
+        }
+      }
+
       if (!isSyntheticConversationId(realCid)) {
         const res = await apiRequest(API.FRIENDS.SEND_MESSAGE(realCid), {
           method: "POST",
           body: JSON.stringify(body),
         });
         if (res?.promotedToInbox) setActiveTab("inbox");
-        if (typeof res?.newBalance === "number") setWalletCoins(res.newBalance);
-        else refreshWallet();
+        await refreshWallet();
       } else if (activeChat.outgoingFriendRequestId) {
-        const res = await apiRequest(
+        await apiRequest(
           API.FRIENDS.SEND_REQUEST_MESSAGE(activeChat.outgoingFriendRequestId),
           { method: "POST", body: JSON.stringify(body) },
         );
-        if (typeof res?.newBalance === "number") setWalletCoins(res.newBalance);
-        else refreshWallet();
+        await refreshWallet();
       } else {
         setThreadProductMessage({
           variant: "warning",

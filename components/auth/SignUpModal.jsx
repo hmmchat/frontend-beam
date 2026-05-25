@@ -129,7 +129,7 @@ function SignUpModalContent({ isOpen, onClose }) {
         onClose();
       } catch (error) {
         console.error("Google login error:", error);
-        setError("Google login failed. Please try again.");
+        setError(error.message || "Google login failed. Please try again.");
       } finally {
         setLoading(false);
       }

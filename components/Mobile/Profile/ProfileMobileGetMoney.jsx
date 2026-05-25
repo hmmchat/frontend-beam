@@ -31,7 +31,10 @@ export default function ProfileMobileGetMoney({
             ? "Loading wallet details..."
             : moneyModel.isUnlocked
               ? "Unlocked! You can withdraw now"
-              : `Just 💎 ${moneyModel.diamondsLeft} left to unlock`}
+              : `${moneyModel.diamondsLeft} left to withdraw`}
+        </p>
+        <p className="text-lg font-semibold text-white mt-2 font-outfit">
+          💎 {moneyModel.diamonds}
         </p>
 
         <h2 className="text-3xl font-bold mt-4 mb-10">
@@ -69,7 +72,7 @@ export default function ProfileMobileGetMoney({
               Learn How to earn diamonds?
             </p>
             <p className="text-white/80 text-xs font-outfit">
-              You literally need to do nothing, <br/> its that simple
+              Your current balance: 💎 {moneyModel.diamonds}
             </p>
           </div>
         </div>

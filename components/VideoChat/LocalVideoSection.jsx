@@ -92,7 +92,7 @@ export default function LocalVideoSection({
               "flex",
               "items-center",
               "justify-center",
-              "text-white/20",
+              "text-white",
               "font-bold",
               "uppercase",
               "tracking-widest",
@@ -108,15 +108,15 @@ export default function LocalVideoSection({
         <div
           className={clsx(
             "absolute",
-            "left-3",
+            "md:left-10",
+            "left-4",
             "flex",
             "flex-col",
-            "gap-1",
-            "max-w-[70%]",
-
+            "gap-2",
+            "max-w-[85%]",
             "max-h-[36vh]",
             "overflow-y-auto",
-            "pr-1",
+            "pr-2",
             "z-10",
             showChatInput ? "bottom-44" : "bottom-28",
           )}
@@ -124,20 +124,26 @@ export default function LocalVideoSection({
           {chatMessages.map((msg) => (
             <div
               key={msg.id}
-              className={clsx(
-                "px-4",
-                "py-1",
-                "text-white",
-                "text-xs",
-                "font-thin",
-                "animate-in",
-                "fade-in",
-              )}
+              className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
             >
-              <span className="text-white/70 mr-2 text-[10px] font-semibold">
-                {msg.name}:
-              </span>
-              {msg.message}
+              <img
+                src={msg.displayPictureUrl || '/avatar-placeholder.png'}
+                alt=""
+                className="w-8 h-8 rounded-full border border-white/20 object-cover flex-shrink-0 shadow-md"
+              />
+              <div
+                className={clsx(
+                  "px-3 py-1.5",
+                  "rounded-md ",
+                  "bg-[#0A032D]/40 ",
+                  "border border-white/5",
+                  "text-white text-xs font-normal leading-relaxed",
+                  "break-words max-w-[calc(100%-2.5rem)]",
+                  "shadow-lg"
+                )}
+              >
+                {msg.message}
+              </div>
             </div>
           ))}
         </div>
@@ -172,7 +178,7 @@ export default function LocalVideoSection({
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..."
-                    className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-2 outline-none"
+                    className="w-full bg-white/10 backdrop-blur-[1px] border border-white/20 rounded-2xl px-4 py-3 text-white text-sm focus:border-white/40 mb-2 outline-none"
                   />
                 </form>
               )}
@@ -182,7 +188,7 @@ export default function LocalVideoSection({
               {/* 3 button */}
               <div
                 className={clsx(
-                  "flex items-center flex-nowrap gap-1 sm:gap-2 w-full",
+                  "flex items-center flex-nowrap gap-1 sm:gap-1 w-full",
                   "overflow-hidden",
                   hideMobileControlsRow ? "hidden md:flex" : "flex"
                 )}
@@ -190,11 +196,11 @@ export default function LocalVideoSection({
                 <button
                   type="button"
                   onClick={toggleCam}
-                  className="w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                  className="w-9 h-9 md:h-12 md:w-12 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
                 >
                   <img
                     src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-                    className="w-5 h-5 object-contain"
+                    className="w-4 h-4 md:h-5 md:w-5 object-contain"
                     alt="Video"
                   />
                 </button>
@@ -208,14 +214,14 @@ export default function LocalVideoSection({
                         : "Share screen or window"
                     }
                     className={clsx(
-                      "w-11 h-11 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
+                      "w-9 h-9 md:h-12 md:w-12 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
                       isScreenSharing
                         ? "border-emerald-400/80 bg-emerald-500/20"
                         : "border-white/40",
                     )}
                   >
                     <svg
-                      className="h-5 w-5 text-white"
+                      className="h-4 w-4 md:h-5 md:w-5 text-white"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                       aria-hidden
@@ -231,11 +237,11 @@ export default function LocalVideoSection({
                     onChatButtonClick ||
                     (() => setShowChatInput(!showChatInput))
                   }
-                  className="w-11 h-11 rounded-full border  border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
+                  className="w-9 md:h-12 h-9 md:w-12 rounded-full border  border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95"
                 >
                   <img
                     src="/msg.png"
-                    className="w-5 h-5 object-contain"
+                    className="w-4 h-4 object-contain"
                     alt="Message"
                   />
                 </button>
@@ -249,14 +255,14 @@ export default function LocalVideoSection({
             </div>
             <img
               src="/logotransparent.png"
-              className="z-10 md:hidden h-6 w-auto shrink-0 mb-[3%]"
+              className={clsx("z-10 mr-[6%] md:hidden h-6 w-auto shrink-0 mb-[2%]", hideMobileControlsRow && "hidden")}
             />
             {/* 2 gift button  */}
-            <div className={clsx("gap-2 md:gap-2", hideMobileControlsRow ? "hidden md:flex" : "flex")}>
+            <div className={clsx("gap-2 md:gap-1", hideMobileControlsRow ? "hidden md:flex" : "flex")}>
               <button
                 type="button"
                 onClick={() => setIsDareOpen(true)}
-                className="relative w-14 h-14 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                className="relative md:w-14 md:h-14 w-12 h-12 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
               >
                 <img
                   src="/circle.png"
@@ -265,14 +271,14 @@ export default function LocalVideoSection({
                 />
                 <img
                   src="/dare.png"
-                  className="relative w-8 h-auto"
+                  className="relative w-7 h-auto md:w-8 "
                   alt="DARE"
                 />
               </button>
               <button
                 type="button"
                 onClick={() => setIsGiftModalOpen(true)}
-                className="relative w-14 h-14 flex items-center border-2 border-b-4 rounded-full border-[#13133b] justify-center transition-transform hover:scale-105 active:scale-95"
+                className="relative md:w-14 md:h-14 w-12 h-12 flex items-center border-2 border-b-4 rounded-full border-[#13133b] justify-center transition-transform hover:scale-105 active:scale-95"
               >
                 <img
                   src="/circle.png"
@@ -281,7 +287,7 @@ export default function LocalVideoSection({
                 />
                 <img
                   src="/giftboc.png"
-                  className="relative w-8 h-8 object-contain"
+                  className="relative w-7 h-7 object-contain"
                   alt="GIFT"
                 />
               </button>

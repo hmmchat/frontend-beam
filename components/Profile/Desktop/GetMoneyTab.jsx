@@ -19,7 +19,10 @@ export default function GetMoneyTab({ moneyModel, loading = false, onRewardGrant
           ? "Loading wallet details..."
           : isUnlocked
             ? "Unlocked! You can withdraw now"
-            : `Just 💎 ${diamondsLeft} left to unlock`}
+            : `${diamondsLeft} left to withdraw`}
+      </p>
+      <p className="text-lg font-semibold text-white mt-2">
+        💎 {diamonds}
       </p>
 
       {/* Amount */}

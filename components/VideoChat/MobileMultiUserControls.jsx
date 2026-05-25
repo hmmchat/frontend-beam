@@ -13,17 +13,17 @@ export default function MobileMultiUserControls({
   onToggleScreenShare
 }) {
   return (
-    <div className="md:hidden absolute inset-x-0 bottom-4 px-4 flex justify-between items-end z-50 pointer-events-auto">
+    <div className="md:hidden absolute inset-x-0 bottom-3 px-4 flex justify-between items-end z-50 pointer-events-auto">
       {/* Left buttons (Camera + Message) */}
       <div className="flex gap-1.5 mb-2">
         <button
           type="button"
           onClick={toggleCam}
-          className="w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          className="w-9 h-9 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
         >
           <img
             src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-            className="w-5 h-5 object-contain"
+            className="w-4 h-4 object-contain"
             alt="Video"
           />
         </button>
@@ -37,14 +37,14 @@ export default function MobileMultiUserControls({
                 : "Share screen or window"
             }
             className={clsx(
-              "w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md",
+              "w-9 h-9 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md",
               isScreenSharing
                 ? "border-emerald-400/80 bg-emerald-500/20"
                 : "border-white/40"
             )}
           >
             <svg
-              className="h-5 w-5 text-white"
+              className="h-4 w-4 text-white"
               viewBox="0 0 24 24"
               fill="currentColor"
               aria-hidden
@@ -56,11 +56,11 @@ export default function MobileMultiUserControls({
         <button
           type="button"
           onClick={onChatButtonClick}
-          className="w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          className="w-9 h-9 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
         >
           <img
             src="/msg.png"
-            className="w-5 h-5 object-contain"
+            className="w-4 h-4 object-contain"
             alt="Message"
           />
         </button>
@@ -72,11 +72,11 @@ export default function MobileMultiUserControls({
       </div>
 
       {/* Right buttons (Dare + Gift) */}
-      <div className="flex gap-1.5 mb-2">
+      <div className="flex gap-1.5 ">
         <button
           type="button"
           onClick={() => setIsDareOpen(true)}
-          className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+          className="relative w-12 h-12 flex items-center border-2 border-b-4 rounded-full border-[#13133b] justify-center transition-transform hover:scale-105 active:scale-95"
         >
           <img
             src="/circle.png"
@@ -85,14 +85,14 @@ export default function MobileMultiUserControls({
           />
           <img
             src="/dare.png"
-            className="relative w-8 h-auto"
+            className="relative w-7 h-auto"
             alt="DARE"
           />
         </button>
         <button
           type="button"
           onClick={() => setIsGiftModalOpen(true)}
-          className="relative w-14 h-14 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+          className="relative w-12 h-12 border-2 border-b-4 rounded-full border-[#13133b] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
         >
           <img
             src="/circle.png"
@@ -101,7 +101,7 @@ export default function MobileMultiUserControls({
           />
           <img
             src="/giftboc.png"
-            className="relative w-8 h-8 object-contain"
+            className="relative w-6 h-6 object-contain"
             alt="GIFT"
           />
         </button>

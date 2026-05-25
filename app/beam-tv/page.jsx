@@ -103,6 +103,7 @@ function BeamTVInner() {
   const [chatProfileSheet, setChatProfileSheet] = useState({ open: false, user: null });
   const [chatProfilesByUserId, setChatProfilesByUserId] = useState({});
   const [friendRequestSentTo, setFriendRequestSentTo] = useState({});
+  const [reportedUserIds, setReportedUserIds] = useState(new Set());
 
   const [broadcastHud, setBroadcastHud] = useState({
     viewerCount: 0,
@@ -1383,6 +1384,37 @@ function BeamTVInner() {
     }
   };
 
+  const handleReportUser = async (reportedUserId) => {
+    const tid = String(reportedUserId || '');
+    if (!tid || tid === 'broadcaster' || tid.startsWith('producer:')) {
+      setEngagementMsg('Cannot report this user.');
+      return;
+    }
+    if (!isLoggedIn()) {
+      setEngagementMsg('Please sign in to report user.');
+      return;
+    }
+    if (reportedUserIds.has(tid)) {
+      setEngagementMsg('You have already reported this user.');
+      return;
+    }
+    try {
+      const res = await apiRequest(API.USERS.REPORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportedUserId: tid, reportType: 'participant' })
+      });
+      if (res.success) {
+        setReportedUserIds((prev) => new Set([...prev, tid]));
+        setEngagementMsg('User reported successfully.');
+      } else {
+        setEngagementMsg('Failed to report user.');
+      }
+    } catch (e) {
+      setEngagementMsg(e?.message || 'Failed to report user.');
+    }
+  };
+
   const renderTile = (tile, idx) => {
     const uid = String(tile?.userId || '');
     const showAddFriend = isLoggedIn() && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
@@ -1391,6 +1423,9 @@ function BeamTVInner() {
     return (
       <RemoteVideoTile
         key={`beam-tile-${uid}-${idx}`}
+        userId={uid}
+        isReported={reportedUserIds.has(uid)}
+        onReportUser={handleReportUser}
         {...tileRest}
         screenShareStream={tileScreen || null}
         forceMuted={tile.forceMuted}

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import clsx from 'clsx';
 
 export default function QuickActions({
-  showChatInput,
   callRoles,
   toggleRandomness,
   handleIcebreaker,
@@ -46,7 +45,7 @@ export default function QuickActions({
     }
   }, [isRolling]);
 
-  if (showChatInput) return null;
+
 
   const isOverlayOpen = isGiftModalOpen || isDareOpen;
 

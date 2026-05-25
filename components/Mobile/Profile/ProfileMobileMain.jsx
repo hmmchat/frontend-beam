@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
+import { resolveStickerPath } from "../../Profile/Desktop/StickersTab";
 
 export default function ProfileMobileMain({ 
   router, 
@@ -54,20 +55,38 @@ export default function ProfileMobileMain({
             )}
           </div>
 
-          <div className="absolute bottom-0 right-[-10px] w-20 h-20 border rounded-full flex items-center justify-center">
-            <div className="relative w-18 h-14">
-              <Image src="/gift/gift8.png" fill alt="" />
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveTab("stickers");
-                }}
-                className="absolute -bottom-1 -right-2 w-5 h-5 cursor-pointer"
-              >
-                <img src="/edit.png" alt="Edit sticker" />
+          {user?.activeBadgeId ? (
+            <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm rounded-full flex items-center justify-center">
+              <div className="relative w-18 h-14">
+                <Image
+                  src={resolveStickerPath(user.activeBadgeId)}
+                  fill
+                  alt="sticker"
+                  className="object-contain"
+                />
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTab("stickers");
+                  }}
+                  className="absolute -bottom-1 -right-2 w-5 h-5 cursor-pointer"
+                >
+                  <img src="/edit.png" alt="Edit sticker" />
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab("stickers");
+              }}
+              className="absolute bottom-0 right-[-10px] w-12 h-12 rounded-full border border-dashed border-white/60 bg-[#4f0b99]/40 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white transition-all shadow-lg"
+              title="Add sticker"
+            >
+              <img src="/edit.png" alt="edit" className="h-4 w-4 opacity-80" />
+            </div>
+          )}
         </div>
 
         <h2 className="mt-4 text-yellow-400 text-xl font-bold">

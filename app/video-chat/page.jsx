@@ -233,6 +233,11 @@ function VideoChatContent() {
   const isCamOffRef = useRef(false);
   const mediaPausedForBackgroundRef = useRef(false);
   const sfuRerouteAttemptRef = useRef(0);
+  const wsReconnectAttemptRef = useRef(0);
+  const wsReconnectTimerRef = useRef(null);
+  const wsPendingReconnectWhileHiddenRef = useRef(false);
+  const openSignalingSocketRef = useRef(null);
+  const peerLeftAutoResumeTimerRef = useRef(null);
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
 
@@ -264,76 +269,47 @@ function VideoChatContent() {
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
 
-    const pauseMediaForBackground = () => {
-      if (mediaPausedForBackgroundRef.current) return;
-      mediaPausedForBackgroundRef.current = true;
-      const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
-      if (videoTrack && !isCamOffRef.current) videoTrack.enabled = false;
-      try {
-        producersRef.current.video?.pause?.();
-      } catch (_) { }
-      Object.values(consumersRef.current || {}).forEach((consumer) => {
-        if (consumer?.kind !== 'video') return;
-        try {
-          consumer.pause?.();
-        } catch (_) { }
+    const nudgeVideoElements = () => {
+      remoteMediaMissingSinceRef.current = null;
+      document.querySelectorAll('video').forEach((el) => {
+        const pr = el.play?.();
+        if (pr && typeof pr.catch === 'function') pr.catch(() => {});
       });
     };
 
-    const resumeMediaFromBackground = () => {
-      const wasPaused = mediaPausedForBackgroundRef.current;
-      mediaPausedForBackgroundRef.current = false;
-      const videoProducer = producersRef.current.video;
-      const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
-
-      if (!isCamOffRef.current) {
-        if (videoTrack) videoTrack.enabled = true;
-        try {
-          videoProducer?.resume?.();
-        } catch (_) { }
-        Object.values(consumersRef.current || {}).forEach((consumer) => {
-          if (consumer?.kind !== 'video') return;
-          try {
-            consumer.resume?.();
-          } catch (_) { }
-        });
+    const reconnectSignalingIfNeeded = () => {
+      const wsState = wsRef.current?.readyState;
+      const needsReconnect =
+        wsPendingReconnectWhileHiddenRef.current ||
+        wsState === WebSocket.CLOSING ||
+        wsState === WebSocket.CLOSED ||
+        wsState === undefined;
+      if (!needsReconnect) return;
+      if (!roomInfoRef.current?.roomId || intentionalExitRef.current) return;
+      wsPendingReconnectWhileHiddenRef.current = false;
+      if (wsReconnectTimerRef.current) {
+        clearTimeout(wsReconnectTimerRef.current);
+        wsReconnectTimerRef.current = null;
       }
-
-      setRemoteStreams((prev) => {
-        const next = prev.map((remote) => {
-          pruneEndedTracks(remote.stream);
-          pruneEndedTracks(remote.screenStream);
-          return { ...remote };
-        });
-        remoteStreamsRef.current = next;
-        return next;
-      });
-
-      if (
-        wasPaused &&
-        roomInfoRef.current?.roomId &&
-        wsRef.current?.readyState === WebSocket.OPEN
-      ) {
-        wsRef.current.send(
-          JSON.stringify({
-            type: 'get-producers',
-            data: { roomId: roomInfoRef.current.roomId }
-          })
-        );
-      }
+      wsReconnectAttemptRef.current = 0;
+      flowLog('signaling_reconnect_on_tab_visible');
+      openSignalingSocketRef.current?.(getWsUrl(), { isReconnect: true });
     };
 
     const applyVisibilityPolicy = () => {
       if (document.hidden) {
-        pauseMediaForBackground();
+        mediaPausedForBackgroundRef.current = true;
         return;
       }
-      resumeMediaFromBackground();
+      mediaPausedForBackgroundRef.current = false;
+      nudgeVideoElements();
+      reconnectSignalingIfNeeded();
     };
 
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
     return () => document.removeEventListener('visibilitychange', applyVisibilityPolicy);
   }, []);
+
 
   const refreshWallet = useCallback(async () => {
     try {
@@ -349,17 +325,15 @@ function VideoChatContent() {
     refreshWallet();
   }, [refreshWallet]);
 
-  function cleanup() {
-    mediaPausedForBackgroundRef.current = false;
-    // Close WebSocket
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+  function teardownMediasoupState({ clearRemoteStreams = true } = {}) {
+    if (wsReconnectTimerRef.current) {
+      clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = null;
     }
-    // Stop local media tracks
-    localStreamRef.current?.getTracks().forEach(t => t.stop());
-    localStreamRef.current = null;
-    // Clear pending producer queue
+    if (peerLeftAutoResumeTimerRef.current) {
+      clearTimeout(peerLeftAutoResumeTimerRef.current);
+      peerLeftAutoResumeTimerRef.current = null;
+    }
     pendingProducersRef.current = [];
     getProducersRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
     getProducersRetryTimeoutsRef.current = [];
@@ -379,7 +353,6 @@ function VideoChatContent() {
     setIsScreenSharing(false);
     Object.values(consumersRef.current || {}).forEach((consumer) => {
       try {
-        consumer?.track?.stop?.();
         consumer?.close?.();
       } catch (_) { }
     });
@@ -396,17 +369,33 @@ function VideoChatContent() {
     try {
       recvTransportRef.current?.close?.();
     } catch (_) { }
-    remoteStreamsRef.current?.forEach((s) => {
-      s?.stream?.getTracks?.().forEach((t) => t.stop());
-      s?.screenStream?.getTracks?.().forEach((t) => t.stop());
-    });
-    remoteStreamsRef.current = [];
-    setRemoteStreams([]);
+    if (clearRemoteStreams) {
+      remoteStreamsRef.current?.forEach((s) => {
+        s?.stream?.getTracks?.().forEach((t) => t.stop());
+        s?.screenStream?.getTracks?.().forEach((t) => t.stop());
+      });
+      remoteStreamsRef.current = [];
+      setRemoteStreams([]);
+    }
     producersRef.current = {};
     consumersRef.current = {};
     consumerIdsByUserRef.current = {};
     sendTransportRef.current = null;
     recvTransportRef.current = null;
+    deviceRef.current = null;
+  }
+
+  function cleanup() {
+    mediaPausedForBackgroundRef.current = false;
+    wsReconnectAttemptRef.current = 0;
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current = null;
+    teardownMediasoupState({ clearRemoteStreams: true });
   }
 
   // --- Remote profile per userId (3-way call: each tile must show that peer, not the matched partner) ---
@@ -675,6 +664,7 @@ function VideoChatContent() {
         }
       } catch (_) { }
       squadQuickInvitePeersPostedRoomIdRef.current = null;
+      mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
       setRoomInfo(info);
       if (info.partner) {
         const pInfo = {
@@ -734,6 +724,7 @@ function VideoChatContent() {
 
     const tick = async () => {
       if (intentionalExitRef.current || autoTransitioningRef.current) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
       const now = Date.now();
       const graceMs = suppressAutoResumeUntilRef.current - now;
       if (graceMs > 0) {
@@ -793,7 +784,7 @@ function VideoChatContent() {
             failureCount: roomHealthFailureCountRef.current
           });
           // Avoid false-positive teardown from transient stale reads.
-          if (roomHealthFailureCountRef.current < 6) {
+          if (roomHealthFailureCountRef.current < 10) {
             return;
           }
           flowLog('room_health_auto_resume', {
@@ -913,6 +904,12 @@ function VideoChatContent() {
     const prev = prevRemoteStreamCountRef.current;
     prevRemoteStreamCountRef.current = n;
 
+    if (n > 0 && peerLeftAutoResumeTimerRef.current) {
+      clearTimeout(peerLeftAutoResumeTimerRef.current);
+      peerLeftAutoResumeTimerRef.current = null;
+      remoteMediaMissingSinceRef.current = null;
+    }
+
     if (n >= 2) {
       setPullStrangerCooldownSec((s) => (s > 0 ? 0 : s));
       suppressAutoResumeUntilRef.current = 0;
@@ -941,6 +938,7 @@ function VideoChatContent() {
       if (intentionalExitRef.current || autoTransitioningRef.current) return;
       if (status !== 'connected') return;
       if (typeof document !== 'undefined' && document.hidden) return;
+      if (mediaPausedForBackgroundRef.current) return;
 
       const remoteStream = remoteStreamsRef.current[0]?.stream || null;
       if (remoteStream) {
@@ -965,7 +963,7 @@ function VideoChatContent() {
 
       if (remoteMediaMissingSinceRef.current) {
         const missingForMs = Date.now() - remoteMediaMissingSinceRef.current;
-        if (missingForMs >= 4000) {
+        if (missingForMs >= 12000) {
           if (isBroadcastingRef.current) {
             return;
           }
@@ -1376,9 +1374,21 @@ function VideoChatContent() {
     }
     if (remainingAfter === 0 && !skipPeerLeftAutoResume) {
       remoteMediaMissingSinceRef.current = Date.now();
-      handlePeerLeftAutoResume();
+      if (peerLeftAutoResumeTimerRef.current) {
+        clearTimeout(peerLeftAutoResumeTimerRef.current);
+      }
+      peerLeftAutoResumeTimerRef.current = setTimeout(() => {
+        peerLeftAutoResumeTimerRef.current = null;
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        if ((remoteStreamsRef.current?.length || 0) > 0) return;
+        handlePeerLeftAutoResume();
+      }, 8000);
     } else {
       remoteMediaMissingSinceRef.current = null;
+      if (peerLeftAutoResumeTimerRef.current) {
+        clearTimeout(peerLeftAutoResumeTimerRef.current);
+        peerLeftAutoResumeTimerRef.current = null;
+      }
     }
   };
 
@@ -1448,8 +1458,28 @@ function VideoChatContent() {
     // Pass the JWT as a query param so the streaming gateway can authenticate.
     const accessToken = localStorage.getItem('accessToken') || '';
     sfuRerouteAttemptRef.current = 0;
+    wsReconnectAttemptRef.current = 0;
 
-    const openSignalingSocket = (baseUrl = WS_URL) => {
+    const scheduleWsReconnect = (baseUrl = WS_URL) => {
+      if (intentionalExitRef.current || autoTransitioningRef.current) return;
+      if (wsReconnectAttemptRef.current >= 4) {
+        setStatus('error');
+        setError('Call connection lost. Please try again.');
+        return;
+      }
+      const attempt = wsReconnectAttemptRef.current;
+      wsReconnectAttemptRef.current += 1;
+      const delayMs = Math.min(500 * (2 ** attempt), 4000);
+      if (wsReconnectTimerRef.current) clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = setTimeout(() => {
+        wsReconnectTimerRef.current = null;
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        flowLog('ws_reconnect_attempt', { attempt: attempt + 1, delayMs });
+        openSignalingSocket(baseUrl, { isReconnect: true });
+      }, delayMs);
+    };
+
+    const openSignalingSocket = (baseUrl = WS_URL, { isReconnect = false } = {}) => {
       const wsUrlWithAuth = buildWsUrl(baseUrl, {
         userId,
         roomId: info.roomId,
@@ -1459,7 +1489,19 @@ function VideoChatContent() {
       wsRef.current = ws;
       console.log('[WebSocket] Connecting to:', wsUrlWithAuth.replace(/token=[^&]+/, 'token=<redacted>'));
 
-      ws.onopen = () => send({ type: 'join-room', data: { roomId: info.roomId } });
+      ws.onopen = () => {
+        wsReconnectAttemptRef.current = 0;
+        send({
+          type: 'join-room',
+          data: {
+            roomId: info.roomId,
+            preserveParticipantOnClose: true
+          }
+        });
+        if (isReconnect) {
+          flowLog('ws_reconnected', { roomId: info.roomId });
+        }
+      };
       ws.onmessage = async (e) => {
         const msg = JSON.parse(e.data);
         realtimeDebug('[WebSocket] Received message:', msg.type, msg);
@@ -1487,14 +1529,23 @@ function VideoChatContent() {
       };
       ws.onerror = (err) => {
         console.error('[WebSocket] Error:', err);
-        setStatus('error');
-        setError('WebSocket connection failed');
       };
       ws.onclose = () => {
         console.log('[WebSocket] Connection closed');
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        if (typeof document !== 'undefined' && document.hidden) {
+          wsPendingReconnectWhileHiddenRef.current = true;
+          if (wsReconnectTimerRef.current) {
+            clearTimeout(wsReconnectTimerRef.current);
+            wsReconnectTimerRef.current = null;
+          }
+          return;
+        }
+        scheduleWsReconnect(baseUrl);
       };
     };
 
+    openSignalingSocketRef.current = openSignalingSocket;
     openSignalingSocket();
   };
 
@@ -1514,6 +1565,46 @@ function VideoChatContent() {
     switch (type) {
       case 'room-joined': {
         console.log('[WebRTC] Room joined, loading device...');
+        const recvTransport = recvTransportRef.current;
+        const sendTransport = sendTransportRef.current;
+        const signalingOnlyReconnect =
+          deviceRef.current &&
+          recvTransport &&
+          !recvTransport.closed &&
+          sendTransport &&
+          !sendTransport.closed &&
+          (remoteStreamsRef.current?.length || 0) > 0;
+
+        if (signalingOnlyReconnect) {
+          flowLog('room_joined_signaling_only');
+          if (data.participantRoles?.length) {
+            const byUserId = {};
+            data.participantRoles.forEach(({ userId: id, role }) => {
+              byUserId[String(id)] = role;
+            });
+            setCallRoles({
+              isLocalHost: data.myRole === 'HOST',
+              byUserId
+            });
+          }
+          mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
+          setStatus('connected');
+          if (Array.isArray(data.producers) && data.producers.length > 0) {
+            data.producers.forEach((p) => {
+              const isSameUser = sameParticipantId(p.userId, userIdRef.current);
+              const isMyProducer = myProducerIdsRef.current.has(String(p.producerId));
+              if (!isSameUser || !isMyProducer) {
+                consume(p.producerId, p.userId, { kind: p.kind, source: p.source });
+              }
+            });
+          }
+          send({ type: 'get-producers', data: { roomId: info.roomId } });
+          break;
+        }
+
+        if (deviceRef.current || sendTransportRef.current || recvTransportRef.current) {
+          teardownMediasoupState({ clearRemoteStreams: false });
+        }
         if (data.participantRoles?.length) {
           const byUserId = {};
           data.participantRoles.forEach(({ userId: id, role }) => {
@@ -1524,7 +1615,7 @@ function VideoChatContent() {
             byUserId
           });
         }
-        mediaEstablishGraceUntilRef.current = Date.now() + 45_000;
+        mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
         const { Device } = await import('mediasoup-client');
         const device = new Device();
         await device.load({ routerRtpCapabilities: data.rtpCapabilities });

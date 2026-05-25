@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { isMobileRuntime } from '@/lib/webrtc-media-utils';
 import GiftAnimation from './GiftAnimation';
 
 export default function RemoteVideoTile({
@@ -116,45 +115,31 @@ export default function RemoteVideoTile({
   useEffect(() => {
     if (screenShareStream) return;
     const v = videoRef.current;
-    if (!v) return;
-    if (v.srcObject !== stream) {
-      v.srcObject = stream;
-    }
-    playSafely(v);
+    if (!v || !stream) return;
 
-    const videoTrack = stream?.getVideoTracks?.()[0];
-    const recoverPlayback = () => {
-      if (!videoRef.current || !stream || videoTrack?.readyState === 'ended') return;
+    const attachAndPlay = () => {
+      if (!videoRef.current || !stream) return;
       const el = videoRef.current;
       if (el.srcObject !== stream) el.srcObject = stream;
       playSafely(el);
     };
 
-    videoTrack?.addEventListener?.('unmute', recoverPlayback);
-    videoTrack?.addEventListener?.('mute', recoverPlayback);
-    document.addEventListener('visibilitychange', recoverPlayback);
-    window.addEventListener('focus', recoverPlayback);
-    window.addEventListener('pageshow', recoverPlayback);
+    attachAndPlay();
 
-    // Chrome/Safari can occasionally stall a WebRTC <video> while the track is still live.
-    // Re-playing the same stream is cheap and avoids black remote tiles until a remount.
-    const playbackWatchMs = isMobileRuntime() ? 8000 : 3000;
-    const intervalId = window.setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      const el = videoRef.current;
-      if (!el || !stream || videoTrack?.readyState === 'ended') return;
-      if (el.paused || el.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-        recoverPlayback();
-      }
-    }, playbackWatchMs);
+    const onVisible = () => {
+      if (document.hidden) return;
+      attachAndPlay();
+    };
+
+    const videoTrack = stream.getVideoTracks?.()[0];
+    videoTrack?.addEventListener?.('unmute', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onVisible);
 
     return () => {
-      window.clearInterval(intervalId);
-      videoTrack?.removeEventListener?.('unmute', recoverPlayback);
-      videoTrack?.removeEventListener?.('mute', recoverPlayback);
-      document.removeEventListener('visibilitychange', recoverPlayback);
-      window.removeEventListener('focus', recoverPlayback);
-      window.removeEventListener('pageshow', recoverPlayback);
+      videoTrack?.removeEventListener?.('unmute', onVisible);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onVisible);
     };
   }, [stream, screenShareStream]);
 

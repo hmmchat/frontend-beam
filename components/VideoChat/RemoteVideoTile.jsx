@@ -54,17 +54,14 @@ export default function RemoteVideoTile({
   const [isReporting, setIsReporting] = useState(false);
   const [areControlsVisible, setAreControlsVisible] = useState(() => {
     if (typeof window !== 'undefined') {
-      const isMobile = isMobileRuntime() || ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-      return !isMobile;
+      return window.innerWidth >= 768;
     }
     return true;
   });
   const timeoutRef = useRef(null);
 
   const handleTouch = () => {
-    const isMobile = isMobileRuntime() ||
-      (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
-    if (!isMobile) return;
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
 
     setAreControlsVisible(true);
     if (timeoutRef.current) {
@@ -76,12 +73,23 @@ export default function RemoteVideoTile({
   };
 
   useEffect(() => {
-    const isMobile = isMobileRuntime() ||
-      (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setAreControlsVisible(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    const isMobile = window.innerWidth < 768;
     if (!isMobile) {
       setAreControlsVisible(true);
       return;
     }
+
+    // On mobile, start as hidden
+    setAreControlsVisible(false);
 
     const handleGlobalTouch = () => {
       handleTouch();
@@ -94,6 +102,7 @@ export default function RemoteVideoTile({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('touchstart', handleGlobalTouch);
       window.removeEventListener('touchmove', handleGlobalTouch);
     };

@@ -3314,6 +3314,26 @@ function VideoChatContent() {
         )}
 
 
+        {remoteStreams.length >= 2 && showChatInput && (
+          <div className="md:hidden absolute inset-x-0 bottom-20 px-4 z-[60] pointer-events-auto">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendChatMessage(e);
+              }}
+              className="animate-in fade-in slide-in-from-bottom-2 duration-200"
+            >
+              <input
+                autoFocus
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Type a message..."
+                className="w-[90%]  backdrop-blur-[1px] border border-white/20 rounded-lg px-2 py-2.5 text-white text-sm focus:border-white/40 outline-none "
+              />
+            </form>
+          </div>
+        )}
+
         {remoteStreams.length >= 2 && (
           <MobileMultiUserControls
             toggleCam={localVideoProps.toggleCam}

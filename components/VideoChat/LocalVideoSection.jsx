@@ -171,7 +171,7 @@ export default function LocalVideoSection({
               {showChatInput && (
                 <form
                   onSubmit={sendChatMessage}
-                  className="animate-in mb-4 ml-1 "
+                  className={clsx("animate-in mb-4 ml-1", hideMobileControlsRow && "hidden md:block")}
                 >
                   <input
                     autoFocus
@@ -200,7 +200,7 @@ export default function LocalVideoSection({
                 >
                   <img
                     src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-                    className="w-4 h-4 md:h-5 md:w-5 object-contain"
+                    className="w-4 h-4 md:h-6 md:w-6 object-contain"
                     alt="Video"
                   />
                 </button>
@@ -241,7 +241,7 @@ export default function LocalVideoSection({
                 >
                   <img
                     src="/msg.png"
-                    className="w-4 h-4 object-contain"
+                    className="w-4 h-4 md:w-5 md:h-5 object-contain"
                     alt="Message"
                   />
                 </button>

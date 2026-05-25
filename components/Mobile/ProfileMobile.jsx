@@ -10,6 +10,7 @@ import html2canvas from "html2canvas";
 import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
 import { API, apiRequest } from "@/lib/api";
 import { buildGetMoneyModel } from "@/lib/getMoney";
+import { enrichUserStickerFields } from "@/lib/stickers";
 
 // Sub-components
 import ProfileMobileMain from "./Profile/ProfileMobileMain";
@@ -39,9 +40,9 @@ export default function ProfileMobile() {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
         const fields =
-          "username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden";
+          "username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden,activeBadgeId,activeBadge";
         const data = await apiRequest(`${API.USERS.GET_ME}?fields=${fields}`);
-        setUser(data.user || data);
+        setUser(await enrichUserStickerFields(data.user || data));
       } catch (e) {
         console.error("[ProfileMobile] Failed to load user:", e);
       }

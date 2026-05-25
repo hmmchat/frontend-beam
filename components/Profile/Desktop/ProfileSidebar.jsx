@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { calculateAge } from "@/lib/facecard-utils";
 import { useRouter } from "next/navigation";
-import { resolveStickerPath } from "./StickersTab";
+import { getActiveBadgeId } from "@/lib/stickers";
 
 export default function ProfileSidebar({
   activeTab,
@@ -27,15 +27,21 @@ export default function ProfileSidebar({
           />
         </div>
 
-        {user?.activeBadgeId ? (
+        {getActiveBadgeId(user) ? (
           <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm">
             <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
-              <Image
-                src={resolveStickerPath(user.activeBadgeId)}
-                alt="sticker"
-                fill
-                className="object-contain"
-              />
+              {user?.activeBadgeImageUrl ? (
+                <Image
+                  src={user.activeBadgeImageUrl}
+                  alt="sticker"
+                  fill
+                  className="object-contain"
+                />
+              ) : (
+                <span className="text-4xl leading-none" aria-hidden>
+                  {user?.activeBadge?.giftEmoji || "🎁"}
+                </span>
+              )}
 
               <div
                 onClick={() => setActiveTab("stickers")}

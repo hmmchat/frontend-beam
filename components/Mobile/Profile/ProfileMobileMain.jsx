@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
-import { resolveStickerPath } from "../../Profile/Desktop/StickersTab";
+import { getActiveBadgeId } from "@/lib/stickers";
 
 export default function ProfileMobileMain({ 
   router, 
@@ -55,15 +55,21 @@ export default function ProfileMobileMain({
             )}
           </div>
 
-          {user?.activeBadgeId ? (
+          {getActiveBadgeId(user) ? (
             <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <div className="relative w-18 h-14">
-                <Image
-                  src={resolveStickerPath(user.activeBadgeId)}
-                  fill
-                  alt="sticker"
-                  className="object-contain"
-                />
+              <div className="relative w-18 h-14 flex items-center justify-center">
+                {user?.activeBadgeImageUrl ? (
+                  <Image
+                    src={user.activeBadgeImageUrl}
+                    fill
+                    alt="sticker"
+                    className="object-contain"
+                  />
+                ) : (
+                  <span className="text-3xl leading-none" aria-hidden>
+                    {user?.activeBadge?.giftEmoji || "🎁"}
+                  </span>
+                )}
                 <div
                   onClick={(e) => {
                     e.stopPropagation();

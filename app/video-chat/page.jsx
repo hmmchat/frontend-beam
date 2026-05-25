@@ -238,6 +238,9 @@ function VideoChatContent() {
   const wsPendingReconnectWhileHiddenRef = useRef(false);
   const openSignalingSocketRef = useRef(null);
   const peerLeftAutoResumeTimerRef = useRef(null);
+  /** Skip leave-room on React Strict Mode unmount right after Meet RN navigation. */
+  const suppressUnmountLeaveUntilRef = useRef(0);
+  const [localMediaGeneration, setLocalMediaGeneration] = useState(0);
 
   const sameParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
 
@@ -385,7 +388,7 @@ function VideoChatContent() {
     deviceRef.current = null;
   }
 
-  function cleanup() {
+  function cleanup({ stopLocalMedia = true } = {}) {
     mediaPausedForBackgroundRef.current = false;
     wsReconnectAttemptRef.current = 0;
     if (wsRef.current) {
@@ -393,10 +396,25 @@ function VideoChatContent() {
       wsRef.current.close();
       wsRef.current = null;
     }
-    localStreamRef.current?.getTracks().forEach(t => t.stop());
-    localStreamRef.current = null;
+    if (stopLocalMedia) {
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
     teardownMediasoupState({ clearRemoteStreams: true });
   }
+
+  // Re-bind local preview when camera stream is acquired after mount.
+  useEffect(() => {
+    const el = localVideoRef.current;
+    const stream = localStreamRef.current;
+    if (el && stream && el.srcObject !== stream) {
+      el.srcObject = stream;
+      const playPromise = el.play?.();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    }
+  }, [localMediaGeneration]);
 
   // --- Remote profile per userId (3-way call: each tile must show that peer, not the matched partner) ---
   const remoteUserIdsKey = remoteStreams
@@ -494,6 +512,17 @@ function VideoChatContent() {
     const init = async () => {
       console.log('[Init] Starting video chat initialization...');
       hadRemotePeerInSessionRef.current = false;
+      try {
+        const raw = sessionStorage.getItem('hmm:enteringVideoChat');
+        if (raw) {
+          const enteredAt = Number(raw);
+          const base = Number.isFinite(enteredAt) ? enteredAt : Date.now();
+          suppressUnmountLeaveUntilRef.current = base + 4000;
+          if (Date.now() >= base + 4000) {
+            sessionStorage.removeItem('hmm:enteringVideoChat');
+          }
+        }
+      } catch (_) { }
       let info = null;
       let uid = null;
 
@@ -687,9 +716,10 @@ function VideoChatContent() {
     // React Strict Mode in dev mounts -> unmounts -> remounts once.
     // Arm unmount cleanup after the effect stabilizes so the synthetic unmount
     // does not call leaveRoom and tear down a just-created room.
+    allowUnmountCleanupRef.current = false;
     cleanupArmTimerRef.current = setTimeout(() => {
       allowUnmountCleanupRef.current = true;
-    }, 0);
+    }, 300);
 
     init();
     return () => {
@@ -699,11 +729,19 @@ function VideoChatContent() {
         clearTimeout(cleanupArmTimerRef.current);
         cleanupArmTimerRef.current = null;
       }
+      const inEnterCallGrace = Date.now() < suppressUnmountLeaveUntilRef.current;
+      const shouldLeaveCall =
+        allowUnmountCleanupRef.current &&
+        !intentionalExitRef.current &&
+        !inEnterCallGrace;
       // Case 2 & 3: go back / signout (component unmount)
-      if (allowUnmountCleanupRef.current && !intentionalExitRef.current) {
+      if (shouldLeaveCall) {
         void beginLeaveCallToHomeReliable();
+        cleanup();
+      } else {
+        // Strict Mode or Meet RN navigation — drop signaling only; keep camera for remount.
+        cleanup({ stopLocalMedia: false });
       }
-      cleanup();
     };
   }, [router]);
 
@@ -1447,6 +1485,7 @@ function VideoChatContent() {
       }
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      setLocalMediaGeneration((n) => n + 1);
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) videoTrack.enabled = !isCamOffRef.current;
     } catch (err) {
@@ -1567,15 +1606,14 @@ function VideoChatContent() {
         console.log('[WebRTC] Room joined, loading device...');
         const recvTransport = recvTransportRef.current;
         const sendTransport = sendTransportRef.current;
-        const signalingOnlyReconnect =
+        const hasLiveMediasoup =
           deviceRef.current &&
           recvTransport &&
           !recvTransport.closed &&
           sendTransport &&
-          !sendTransport.closed &&
-          (remoteStreamsRef.current?.length || 0) > 0;
+          !sendTransport.closed;
 
-        if (signalingOnlyReconnect) {
+        if (hasLiveMediasoup) {
           flowLog('room_joined_signaling_only');
           if (data.participantRoles?.length) {
             const byUserId = {};

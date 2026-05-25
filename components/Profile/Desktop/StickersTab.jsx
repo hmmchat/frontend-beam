@@ -3,33 +3,10 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { API, apiRequest } from "@/lib/api";
-
-export function resolveStickerPath(giftId) {
-  if (!giftId) return "/gift/gift1.png";
-  if (giftId.startsWith("/") || giftId.startsWith("http")) return giftId;
-
-  if (giftId === "monkey") return "/stickers/s1.png";
-  if (giftId === "pikachu") return "/stickers/s2.png";
-  if (giftId === "rose") return "/stickers/s3.png";
-  if (giftId === "diamond") return "/stickers/s4.png";
-  if (giftId === "heart") return "/stickers/s5.png";
-  if (giftId === "star") return "/stickers/s6.png";
-  if (giftId === "fire") return "/stickers/s7.png";
-  if (giftId === "crown") return "/stickers/s8.png";
-
-  if (giftId === "superman") return "/stickers/s3.png";
-  if (giftId === "ironman") return "/stickers/s4.png";
-
-  if (/^s\d+$/.test(giftId)) return `/stickers/${giftId}.png`;
-  if (/^gift\d+$/.test(giftId)) return `/gift/${giftId}.png`;
-
-  let h = 0;
-  for (let i = 0; i < giftId.length; i++) {
-    h = (Math.imul(31, h) + giftId.charCodeAt(i)) | 0;
-  }
-  const idx = (Math.abs(h) % 8) + 1;
-  return `/gift/gift${idx}.png`;
-}
+import {
+  fetchUserStickers,
+  getActiveBadgeId,
+} from "@/lib/stickers";
 
 export default function StickersTab({ user, setUser }) {
   const [badges, setBadges] = useState([]);
@@ -41,10 +18,11 @@ export default function StickersTab({ user, setUser }) {
   const userId = user?.id || user?.userId;
 
   useEffect(() => {
-    if (user?.activeBadgeId !== undefined) {
-      setSelectedGiftId(user.activeBadgeId);
+    const activeId = getActiveBadgeId(user);
+    if (activeId !== undefined) {
+      setSelectedGiftId(activeId);
     }
-  }, [user?.activeBadgeId]);
+  }, [user?.activeBadgeId, user?.activeBadge?.giftId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -52,7 +30,7 @@ export default function StickersTab({ user, setUser }) {
     const fetchBadges = async () => {
       try {
         setLoading(true);
-        const data = await apiRequest(API.USERS.GET_BADGES(userId));
+        const data = await fetchUserStickers(userId);
         if (Array.isArray(data)) {
           setBadges(data);
         }
@@ -86,7 +64,16 @@ export default function StickersTab({ user, setUser }) {
         body: JSON.stringify({ giftId: selectedGiftId }),
       });
       if (setUser) {
-        setUser((prev) => prev ? { ...prev, activeBadgeId: selectedGiftId } : prev);
+        const selected = badges.find((b) => b.giftId === selectedGiftId);
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                activeBadgeId: selectedGiftId,
+                activeBadgeImageUrl: selected?.imageUrl || null,
+              }
+            : prev
+        );
       }
     } catch (err) {
       console.error("Failed to save active sticker:", err);
@@ -106,7 +93,9 @@ export default function StickersTab({ user, setUser }) {
       });
       setSelectedGiftId(null);
       if (setUser) {
-        setUser((prev) => prev ? { ...prev, activeBadgeId: null } : prev);
+        setUser((prev) =>
+          prev ? { ...prev, activeBadgeId: null, activeBadgeImageUrl: null } : prev
+        );
       }
     } catch (err) {
       console.error("Failed to remove sticker:", err);
@@ -118,7 +107,6 @@ export default function StickersTab({ user, setUser }) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden px-2">
-      {/* Header */}
       <div className="flex-shrink-0 mb-6">
         <p className="text-white font-semibold text-xl">Your Stickers</p>
         <p className="text-xs text-white/60 mt-1 leading-tight">
@@ -137,27 +125,33 @@ export default function StickersTab({ user, setUser }) {
             {currentBadges.map((badge, localIndex) => {
               const globalIndex = currentPage * stickersPerPage + localIndex;
               const isSelected = selectedGiftId === badge.giftId;
-              const src = resolveStickerPath(badge.giftId);
 
               return (
                 <div
-                  key={badge.giftId}
+                  key={`${badge.giftId}-${globalIndex}`}
                   onClick={() => handleSelectSticker(badge.giftId)}
                   className="cursor-pointer transition-all active:scale-95 hover:scale-105"
                 >
                   <div
-                    className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${isSelected
-                      ? "border-[#FACC15] scale-110"
-                      : "border-white/50 hover:border-white border-[1px]"
-                      }`}
+                    className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${
+                      isSelected
+                        ? "border-[#FACC15] scale-110"
+                        : "border-white/50 hover:border-white border-[1px]"
+                    }`}
                   >
-                    <Image
-                      src={src}
-                      alt={badge.giftName || `Sticker ${globalIndex + 1}`}
-                      width={65}
-                      height={65}
-                      className="object-contain"
-                    />
+                    {badge.imageUrl ? (
+                      <Image
+                        src={badge.imageUrl}
+                        alt={badge.giftName || `Sticker ${globalIndex + 1}`}
+                        width={65}
+                        height={65}
+                        className="object-contain"
+                      />
+                    ) : (
+                      <span className="text-4xl leading-none" aria-hidden>
+                        {badge.giftEmoji || "🎁"}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -166,21 +160,20 @@ export default function StickersTab({ user, setUser }) {
         )}
       </div>
 
-      {/* Pagination Dots (3-dot slider style) */}
       {totalPages > 1 && (
         <div className="flex-shrink-0 flex justify-center gap-2 mb-6">
           {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentPage(i)}
-              className={`h-2.5 w-2.5 rounded-full transition-all ${i === currentPage ? "bg-white w-6" : "bg-white/40"
-                }`}
+              className={`h-2.5 w-2.5 rounded-full transition-all ${
+                i === currentPage ? "bg-white w-6" : "bg-white/40"
+              }`}
             />
           ))}
         </div>
       )}
 
-      {/* Footer */}
       <div className="flex-shrink-0 flex items-center justify-between">
         <button
           onClick={handleRemoveSticker}

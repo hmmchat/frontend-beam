@@ -17,6 +17,7 @@ import StickersTab from "./Desktop/StickersTab";
 
 import { API, apiRequest } from "@/lib/api";
 import { buildGetMoneyModel } from "@/lib/getMoney";
+import { enrichUserStickerFields } from "@/lib/stickers";
 
 export default function ProfileDesktop({
   user: initialUser,
@@ -50,9 +51,9 @@ export default function ProfileDesktop({
       const fetchUser = async () => {
         try {
           const fields =
-            "username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden";
+            "username,dateOfBirth,gender,displayPictureUrl,intent,photos,musicPreference,brandPreferences,interests,values,preferredCity,zodiac,zodiacId,zodiacOverridden,activeBadgeId,activeBadge";
           const data = await apiRequest(`${API.USERS.GET_ME}?fields=${fields}`);
-          setUser(data.user || data);
+          setUser(await enrichUserStickerFields(data.user || data));
         } catch (err) {
           console.error("Failed to fetch user data:", err);
         }

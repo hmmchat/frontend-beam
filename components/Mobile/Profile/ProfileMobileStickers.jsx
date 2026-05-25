@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { API, apiRequest } from "@/lib/api";
-import { resolveStickerPath } from "../../Profile/Desktop/StickersTab";
+import { fetchUserStickers, getActiveBadgeId } from "@/lib/stickers";
 
 export default function ProfileMobileStickers({ 
   activeTab, 
@@ -19,53 +19,19 @@ export default function ProfileMobileStickers({
   const userId = user?.id || user?.userId;
 
   useEffect(() => {
-    if (user?.activeBadgeId !== undefined) {
-      setSelectedGiftId(user.activeBadgeId);
+    const activeId = getActiveBadgeId(user);
+    if (activeId !== undefined) {
+      setSelectedGiftId(activeId);
     }
-  }, [user?.activeBadgeId]);
+  }, [user?.activeBadgeId, user?.activeBadge?.giftId]);
 
   useEffect(() => {
     if (activeTab === "stickers" && userId) {
       const fetchBadges = async () => {
         try {
           setLoading(true);
-
-          // Primary: GET /users/:userId/badges (syncs from wallet transactions first)
-          let data = await apiRequest(API.USERS.GET_BADGES(userId)).catch(() => null);
-
-          if (Array.isArray(data) && data.length > 0) {
-            setBadges(data);
-            return;
-          }
-
-          // Fallback: read directly from wallet gift transactions + gift catalog
-          const [txRes, catalogRes] = await Promise.all([
-            apiRequest(API.WALLET.GET_GIFTS).catch(() => null),
-            apiRequest(API.FRIENDS.GET_GIFT_CATALOG).catch(() => null),
-          ]);
-
-          const transactions = Array.isArray(txRes) ? txRes : [];
-          const catalogGifts = Array.isArray(catalogRes?.gifts) ? catalogRes.gifts : [];
-
-          const catalogMap = {};
-          catalogGifts.forEach(g => { if (g.giftId) catalogMap[g.giftId] = g; });
-
-          const seen = new Set();
-          const resolved = [];
-          for (const tx of transactions) {
-            if (!tx.giftId || seen.has(tx.giftId)) continue;
-            seen.add(tx.giftId);
-            const catalog = catalogMap[tx.giftId] || {};
-            resolved.push({
-              giftId: tx.giftId,
-              giftName: catalog.name || tx.giftId,
-              giftEmoji: catalog.emoji || '🎁',
-              imageUrl: catalog.imageUrl || null,
-              receivedAt: tx.createdAt,
-            });
-          }
-
-          setBadges(resolved);
+          const data = await fetchUserStickers(userId);
+          setBadges(Array.isArray(data) ? data : []);
         } catch (err) {
           console.error("Failed to fetch badges:", err);
         } finally {
@@ -89,7 +55,16 @@ export default function ProfileMobileStickers({
         body: JSON.stringify({ giftId: selectedGiftId }),
       });
       if (setUser) {
-        setUser((prev) => prev ? { ...prev, activeBadgeId: selectedGiftId } : prev);
+        const selected = badges.find((b) => b.giftId === selectedGiftId);
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                activeBadgeId: selectedGiftId,
+                activeBadgeImageUrl: selected?.imageUrl || null,
+              }
+            : prev
+        );
       }
       setActiveTab("main");
     } catch (err) {
@@ -110,7 +85,9 @@ export default function ProfileMobileStickers({
       });
       setSelectedGiftId(null);
       if (setUser) {
-        setUser((prev) => prev ? { ...prev, activeBadgeId: null } : prev);
+        setUser((prev) =>
+          prev ? { ...prev, activeBadgeId: null, activeBadgeImageUrl: null } : prev
+        );
       }
       setActiveTab("main");
     } catch (err) {
@@ -165,7 +142,6 @@ export default function ProfileMobileStickers({
             ) : (
               badges.map((badge) => {
                 const isSelected = selectedGiftId === badge.giftId;
-                const src = badge.imageUrl || resolveStickerPath(badge.giftId);
 
                 return (
                   <div
@@ -178,13 +154,19 @@ export default function ProfileMobileStickers({
                         : "border border-white/50"
                     }`}
                   >
-                    <Image
-                      src={src}
-                      width={50}
-                      height={50}
-                      alt={badge.giftName || ""}
-                      className="object-contain"
-                    />
+                    {badge.imageUrl ? (
+                      <Image
+                        src={badge.imageUrl}
+                        width={50}
+                        height={50}
+                        alt={badge.giftName || ""}
+                        className="object-contain"
+                      />
+                    ) : (
+                      <span className="text-3xl leading-none" aria-hidden>
+                        {badge.giftEmoji || "🎁"}
+                      </span>
+                    )}
                   </div>
                 );
               })

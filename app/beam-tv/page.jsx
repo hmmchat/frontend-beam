@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
-import { exitBeamTvViewer, exitBeamTvViewerKeepalive } from '@/lib/discovery-presence';
+import { exitBeamTvViewer, exitBeamTvViewerKeepalive, markEnteringVideoChat } from '@/lib/discovery-presence';
 import clsx from 'clsx';
 import BroadcastSkeleton from '@/components/beam-tv/BroadcastSkeleton';
 import BroadcastHud from '@/components/VideoChat/BroadcastHud';
@@ -630,6 +630,7 @@ function BeamTVInner() {
           try {
             sessionStorage.setItem('waitlistJoinRedirect', '1');
           } catch (_) {}
+          markEnteringVideoChat();
           router.push('/video-chat');
         }
       } catch (_) {}

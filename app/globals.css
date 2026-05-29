@@ -24,7 +24,9 @@
   }
 }
 
-
+.font-sigmar {
+  font-family: var(--font-sigmar);
+}
 
 
 @layer utilities {
@@ -186,8 +188,17 @@
   animation: trianglePath 24s linear infinite;
 }
 
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 
 
+}
 
 @keyframes marquee {
   0% {
@@ -197,14 +208,32 @@
   100% {
     transform: translateX(-100%);
   }
+
+}
+
+
+/* SAME SPEED FOR BOTH */
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee-reverse 12s linear infinite;
 }
 
 .animate-marquee {
   display: inline-block;
-  min-width: 100%;
-  animation: marquee 6s linear infinite;
+  min-width: max-content;
+  animation: marquee-left 8s linear infinite;
 }
-
 
 .age-badge {
   font-size: 18px;
@@ -250,4 +279,32 @@
 
 .animate-spin-slow {
   animation: spin-slow 8s linear infinite;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+
+.text-stroke-yellow {
+  font-feature-settings: "liga" off, "clig" off;
+  font-family: "Sigmar";
+
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -1.377px;
+
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px #F2AD00;
+
+  display: inline-block;
 }

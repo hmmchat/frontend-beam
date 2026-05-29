@@ -61,14 +61,14 @@ export default function FacecardEditor({
     >
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
-       <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
-         <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 px-2 relative z-10">
-      {/* TOP ROW: Close, Name Box, Progress */}
-         <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
+      <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
+        <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 px-2 relative z-10">
+          {/* TOP ROW: Close, Name Box, Progress */}
+          <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
             {/* Close Button */}
 
-           <div className="col-span-2">
-           <button
+            <div className="col-span-2">
+              <button
                 onClick={leaveEditor}
                 className="w-9 h-9 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
               >
@@ -97,12 +97,67 @@ export default function FacecardEditor({
               <div className="relative w-[120px] h-[120px] flex items-center justify-center">
                 {/* Glow */}
 
-                {/* Outer ring */}
-                <div className="absolute w-[104px] h-[104px] rounded-full border-[2px] border-pink-500/60 shadow-[0_0_15px_rgba(236,72,153,0.7),inset_0_0_10px_rgba(236,72,153,0.5)]" />
 
-                <div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-white" />
 
-                <div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-pink-500/60" />
+                {/* Mobile Outer Rings & Glow Wrapper (Functional Mask) */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+
+                >
+                  <div className="absolute inset-0 flex items-center justify-center scale-[0.1]">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="281"
+                      height="281"
+                      viewBox="0 0 281 281"
+                      fill="none"
+                    >
+                      <g
+                        filter="url(#filter0_f_11224_6532)"
+                        style={{ mixBlendMode: "plus-lighter" }}
+                      >
+                        <path
+                          d="M259.468 140.068C259.468 206.012 206.01 259.47 140.066 259.47C74.1221 259.47 20.6641 206.012 20.6641 140.068C20.6641 74.1241 74.1221 20.666 140.066 20.666C206.01 20.666 259.468 74.1241 259.468 140.068ZM35.0042 140.068C35.0042 198.092 82.0419 245.13 140.066 245.13C198.09 245.13 245.128 198.092 245.128 140.068C245.128 82.0439 198.09 35.0061 140.066 35.0061C82.0419 35.0061 35.0042 82.0439 35.0042 140.068Z"
+                          fill="#FFBC2B"
+                        />
+                      </g>
+
+                      <defs>
+                        <filter
+                          id="filter0_f_11224_6532"
+                          x="-0.00164413"
+                          y="0.00030899"
+                          width="280.136"
+                          height="280.136"
+                          filterUnits="userSpaceOnUse"
+                          colorInterpolationFilters="sRGB"
+                        >
+                          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                          <feBlend
+                            mode="normal"
+                            in="SourceGraphic"
+                            in2="BackgroundImageFix"
+                            result="shape"
+                          />
+                          <feGaussianBlur
+                            stdDeviation="10.3329"
+                            result="effect1_foregroundBlur_11224_6532"
+                          />
+                        </filter>
+                      </defs>
+                    </svg>
+                  </div>
+
+                  {/* Outer ring */}
+                  <div className="absolute  w-[104px] h-[104px] rounded-full border-[2px] border-[#4E0093] mix-blend-color-dodge" />
+
+                  <div className="absolute w-[100px] h-[100px] rounded-full border-[2px] border-[#FFBC2B] mix-blend-color-dodge" />
+
+                  <div className="absolute w-[96px] h-[96px] rounded-full border-[2px] border-[#4E0093] mix-blend-color-dodge" />
+                </div>
+
+
+
 
                 {/* Main yellow ring with pink glow */}
                 <div className="w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]">
@@ -150,7 +205,7 @@ export default function FacecardEditor({
                     className="h-[20px] w-[20px] object-contain brightness-0 invert"
                   />
                 ) : (
-                <span className="opacity-40 text-2xl">  <img src="/assets/plus.png" alt="" /></span>
+                  <span className="opacity-40 text-2xl">  <img src="/assets/plus.png" alt="" /></span>
                 )}
               </button>
             </div>
@@ -220,7 +275,7 @@ export default function FacecardEditor({
                   className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
                 >
                   {interests.length > 0 ? (
-                    <div key={interestIndex} className="animate-slide-down">
+                    <div key={interestIndex} className="animate-slide-down font-outfit">
                       {interests[interestIndex]}
                     </div>
                   ) : (
@@ -228,12 +283,12 @@ export default function FacecardEditor({
                   )}
                 </div>
 
-               <button
-  onClick={() => setShowSelector("interests")}
-  className="w-12 h-12 flex items-center justify-center border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
->
-  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
-</button>
+                <button
+                  onClick={() => setShowSelector("interests")}
+                  className="w-12 h-12 flex items-center justify-center border border-white/60 border-b-2 rounded-xl text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+                >
+                  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -250,7 +305,7 @@ export default function FacecardEditor({
                   className="w-48 h-12 border border-white/40 rounded-full px-4 flex items-center justify-center text-[11px] 0  meeting now overflow-hidden"
                 >
                   {causes.length > 0 ? (
-                    <div key={causeIndex} className="animate-slide-down italic">
+                    <div key={causeIndex} className="animate-slide-down font-outfit">
                       {causes[causeIndex]}
                     </div>
                   ) : (
@@ -262,7 +317,7 @@ export default function FacecardEditor({
                   onClick={() => setShowSelector("values")}
                   className="w-12 h-12 flex items-center justify-center  border border-white/60 rounded-xl border-b-2 text-2xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
                 >
-         <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+                  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -282,7 +337,7 @@ export default function FacecardEditor({
                     <div
                       key={i}
                       onClick={() => setShowSelector("brands")}
-                      className="w-11 h-11 shrink-0 border-2 border-white/40 rounded-full flex items-center justify-center bg-white/5 0  meeting now hover:bg-white/10"
+                      className={`w-11 h-11 shrink-0 border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
                     >
                       {selection ? (
                         <img
@@ -317,7 +372,7 @@ export default function FacecardEditor({
                   src={user?.displayPictureUrl || "/imageprofile.png"}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-black text-[10px]">
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center text-black text-[10px] z-20 absolute">
                   ✎
                 </div>
               </div>
@@ -343,7 +398,7 @@ export default function FacecardEditor({
                             e.stopPropagation();
                             if (onDeletePhoto) onDeletePhoto(photo.id);
                           }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white text-xs z-10 hover:bg-red-600 active:scale-90 transition-all shadow-lg"
+                          className="absolute  -top-2 -right-2  w-6 h-6 bg-white rounded-full flex items-center justify-center text-black text-xs z-10 hover:bg-red-600 active:scale-90 transition-all shadow-lg"
                         >
                           ✕
                         </button>
@@ -368,7 +423,7 @@ export default function FacecardEditor({
                 className="relative 0  meeting now active:scale-95 transition"
               >
                 <div
-                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/40 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
+                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/60 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
                 >
                   <div
                     className={`w-29 h-29 rounded-full  p-1 overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
@@ -384,35 +439,39 @@ export default function FacecardEditor({
                     )}
                   </div>
 
-       
-                
+
+
                 </div>
               </div>
 
-              <div className="relative px-6 py-1 min-w-[120px]">
+              <div className="relative px-6  min-w-[100px] max-w-[120px] py-1 flex items-center justify-center overflow-hidden">
                 <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50"></span>
                 <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50"></span>
                 <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50"></span>
                 <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50"></span>
                 {/* Text */}
-                <div className="inline-flex flex-col  justify-end items-start">
-               <p className="text-white text-[10px] font-outfit leading-tight">
-  {(user?.musicPreference?.name ||
-    user?.musicPreference?.songName ||
-    "Select Song")
-    .split(" ")
-    .slice(0, 2)
-    .join(" ")}
-</p>
+                <div className="flex flex-col justify-end items-start w-full overflow-hidden">
+                  <div className="w-full overflow-hidden whitespace-nowrap mask-grad ">
+                    <div className="inline-block animate-marquee whitespace-nowrap text-white text-[10px] font-outfit leading-tight">
+                      <span className="">
+                        {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                      </span>
+                      <span className="">
+                        {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                      </span>
+                    </div>
+                  </div>
 
-<p className="text-white/60 font-outfit text-[10px] text-center">
-  {(user?.musicPreference?.artist ||
-    user?.musicPreference?.artistName ||
-    "Spotify")
-    .split(" ")
-    .slice(0, 2)
-    .join(" ")}
-</p>
+                  <div className="w-full overflow-hidden whitespace-nowrap mask-grad -mt-2">
+                    <div className="inline-block animate-marquee whitespace-nowrap text-white/60 font-outfit text-[10px]">
+                      <span className="">
+                        {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                      </span>
+                      <span className="">
+                        {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -436,476 +495,550 @@ export default function FacecardEditor({
       </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
+      <section className="   [@media(max-height:947px)]:scale-[0.99][@media(max-height:950px)]:scale-[1] [@media(max-height:850px)]:scale-[0.90] ">
+        <div className=" transition-all duration-300 max-w-[1200px] w-full px-6 mx-auto">
 
-      <div className=" transition-all duration-300 max-w-[1200px] w-full px-6 mx-auto">
 
 
+          <div className="relative hidden lg:flex lg:flex-row  w-full  flex-col  gap-4 md:gap-6    rounded-[60px] md:rounded-[60px] border border-white/60 p-4 md:p-4">
+            {/* Main Editor UI */}
 
-        <div className="relative hidden lg:flex lg:flex-row  w-full  flex-col  gap-4 md:gap-6    rounded-[60px] md:rounded-[60px] border border-white/60 p-4 md:p-4">
-          {/* Main Editor UI */}
+            <div className="flex-1 w-full border border-2 border-white/30 rounded-[54px] p-8 px-11 relative flex flex-col gap-10">
+              {/* Top Header Row */}
+              <div className="flex items-start gap-10  ">
+                {/* Left: Back + Vertical Name */}
+                <div className="relative flex flex-col items-start h-full justify-between">
+                  {/* Back Button */}
+                  <button
+                    onClick={leaveEditor}
+                    className="w-[58px] h-18  p-1 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
+                  >
+                    <span className="text-xl "><FaArrowLeft /></span>
+                  </button>
 
-          <div className="flex-1 w-full border border-2 border-white/30 rounded-[54px] p-8 px-11 relative flex flex-col gap-10">
-            {/* Top Header Row */}
-            <div className="flex items-start gap-10  ">
-              {/* Left: Back + Vertical Name */}
-     <div className="relative flex flex-col items-start h-full justify-between">
-                {/* Back Button */}
-                <button
-                  onClick={leaveEditor}
-                  className="w-[58px] h-18  p-1 rounded-full border border-white/80 flex items-center justify-center hover:bg-white/10 transition"
-                >
-                  <span className="text-xl "><FaArrowLeft /></span>
-                </button>
+                  {/* Vertical Name Wrapper */}
+                  <div className="relative w-[70px] h-full flex items-center justify-center">
+                    {/* Rotated content */}
+                    <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-4 mt-2   relative">
+                      {/* Corner brackets */}
+                      <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/50"></span>
+                      <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/50"></span>
+                      <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/50"></span>
+                      <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/50"></span>
 
-                {/* Vertical Name Wrapper */}
-<div className="relative w-[70px] h-full flex items-center justify-center">
-                  {/* Rotated content */}
-                  <div className="absolute rotate-[-90deg] whitespace-nowrap px-12 py-5 mt-2   relative">
-                    {/* Corner brackets */}
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/50"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/50"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/50"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/50"></span>
+                      <h2 className="text-2xl  tracking-wide  leading-none text-start">
+                        {firstName}
+                      </h2>
 
-                    <h2 className="text-2xl  tracking-wide  leading-none text-start">
-                      {firstName}
-                    </h2>
-
-                    <p className="text-[11px] opacity-90 font-outfit tracking-widest uppercase mt-1 text-center">
-                      USERID: {user?.id?.slice(0, 8)}
-                    </p>
+                      <p className="text-[11px] opacity-90 font-outfit tracking-widest uppercase mt-1 text-center">
+                        USERID: {user?.id?.slice(0, 8)}
+                      </p>
+                    </div>
                   </div>
+
+
                 </div>
+
+                {/* Right: Photo Slots */}
+                <div className="relative flex gap-5 justify-center">
+                  {photoUploading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[2.5rem] bg-black/55 backdrop-blur-sm">
+                      <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3" />
+                      <p className="text-xs font-semibold uppercase tracking-widest text-white/90">
+                        Uploading &amp; saving…
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Slot 1 */}
+                  <div
+                    onClick={() => handleSlotClick(0)}
+                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${photoUploading ? "pointer-events-none opacity-60" : ""
+                      }`}
+                  >
+                    {user?.displayPictureUrl ? (
+                      <img
+                        src={user.displayPictureUrl}
+                        alt="Photo 1"
+                        className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-[30px]">
+                        <span className="text-5xl opacity-40 border-4 border-white/80 rounded-full px-3">
+                          <img src="/assets/plus.png" alt="" />
+                        </span>
+                      </div>
+                    )}
+
+                    <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
+                      ✎
+                    </button>
+                  </div>
+
+                  {/* Slot 2 (Photo Order 0) */}
+                  <div
+                    onClick={() => handleSlotClick(1)}
+                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${photoUploading
+                      ? "pointer-events-none opacity-60"
+                      : "hover:bg-white/10"
+                      }`}
+                  >
+                    {user?.photos?.find((p) => p.order === 0)?.url && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const photo = user.photos.find((p) => p.order === 0);
+                          if (onDeletePhoto && photo) onDeletePhoto(photo.id);
+                        }}
+                        className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
+                      >
+                        ✕
+                      </button>
+                    )}
+
+                    {user?.photos?.find((p) => p.order === 0)?.url ? (
+                      <img
+                        src={user.photos.find((p) => p.order === 0).url}
+                        alt="Photo 2"
+                        className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+                      />
+                    ) : (
+
+                      <CiCirclePlus className="text-[60px] opacity-60  rounded-full " />
+
+                    )}
+                  </div>
+
+                  {/* Slot 3 (Photo Order 1) */}
+                  <div
+                    onClick={() => handleSlotClick(2)}
+                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${photoUploading
+                      ? "pointer-events-none opacity-60"
+                      : "0  meeting now hover:bg-white/10"
+                      }`}
+                  >
+                    {user?.photos?.find((p) => p.order === 1)?.url && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const photo = user.photos.find((p) => p.order === 1);
+                          if (onDeletePhoto && photo) onDeletePhoto(photo.id);
+                        }}
+                        className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
+                      >
+                        ✕
+                      </button>
+                    )}
+                    {user?.photos?.find((p) => p.order === 1)?.url ? (
+                      <img
+                        src={user.photos.find((p) => p.order === 1).url}
+                        className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
+                        alt="Photo 3"
+                      />
+                    ) : (
+                      <CiCirclePlus className="text-[60px] opacity-60  rounded-full " />
+                    )}
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                  />
+                </div>
+
+
+
 
 
               </div>
 
-              {/* Right: Photo Slots */}
-              <div className="relative flex gap-5 justify-center">
-                {photoUploading && (
-                  <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[2.5rem] bg-black/55 backdrop-blur-sm">
-                    <div className="h-10 w-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3" />
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/90">
-                      Uploading &amp; saving…
-                    </p>
+              {/* Info Sections Area */}
+              <div className="grid grid-cols-10 mt-5  gap-2  items-center">
+                {/* DOB & Gender Text Labels */}
+                <div className="col-span-3 w-[90%] flex flex-col gap-12 ">
+                  {/* DOB + Zodiac */}
+                  <div className="relative px-1 py-3 flex justify-center">
+                    <div className="flex flex-col items-start text-left">
+                      <span className="absolute top-0 left-0 w-4 h-4 border-t-[2px] border-l-[2px] border-white/40"></span>
+                      <span className="absolute top-0 right-0 w-4 h-4 border-t-[2px] border-r-[2px] border-white/40"></span>
+                      <span className="absolute bottom-0 left-0 w-4 h-4 border-b-[2px] border-l-[2px] border-white/40"></span>
+                      <span className="absolute bottom-0 right-0 w-4 h-4 border-b-[2px] border-r-[2px] border-white/40"></span>
+
+                      <p className="text-[12px] uppercase opacity-80 font-outfit">
+                        DOB :{" "}
+                        {user?.dateOfBirth
+                          ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+                          : ""}
+                      </p>
+
+                      <p className="text-[12px]  mt-1 font-outfit">
+                        Zodiac : {zodiac?.name || "Vacant"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Gender */}
+                  <div className="relative px-1 py-3 flex justify-center">
+                    <div className="flex flex-col items-start text-left">
+                      <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
+                      <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
+                      <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
+                      <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
+
+                      <p className="text-[12px] font-outfit  ">Gender Identity</p>
+                      <p className="text-[12px] font-outfit   mt-1">
+                        {user?.gender || "Female"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Brands */}
+                  <div className="relative px-1 py-3 mt-5 flex justify-center">
+                    <div className="flex flex-col items-start text-left">
+                      <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
+                      <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
+                      <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
+                      <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
+
+                      <p className="text-[12px]   ">Brands</p>
+                      <p className="text-[12px] font-outfit  ">
+                        Can&apos;t live w/o &#39;em
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+
+
+                {/* Icon Pills & Brand Grid */}
+                <div className="col-span-7 space-y-7 ">
+                  <div className="flex items-center gap-4">
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof onPickZodiac === "function") onPickZodiac();
+                        else setShowSelector("zodiacs");
+                      }}
+                      className="w-[84px] h-[84px] rounded-[20px] border border-[1.5px] border-b-[4px] border-white/60 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
+                      aria-label="Change zodiac"
+                    >
+                      {user?.zodiac?.imageUrl ? (
+                        <img
+                          src={user.zodiac.imageUrl}
+                          alt={user.zodiac.name || "Zodiac"}
+                          className="h-[75%] w-[75%] object-contain p-2 font-outfit text-sm"
+                        />
+                      ) : (
+                        zodiac?.symbol || (
+                          <span className="opacity-40 text-3xl">  <img src="/assets/plus.png" alt="" /></span>
+                        )
+                      )}
+                    </button>
+
+                    <div
+                      onClick={() => setShowSelector("interests")}
+                      className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
+                    >
+                      <span className="text-sm font-thin tracking-wide font-outfit">Interests:</span>
+                      <div className="flex-1 flex justify-end overflow-hidden">
+                        {interests.length > 0 ? (
+                          <span
+                            key={interestIndex}
+                            className="text-sm font-outfit opacity-90 truncate max-w-[150px] animate-slide-down"
+                          >
+                            {interests[interestIndex]}
+                          </span>
+                        ) : (
+                          <span className="text-sm opacity-90"></span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowSelector("interests")}
+                      className="w-18 h-18 rounded-2xl border border-white/70  border border-b-[3px] flex items-center justify-center text-3xl font-outfit font-thin transition text-white/70 hover:bg-white/10"
+                    >
+                      +
+                    </button>
+                  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+                  <div className="flex items-center font-outfit gap-4 ">
+                    <div className="w-[84px] h-[84px] rounded-[20px] border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
+                      {user?.gender === "MALE"
+                        ? "♂"
+                        : user?.gender === "FEMALE"
+                          ? "♀"
+                          : ""}
+                    </div>
+
+                    <div
+                      onClick={() => setShowSelector("values")}
+                      className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
+                    >
+                      <span className="text-sm  tracking-wide">Causes:</span>
+                      <div className="flex-1 flex justify-end overflow-hidden">
+                        {causes.length > 0 ? (
+                          <span
+                            key={causeIndex}
+                            className="text-sm opacity-90 font-outfit truncate max-w-[150px] animate-slide-down"
+                          >
+                            {causes[causeIndex]}
+                          </span>
+                        ) : (
+                          <span className="text-sm opacity-90 italic"></span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowSelector("values")}
+                      className="w-18 mt-1 h-18 rounded-2xl border border-b-[3px] border-white/70 flex items-center justify-center text-3xl font-thin transition text-white/70 hover:bg-white/10"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Brand Icons Row */}
+                  <div className="flex gap-8 mt-12  scrollbar-hide">
+                    {[0, 1, 2, 3, 4].map((i) => {
+                      const selection = user?.brandPreferences?.[i];
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => setShowSelector("brands")}
+                          className={`relative w-20 h-20 rounded-full border border-2 flex items-center justify-center shadow-inner transition-all hover:scale-105 ${selection ? "border-black bg-white/10" : "border-white/50 bg-transparent"}`}
+                        >
+                          {selection &&
+                            (selection.brand?.logoUrl ? (
+                              <img
+                                src={selection.brand.logoUrl}
+                                alt={selection.brand.name}
+                                className="w-[100%] h-[100%] rounded-full  object-contain"
+                              />
+                            ) : (
+                              <span className="text-white font-bold text-xl">
+                                {selection.brand?.name?.slice(0, 2)}
+                              </span>
+                            ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+
+
+                </div>
+
+
+
+              </div>
+            </div>
+
+            {/* Right Side Info Col */}
+            <div className="w-full lg:w-[260px] xl:w-[300px] flex flex-col gap-10 py-6 pr-4">
+              {/* Progress Area */}
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative w-56 h-56 flex items-center justify-center"
+
+                >
+
+
+
+                  {/* Glow SVG */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 281 281"
+                      fill="none"
+                      className="w-full h-full max-w-[281px] max-h-[281px]"
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      <g
+                        filter="url(#filter0_f_11224_6532)"
+                        style={{ mixBlendMode: "plus-lighter" }}
+                      >
+                        <path
+                          d="M259.468 140.068C259.468 206.012 206.01 259.47 140.066 259.47C74.1221 259.47 20.6641 206.012 20.6641 140.068C20.6641 74.1241 74.1221 20.666 140.066 20.666C206.01 20.666 259.468 74.1241 259.468 140.068ZM35.0042 140.068C35.0042 198.092 82.0419 245.13 140.066 245.13C198.09 245.13 245.128 198.092 245.128 140.068C245.128 82.0439 198.09 35.0061 140.066 35.0061C82.0419 35.0061 35.0042 82.0439 35.0042 140.068Z"
+                          fill="#FFBC2B"
+                        />
+                      </g>
+
+                      <defs>
+                        <filter
+                          id="filter0_f_11224_6532"
+                          x="-0.00164413"
+                          y="0.00030899"
+                          width="280.136"
+                          height="280.136"
+                          filterUnits="userSpaceOnUse"
+                          colorInterpolationFilters="sRGB"
+                        >
+                          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                          <feBlend
+                            mode="normal"
+                            in="SourceGraphic"
+                            in2="BackgroundImageFix"
+                            result="shape"
+                          />
+                          <feGaussianBlur
+                            stdDeviation="10.3329"
+                            result="effect1_foregroundBlur_11224_6532"
+                          />
+                        </filter>
+                      </defs>
+                    </svg>
+                  </div>
+
+                  {/* Outer ring */}
+                  <div className="absolute w-[190px] h-[190px] rounded-full border-[4px] border-[#4E0093] mix-blend-color-dodge" />
+
+                  <div className="absolute w-[182px] h-[182px] rounded-full border-[4px] border-[#FFBC2B] mix-blend-color-dodge" />
+
+                  <div className="absolute w-[174px] h-[174px] rounded-full border-[4px] border-[#4E0093] mix-blend-color-dodge" />
+
+                  {/* Main yellow ring */}
+                  <div className="relative w-[160px] h-[160px] rounded-full border-[8px] border-[#FFBC2B] flex items-center justify-center">
+
+                    {/* Inner thin ring */}
+                    <div className="absolute w-[140px] h-[140px] rounded-full border-[4px] border-[#FFBC2B]" />
+
+                    {/* Center text */}
+                    <span className="text-4xl text-white font-semibold">
+                      {progress}
+                      <span className="text-2xl opacity-60 ml-1">%</span>
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onOpenFacecardPreview?.()}
+                  className="w-[80%] py-6 border-2 border-b-4 border-white/40 rounded-[18px] flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
+                >
+                  <span className="text-xl">
+                    <img src="/eye.svg" alt="" />
+                  </span>
+
+                  <span className="text-xs font-bold tracking-widest text-white">
+                    Facecard
+                  </span>
+                </button>
+              </div>
+
+              {/* Music Section */}
+              <div
+                onClick={() => setShowSelector("music")}
+                className="flex-1 flex flex-col items-center gap-6 relative 0  meeting now group"
+              >
+                {user?.musicPreference ? (
+                  /* when music is selected */
+                  <div className="absolute -right-8 z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="134" height="100" viewBox="0 0 130 88" fill="none">
+                      <path d="M127.589 1.93553L52.3248 1.93551L11.4682 73.876" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                      <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(-1.03187e-07 1 1 1.03187e-07 3.74761e-06 71.542)" fill="white" fillOpacity="0.5" />
+                    </svg>
+                  </div>
+                ) : (
+                  /* when music is not selected */
+                  <div className="absolute -right-18 z-10 transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="134" height="100" viewBox="0 0 138 88" fill="none">
+                      <path d="M111.059 1.93613L45.5457 38.9875L45.3976 121.72" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                      <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 36.2666 125.335)" fill="white" fillOpacity="0.5" />
+                    </svg>
                   </div>
                 )}
 
-                {/* Slot 1 */}
-<div
-  onClick={() => handleSlotClick(0)}
-  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${
-    photoUploading ? "pointer-events-none opacity-60" : ""
-  }`}
->
-  {user?.displayPictureUrl ? (
-    <img
-      src={user.displayPictureUrl}
-      alt="Photo 1"
-      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-[30px]">
-       <span className="text-5xl opacity-40 border-4 border-white/80 rounded-full px-3">
-        <img src="/assets/plus.png" alt="" />
-      </span>
-    </div>
-  )}
-
-  <button className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg">
-    ✎
-  </button>
-</div>
-
-                {/* Slot 2 (Photo Order 0) */}
-                <div
-  onClick={() => handleSlotClick(1)}
-  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
-    photoUploading
-      ? "pointer-events-none opacity-60"
-      : "hover:bg-white/10"
-  }`}
->
-  {user?.photos?.find((p) => p.order === 0)?.url && (
-    <button 
-      onClick={(e) => {
-        e.stopPropagation();
-        const photo = user.photos.find((p) => p.order === 0);
-        if (onDeletePhoto && photo) onDeletePhoto(photo.id);
-      }}
-      className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
-    >
-      ✕
-    </button>
-  )}
-
-  {user?.photos?.find((p) => p.order === 0)?.url ? (
-    <img
-      src={user.photos.find((p) => p.order === 0).url}
-      alt="Photo 2"
-      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
-    />
-  ) : (
-  
-         <CiCirclePlus className="text-[60px] opacity-60  rounded-full "/>
-
-  )}
-</div>
-
-                {/* Slot 3 (Photo Order 1) */}
-                <div
-                  onClick={() => handleSlotClick(2)}
-                  className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${
-                    photoUploading
-                      ? "pointer-events-none opacity-60"
-                      : "0  meeting now hover:bg-white/10"
-                  }`}
-                >
-                  {user?.photos?.find((p) => p.order === 1)?.url && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const photo = user.photos.find((p) => p.order === 1);
-                        if (onDeletePhoto && photo) onDeletePhoto(photo.id);
-                      }}
-                      className="absolute -top-1 -right-3 z-20 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-lg hover:bg-gray-50 active:scale-90 transition-all"
-                    >
-                      ✕
-                    </button>
-                  )}
-                  {user?.photos?.find((p) => p.order === 1)?.url ? (
-                    <img
-                      src={user.photos.find((p) => p.order === 1).url}
-                      className="w-full h-full object-cover rounded-[30px] rounded-b-[26px]"
-                      alt="Photo 3"
-                    />
-                  ) : (
-                            <CiCirclePlus className="text-[60px] opacity-60  rounded-full "/>
-                  )}
-                </div>
-
-                {/* Hidden File Input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="hidden"
-                />
-              </div>
 
 
+                <div className="relative w-32 sm:w-36 md:w-44 aspect-square flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-[2px]  border-white/80" />
+                  <div className="absolute inset-[2.2px] rounded-full border-[2px] border-white/50" />
 
-
-
-            </div>
-
-            {/* Info Sections Area */}
-            <div className="grid grid-cols-10 mt-5  gap-2  items-center">
-              {/* DOB & Gender Text Labels */}
-              <div className="col-span-3 w-[90%] flex flex-col gap-10 ">
-                {/* DOB + Zodiac */}
-                <div className="relative px-1 py-4 flex justify-center">
-                  <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t-[2px] border-l-[2px] border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t-[2px] border-r-[2px] border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-[2px] border-l-[2px] border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-[2px] border-r-[2px] border-white/40"></span>
-
-                    <p className="text-[12px] uppercase opacity-80 font-outfit">
-                      DOB :{" "}
-                      {user?.dateOfBirth
-                        ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                        : ""}
-                    </p>
-
-                    <p className="text-[12px]  mt-1 font-outfit">
-                      Zodiac : {zodiac?.name || "Vacant"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Gender */}
-                <div className="relative px-1 py-4 flex justify-center">
-                  <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
-
-                    <p className="text-[12px] font-outfit  ">Gender Identity</p>
-                    <p className="text-[12px] font-outfit   mt-1">
-                      {user?.gender || "Female"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Brands */}
-                <div className="relative px-1 py-4 mt-5 flex justify-center">
-                  <div className="flex flex-col items-start text-left">
-                    <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/40"></span>
-                    <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/40"></span>
-                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/40"></span>
-                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/40"></span>
-
-                    <p className="text-[12px]   ">Brands</p>
-                    <p className="text-[12px] font-outfit  ">
-                      Can&apos;t live w/o &#39;em
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-
-
-              {/* Icon Pills & Brand Grid */}
-              <div className="col-span-7 space-y-7 ">
-                <div className="flex items-center gap-4">
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (typeof onPickZodiac === "function") onPickZodiac();
-                      else setShowSelector("zodiacs");
-                    }}
-                    className="w-[84px] h-[84px] rounded-[20px] border border-[1.5px] border-b-[4px] border-white/60 flex items-center justify-center shadow-inner overflow-hidden hover:bg-white/5 transition  "
-                    aria-label="Change zodiac"
-                  >
-                    {user?.zodiac?.imageUrl ? (
+                  <div className="absolute inset-3 rounded-full overflow-hidden border-2 border-white/30 shadow-2xl  animate-spin-slow flex items-center justify-center">
+                    {user?.musicPreference?.albumArtUrl ? (
                       <img
-                        src={user.zodiac.imageUrl}
-                        alt={user.zodiac.name || "Zodiac"}
-                        className="h-[75%] w-[75%] object-contain p-2 font-outfit text-sm"
+                        src={user.musicPreference.albumArtUrl}
+                        className="w-full h-full object-cover rounded-full"
+                        alt="Album Art"
                       />
                     ) : (
-                      zodiac?.symbol || (
-                        <span className="opacity-40 text-3xl">  <img src="/assets/plus.png" alt="" /></span>
-                      )
+                      <span className="text-6xl opacity-20 text-white">+</span>
                     )}
-                  </button>
-
-                  <div
-                    onClick={() => setShowSelector("interests")}
-className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
-                  >
-                    <span className="text-sm font-thin tracking-wide font-outfit">Interests:</span>
-                    <div className="flex-1 flex justify-end overflow-hidden">
-                      {interests.length > 0 ? (
-                        <span
-                          key={interestIndex}
-                          className="text-sm font-outfit opacity-90 truncate max-w-[150px] animate-slide-down"
-                        >
-                          {interests[interestIndex]}
-                        </span>
-                      ) : (
-                        <span className="text-sm opacity-90"></span>
-                      )}
-                    </div>
                   </div>
 
-                  <button
-                    onClick={() => setShowSelector("interests")}
-                    className="w-18 h-18 rounded-2xl border border-white/70  border border-b-[3px] flex items-center justify-center text-3xl font-outfit font-thin transition text-white/70 hover:bg-white/10"
-                  >
-                    +
-                  </button>
+
                 </div>
 
 
+                <div className="relative w-full py-3 flex justify-center">
+                  <div className="relative w-48 px-1 py-3 text-center text-white">
 
+                    <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60" />
+                    <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/60" />
+                    <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60" />
+                    <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60" />
 
-
-
-
-
-
-
-                
-
-                <div className="flex items-center font-outfit gap-4 ">
-                  <div className="w-[84px] h-[84px] rounded-[20px] border-2 border-white/60 flex items-center justify-center text-3xl shadow-inner">
-                    {user?.gender === "MALE"
-                      ? "♂"
-                      : user?.gender === "FEMALE"
-                        ? "♀"
-                        : ""}
-                  </div>
-
-                  <div
-                    onClick={() => setShowSelector("values")}
-className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 flex items-center justify-between hover:bg-white/5 transition overflow-hidden"
-                  >
-                    <span className="text-sm  tracking-wide">Causes:</span>
-                    <div className="flex-1 flex justify-end overflow-hidden">
-                      {causes.length > 0 ? (
-                        <span
-                          key={causeIndex}
-                          className="text-sm opacity-90 font-outfit truncate max-w-[150px] animate-slide-down"
-                        >
-                          {causes[causeIndex]}
+                    {/* Song */}
+                    {/* Song */}
+                    <div className="w-[60%] mx-auto overflow-hidden whitespace-nowrap mask-grad">
+                      <div className="animate-marquee-reverse whitespace-nowrap text-[12px] font-outfit text-white">
+                        <span className="px-4">
+                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
                         </span>
-                      ) : (
-                        <span className="text-sm opacity-90 italic"></span>
-                      )}
-                    </div>
-                  </div>
 
-                  <button
-                    onClick={() => setShowSelector("values")}
-                    className="w-18 mt-1 h-18 rounded-2xl border border-b-[3px] border-white/70 flex items-center justify-center text-3xl font-thin transition text-white/70 hover:bg-white/10"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Brand Icons Row */}
-                <div className="flex gap-8 mt-12  scrollbar-hide">
-                  {[0, 1, 2, 3, 4].map((i) => {
-                    const selection = user?.brandPreferences?.[i];
-                    return (
-                      <div
-                        key={i}
-                        onClick={() => setShowSelector("brands")}
-                        className={`relative w-20 h-20 rounded-full border border-2  border-white/50 flex items-center justify-center shadow-inner 0  meeting now transition-all hover:scale-105 ${selection ? "bg-white/10" : "bg-transparent"}`}
-                      >
-                        {selection &&
-                          (selection.brand?.logoUrl ? (
-                            <img
-                              src={selection.brand.logoUrl}
-                              alt={selection.brand.name}
-                              className="w-[100%] h-[100%] rounded-full  object-contain"
-                            />
-                          ) : (
-                            <span className="text-white font-bold text-xl">
-                              {selection.brand?.name?.slice(0, 2)}
-                            </span>
-                          ))}
+                        <span className="px-4">
+                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
 
+                    {/* Artist */}
+                    <div className="w-[60%] mx-auto overflow-hidden whitespace-nowrap -mt-1 mask-grad">
+                      <div className="animate-marquee-reverse whitespace-nowrap text-[12px] font-outfit text-white/60">
+                        <span className="px-4">
+                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                        </span>
 
-                
-              </div>
+                        <span className="px-4">
+                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                        </span>
+                      </div>
+                    </div>
 
-
-              
-            </div>
-          </div>
-
-          {/* Right Side Info Col */}
-          <div className="w-full lg:w-[260px] xl:w-[300px] flex flex-col gap-10 py-6 pr-4">
-            {/* Progress Area */}
-            <div className="flex flex-col items-center gap-6">
-              <div className="relative w-56 h-56 flex items-center justify-center">
-                {/* Outer ring */}
-                <div className="absolute w-[190px] h-[190px] rounded-full border-[5px] border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.7),inset_0_0_15px_rgba(236,72,153,0.5)]" />
-                <div className="absolute w-[180px] h-[180px] rounded-full border-[4px] border-white" />
-                <div className="absolute w-[174px] h-[174px] rounded-full border-[5px] border-pink-500/70" />
-
-                {/* Main yellow ring */}
-                <div className="w-[160px] h-[160px] rounded-full border-[8px] border-yellow-400 flex items-center justify-center ">
-                  {/* Inner thin ring */}
-                  <div className="absolute w-[140px] h-[140px] rounded-full border-[4px] border-[#FFBC2B]" />
-
-                  {/* Center text */}
-                  <span className="text-4xl text-white font-semibold">
-                    {progress}
-                    <span className="text-2xl opacity-60 ml-1">%</span>
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onOpenFacecardPreview?.()}
-                className="w-[80%] py-6 border-2 border-b-4 border-white/40 rounded-xl flex items-center justify-center gap-3 hover:bg-white/5 transition font-bold tracking-widest uppercase text-xs"
-              >
-                <span className="text-xl">
-                  <img src="/eye.svg" alt="" />
-                </span>
-                <span className="text-xs font-bold tracking-widest text-white">
-                  Facecard
-                </span>
-              </button>
-            </div>
-
-            {/* Music Section */}
-            <div
-              onClick={() => setShowSelector("music")}
-              className="flex-1 flex flex-col items-center gap-6 relative 0  meeting now group"
-            >
-              {user?.musicPreference ? (
-                <div className="absolute -right-16  z-20 -translate-y-1/2">
-                  <div className="relative w-20 h-20">
-                    <div className="absolute bottom-10 -left-4 w-16 h-[2px] bg-white/40  origin-left"></div>
-                    <div className="absolute  -left-8  rotate-25 w-[2px] h-18 z-10  bg-white/40 mt-9"></div>
-                    <div className="absolute -bottom-8 right-[7.5rem] w-3 h-3 bg-white/40 rounded-full"></div>
                   </div>
                 </div>
-              ) : (
-                <div className="absolute -right-16  -translate-y-1/2">
-                  <div className="relative w-20 h-20">
-                    <div className="absolute bottom-10 -left-1 w-16 h-[2px] bg-white/40 -rotate-[25deg] origin-left"></div>
-                    <div className="absolute  -left-1 w-[2px] top-10 h-12 bg-white/40"></div>
-                    <div className="absolute -bottom-5 right-[77px] w-3 h-3 bg-white/40 rounded-full"></div>
-                  </div>
+
+                <div className="grid grid-cols-12 gap-1 opacity-70">
+                  {[...Array(36)].map((_, i) => (
+                    <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
+                  ))}
                 </div>
-              )}
-
-              <div className="relative w-32 sm:w-36 md:w-44 aspect-square flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-[3px] border-white/20" />
-
-                <div className="absolute inset-2 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl  animate-spin-slow flex items-center justify-center">
-                  {user?.musicPreference?.albumArtUrl ? (
-                    <img
-                      src={user.musicPreference.albumArtUrl}
-                      className="w-full h-full object-cover rounded-full"
-                      alt="Album Art"
-                    />
-                  ) : (
-                    <span className="text-6xl opacity-20 text-white">+</span>
-                  )}
-                </div>
-
-                <div className="absolute w-6 h-6 rounded-full bg-black border border-white/20 flex items-center justify-center z-10">
-                  <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                </div>
-              </div>
-
-              
-              <div className="relative w-full py-6 flex justify-center">
-                <div className="relative px-1 w-48 py-4 text-center text-white">
-                  <span className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/60" />
-                  <span className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/60" />
-                  <span className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/60" />
-                  <span className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/60" />
-
-                  <p className="text-[12px]  text-center font-outfit items-center justify-center">
-                    {user?.musicPreference?.name ||
-                      user?.musicPreference?.songName ||
-                      "Select Song"}
-                  </p>
-                  <p className="text-[12px] text-center   font-outfit">
-                    {user?.musicPreference?.artist ||
-                      user?.musicPreference?.artistName ||
-                      "Spotify"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-12 gap-1 opacity-70">
-                {[...Array(36)].map((_, i) => (
-                  <div key={i} className="w-1 h-1 bg-white rounded-full"></div>
-                ))}
               </div>
             </div>
+
+
           </div>
-
-
         </div>
-      </div>
+
+        <p className="font-outfit w-[90%] mt-3 text-xs font-thin text-right">Facecard Creation tool V1</p>
+      </section>
+
 
       <style jsx>{`
         @keyframes fade-in {
@@ -960,6 +1093,36 @@ className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        @keyframes marquee {
+          0% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .animate-marquee {
+          display: inline-block;
+          white-space: nowrap;
+          animation: marquee 12s linear infinite;
+        }
+        @keyframes marquee-reverse {
+          0% {
+            transform: translateX(-50%);
+          }
+          100% {
+            transform: translateX(0%);
+          }
+        }
+        .animate-marquee-reverse {
+          display: inline-block;
+          white-space: nowrap;
+          animation: marquee-reverse 12s linear infinite;
+        }
+        .mask-grad {
+          mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
+        }
       `}</style>
     </div>
   );
@@ -969,4 +1132,3 @@ className=" ml-4   flex-1 min-w-0 h-18 rounded-full border border-white/60 px-5 
 
 
 
- 

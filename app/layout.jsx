@@ -1,20 +1,27 @@
 import "./globals.css";
-import localFont from 'next/font/local';
-import { Outfit } from 'next/font/google';
-import CaptureReferralFromUrl from '@/components/CaptureReferralFromUrl';
+import localFont from "next/font/local";
+import { Outfit, Sigmar } from "next/font/google";
+import CaptureReferralFromUrl from "@/components/CaptureReferralFromUrl";
 
 const otomanopeeOne = localFont({
-  src: '../public/OtomanopeeOne-Regular.ttf',
-  variable: '--font-otomanopee',
-  weight: '400',
-  display: 'swap',
+  src: "../public/OtomanopeeOne-Regular.ttf",
+  variable: "--font-otomanopee",
+  weight: "400",
+  display: "swap",
 });
 
 const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-  weight: [  '300', '400', '500', '600'],
-  display: 'swap',
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
+});
+
+const sigmar = Sigmar({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-sigmar",
+  display: "swap",
 });
 
 export const metadata = {
@@ -28,7 +35,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${otomanopeeOne.variable} ${outfit.variable}`}>
+      <body
+        className={`${otomanopeeOne.variable} ${outfit.variable} ${sigmar.variable}`}
+      >
         <CaptureReferralFromUrl />
         {children}
       </body>

@@ -39,7 +39,7 @@ function HistoryContent() {
             setViewerId(String(uid));
             localStorage.setItem("userId", String(uid));
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   }, [viewerId]);
@@ -154,7 +154,7 @@ function HistoryContent() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 px-5 justify-between">
           <div className="flex items-center gap-2">
-            <div 
+            <div
               onClick={() => router.push('/')}
               className="border-[2px] border-white/40   rounded-full md:p-3.5 p-2   meeting now hover:bg-white/10 transition-colors"
             >
@@ -173,7 +173,7 @@ function HistoryContent() {
                         md:ring md:ring-white/50  
                         ">
 
-          <div className="h-full overflow-y-auto space-y-4 pt-3 mt-3 md:px-12 px-3">
+          <div className="h-full overflow-y-auto scrollbar-hide space-y-4 pt-3 mt-3 md:px-12 px-3">
             {productMessage ? (
               <div className="mx-2 rounded-2xl border border-white/20 bg-black/25 px-4 py-3 text-sm text-white/90">
                 {productMessage}
@@ -190,206 +190,208 @@ function HistoryContent() {
                 );
                 const hasMultiple = otherParticipants.length > 1;
 
-               return (
-  <div
-    key={call.sessionId}
-    className={`${
-      hasMultiple
-        ? "border border-white/60 rounded-[32px] md:p-2 p-1"
-        : ""
-    } flex flex-col`}
-  >
-    {/* ================= TIMELINE ================= */}
-    {timelinesBySessionId[call.sessionId] && (() => {
-      const timeline = timelinesBySessionId[call.sessionId] || [];
-      const participantById = Object.fromEntries(
-        (call.participants || []).map((p) => [String(p.userId), p])
-      );
+                return (
+                  <div
+                    key={call.sessionId}
+                    className={`${hasMultiple
+                      ? "border border-white/60 rounded-[32px] md:p-2 p-1"
+                      : ""
+                      } flex flex-col`}
+                  >
+                    {/* ================= TIMELINE ================= */}
+                    {timelinesBySessionId[call.sessionId] && (() => {
+                      const timeline = timelinesBySessionId[call.sessionId] || [];
+                      const participantById = Object.fromEntries(
+                        (call.participants || []).map((p) => [String(p.userId), p])
+                      );
 
-      const joinedEvents = timeline
-        .filter((e) => e.eventType === "participant_joined_time")
-        .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+                      const joinedEvents = timeline
+                        .filter((e) => e.eventType === "participant_joined_time")
+                        .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
- const joinOrder = null;
+                      const joinOrder = null;
 
-      const pulledIn = timeline.find(
-        (e) =>
-          e.eventType === "participant_joined_via_pull_stranger" &&
-          viewerId &&
-          String(e.userId) === String(viewerId)
-      );
+                      const pulledIn = timeline.find(
+                        (e) =>
+                          e.eventType === "participant_joined_via_pull_stranger" &&
+                          viewerId &&
+                          String(e.userId) === String(viewerId)
+                      );
 
-      const kicked = timeline.find(
-        (e) =>
-          e.eventType === "participant_kicked" &&
-          viewerId &&
-          String(e.userId) === String(viewerId)
-      );
+                      const kicked = timeline.find(
+                        (e) =>
+                          e.eventType === "participant_kicked" &&
+                          viewerId &&
+                          String(e.userId) === String(viewerId)
+                      );
 
-      const exited = null;
+                      const exited = null;
 
-      const primaryEvents = [
-        pulledIn ? { label: "Pulled stranger", at: pulledIn.at } : null,
-        kicked ? { label: "Kicked out", at: kicked.at } : null,
-        exited ? { label: "Exited", at: exited.at } : null,
-      ].filter(Boolean);
+                      const primaryEvents = [
+                        pulledIn ? { label: "Pulled stranger", at: pulledIn.at } : null,
+                        kicked ? { label: "Kicked out", at: kicked.at } : null,
+                        exited ? { label: "Exited", at: exited.at } : null,
+                      ].filter(Boolean);
 
-      if (!primaryEvents.length && !joinOrder) return null;
+                      if (!primaryEvents.length && !joinOrder) return null;
 
-      return (
-        <div className="flex flex-col gap-2 mb-4 px-2">
-          {/* Example timeline content */}
-          {joinOrder && (
-            <p className="text-xs text-white/70">
-              {joinOrder}
-            </p>
-          )}
+                      // return (
+                      //   <div className="flex flex-col gap-2 mb-4 px-2">
+                      //     {/* Example timeline content */}
+                      //     {joinOrder && (
+                      //       <p className="text-xs text-white/70">
+                      //         {joinOrder}
+                      //       </p>
+                      //     )}
 
-          {primaryEvents.map((event, i) => (
-            <p key={i} className="text-xs text-white/60">
-              {event.label}
-            </p>
-          ))}
-        </div>
-      );
-    })()}
+                      //     {primaryEvents.map((event, i) => (
+                      //       <p key={i} className="text-xs text-white/60">
+                      //         {event.label}
+                      //       </p>
+                      //     ))}
+                      //   </div>
+                      // );
 
-    {/* ❌ Removed loading div → it was causing fake top gap */}
 
-    {/* ================= CARDS ================= */}
-    <div className="flex flex-col gap-4 ">
-      {otherParticipants.map((participant) => (
-        <div
-          key={participant.userId}
-          className="border border-white/40 rounded-[26px] md:p-5 p-3  space-y-4 "
-        >
-          {/* Top row */}
-          <div className="flex items-center gap-3">
-            {call.callType === "Squad" && (
-              <p className="text-xs text-white px-3 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full">
-                Squad
-              </p>
-            )}
-            {call.callType === "Broadcast" && (
-<div className="flex items-center gap-2">
-                <p className="text-xs text-white px-5 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full flex ">
-                Squad 
-              </p> 
-              <img src="/history/broadcast.svg" alt="broadcast" className="w-5 h-5" />
-              </div>
-            
-            )}
 
-            <span className="text-xs font-outfit text-white/90">
-              {formatDate(call.startedAt)}
-            </span>
+                    })()}
 
-            <img
-              src="/history/infoicon.svg"
-              alt="info"
-              className="w-6 h-6 ml-auto"
-            />
-          </div>
+                    {/* ❌ Removed loading div → it was causing fake top gap */}
 
-          <hr className="border-white/40" />
+                    {/* ================= CARDS ================= */}
+                    <div className="flex flex-col gap-4 ">
+                      {otherParticipants.map((participant) => (
+                        <div
+                          key={participant.userId}
+                          className="border border-white/40 rounded-[26px] md:p-5 p-3  space-y-4 "
+                        >
+                          {/* Top row */}
+                          <div className="flex items-center gap-3">
+                            {call.callType === "Squad" && (
+                              <p className="text-xs text-white px-3 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full">
+                                Squad
+                              </p>
+                            )}
+                            {call.callType === "Broadcast" && (
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-white px-5 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full flex ">
+                                  Squad
+                                </p>
+                                <img src="/history/broadcast.svg" alt="broadcast" className="w-5 h-5" />
+                              </div>
 
-          {/* Content */}
-          <div className="flex items-center justify-between">
-            {/* Left */}
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/facecard?userId=${encodeURIComponent(
-                      participant.userId
-                    )}`
-                  )
-                }
-                className="w-14 md:w-20 h-14 md:h-20  rounded-full overflow-hidden border border-white border-2 hover:bg-white/5 transition-colors"
-              >
-                <Image
-                  src={
-                    participant.displayPictureUrl 
-                  }
-                  alt="user"
-                  width={56}
-                  height={56}
-                  className="object-cover w-full h-full "
-                />
-              </button>
+                            )}
 
-              <div className="">
-                <div className="md:text-[14px] text-[12px]  ">
-                 <span className="md:mr-[5px]">👦</span>  { participant.username }
-                </div>
+                            <span className="text-xs font-outfit text-white/90">
+                              {formatDate(call.startedAt)}
+                            </span>
 
-                <div className="md:text-[14px] text-[11px] font-outfit text-white/80 flex items-center gap-1 mt-1">
-                  <img src="/history/locationline.svg" alt="location" className="md:w-5 md:h-5 w-3 h-3" />
-                  {  participant.location }
-                </div>
+                            <img
+                              src="/history/infoicon.svg"
+                              alt="info"
+                              className="w-6 h-6 ml-auto"
+                            />
+                          </div>
 
-                <div className="flex items-center gap-2 font-semibold md:text-sm text-[11px] font-outfit md:mt-2 mt-1">
-                <img src="/history/video-outline.svg" alt="videocam" className="md:w-7 md:h-7 w-5 h-5" />
-                  {formatDuration(participant.durationSeconds)}
-                </div>
-              </div>
-            </div>
+                          <hr className="border-white/40" />
 
-            {/* Right */}
-            <div className="flex items-center md:gap-1">
-              <button
-                type="button"
-                title={participant.isFriend ? "Message" : (participant.conversationId ? `Message once for ${participant.messageCost ?? 10} coins` : "Message")}
-                onClick={() => {
-                  const q = new URLSearchParams({
-                    chat: participant.conversationId || "",
-                    userId: participant.userId,
-                    username: participant.username || "User",
-                    friend: participant.isFriend ? "1" : "0",
-                  });
-                  if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
-                  router.push(`/inbox?${q.toString()}`);
-                }}
-                className="w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-              >
-                <img
-                  src="/history/mail.svg"
-                  alt="message"
-                  className="w-6 h-6 md:w-8 md:h-8"
-                />
-              </button>
+                          {/* Content */}
+                          <div className="flex items-center justify-between">
+                            {/* Left */}
+                            <div className="flex items-center gap-4">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    `/facecard?userId=${encodeURIComponent(
+                                      participant.userId
+                                    )}`
+                                  )
+                                }
+                                className="w-14 md:w-20 h-14 md:h-20  rounded-full overflow-hidden border border-white border-2 hover:bg-white/5 transition-colors"
+                              >
+                                <Image
+                                  src={
+                                    participant.displayPictureUrl
+                                  }
+                                  alt="user"
+                                  width={56}
+                                  height={56}
+                                  className="object-cover w-full h-full "
+                                />
+                              </button>
 
-              <button
-                type="button"
-                disabled={actionBusyId === participant.userId || participant.friendRequestSent || participant.isFriend}
-                onClick={() => !participant.isFriend && sendFriendRequest(participant.userId)}
-                className={`w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors disabled:opacity-50 ${participant.isFriend ? 'hidden' : ''}`}
-                title={participant.isFriend ? "Friends" : (participant.friendRequestSent ? "Friend request sent" : "Send friend request")}
-              >
-                <img
-                  src="/history/heart.svg"
-                  alt="heart"
-                  className={`w-6 h-6 md:w-8 md:h-8 ${participant.isFriend ? 'hidden' : ''}`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+                              <div className="">
+                                <div className="md:text-[14px] text-[12px]  ">
+                                  <span className="md:mr-[5px]">👦</span>  {participant.username}
+                                </div>
+
+                                <div className="md:text-[14px] text-[11px] font-outfit text-white/80 flex items-center gap-1 mt-1">
+                                  <img src="/history/locationline.svg" alt="location" className="md:w-5 md:h-5 w-3 h-3" />
+                                  {participant.location}
+                                </div>
+
+                                <div className="flex items-center gap-2 font-semibold md:text-sm text-[11px] font-outfit md:mt-2 mt-1">
+                                  <img src="/history/video-outline.svg" alt="videocam" className="md:w-7 md:h-7 w-5 h-5" />
+                                  {formatDuration(participant.durationSeconds)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right */}
+                            <div className="flex items-center md:gap-1 gap-[3px]">
+                              <button
+                                type="button"
+                                title={participant.isFriend ? "Message" : (participant.conversationId ? `Message once for ${participant.messageCost ?? 10} coins` : "Message")}
+                                onClick={() => {
+                                  const q = new URLSearchParams({
+                                    chat: participant.conversationId || "",
+                                    userId: participant.userId,
+                                    username: participant.username || "User",
+                                    friend: participant.isFriend ? "1" : "0",
+                                  });
+                                  if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
+                                  router.push(`/inbox?${q.toString()}`);
+                                }}
+                                className="w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                              >
+                                <img
+                                  src="/history/mail.svg"
+                                  alt="message"
+                                  className="w-6 h-6 md:w-8 md:h-8"
+                                />
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={actionBusyId === participant.userId || participant.friendRequestSent || participant.isFriend}
+                                onClick={() => !participant.isFriend && sendFriendRequest(participant.userId)}
+                                className={`w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors disabled:opacity-50 ${participant.isFriend ? 'hidden' : ''}`}
+                                title={participant.isFriend ? "Friends" : (participant.friendRequestSent ? "Friend request sent" : "Send friend request")}
+                              >
+                                <img
+                                  src="/history/heart.svg"
+                                  alt="heart"
+                                  className={`w-6 h-6 md:w-8 md:h-8 ${participant.isFriend ? 'hidden' : ''}`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
               })
             )}
           </div>
 
-          
+
         </div>
 
 
 
-        
+
       </div>
     </div>
   );

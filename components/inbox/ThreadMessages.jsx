@@ -73,7 +73,7 @@ export default function ThreadMessages({
   return (
     <div
       ref={messagesScrollRef}
-      className="flex-1 p-4 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain border border-white/50 md:rounded-[50px] rounded-[28px] mt-3  md:border-none"
+      className="flex-1 p-4 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain border border-white/50 md:rounded-[50px] rounded-[28px] mt-3 md:border-none scrollbar-hide"
     >
       <div className="flex flex-col gap-4">
         {threadHasMore &&

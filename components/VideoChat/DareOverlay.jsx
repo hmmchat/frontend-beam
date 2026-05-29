@@ -78,7 +78,7 @@ export default function DareOverlay({
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Overlay Container */}
-      <div className="absolute z-40 md:bottom-0 bottom-10 left-1/2 -translate-x-1/2 -translate-y-[34%] z-50 flex flex-col items-center md:items-end w-full px-4">
+      <div className="absolute z-50 md:bottom-0 bottom-[0%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4">
         {/* 1st VIEW */}
         {stage === 1 && (
           <div className="flex flex-col items-center md:items-end w-full max-w-[480px] relative">
@@ -114,6 +114,7 @@ export default function DareOverlay({
                 style={{
                   backgroundImage: "url(/assets/mb.jpg)",
                   backgroundSize: "cover",
+                  opacity: 0.9,
                 }}
               />
 
@@ -192,7 +193,7 @@ export default function DareOverlay({
                           onSelectGift(gift.id);
                         }}
                         className={clsx(
-                          "md:min-w-[85px] min-w-[70px] md:rounded-2xl rounded-[11px] md:p-3 py-2 p flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
+                          "md:min-w-[85px] min-w-[23.1%] md:rounded-2xl rounded-[11px] md:p-3 py-2 p flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
                           selectedGiftId === gift.id
                             ? "border-white bg-white/20"
                             : "border-white/60",
@@ -220,7 +221,7 @@ export default function DareOverlay({
         {stage === 2 && (
           <div
             onClick={(e) => e.stopPropagation()}
-            className=" w-full max-w-[360px] border-2 border-white/40 rounded-[32px] p-6  relative overflow-hidden"
+            className=" w-full max-w-[360px] border-32 border-white/40 rounded-[32px] p-6  relative overflow-hidden"
           >
             <div
               className="absolute inset-0"
@@ -370,6 +371,77 @@ export default function DareOverlay({
             </div>
           </button>
         </div>
+      </div>
+
+      {/* Bottom Bar Mobile */}
+      <div className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
+        <div
+          className="absolute inset-0 z-0 pointer-events-auto"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+            opacity: 0.9,
+          }}
+        />
+
+        {!hasSufficientCoins ? (
+          <>
+            <div className="z-10 text-sm text-white">
+              Insufficient balance
+            </div>
+
+            <button
+              onClick={onOpenCoinModal}
+              className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95 pointer-events-auto"
+            >
+              Buy Coins
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="z-10 flex items-center gap-2 text-sm text-white">
+              <span>Spend Coin:</span>
+
+              <span className="flex items-center justify-center gap-1 font-semibold">
+                <img
+                  src="/Coins/coin10.png"
+                  className="w-4 rounded-full"
+                  alt=""
+                />
+                {currentPrice}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={
+                dareAcceptanceStatus !== "accepted" ||
+                !hasSufficientCoins ||
+                !selectedGift
+              }
+              onClick={() => onSendDare && onSendDare()}
+              className={clsx(
+                "group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto transition-all",
+                (dareAcceptanceStatus !== "accepted" || !hasSufficientCoins || !selectedGift)
+                  ? "opacity-40 grayscale"
+                  : "hover:scale-105 active:scale-95"
+              )}
+            >
+              <div
+                className={clsx(
+                  "absolute inset-0 rounded-full flex items-center justify-center shadow-xl border-2 border-black/20",
+                  dareAcceptanceStatus === "accepted" ? "bg-red-600" : "bg-gray-600"
+                )}
+              >
+                <span className="text-white font-black text-[9px] leading-[10px] rotate-[-12deg] uppercase tracking-tight text-center">
+                  Send
+                  <br />
+                  Dare
+                </span>
+              </div>
+            </button>
+          </>
+        )}
       </div>
     </>
   );

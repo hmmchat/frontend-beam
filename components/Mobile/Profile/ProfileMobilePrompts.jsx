@@ -98,8 +98,8 @@ export default function ProfileMobilePrompts({ onBack, user, setUser }) {
         </div>
 
         {/* SUGGESTION CHIPS */}
-        <div className="flex flex-wrap gap-2">
-          {loading ? (
+        <div className={`flex flex-wrap gap-2 transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : ""}`}>
+          {suggestions.length === 0 && loading ? (
             <div className="w-full py-8 flex justify-center">
               <div className="w-6 h-6 border-2 border-white/30 rounded-full animate-spin" />
             </div>

@@ -31,6 +31,7 @@ import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
 import QuickActions from '@/components/video-chat/QuickActions';
 import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserControls';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
+import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
 import DareOverlay from '@/components/VideoChat/DareOverlay';
 import DareProposalOverlay from '@/components/VideoChat/DareProposalOverlay';
 import {
@@ -161,6 +162,9 @@ function VideoChatContent() {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isDareOpen, setIsDareOpen] = useState(false);
+  const [successGift, setSuccessGift] = useState(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successRecipientName, setSuccessRecipientName] = useState('');
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [activeRemoteGift, setActiveRemoteGift] = useState(null);
   const [activeLocalGift, setActiveLocalGift] = useState(null);
@@ -276,7 +280,7 @@ function VideoChatContent() {
       remoteMediaMissingSinceRef.current = null;
       document.querySelectorAll('video').forEach((el) => {
         const pr = el.play?.();
-        if (pr && typeof pr.catch === 'function') pr.catch(() => {});
+        if (pr && typeof pr.catch === 'function') pr.catch(() => { });
       });
     };
 
@@ -411,7 +415,7 @@ function VideoChatContent() {
       el.srcObject = stream;
       const playPromise = el.play?.();
       if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {});
+        playPromise.catch(() => { });
       }
     }
   }, [localMediaGeneration]);
@@ -2005,14 +2009,27 @@ function VideoChatContent() {
         removeRemoteParticipantFromUi(data.kickedUserId, { skipPeerLeftAutoResume: true });
         scheduleCallRoleRefresh();
         if (data.pullStrangerReenabled) {
-          setPullStrangerCooldownSec(PULL_STRANGER_WINDOW_SECONDS);
-          suppressAutoResumeUntilRef.current = Date.now() + (PULL_STRANGER_WINDOW_SECONDS * 1000);
-          roomHealthFailureCountRef.current = 0;
-          setRoomHealthDebug({
-            graceActive: true,
-            graceRemainingSec: PULL_STRANGER_WINDOW_SECONDS,
-            failureCount: 0
-          });
+          setTimeout(() => {
+            setPullStrangerCooldownSec(PULL_STRANGER_WINDOW_SECONDS);
+            suppressAutoResumeUntilRef.current = Date.now() + (PULL_STRANGER_WINDOW_SECONDS * 1000);
+            roomHealthFailureCountRef.current = 0;
+            setRoomHealthDebug({
+              graceActive: true,
+              graceRemainingSec: PULL_STRANGER_WINDOW_SECONDS,
+              failureCount: 0
+            });
+          }, 100);
+        } else if (!callRoles.isLocalHost && remoteStreamsRef.current.length === 1) {
+          setTimeout(() => {
+            setPullStrangerCooldownSec(PULL_STRANGER_WINDOW_SECONDS);
+            suppressAutoResumeUntilRef.current = Date.now() + (PULL_STRANGER_WINDOW_SECONDS * 1000);
+            roomHealthFailureCountRef.current = 0;
+            setRoomHealthDebug({
+              graceActive: true,
+              graceRemainingSec: PULL_STRANGER_WINDOW_SECONDS,
+              failureCount: 0
+            });
+          }, 100);
         }
         break;
       }
@@ -2034,14 +2051,20 @@ function VideoChatContent() {
         }
         scheduleCallRoleRefresh();
         if (data.pullStrangerReenabled) {
-          setPullStrangerCooldownSec(PULL_STRANGER_WINDOW_SECONDS);
-          suppressAutoResumeUntilRef.current = Date.now() + (PULL_STRANGER_WINDOW_SECONDS * 1000);
-          roomHealthFailureCountRef.current = 0;
-          setRoomHealthDebug({
-            graceActive: true,
-            graceRemainingSec: PULL_STRANGER_WINDOW_SECONDS,
-            failureCount: 0
-          });
+          setTimeout(() => {
+            setPullStrangerCooldownSec(PULL_STRANGER_WINDOW_SECONDS);
+            suppressAutoResumeUntilRef.current = Date.now() + (PULL_STRANGER_WINDOW_SECONDS * 1000);
+            roomHealthFailureCountRef.current = 0;
+            setRoomHealthDebug({
+              graceActive: true,
+              graceRemainingSec: PULL_STRANGER_WINDOW_SECONDS,
+              failureCount: 0
+            });
+          }, 100);
+        } else if (callRoles.isLocalHost && remoteStreamsRef.current.length === 1) {
+          setTimeout(() => {
+            handlePullStranger();
+          }, 100);
         }
         break;
       }
@@ -2661,20 +2684,17 @@ function VideoChatContent() {
     const backendGiftId = giftIdMap[selectedGiftId];
 
     try {
-      // Auto-purchase diamonds with coins if sender doesn't have enough diamonds
-      if (diamonds < giftAmount) {
-        const neededDiamonds = giftAmount - diamonds;
-        const neededCoins = neededDiamonds * 100;
-        if (coins < neededCoins) {
-          alert(`Insufficient balance. Dare costs 💎 ${giftAmount}. You have 💎 ${diamonds} and need ${neededDiamonds} more (costs ${neededCoins} coins, available: ${coins} coins).`);
-          return;
-        }
-        // Call purchase endpoint
-        await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
-          method: "POST",
-          body: JSON.stringify({ diamondAmount: neededDiamonds }),
-        });
+      // Always purchase the exact diamond amount needed for the dare from coins, so the sender's existing diamonds are not used/subtracted
+      const neededCoins = giftAmount * 100;
+      if (coins < neededCoins) {
+        alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
+        return;
       }
+      // Call purchase endpoint
+      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+        method: "POST",
+        body: JSON.stringify({ diamondAmount: giftAmount }),
+      });
 
       // Send dare payment to backend
       await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), {
@@ -2704,6 +2724,18 @@ function VideoChatContent() {
           })
         }
       });
+
+      // Show animated success popup
+      const popupGiftObj = {
+        name: giftObj.name,
+        img: giftObj.img,
+        price: giftAmount * 100,
+        diamonds: giftAmount
+      };
+      setSuccessGift(popupGiftObj);
+      setSuccessRecipientName(remoteStreamsRef.current[0]?.name || "Partner");
+      setShowSuccessPopup(true);
+
     } catch (err) {
       console.error("Failed to send dare:", err);
       alert(err.message || "Failed to send dare");
@@ -2740,7 +2772,8 @@ function VideoChatContent() {
     coins,
     selectedGiftId,
     gift: activeLocalGift,
-    onGiftAnimationComplete: handleLocalGiftComplete
+    onGiftAnimationComplete: handleLocalGiftComplete,
+    hideAllControls: !!activeDareProposal
   };
   const getRemoteFriendTileProps = (streamInfo) => {
     const uid = String(streamInfo.userId ?? '');
@@ -3119,7 +3152,7 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
-              showLeaveNextButton={status === 'connected'}
+              showLeaveNextButton={status === 'connected' && callRoles.isLocalHost}
               leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
@@ -3155,7 +3188,7 @@ function VideoChatContent() {
                   gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   className="absolute inset-0 w-full h-full"
-                  showMinusButton={!!remoteStreams[1]}
+                  showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
                 />
                 {/* Summoning overlay — slow rotating ring + cancel + text */}
@@ -3322,7 +3355,7 @@ function VideoChatContent() {
                 showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
                 showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
                 onKickParticipant={() => handleKickRemote(remoteStreams[1].userId)}
-                showLeaveNextButton={status === 'connected'}
+                showLeaveNextButton={status === 'connected' && callRoles.isLocalHost}
                 leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
                 onLeaveOrNext={handleLeaveGroupOrRaincheck}
                 onReportClick={() => setShowGroupMembersModal(true)}
@@ -3331,7 +3364,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
-                showMinusButton={true}
+                showMinusButton={callRoles.isLocalHost}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
               />
               {/* Always render the tile — null stream shows its natural empty background; cancel overlay appears on top while summoning */}
@@ -3355,7 +3388,7 @@ function VideoChatContent() {
                   gift={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   className="absolute inset-0 w-full h-full"
-                  showMinusButton={!!remoteStreams[2]}
+                  showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}
                 />
                 {/* Summoning overlay — slow rotating ring + cancel + text */}
@@ -3463,7 +3496,7 @@ function VideoChatContent() {
           </div>
         )}
 
-        {remoteStreams.length >= 2 && (
+        {remoteStreams.length >= 2 && !activeDareProposal && (
           <MobileMultiUserControls
             toggleCam={localVideoProps.toggleCam}
             isCamOff={localVideoProps.isCamOff}
@@ -3492,6 +3525,13 @@ function VideoChatContent() {
 
         <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
 
+        <GiftSuccessPopup
+          isOpen={showSuccessPopup}
+          onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
+          gift={successGift}
+          recipientName={successRecipientName}
+        />
+
         <GiftOverlay
           isOpen={isGiftModalOpen}
           onClose={() => {
@@ -3506,28 +3546,25 @@ function VideoChatContent() {
             const targetId = remoteStreamsRef.current[0]?.userId;
             if (targetId && roomInfoRef.current?.roomId) {
               try {
-                // Auto-purchase diamonds with coins if sender doesn't have enough diamonds
-                const giftAmount = Number(gift.price) || 0;
-                if (diamonds < giftAmount) {
-                  const neededDiamonds = giftAmount - diamonds;
-                  const neededCoins = neededDiamonds * 100;
-                  if (coins < neededCoins) {
-                    alert(`Insufficient balance. Gift costs 💎 ${giftAmount}. You have 💎 ${diamonds} and need ${neededDiamonds} more (costs ${neededCoins} coins, available: ${coins} coins).`);
-                    return;
-                  }
-                  // Call purchase endpoint
-                  await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
-                    method: "POST",
-                    body: JSON.stringify({ diamondAmount: neededDiamonds }),
-                  });
+                // Always purchase the exact diamond amount needed for the gift from coins, so the sender's existing diamonds are not used/subtracted
+                const coinCost = Number(gift.price) || 0;
+                const diamondAmount = Number(gift.diamonds) || 0;
+                if (coins < coinCost) {
+                  alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+                  return;
                 }
+                // Call purchase endpoint
+                await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+                  method: "POST",
+                  body: JSON.stringify({ diamondAmount: diamondAmount }),
+                });
 
                 // Send the gift call to backend
                 await apiRequest(API.STREAMING.SEND_GIFT(roomInfoRef.current.roomId), {
                   method: "POST",
                   body: JSON.stringify({
                     toUserId: targetId,
-                    amount: giftAmount,
+                    amount: diamondAmount,
                     giftId: gift.id,
                     fromUserId: userIdRef.current
                   })
@@ -3535,6 +3572,11 @@ function VideoChatContent() {
 
                 // Refresh wallet
                 await refreshWallet();
+
+                // Show animated success popup
+                setSuccessGift(gift);
+                setSuccessRecipientName(remoteStreamsRef.current[0]?.name || "Partner");
+                setShowSuccessPopup(true);
 
                 const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
                 send({

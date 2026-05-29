@@ -16,7 +16,14 @@ export default function MeetSomeone() {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [activeMeetingCount, setActiveMeetingCount] = useState(0);
 
-    const [coins] = useState(25500);
+    const [coins, setCoins] = useState(25500);
+    const [genderFilter, setGenderFilter] = useState("ALL");
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+        }
+    }, []);
     const [mode, setMode] = useState('solo'); // solo | squad
     const [filter, setFilter] = useState('both');
 
@@ -152,6 +159,11 @@ export default function MeetSomeone() {
                             <FilterButtons
                                 onGenderClick={() => setIsGenderModalOpen(true)}
                                 onLocationClick={() => setIsLocationModalOpen(true)}
+                                genderLabel={
+                                    genderFilter === "MALE" ? "Male" :
+                                    genderFilter === "FEMALE" ? "Female" :
+                                    genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
+                                }
                                 className="mt-20 mb-20"
                             />
                         </div>
@@ -251,7 +263,15 @@ export default function MeetSomeone() {
 
             {/* Modals */}
             <SignUpModal isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} />
-            <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
+            <GenderModal 
+                isOpen={isGenderModalOpen} 
+                onClose={() => {
+                    setIsGenderModalOpen(false);
+                    setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+                }} 
+                userCoins={coins}
+                onCoinsUpdated={(cost) => setCoins(prev => Math.max(0, prev - cost))}
+            />
             <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
         </div>
     );

@@ -54,9 +54,9 @@ export default function PromptsTab({ user, setUser }) {
   const displayedSuggestions = suggestions.slice(0, 10);
 
   return (
-    <div className="flex h-full w-full flex-col px-6 md:px-10">
+    <div className="flex h-full w-full flex-col px-6 md:px-10 [@media(max-height:650px)]:scale-[0.50]">
       {/* Prompt Box */}
-      <div className="flex-shrink-0 border-[2px] border-white/50 rounded-[2rem] p-5 py-6 text-center text-sm text-white/90 mb-5">
+      <div className="flex-shrink-0 border-[2px] border-white/50 rounded-[2rem] p-5 py-6 text-center text-sm text-white/90 mb-5 ">
         <textarea
           rows={5}
           value={localIntent}
@@ -91,8 +91,8 @@ export default function PromptsTab({ user, setUser }) {
         </div>
 
         {/* Chips — strictly 5 rows max, no scrolling */}
-        <div className="flex flex-wrap gap-2 max-h-[310px] overflow-hidden pb-1">
-          {loading ? (
+        <div className={`flex flex-wrap gap-2 max-h-[310px] overflow-hidden pb-1 transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : ""}`}>
+          {displayedSuggestions.length === 0 && loading ? (
             <div className="w-full py-8 flex justify-center">
               <div className="w-6 h-6 border-2 border-white/30 rounded-full animate-spin" />
             </div>

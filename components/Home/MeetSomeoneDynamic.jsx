@@ -77,6 +77,13 @@ export default function MeetSomeoneDynamic() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [myProfile, setMyProfile] = useState(null);
   const [squadInviteOpen, setSquadInviteOpen] = useState(false);
+  const [genderFilter, setGenderFilter] = useState("ALL");
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+    }
+  }, []);
   const [squadLobby, setSquadLobby] = useState(null);
   const [squadMeetBusy, setSquadMeetBusy] = useState(false);
   const [squadShareBusy, setSquadShareBusy] = useState(false);
@@ -93,6 +100,7 @@ export default function MeetSomeoneDynamic() {
   const [isResumeLoading, setIsResumeLoading] = useState(false);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
+  const [waitingMessage, setWaitingMessage] = useState("Maybe they fainted, you're that hot!");
   const [waitingMatchedUser, setWaitingMatchedUser] = useState(null);
   const [matchedRoom, setMatchedRoom] = useState(null);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
@@ -107,6 +115,37 @@ export default function MeetSomeoneDynamic() {
     return true;
   });
   const [discoveryBlockedByOtherTab, setDiscoveryBlockedByOtherTab] = useState(false);
+
+  useEffect(() => {
+    let messageInterval = null;
+
+    const fetchWaitingMessage = async () => {
+      try {
+        const res = await apiRequest(API.DISCOVERY.MEET_RN_WAITING_MESSAGE);
+        if (res && res.ok && res.message) {
+          setWaitingMessage(res.message);
+        }
+      } catch (err) {
+        console.error('Error fetching waiting message:', err);
+      }
+    };
+
+    if (waitingForMatch) {
+      // Fetch once immediately
+      void fetchWaitingMessage();
+      // Then poll every 5s
+      messageInterval = setInterval(fetchWaitingMessage, 5000);
+    } else {
+      // Reset back to default
+      setWaitingMessage("Maybe they fainted, you're that hot!");
+    }
+
+    return () => {
+      if (messageInterval) {
+        clearInterval(messageInterval);
+      }
+    };
+  }, [waitingForMatch]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1884,6 +1923,128 @@ export default function MeetSomeoneDynamic() {
     };
   }, [isSearching, waitingForMatch, swiping, sessionId, mode]);
 
+  const toggleFullscreen = () => {
+    try {
+      const doc = window.document;
+      const docEl = doc.documentElement;
+
+      const requestFullScreen =
+        docEl.requestFullscreen ||
+        docEl.mozRequestFullScreen ||
+        docEl.webkitRequestFullScreen ||
+        docEl.msRequestFullscreen;
+
+      const cancelFullScreen =
+        doc.exitFullscreen ||
+        doc.mozCancelFullScreen ||
+        doc.webkitExitFullscreen ||
+        doc.msExitFullscreen;
+
+      if (
+        !doc.fullscreenElement &&
+        !doc.mozFullScreenElement &&
+        !doc.webkitFullscreenElement &&
+        !doc.msFullscreenElement
+      ) {
+        if (requestFullScreen) {
+          requestFullScreen.call(docEl).catch((err) => {
+            console.error("Error attempting to enable fullscreen:", err);
+          });
+        }
+      } else {
+        if (cancelFullScreen) {
+          cancelFullScreen.call(doc);
+        }
+      }
+    } catch (error) {
+      console.error("Fullscreen toggle error:", error);
+    }
+  };
+
+  const renderMatchButtons = (isDesktop = false) => {
+    if (waitingForMatch) {
+      return (
+        <div className={clsx(
+          'flex', 'items-center', 'gap-3',
+          isDesktop ? 'h-[42px] px-3' : 'py-2 px-4', 'backdrop-blur-md', 'w-full'
+        )}>
+          <button onClick={handleCancelWaiting} className="text-white hover:text-white/80 transition text-lg shrink-0">
+            <IoClose className="w-5 h-5" />
+          </button>
+          <div className="flex-grow text-center pr-5">
+            <div className={clsx('text-white', 'font-bold', isDesktop ? 'text-[11px] leading-tight' : 'text-xs sm:text-sm')}>
+              Waiting for response.
+            </div>
+            <div className={clsx('text-white/85', 'font-normal', isDesktop ? 'text-[9px] leading-none' : 'text-[10px] sm:text-xs mt-0.5')}>
+              {waitingMessage}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isDesktop) {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRaincheck}
+            className={clsx(
+              'w-[110px]',
+              'h-[42px]',
+              'flex',
+              'items-center',
+              'justify-center',
+              'rounded-full',
+              'border',
+              'border-white/30',
+              'text-white',
+              'text-xs',
+              'whitespace-nowrap',
+              'hover:bg-white/10',
+              'transition',
+              'active:scale-95'
+            )}
+          >
+            Raincheck!
+          </button>
+
+          <button
+            onClick={handleProceed}
+            className={clsx(
+              'w-[110px]',
+              'h-[42px]',
+              'flex',
+              'items-center',
+              'justify-center',
+              'rounded-full',
+              'border',
+              'border-white/30',
+              'text-white',
+              'text-xs',
+              'whitespace-nowrap',
+              'hover:bg-white/10',
+              'transition',
+              'active:scale-95'
+            )}
+          >
+            Meet rn
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
+        <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+          Raincheck!
+        </button>
+        <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
+          Meet rn
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
 
@@ -1933,6 +2094,8 @@ export default function MeetSomeoneDynamic() {
                 refreshSquadLobby={refreshSquadLobby}
                 loadQuickInviteFriends={loadQuickInviteFriends}
                 squadProductMessage={squadProductMessage}
+                isVideoOn={isVideoOn}
+                onVideoClick={() => setIsVideoOn(!isVideoOn)}
               />
             </div>
           )}
@@ -1997,20 +2160,17 @@ export default function MeetSomeoneDynamic() {
                       </div>
                       <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
                         <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
-                          <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-                            <IoIosArrowBack />
-                          </button>
-                          <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
-                            <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-                              Raincheck!
+                          {!waitingForMatch && (
+                            <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                              <IoIosArrowBack />
                             </button>
-                            <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-                              Meet rn
+                          )}
+                          {renderMatchButtons()}
+                          {!waitingForMatch && (
+                            <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                              <IoIosArrowForward />
                             </button>
-                          </div>
-                          <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-                            <IoIosArrowForward />
-                          </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2032,23 +2192,19 @@ export default function MeetSomeoneDynamic() {
                     <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
                       <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3', 'mx-auto')}>
 
-                        <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-                          <IoIosArrowBack />
-                        </button>
-
-                        <div className={clsx('flex', 'flex-1', 'items-center', 'gap-3')}>
-                          <button onClick={handleRaincheck} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-                            Raincheck!
+                        {!waitingForMatch && (
+                          <button onClick={handlePrevImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                            <IoIosArrowBack />
                           </button>
+                        )}
 
-                          <button onClick={handleProceed} className={clsx('flex-1', 'py-3', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-sm', 'backdrop-blur-md', 'hover:bg-white/10', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]', 'hover:scale-105', 'transition-all', 'duration-300', 'active:scale-95')}>
-                            Meet rn
+                        {renderMatchButtons()}
+
+                        {!waitingForMatch && (
+                          <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
+                            <IoIosArrowForward />
                           </button>
-                        </div>
-
-                        <button onClick={handleNextImage} className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'rounded-full', 'border', 'border-white/30', 'text-white', 'text-2xl', 'backdrop-blur-md', 'hover:bg-white/10', 'transition', 'active:scale-90')}>
-                          <IoIosArrowForward />
-                        </button>
+                        )}
 
                       </div>
                     </div>
@@ -2123,9 +2279,9 @@ export default function MeetSomeoneDynamic() {
                     router.push('/history');
                   }
                 }}
-                className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'transition-all', 'duration-300')}
+                className={clsx('group', 'w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'rounded-full', 'transition-all', 'duration-300')}
               >
-                <img src="/assets/history.svg" className={clsx('w-7', 'h-7')} alt="History" />
+                <img src="/assets/history.svg" className={clsx('w-7', 'h-7', 'transition-transform', 'duration-300', 'group-hover:scale-110')} alt="History" />
               </button>
 
 
@@ -2138,6 +2294,7 @@ export default function MeetSomeoneDynamic() {
                   }
                 }}
                 className={clsx(
+                  'group',
                   'w-10',
                   'md:w-[35.6px]',
                   'h-10',
@@ -2147,7 +2304,6 @@ export default function MeetSomeoneDynamic() {
                   'justify-center',
                   'hover:bg-white/20',
                   'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]',
-                  'hover:scale-110',
                   'rounded-full',
                   'relative',
                   'transition-all',
@@ -2156,9 +2312,11 @@ export default function MeetSomeoneDynamic() {
               >
                 <img
                   src="/assets/chattopicon.svg"
-                  className={clsx('w-6', 'h-6')}
+                  className={clsx('w-6', 'h-6', 'transition-transform', 'duration-300', 'group-hover:scale-110')}
                   alt="Messages"
                 />
+
+                <span className="border rounded-full h-2 w-2   -right-2  absolute top-3   "> </span>
 
                 {unreadCount > 0 && (
                   <span
@@ -2190,13 +2348,13 @@ export default function MeetSomeoneDynamic() {
                     router.push('/profile/');
                   }
                 }}
-                className={clsx('w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'hover:scale-110', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}
+                className={clsx('group', 'w-10', 'md:w-[35.6px]', 'h-10', 'md:h-[35.6px]', 'flex', 'items-center', 'justify-center', 'hover:bg-white/20', 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]', 'rounded-full', 'overflow-hidden', 'my-auto', 'transition-all', 'duration-300')}
               >
                 {myProfile ? (
                   <img
                     src={myProfile.displayPictureUrl}
                     onError={(e) => e.currentTarget.src}
-                    className={clsx('w-8', 'h-8', 'object-cover', 'rounded-full')}
+                    className={clsx('w-8', 'h-8', 'object-cover', 'rounded-full', 'transition-transform', 'duration-300', 'group-hover:scale-110')}
                   />
                 ) : (
                   <div className={clsx('w-full', 'h-full', 'bg-white/20', 'animate-pulse', 'rounded-full')} />
@@ -2222,19 +2380,20 @@ export default function MeetSomeoneDynamic() {
             <div className={clsx('absolute', 'top-4', 'md:top-18', 'right-16', 'z-50', 'flex', 'gap-2', isSearching && 'hidden')}>
 
               <Link href="/beam-tv">
-                <button className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-                  <img src="/crown.svg" alt="crown" className={clsx('h-6', 'w-6')} />
+                <button className={clsx('group', 'md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+                  <img src="/crown.svg" alt="crown" className={clsx('h-6', 'w-6', 'transition-transform', 'duration-300', 'group-hover:scale-110')} />
                 </button>
               </Link>
 
 
 
-              <Link href="/onboarding?intent=1">
+              <div>
                 <button
-                  className={clsx('md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
-                  <img src="/icon1.svg" alt="Prompt" className={clsx('h-6', 'w-6')} />
+                  onClick={toggleFullscreen}
+                  className={clsx('group', 'md:h-[55px]', 'md:w-[55px]', 'h-10', 'w-10', 'rounded-full', 'border-[1px]', 'border-b-[3px]', 'border-white/60', 'shadow-md', 'transition-all', 'duration-300', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]', 'items-center', 'justify-center', 'flex')}>
+                  <img src="/icon1.svg" alt="Prompt" className={clsx('h-6', 'w-6', 'transition-transform', 'duration-300', 'group-hover:scale-110')} />
                 </button>
-              </Link>
+              </div>
 
 
 
@@ -2277,6 +2436,11 @@ export default function MeetSomeoneDynamic() {
                     <FilterButtons
                       onGenderClick={() => setIsGenderModalOpen(true)}
                       onLocationClick={() => setIsLocationModalOpen(true)}
+                      genderLabel={
+                        genderFilter === "MALE" ? "Male" :
+                          genderFilter === "FEMALE" ? "Female" :
+                            genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
+                      }
                       locationLabel={myProfile?.preferredCity === 'ANYWHERE_IN_INDIA' ? 'Anywhere' : (myProfile?.preferredCity || 'Anywhere')}
                       className={clsx('text-white')}
                     />
@@ -2345,68 +2509,25 @@ export default function MeetSomeoneDynamic() {
                                   >
 
                                     {/* LEFT ARROW */}
-                                    <button
-                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
-                                    >
-                                      <IoIosArrowBack />
-                                    </button>
+                                    {!waitingForMatch && (
+                                      <button
+                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
+                                      >
+                                        <IoIosArrowBack />
+                                      </button>
+                                    )}
 
                                     {/* CENTER BUTTONS */}
-                                    <div className="flex items-center gap-2">
-
-                                      <button
-                                        onClick={handleRaincheck}
-                                        className={clsx(
-                                          'w-[110px]',
-                                          'h-[42px]',
-                                          'flex',
-                                          'items-center',
-                                          'justify-center',
-                                          'rounded-full',
-                                          'border',
-                                          'border-white/30',
-                                          'text-white',
-                                          'text-[12px]',
-                                          'whitespace-nowrap',
-                                          'hover:bg-white/10',
-                                          'transition',
-                                          'active:scale-95'
-                                        )}
-                                      >
-                                        Raincheck!
-                                      </button>
-
-                                      <button
-                                        onClick={handleProceed}
-                                        className={clsx(
-                                          'w-[110px]',
-                                          'h-[42px]',
-                                          'flex',
-                                          'items-center',
-                                          'justify-center',
-                                          'rounded-full',
-                                          'border',
-                                          'border-white/30',
-                                          'text-white',
-                                          'text-[12px]',
-                                          'whitespace-nowrap',
-                                          'hover:bg-white/10',
-                                          'transition',
-                                          'active:scale-95'
-                                        )}
-                                      >
-                                        Meet rn
-                                      </button>
-
-                                    </div>
+                                    {renderMatchButtons(true)}
 
                                     {/* RIGHT ARROW */}
-                                    <button
-                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
-                                    >
-                                      <IoIosArrowForward />
-                                    </button>
-
+                                    {!waitingForMatch && (
+                                      <button
+                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
+                                      >
+                                        <IoIosArrowForward />
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               ) : (
@@ -2436,88 +2557,45 @@ export default function MeetSomeoneDynamic() {
                                   >
 
                                     {/* LEFT ARROW */}
-                                    <button
-                                      onClick={handlePrevImage}
-                                      className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
-                                      <IoIosArrowBack />
-                                    </button>
+                                    {!waitingForMatch && (
+                                      <button
+                                        onClick={handlePrevImage}
+                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
+                                        <IoIosArrowBack />
+                                      </button>
+                                    )}
 
                                     {/* CENTER BUTTONS */}
-                                    <div className="flex items-center gap-2">
-
-                                      <button
-                                        onClick={handleRaincheck}
-                                        className={clsx(
-                                          'w-[110px]',
-                                          'h-[42px]',
-                                          'flex',
-                                          'items-center',
-                                          'justify-center',
-                                          'rounded-full',
-                                          'border',
-                                          'border-white/30',
-                                          'text-white',
-                                          'text-xs',
-                                          'whitespace-nowrap',
-                                          'hover:bg-white/10',
-                                          'transition',
-                                          'active:scale-95'
-                                        )}
-                                      >
-                                        Raincheck!
-                                      </button>
-
-                                      <button
-                                        onClick={handleProceed}
-                                        className={clsx(
-                                          'w-[110px]',
-                                          'h-[42px]',
-                                          'flex',
-                                          'items-center',
-                                          'justify-center',
-                                          'rounded-full',
-                                          'border',
-                                          'border-white/30',
-                                          'text-white',
-                                          'text-xs',
-                                          'whitespace-nowrap',
-                                          'hover:bg-white/10',
-                                          'transition',
-                                          'active:scale-95'
-                                        )}
-                                      >
-                                        Meet rn
-                                      </button>
-
-                                    </div>
+                                    {renderMatchButtons(true)}
 
                                     {/* RIGHT ARROW */}
-                                    <button
-                                      onClick={handleNextImage}
-                                      className={clsx(
-                                        'relative',
-                                        'z-[110]',
-                                        'w-10',
-                                        'h-10',
-                                        'rounded-full',
-                                        'border',
-                                        'border-white/40',
-                                        'flex',
-                                        'items-center',
-                                        'justify-center',
-                                        'text-white',
-                                        'text-2xl',
-                                        'hover:bg-white/10',
-                                        'transition',
-                                        'active:scale-75',
-                                        'cursor-pointer',
-                                        'backdrop-blur-sm',
-                                        'shrink-0'
-                                      )}
-                                    >
-                                      <IoIosArrowForward />
-                                    </button>
-
+                                    {!waitingForMatch && (
+                                      <button
+                                        onClick={handleNextImage}
+                                        className={clsx(
+                                          'relative',
+                                          'z-[110]',
+                                          'w-10',
+                                          'h-10',
+                                          'rounded-full',
+                                          'border',
+                                          'border-white/40',
+                                          'flex',
+                                          'items-center',
+                                          'justify-center',
+                                          'text-white',
+                                          'text-2xl',
+                                          'hover:bg-white/10',
+                                          'transition',
+                                          'active:scale-75',
+                                          'cursor-pointer',
+                                          'backdrop-blur-sm',
+                                          'shrink-0'
+                                        )}
+                                      >
+                                        <IoIosArrowForward />
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               )}
@@ -2632,11 +2710,11 @@ export default function MeetSomeoneDynamic() {
                     {/* Circles + Share: one column, small gap so the two stacks read as one unit above Invite */}
                     <div className={clsx('flex w-full shrink-0 flex-col items-center gap-2 text-center md:gap-2.5')}>
                       <div className={clsx('w-full shrink-0 text-center')}>
-                        <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-4')}>
+                        <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-6')}>
                           {/* Me */}
                           <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
                             <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                              <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                              <div className={clsx('relative', 'w-16', 'h-16', 'md:w-22', 'md:h-22', 'overflow-visible')}>
                                 <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
                                   <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
                                 </div>
@@ -2644,13 +2722,13 @@ export default function MeetSomeoneDynamic() {
                               <span className="text-xs">Me</span>
                             </div>
                           </div>
-                          {squadGuestIds.map((guestId, i) => (
-                            <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
+                          {squadGuestIds.slice(0, 2).map((guestId, i) => (
+                            <div key={`g-${i}`} className={clsx('flex', 'items-center', 'gap-2', 'md:gap-6')}>
                               <div className={clsx('flex shrink-0 items-center self-center')}>
-                                <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-70')} />
+                                <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'mb-3 ', 'opacity-90')} />
                               </div>
-                              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
-                                <div className={clsx('relative', 'w-16', 'h-16', 'md:w-20', 'md:h-20', 'overflow-visible')}>
+                              <div className={clsx('flex', 'flex-col', 'items-center')}>
+                                <div className={clsx('relative', 'w-16', 'h-16', 'md:w-22', 'md:h-22', 'overflow-visible')}>
                                   <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
                                     {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
                                       <img src={guestProfiles[guestId].displayPictureUrl} alt="" className={clsx('w-full', 'h-full', 'object-cover')} />
@@ -2930,7 +3008,17 @@ export default function MeetSomeoneDynamic() {
         />
 
         {/* Modals */}
-        <GenderModal isOpen={isGenderModalOpen} onClose={() => setIsGenderModalOpen(false)} />
+        <GenderModal
+          isOpen={isGenderModalOpen}
+          onClose={() => {
+            setIsGenderModalOpen(false);
+            setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+          }}
+          userCoins={coins}
+          onCoinsUpdated={(cost) => {
+            setCoins(prev => Math.max(0, prev - cost));
+          }}
+        />
         <LocationModal
           isOpen={isLocationModalOpen}
           onClose={() => {

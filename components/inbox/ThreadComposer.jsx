@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { IoSendSharp } from "react-icons/io5";
-import GiftModal from "../Home/GiftModal";
+import GiftOverlay from "@/components/VideoChat/GiftOverlay";
 import clsx from 'clsx';
 import { FaRegFaceSmile, FaRegImages } from "react-icons/fa6";
 import EmojiPicker from "./EmojiPicker";
@@ -16,8 +16,7 @@ export default function ThreadComposer({
   firstMessageCost,
   isGiftModalOpen,
   setIsGiftModalOpen,
-  giftModalItems,
-  giftsCatalogLoading,
+  // giftModalItems and giftsCatalogLoading no longer needed — GiftOverlay fetches its own catalog
   sendMessage,
   emitTyping,
   typingTimerRef,
@@ -25,10 +24,10 @@ export default function ThreadComposer({
   const inputRef = useRef(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState(null);
 
   useEffect(() => {
     const onDoc = (e) => {
-      // close pickers on outside click
       const t = e.target;
       if (!t) return;
       if (t.closest?.("[data-emoji-root]")) return;
@@ -61,22 +60,12 @@ export default function ThreadComposer({
     });
     emitTyping(Boolean(next.trim()));
   };
- 
+
   return (
     <>
-      {/* <div className={clsx('px-4', 'md:px-6', 'pt-3', 'pb-1', 'flex', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-0.5', 'text-[10px]', 'font-semibold', 'text-white/70', 'md:hidden')}>
-        {walletCoins != null ? (
-          <span>{walletCoins} coins</span>
-        ) : (
-          <span className="text-white/45">Wallet…</span>
-        )}
-        <span className="text-white/35">·</span>
-        <span>1st text ~{firstMessageCost} coins</span>
-      </div> */}
       <div className={clsx('px-2', 'md:p-4', 'pt-4', 'md:pt-6', 'flex', 'items-center', 'gap-3')}>
         <div className={clsx('relative', 'flex-1')}>
-          {/* z-index: input is painted after these in DOM; without z-20 the full-width input covers the icons */}
-          <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2 ">
+          <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2">
             <button
               type="button"
               onClick={() => { setEmojiOpen((o) => !o); setGifOpen(false); }}
@@ -135,7 +124,6 @@ export default function ThreadComposer({
             </div>
           )}
 
-          {/* GIF picker placeholder: wired up in the parent via `sendMessage(gif)` */}
           {gifOpen && (
             <div className="absolute bottom-[calc(100%+10px)] left-0 z-[80] w-[20rem] max-w-[90vw]" data-gif-root>
               <GifPicker
@@ -148,6 +136,7 @@ export default function ThreadComposer({
           )}
         </div>
 
+        {/* Gift button */}
         <button
           type="button"
           onClick={() => setIsGiftModalOpen(true)}
@@ -166,12 +155,19 @@ export default function ThreadComposer({
         </button>
       </div>
 
-      <GiftModal
+      {/* Gift Overlay — same component as video-chat and /cards */}
+      <GiftOverlay
         isOpen={isGiftModalOpen}
-        onClose={() => setIsGiftModalOpen(false)}
-        onSelectGift={(gift) => sendMessage(gift)}
-        catalogGifts={giftModalItems}
-        catalogLoading={giftsCatalogLoading}
+        onClose={() => { setIsGiftModalOpen(false); setSelectedGiftId(null); }}
+        onOpenCoinModal={() => {}}
+        onSelectGift={(gift) => setSelectedGiftId(gift.id)}
+        selectedGiftId={selectedGiftId}
+        coins={walletCoins ?? 0}
+        onSendGift={(gift) => {
+          sendMessage(gift);
+          setIsGiftModalOpen(false);
+          setSelectedGiftId(null);
+        }}
       />
     </>
   );

@@ -6,15 +6,12 @@ import { API, apiRequest } from "@/lib/api";
 
 import MobileHome from "@/components/Mobile/MobileHome";
 import DesktopHome from "@/components/Mobile/DesktopHome";
-import HomeSkeleton from "@/components/Home/HomeSkeleton";
+
 import { clearPendingReferralCode } from "@/components/CaptureReferralFromUrl";
 
 const MeetSomeoneDynamic = dynamic(
   () => import("@/components/Home/MeetSomeoneDynamic"),
-  {
-    ssr: false,
-    loading: () => <HomeSkeleton />,
-  },
+
 );
 
 const MyComponent = () => {
@@ -89,15 +86,13 @@ const MyComponent = () => {
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
       localStorage.removeItem("currentRoom");
-    } catch (_) {}
+    } catch (_) { }
   }, [authChecked, isLoggedIn]);
 
 
 
 
-  if (!isMounted || !authChecked || !profileChecked) {
-    return <HomeSkeleton />;
-  }
+
 
   if (isLoggedIn && profileComplete) {
     return <MeetSomeoneDynamic />;

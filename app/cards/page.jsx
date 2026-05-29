@@ -5,38 +5,14 @@ import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 import FaceCard2 from '@/components/Home/FaceCard2';
-import GiftModal from '@/components/Home/GiftModal';
+import GiftOverlay from '@/components/VideoChat/GiftOverlay';
+import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
 import clsx from 'clsx';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 
 // Stable session ID for this page visit (backend adds offline- prefix)
 function makeSessionId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-const PRESET_GIFT_IMAGES = [
-  "/gift/gift1.png", "/gift/gift2.png", "/gift/gift3.png", "/gift/gift4.png",
-  "/gift/gift5.png", "/gift/gift6.png", "/gift/gift7.png", "/gift/gift8.png",
-];
-
-function fallbackPresetGiftImagePath(giftId) {
-  if (!giftId || typeof giftId !== "string") return PRESET_GIFT_IMAGES[0];
-  let h = 0;
-  for (let i = 0; i < giftId.length; i++) {
-    h = Math.imul(31, h) + giftId.charCodeAt(i) | 0;
-  }
-  const idx = (Math.abs(h) % PRESET_GIFT_IMAGES.length) + 1;
-  return `/gift/gift${idx}.png`;
-}
-
-function mapCatalogToModalGifts(rows) {
-  if (!rows?.length) return [];
-  return rows.map((g) => ({
-    id: g.giftId,
-    name: `${g.emoji || ""} ${g.name}`.trim(),
-    price: g.diamonds ?? g.coins ?? 0,
-    image: (g.imageUrl && String(g.imageUrl).trim()) || fallbackPresetGiftImagePath(g.giftId),
-  }));
 }
 
 export default function OfflineCardsPage() {
@@ -51,9 +27,10 @@ export default function OfflineCardsPage() {
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
-  const [giftModalItems, setGiftModalItems] = useState(null);
-  const [giftsCatalogLoading, setGiftsCatalogLoading] = useState(false);
-  const [walletCoins, setWalletCoins] = useState(null);
+  const [selectedGift, setSelectedGift] = useState(null);
+  const [walletCoins, setWalletCoins] = useState(0);
+  const [successGift, setSuccessGift] = useState(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   // ── fetch next card ──────────────────────────────────────────────────────
   const fetchCard = useCallback(async () => {
@@ -87,27 +64,14 @@ export default function OfflineCardsPage() {
 
   useEffect(() => { fetchCard(); }, [fetchCard]);
 
-  // ── load gift catalog ────────────────────────────────────────────────────
+  // ── load wallet balance ──────────────────────────────────────────────────
   useEffect(() => {
-    const loadGiftCatalog = async () => {
-      setGiftsCatalogLoading(true);
-      try {
-        const data = await apiRequest(API.FRIENDS.GET_GIFT_CATALOG);
-        const mapped = mapCatalogToModalGifts(data?.gifts || []);
-        setGiftModalItems(mapped.length ? mapped : null);
-      } catch {
-        setGiftModalItems(null);
-      } finally {
-        setGiftsCatalogLoading(false);
-      }
-    };
     const loadWallet = async () => {
       try {
         const b = await apiRequest(API.WALLET.GET_BALANCE);
-        setWalletCoins(typeof b?.balance === 'number' ? b.balance : null);
-      } catch { setWalletCoins(null); }
+        setWalletCoins(typeof b?.balance === 'number' ? b.balance : 0);
+      } catch { setWalletCoins(0); }
     };
-    loadGiftCatalog();
     loadWallet();
   }, []);
 
@@ -184,27 +148,59 @@ export default function OfflineCardsPage() {
   const handleSendGift = async (gift) => {
     if (!card || !gift) return;
     try {
-      const token = localStorage.getItem('accessToken');
-      // Find or create a conversation first, then send gift message
-      const res = await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ toUserId: card.userId }),
-      }).catch(() => null); // ignore if already friends
+      const coinCost = Number(gift.price) || 0;
+      const diamondAmount = Number(gift.diamonds) || 0;
 
-      // Navigate to inbox with gift context
-      const q = new URLSearchParams({
-        userId: card.userId,
-        username: card.username || 'User',
-        friend: '0',
-        giftId: gift.id,
-        giftAmount: String(gift.price),
+      // Check coin balance
+      if (walletCoins < coinCost) {
+        alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins} coins.`);
+        return;
+      }
+
+      // 1. Purchase diamonds with coins first (so existing diamonds are not deducted)
+      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+        method: "POST",
+        body: JSON.stringify({ diamondAmount }),
       });
-      if (card.displayPictureUrl) q.set('photo', card.displayPictureUrl);
+
+      // 2. Send the gift
+      await apiRequest(API.STREAMING.SEND_OFFLINE_GIFT, {
+        method: 'POST',
+        body: JSON.stringify({
+          toUserId: card.userId,
+          amount: diamondAmount,
+          giftId: gift.id,
+        }),
+      });
+
+      // 3. Automatically send friend request if not already sent
+      if (!connectSent) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ toUserId: card.userId }),
+          });
+          setConnectSent(true);
+        } catch (friendErr) {
+          console.error('[OfflineCards] auto friend request error:', friendErr);
+        }
+      }
+
+      // Deduct coins locally
+      setWalletCoins((prev) => Math.max(0, prev - coinCost));
+
+      // Close modal and reset selection
       setIsGiftModalOpen(false);
-      router.push(`/inbox?${q.toString()}`);
+      
+      // Store sent gift and open success popup
+      setSuccessGift(gift);
+      setShowSuccessPopup(true);
+      setSelectedGift(null);
     } catch (err) {
       console.error('[OfflineCards] gift error:', err);
+      alert(err.message || 'Failed to send gift. Please try again.');
     }
   };
 
@@ -267,21 +263,17 @@ export default function OfflineCardsPage() {
           className="relative w-full h-full flex flex-col items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] w-[98vw] md:w-[800px]">
+          <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] w-[98vw] md:w-[750px]">
 
             {/* FaceCard */}
             <div className="origin-top w-full flex justify-center transition-transform mt-3 sm:mt-0
-              md:[@media(max-height:2100px)]:scale-[0.95]
-              md:[@media(max-height:2000px)]:scale-[0.90]
-              md:[@media(max-height:1900px)]:scale-[0.87]
-              md:[@media(max-height:1800px)]:scale-[0.85]
-              md:[@media(max-height:1700px)]:scale-[0.88]
-              md:[@media(max-height:1500px)]:scale-[0.87]
-              md:[@media(max-height:1200px)]:scale-[0.87]
-              md:[@media(max-height:1000px)]:scale-[0.86]
-              md:[@media(max-height:800px)]:scale-[0.86]
-              md:[@media(max-height:700px)]:scale-[0.80]
-              md:[@media(max-height:600px)]:scale-[0.80]
+        
+
+       [@media(max-height:1000px)]:scale-[0.90] 
+          
+    [@media(max-height:800px)]:scale-[0.80] 
+       
+       
             ">
               <FaceCard2
                 user={{
@@ -298,187 +290,219 @@ export default function OfflineCardsPage() {
             </div>
 
             {/* ── DESKTOP BOTTOM BAR ── */}
-            <div className="absolute bottom-8 w-full px-12 z-50 hidden md:flex items-center justify-between">
+            <div className="absolute bottom-8 left-0 right-0 w-full px-12 z-50 hidden md:flex items-center h-16">
+              {!isGiftModalOpen && (
+                <>
+                  {/* Left group: X · Message · Heart */}
+                  <div className="absolute left-12 flex gap-3 items-center">
+                    <button
+                      type="button"
+                      onClick={handlePass}
+                      disabled={swiping}
+                      className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-2xl disabled:opacity-40 active:scale-95"
+                      aria-label="Pass"
+                    >
+                      ✕
+                    </button>
 
-              {/* Left group: X · Message · Heart */}
-              <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleMessage}
+                      className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                      aria-label="Message"
+                    >
+                      <img src="/history/mail.svg" alt="message" className="w-8 h-8" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConnect}
+                      disabled={connectSent}
+                      className={clsx(
+                        'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-colors',
+                        connectSent
+                          ? 'border-green-400/60 bg-green-500/20 cursor-default'
+                          : 'border-white/40 hover:bg-white/10 active:scale-95'
+                      )}
+                      title={connectSent ? 'Friend request sent' : 'Send friend request'}
+                      aria-label="Connect"
+                    >
+                      <img
+                        src="/history/heart.svg"
+                        alt="heart"
+                        className={clsx('w-8 h-8', connectSent && 'opacity-60')}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Center group: ← → photo nav */}
+                  <div className="absolute left-1/2 flex gap-3 items-center" style={{ transform: 'translateX(-50%)' }}>
+                    <button
+                      onClick={handlePrevImage}
+                      disabled={allPhotos.length <= 1}
+                      className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      aria-label="Previous photo"
+                    >
+                      <IoIosArrowBack />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      disabled={allPhotos.length <= 1}
+                      className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      aria-label="Next photo"
+                    >
+                      <IoIosArrowForward />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Right group: Gift */}
+              <div className="absolute right-12 flex items-center">
                 <button
                   type="button"
-                  onClick={handlePass}
-                  disabled={swiping}
-                  className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-2xl disabled:opacity-40 active:scale-95"
-                  aria-label="Pass"
-                >
-                  ✕
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleMessage}
-                  className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-                  aria-label="Message"
-                >
-                  <img src="/history/mail.svg" alt="message" className="w-8 h-8" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleConnect}
-                  disabled={connectSent}
-                  className={clsx(
-                    'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-colors',
-                    connectSent
-                      ? 'border-green-400/60 bg-green-500/20 cursor-default'
-                      : 'border-white/40 hover:bg-white/10 active:scale-95'
-                  )}
-                  title={connectSent ? 'Friend request sent' : 'Send friend request'}
-                  aria-label="Connect"
+                  onClick={() => {
+                    if (isGiftModalOpen && selectedGift) {
+                      const hasSufficientCoins = walletCoins >= (selectedGift.price || 0);
+                      if (hasSufficientCoins) {
+                        handleSendGift(selectedGift);
+                      }
+                    } else {
+                      setIsGiftModalOpen(!isGiftModalOpen);
+                    }
+                  }}
+                  className={clsx('w-16 h-16 flex items-center justify-center border-3 border-b-6 border-[#13133b] rounded-full active:scale-95 transition-transform relative group')}
+                  aria-label="Send gift"
                 >
                   <img
-                    src="/history/heart.svg"
-                    alt="heart"
-                    className={clsx('w-8 h-8', connectSent && 'opacity-60')}
+                    src="/circle.png"
+                    alt=""
+                    className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                  />
+                  <img
+                    src="/giftboc.png"
+                    alt="gift"
+                    className="relative w-8 h-8 object-contain group-hover:rotate-12 transition-transform"
                   />
                 </button>
               </div>
-
-              {/* Center group: ← → photo nav */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handlePrevImage}
-                  disabled={allPhotos.length <= 1}
-                  className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                  aria-label="Previous photo"
-                >
-                  <IoIosArrowBack />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  disabled={allPhotos.length <= 1}
-                  className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                  aria-label="Next photo"
-                >
-                  <IoIosArrowForward />
-                </button>
-              </div>
-
-              {/* Right group: Gift */}
-              <button
-                type="button"
-                onClick={() => setIsGiftModalOpen(true)}
-                className={clsx('w-16 h-16 flex items-center justify-center active:scale-95 transition-transform relative group')}
-                aria-label="Send gift"
-              >
-                <img
-                  src="/circle.png"
-                  alt=""
-                  className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
-                />
-                <img
-                  src="/giftboc.png"
-                  alt="gift"
-                  className="relative w-8 h-8 object-contain group-hover:rotate-12 transition-transform"
-                />
-              </button>
             </div>
 
             {/* ── MOBILE BOTTOM BAR ── */}
-            <div className="md:hidden absolute bottom-6 w-full flex items-center justify-between px-4 z-50">
+            <div className="md:hidden absolute bottom-6 left-0 right-0 w-full px-4 z-50 flex items-center h-14">
+              {!isGiftModalOpen && (
+                <>
+                  {/* Left group: X · Message · Heart */}
+                  <div className="absolute left-4 flex gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={handlePass}
+                      disabled={swiping}
+                      className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
+                      aria-label="Pass"
+                    >
+                      ✕
+                    </button>
 
-              {/* Left group: X · Message · Heart */}
-              <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleMessage}
+                      className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                      aria-label="Message"
+                    >
+                      <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConnect}
+                      disabled={connectSent}
+                      className={clsx(
+                        'w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors',
+                        connectSent
+                          ? 'border-green-400/60 bg-green-500/20 cursor-default'
+                          : 'border-white/40 hover:bg-white/10 active:scale-95'
+                      )}
+                      title={connectSent ? 'Friend request sent' : 'Send friend request'}
+                      aria-label="Connect"
+                    >
+                      <img
+                        src="/history/heart.svg"
+                        alt="heart"
+                        className={clsx('w-6 h-6', connectSent && 'opacity-60')}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Center: ← → photo nav */}
+                  <div className="absolute left-1/2 flex gap-2 items-center" style={{ transform: 'translateX(-50%)' }}>
+                    <button
+                      onClick={handlePrevImage}
+                      disabled={allPhotos.length <= 1}
+                      className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      aria-label="Previous photo"
+                    >
+                      <IoIosArrowBack />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      disabled={allPhotos.length <= 1}
+                      className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      aria-label="Next photo"
+                    >
+                      <IoIosArrowForward />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Right: Gift */}
+              <div className="absolute right-4 flex items-center">
                 <button
                   type="button"
-                  onClick={handlePass}
-                  disabled={swiping}
-                  className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
-                  aria-label="Pass"
-                >
-                  ✕
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleMessage}
-                  className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-                  aria-label="Message"
-                >
-                  <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleConnect}
-                  disabled={connectSent}
-                  className={clsx(
-                    'w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors',
-                    connectSent
-                      ? 'border-green-400/60 bg-green-500/20 cursor-default'
-                      : 'border-white/40 hover:bg-white/10 active:scale-95'
-                  )}
-                  title={connectSent ? 'Friend request sent' : 'Send friend request'}
-                  aria-label="Connect"
+                  onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
+                  className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
+                  aria-label="Send gift"
                 >
                   <img
-                    src="/history/heart.svg"
-                    alt="heart"
-                    className={clsx('w-6 h-6', connectSent && 'opacity-60')}
+                    src="/circle.png"
+                    alt=""
+                    className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                  />
+                  <img
+                    src="/giftboc.png"
+                    alt="gift"
+                    className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
                   />
                 </button>
               </div>
-
-              {/* Center: ← → photo nav */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handlePrevImage}
-                  disabled={allPhotos.length <= 1}
-                  className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                  aria-label="Previous photo"
-                >
-                  <IoIosArrowBack />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  disabled={allPhotos.length <= 1}
-                  className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                  aria-label="Next photo"
-                >
-                  <IoIosArrowForward />
-                </button>
-              </div>
-
-              {/* Right: Gift */}
-              <button
-                type="button"
-                onClick={() => setIsGiftModalOpen(true)}
-                className={clsx('w-14 h-14 flex items-center justify-center active:scale-95 transition-transform relative group rounded-full')}
-                aria-label="Send gift"
-              >
-                <img
-                  src="/circle.png"
-                  alt=""
-                  className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
-                />
-                <img
-                  src="/giftboc.png"
-                  alt="gift"
-                  className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
-                />
-              </button>
             </div>
+
+            {/* Gift Overlay positioned relative to the card container */}
+            <GiftOverlay
+              isOpen={isGiftModalOpen}
+              onClose={() => { setIsGiftModalOpen(false); setSelectedGift(null); }}
+              onOpenCoinModal={() => { }}
+              onSelectGift={(gift) => setSelectedGift(gift)}
+              selectedGiftId={selectedGift?.id || null}
+              coins={walletCoins}
+              onSendGift={handleSendGift}
+              className="bottom-24 right-4 left-4 md:right-20 md:left-auto md:bottom-28 md:translate-y-0"
+              desktopBottomBarClassName="bottom-8 left-40 flex gap-4 px-6 py-3 rounded-2xl  items-center z-50"
+              mobileBottomBarClassName="bottom-4"
+              hideSendButton={true}
+            />
+
+            <GiftSuccessPopup
+              isOpen={showSuccessPopup}
+              onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
+              gift={successGift}
+              recipientName={card?.name}
+            />
 
           </div>
         </div>
       )}
-
-      {/* Gift Modal */}
-      <GiftModal
-        isOpen={isGiftModalOpen}
-        onClose={() => setIsGiftModalOpen(false)}
-        onSelectGift={handleSendGift}
-        catalogGifts={giftModalItems}
-        catalogLoading={giftsCatalogLoading}
-      />
     </div>
   );
 }

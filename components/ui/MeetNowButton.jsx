@@ -36,11 +36,17 @@ export default function MeetNowButton({
   containerClass = ""
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={isSearching}
+    <div
+      onClick={(e) => {
+        if (!isSearching && onClick) {
+          onClick(e);
+        }
+      }}
+      role="button"
+      tabIndex={isSearching ? -1 : 0}
+      aria-disabled={isSearching}
       className={clsx(
-        'group relative z-20 border flex items-center justify-center gap-4  active:scale-[0.98] transition-all overflow-hidden shadow-2xl shadow-purple-500/20 hover:scale-[1.01] hover:brightness-110 hover:shadow-purple-500/20 backdrop-blur-[1px] transition-all duration-300',
+        'group relative z-20 border flex items-center justify-center gap-4  active:scale-[0.98] transition-all overflow-hidden shadow-2xl shadow-purple-500/20 hover:scale-[1.01] hover:brightness-110 hover:shadow-purple-500/20 backdrop-blur-[1px] transition-all duration-300 select-none',
         isSearching
           ? 'bg-yellow-500/80 text-black border-black animate-pulse cursor-wait'
           : 'bg-[#0A032D]/30 text-white border-white hover:bg-black/30 cursor-pointer',
@@ -48,10 +54,6 @@ export default function MeetNowButton({
         containerClass,
         className
       )}
-
-
-
-
       style={{
         backdropFilter: "blur(2px)",
         WebkitBackdropFilter: "blur(2px)",
@@ -80,24 +82,24 @@ export default function MeetNowButton({
         <img
           src={isVideoOn ? "/assets/video-on.svg" : "/assets/video-off.svg"}
           className={clsx(
-            "transition-all",
+            "transition-all ",
             iconClass,   // ✅ custom icon size
             isSearching ? "brightness-0" : ""
           )}
           alt="video toggle"
         />
       </div>
-    <span
-  className={clsx(
-    "z-10 font-bold leading-none",
-    "text-[clamp(14px,4vw,22px)]",
-    isSearching ? "text-black" : "text-white",
-    textClass
-  )}
->
+      <span
+        className={clsx(
+          "z-10 font-bold leading-none",
+          "text-[clamp(14px,4vw,22px)]",
+          isSearching ? "text-black" : "text-white",
+          textClass
+        )}
+      >
         {isSearching ? searchingText : text}
       </span>
-    </button>
+    </div>
   );
 }
 

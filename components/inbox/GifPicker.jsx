@@ -108,7 +108,7 @@ export default function GifPicker({ onSelect, className }) {
           className="w-full rounded-xl bg-white/5 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
         />
       </div>
-      <div className="p-2 max-h-[18rem] overflow-auto">
+      <div className="p-2 max-h-[18rem] overflow-auto scrollbar-hide">
         {err && <div className="px-2 py-2 text-xs text-red-300">{err}</div>}
         {loading && (
           <div className="grid grid-cols-2 gap-2 mb-2">

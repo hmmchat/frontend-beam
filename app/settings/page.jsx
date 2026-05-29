@@ -35,9 +35,8 @@ function ActionRow({ label, onClick, disabled, destructive }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center justify-between py-3.5 text-left text-[15px] transition-colors hover:bg-white/5 disabled:cursor-wait disabled:opacity-60 ${
-        destructive ? "text-red-200" : "text-white"
-      }`}
+      className={`flex w-full items-center justify-between py-3.5 text-left text-[15px] transition-colors hover:bg-white/5 disabled:cursor-wait disabled:opacity-60 ${destructive ? "text-red-200" : "text-white"
+        }`}
     >
       <span>{label}</span>
       <span
@@ -179,19 +178,18 @@ function SettingsContent() {
   };
 
   return (
-    <div className="relative flex  w-full h-[100dvh]  flex-col overflow-x-hidden px-5 pb-16 pt-8 font-outfit md:px-10 md:pt-10">
-         <div
-            className="absolute inset-0 -z-10"
-            style={{
-              backgroundImage: "url(/assets/mb.jpg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }}
-          />
+    <div className="relative flex w-full h-[100dvh] flex-col overflow-hidden px-5 pb-16 pt-8 font-outfit md:px-10 md:pt-10">
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
 
-
-      <header className=" mb-2  md:mb-0 flex w-full max-w-5xl items-center justify-between self-center px-1">
+      <header className="mb-6 flex w-full max-w-5xl items-center justify-between self-center px-1 shrink-0">
         <button
           type="button"
           onClick={() => router.push("/profile")}
@@ -203,29 +201,29 @@ function SettingsContent() {
           </span>
           <span className="text-base font-medium">Settings</span>
         </button>
-<img src="/assets/Logo.svg" alt="logo" className="w-24 h-18" />
+        <img src="/logo.png" alt="logo" className="w-auto h-12" />
       </header>
 
-<main className="mx-auto w-full max-w-5xl flex-1 overflow-hidden rounded-[32px] md:rounded-[60px] border md:border-white/70 border-white/40 px-5 pt-8  pb-20 md:px-20 md:pt-16  ">
-<section className="mb-5">
-  <h2 className="mb-1 text-[14px] font-semibold text-white md:text-sm font-otomanopee">
-    Terms of service
-  </h2>
+      <main className="mx-auto w-full max-w-5xl rounded-[32px] md:rounded-[60px] border md:border-white/70 border-white/40 px-5 pt-8 pb-10 md:px-20 md:pt-16 overflow-y-auto scrollbar-hide min-h-0 flex-1">
+        <section className="mb-5">
+          <h2 className="mb-1 text-[14px] font-semibold text-white md:text-sm font-otomanopee">
+            Terms of service
+          </h2>
 
-  <div className="w-[95%] ml-auto divide-y divide-white/15">
-    <PlaceholderRow label="Terms of service" />
-    <PlaceholderRow label="About Us" />
-    <PlaceholderRow label="Safety center" />
-    <PlaceholderRow label="Privacy policy" />
-  </div>
-</section>
+          <div className="w-[95%] ml-auto divide-y divide-white/15">
+            <PlaceholderRow label="Terms of service" />
+            <PlaceholderRow label="About Us" />
+            <PlaceholderRow label="Safety center" />
+            <PlaceholderRow label="Privacy policy" />
+          </div>
+        </section>
 
         <section className="mb-4">
           <h2 className="mb-1 text-sm font-semibold text-white md:text-sm font-otomanopee">
             Support
           </h2>
 
-  <div className="w-[95%] ml-auto divide-y divide-white/15">
+          <div className="w-[95%] ml-auto divide-y divide-white/15">
             <PlaceholderRow label="FAQs" />
             <PlaceholderRow label="Contact Us" />
           </div>
@@ -236,7 +234,7 @@ function SettingsContent() {
             Account
           </h2>
 
-  <div className="w-[95%] ml-auto divide-y divide-white/15">
+          <div className="w-[95%] ml-auto divide-y divide-white/15">
             <ActionRow
               label="Sign out"
               onClick={signOut}

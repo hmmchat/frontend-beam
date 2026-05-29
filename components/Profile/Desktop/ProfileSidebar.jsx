@@ -19,7 +19,7 @@ export default function ProfileSidebar({
       <div className="relative">
         <div className="h-full w-full overflow-hidden rounded-full border-2 border-white">
           <Image
-            src={user?.displayPictureUrl || "/loadingpage.png"}
+            src={user?.displayPictureUrl}
             alt="profile"
             width={120}
             height={120}
@@ -61,8 +61,11 @@ export default function ProfileSidebar({
           </div>
         )}
       </div>
-      <h2 className="mt-4 text-xl font-bold text-yellow-400">
-        {firstName} {user?.age || calculateAge(user?.dateOfBirth) || ""}
+      <h2 className="mt-4 font-sigmar text-xl font-extrabold text-[#F2AD00]">
+        {firstName}{" "}
+        <span className="text-stroke-yellow">
+          {user?.age || calculateAge(user?.dateOfBirth) || ""}
+        </span>
       </h2>
 
       <div className="mt-10 w-full space-y-4 px-4 text-left">
@@ -76,22 +79,22 @@ export default function ProfileSidebar({
           </div>
 
           <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push("/facecard?view=editor&from=profile");
-            }}
-            className="shrink-0  rounded-full border border-white/80 px-2 py-1 text-[9px] font-outfit transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
-            aria-label="Open profile completion"
-          >
-            {progress}% complete
-          </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/facecard?view=editor&from=profile");
+              }}
+              className="shrink-0  rounded-full border border-white/80 px-2 py-1 text-[9px] font-outfit transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
+              aria-label="Open profile completion"
+            >
+              {progress}% complete
+            </button>
 
 
-          <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/70">
-            ›
-          </span>
+            <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/70">
+              ›
+            </span>
           </div>
         </div>
 
@@ -119,14 +122,14 @@ export default function ProfileSidebar({
           </div>
 
           <div className="flex gap-2">
-          <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
-            💎 {moneyModel?.diamonds ?? 0}
-          </span>
-          <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
-            ›
-          </span>
+            <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
+              💎 {moneyModel?.diamonds ?? 0}
+            </span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
+              ›
+            </span>
 
-</div>
+          </div>
         </div>
 
         <div

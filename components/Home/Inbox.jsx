@@ -16,6 +16,7 @@ import ConversationSidebar from "../inbox/ConversationSidebar";
 import ThreadHeader from "../inbox/ThreadHeader";
 import ThreadMessages from "../inbox/ThreadMessages";
 import ThreadComposer from "../inbox/ThreadComposer";
+import GiftSuccessPopup from "@/components/VideoChat/GiftSuccessPopup";
 import clsx from "clsx";
 
 /** Backend ConversationQuerySchema.filter */
@@ -97,7 +98,7 @@ function buildSendMessagePayload({
   if (hasText) body.message = trimmed;
   if (resolvedGift) {
     body.giftId = resolvedGift.id;
-    body.giftAmount = resolvedGift.price;
+    body.giftAmount = resolvedGift.diamonds;
   }
   if (resolvedGif) {
     const url = String(resolvedGif.url || resolvedGif.previewUrl || "").trim();
@@ -282,6 +283,9 @@ export default function Inbox() {
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [successGift, setSuccessGift] = useState(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successRecipientName, setSuccessRecipientName] = useState("");
   const [notif, setNotif] = useState(null);
   const [sendFriendBusy, setSendFriendBusy] = useState(false);
 
@@ -290,8 +294,6 @@ export default function Inbox() {
   const [firstMessageCost, setFirstMessageCost] = useState(
     DEFAULT_FIRST_MSG_COST,
   );
-  const [giftModalItems, setGiftModalItems] = useState(null);
-  const [giftsCatalogLoading, setGiftsCatalogLoading] = useState(false);
   const [conversationSearch, setConversationSearch] = useState("");
   const [listLoadError, setListLoadError] = useState(null);
   /** In-thread product copy (replaces window.alert for errors / warnings). */
@@ -385,17 +387,12 @@ export default function Inbox() {
   }, []);
 
   const loadGiftCatalog = useCallback(async () => {
-    setGiftsCatalogLoading(true);
     try {
       const data = await apiRequest(API.FRIENDS.GET_GIFT_CATALOG);
       if (typeof data?.firstMessageCostCoins === "number")
         setFirstMessageCost(data.firstMessageCostCoins);
-      const mapped = mapCatalogToModalGifts(data?.gifts || []);
-      setGiftModalItems(mapped.length ? mapped : null);
     } catch {
-      setGiftModalItems(null);
-    } finally {
-      setGiftsCatalogLoading(false);
+      // non-critical
     }
   }, []);
 
@@ -1566,21 +1563,18 @@ export default function Inbox() {
     try {
       setSending(true);
 
-      // Auto-purchase diamonds with coins if sender doesn't have enough diamonds for the gift
+      // Always purchase the exact diamond amount needed for the gift from coins, so the sender's existing diamonds are not used/subtracted
       if (resolvedGift) {
-        const giftAmount = Number(resolvedGift.price) || 0;
-        if (walletDiamonds < giftAmount) {
-          const neededDiamonds = giftAmount - walletDiamonds;
-          const neededCoins = neededDiamonds * 100;
-          if (walletCoins === null || walletCoins < neededCoins) {
-            throw new Error(`Insufficient balance. Gift costs 💎 ${giftAmount}. You have 💎 ${walletDiamonds} and need ${neededDiamonds} more (costs ${neededCoins} coins, available: ${walletCoins || 0} coins).`);
-          }
-          // Call purchase endpoint
-          await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
-            method: "POST",
-            body: JSON.stringify({ diamondAmount: neededDiamonds }),
-          });
+        const giftAmount = Number(resolvedGift.diamonds) || 0;
+        const coinCost = Number(resolvedGift.price) || 0;
+        if (walletCoins === null || walletCoins < coinCost) {
+          throw new Error(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins || 0} coins.`);
         }
+        // Call purchase endpoint
+        await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+          method: "POST",
+          body: JSON.stringify({ diamondAmount: giftAmount }),
+        });
       }
 
       if (!isSyntheticConversationId(realCid)) {
@@ -1605,6 +1599,12 @@ export default function Inbox() {
       }
       setNewMessage("");
       setIsGiftModalOpen(false);
+
+      if (resolvedGift) {
+        setSuccessGift(resolvedGift);
+        setSuccessRecipientName(activeChat?.name || "them");
+        setShowSuccessPopup(true);
+      }
       await loadThreadMessages(activeChat);
       await loadLists({ quiet: true });
     } catch (e) {
@@ -2132,13 +2132,18 @@ export default function Inbox() {
                     firstMessageCost={firstMessageCost}
                     isGiftModalOpen={isGiftModalOpen}
                     setIsGiftModalOpen={setIsGiftModalOpen}
-                    giftModalItems={giftModalItems}
-                    giftsCatalogLoading={giftsCatalogLoading}
                     sendMessage={sendMessage}
                     emitTyping={emitTyping}
                     typingTimerRef={typingTimerRef}
                   />
                 )}
+
+                <GiftSuccessPopup
+                  isOpen={showSuccessPopup}
+                  onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
+                  gift={successGift}
+                  recipientName={successRecipientName}
+                />
               </>
             ) : (
               <div

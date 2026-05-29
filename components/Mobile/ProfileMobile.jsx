@@ -233,7 +233,7 @@ export default function ProfileMobile() {
   };
 
   return (
-    <div className="h-[100dvh] w-full text-white flex flex-col items-center pt-6 px-4 relative ">
+    <div className="h-[100dvh] w-full text-white flex flex-col items-center pt-6 px-4 relative overflow-y-auto scrollbar-hide">
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-10">
         <Image

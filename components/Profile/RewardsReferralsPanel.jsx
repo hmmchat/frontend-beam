@@ -265,7 +265,7 @@ export default function RewardsReferralsPanel() {
       : 0;
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto px-3 py-2 md:py-4">
+    <div className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-hide px-3 py-2 md:py-4">
       
       {/* === INVITE BOX === */}
       <div className="w-full h-full md:h-fit  mx-auto">

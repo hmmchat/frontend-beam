@@ -134,7 +134,7 @@ export default function ProfileMobileStickers({
         {/* INNER CARD */}
         <div className=" ">
           {/* GRID */}
-          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto scrollbar-hide pr-1">
             {loading ? (
               <p className="col-span-4 text-center text-sm text-white/60 py-8">Loading stickers...</p>
             ) : badges.length === 0 ? (

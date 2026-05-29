@@ -58,7 +58,7 @@ export default function WaitlistModal({
                   onClick={() => setSelectedWaitlistUser(u)}
                 >
                   <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-yellow-300/90 bg-gray-200 shrink-0">
-                    <img src={u.displayPictureUrl || '/avatar-placeholder.png'} alt={u.username || 'User'} className="w-full h-full object-cover" />
+                    <img src={u.displayPictureUrl} alt={u.username} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-white text-[2rem] leading-none font-black truncate">{u.username || 'User'}</div>

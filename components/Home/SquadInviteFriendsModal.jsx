@@ -20,11 +20,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-      const res = await fetch(API.FRIENDS.GET_FRIENDS_WALL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await apiRequest(API.FRIENDS.GET_FRIENDS_WALL);
       const rows = data.friends || [];
       const enriched = await Promise.all(
         rows.map(async (f) => {
@@ -129,7 +125,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
   return (
     <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center md:p-6">
 
-      
+
       <button
         type="button"
         className="absolute inset-0 "
@@ -137,22 +133,22 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
         onClick={onClose}
       />
 
-      
+
       <div
         className={clsx(
           'relative w-full max-w-xl border border-white/25 md:rounded-[2rem] rounded-t-[2rem]',
-          'shadow-2xl max-h-[90dvh] flex flex-col text-white font-sans overflow-hidden'
+          ' max-h-[90dvh] flex flex-col text-white font-sans overflow-hidden'
         )}
       >
-            <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "url(/assets/mb.jpg)",
-              backgroundSize: "cover",
-            }}
-          />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+          }}
+        />
 
-        
+
 
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10 z-50">
           <button
@@ -167,7 +163,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
           </h2>
         </div>
 
-<div className="relative z-10 px-6 py-3">
+        <div className="relative z-10 px-6 py-3">
           {inviteProductMessage ? (
             <div
               role="alert"
@@ -177,17 +173,17 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
             </div>
           ) : null}
           <div className="flex items-center gap-2 rounded-full border border-white/60 px-1 py-1 ">
-            <span className="text-white text-sm border rounded-full h-9 w-9 flex items-center justify-center"><FaSearch className=""/></span>
+            <span className="text-white text-sm border rounded-full h-9 w-9 flex items-center justify-center"><FaSearch className="" /></span>
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)} 
+              onChange={(e) => setQ(e.target.value)}
               placeholder="Search friends by name or ID"
               className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/40"
             />
           </div>
         </div>
 
- <div className="relative z-10 flex-1 overflow-y-auto px-2 pb-6">
+        <div className="relative z-10 flex-1 overflow-y-auto px-2 pb-6">
           {loading ? (
             <p className="text-center text-white/50 py-12 text-sm">Loading friends…</p>
           ) : filtered.length === 0 ? (
@@ -216,8 +212,8 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                         alreadyInSquad
                           ? 'bg-white/10 text-white/60   cursor-not-allowed'
                           : sent
-                          ? 'bg-yellow-400 text-black'
-                          : ' hover:bg-white/25  '
+                            ? 'bg-yellow-400 text-black'
+                            : ' hover:bg-white/25  '
                       )}
                     >
                       <span
@@ -226,8 +222,8 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                           alreadyInSquad
                             ? 'bg-white/10 text-white/70'
                             : sent
-                            ? 'bg-black/20'
-                            : 'bg-white text-purple-900'
+                              ? 'bg-black/20'
+                              : 'bg-white text-purple-900'
                         )}
                       >
                         {alreadyInSquad ? '•' : sent ? 'x' : '+'}

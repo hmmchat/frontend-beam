@@ -89,7 +89,7 @@ export default function QuickActions({
           "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
         )}
       >
-        <img src={isBroken ? "/icecreambreak.png" : "/icecream.png"} className={clsx(isBroken ? "w-5 h-6  transition-transform" : "w-5 h-6 transition-transform")} />
+        <img src={isBroken ? "/icecreambreak.png" : "/icecream.png"} className={clsx(isBroken ? "w-6.5 h-6.8  transition-transform" : "w-5 h-6 transition-transform")} />
       </button>
 
     </div>

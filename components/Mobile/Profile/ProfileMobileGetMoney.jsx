@@ -4,11 +4,11 @@ import { ArrowLeft } from "lucide-react";
 import FreeCoinsSection from "../../Profile/FreeCoinsSection";
 import { formatInrValue } from "@/lib/getMoney";
 
-export default function ProfileMobileGetMoney({ 
-  onBack, 
-  walletSnapshot, 
-  moneyModel, 
-  handleAdRewardGranted 
+export default function ProfileMobileGetMoney({
+  onBack,
+  walletSnapshot,
+  moneyModel,
+  handleAdRewardGranted
 }) {
   return (
     <div className="w-full flex flex-col h-full pb-6">
@@ -62,7 +62,7 @@ export default function ProfileMobileGetMoney({
         </div>
       </div>
 
-      <div className="mt-12 text-sm text-white/70 space-y-6 text-left w-full pt-6 mx-8">
+      <div className="mt-12 text-sm text-white/70 space-y-6 pt-6 px-2">
         <div className="flex items-center gap-2">
           <span className="w-7 h-7 flex items-center justify-center border border-white rounded-full">
             ?

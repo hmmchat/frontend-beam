@@ -330,16 +330,15 @@ export default function ProfileDesktop({
         />
 
         <div
-className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-white/40 px-6 md:px-8 ${
-  activeTab === "account" || activeTab === "default" ? "py-4" : "py-6 md:py-8"
-}`}>
+          className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-white/40 px-6 md:px-8 ${activeTab === "account" || activeTab === "default" ? "py-4" : "py-6 md:py-8"
+            }`}>
           {activeTab === "account" || activeTab === "default" ? (
             <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
               <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
                 <div className="w-full max-w-[420px] transition-transform ">
-              <div className="flex h-full w-full items-start justify-center overflow-hidden">
-  <div
-    className="
+                  <div className="flex h-full w-full items-start justify-center overflow-hidden">
+                    <div
+                      className="
       origin-top
       [@media(max-height:2100px)]:scale-[0.95]
       [@media(max-height:2000px)]:scale-[0.90]
@@ -353,57 +352,59 @@ className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-w
       md:[@media(max-height:700px)]:scale-[0.70]
       [@media(max-height:600px)]:scale-[0.50]
     "
-  >
-    <div
-      ref={facecardExportRef}
-      data-facecard-export-root="true"
-    >
-      <FaceCard3
-        user={{
-          ...user,
-          age,
-          city: user?.preferredCity || user?.city,
-        }}
-        currentIndex={currentImageIndex}
-        onIndexChange={setCurrentImageIndex}
-        hideArrows={true}
-        hideHeader={true}
-      />
-    </div>
-  </div>
-</div>
+                    >
+                      <div
+                        ref={facecardExportRef}
+                        data-facecard-export-root="true"
+                      >
+                        <FaceCard3
+                          user={{
+                            ...user,
+                            age,
+                            city: user?.preferredCity || user?.city,
+                          }}
+                          currentIndex={currentImageIndex}
+                          onIndexChange={setCurrentImageIndex}
+                          hideArrows={true}
+                          hideHeader={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-             
+
             </div>
           ) : (
 
 
             // <div className="min-h-0 flex-1 overflow-y-auto flex items-start justify-center">
-<div className="min-h-0 flex-1 flex items-start justify-center">
-            {activeTab === "getmoney" ? (
-              <GetMoneyTab
-                moneyModel={moneyModel}
-                loading={walletSnapshot.loading}
-                onRewardGranted={handleAdRewardGranted}
-              />
-            ) : activeTab === "prompts" ? (
-<div className="flex h-full w-full items-center justify-center overflow-hidden">
-  <div className="origin-top 
-    [@media(max-height:1000px)]:scale-[0.98] 
-    [@media(max-height:900px)]:scale-[0.95] 
-    [@media(max-height:800px)]:scale-[0.70] 
-    [@media(max-height:700px)]:scale-[0.82] 
-    [@media(max-height:600px)]:scale-[0.6]"
-  >
-    <PromptsTab user={user} setUser={setUser} />
-  </div>
-</div>
-            ) : activeTab === "rewards" ? (
-              <RewardsTab onBack={() => setActiveTab("default")} />
-            ) : (
-              <StickersTab user={user} setUser={setUser} />
-            )}
+            <div className="min-h-0 flex-1 flex items-start justify-center">
+              {activeTab === "getmoney" ? (
+
+
+                <GetMoneyTab
+                  moneyModel={moneyModel}
+                  loading={walletSnapshot.loading}
+                  onRewardGranted={handleAdRewardGranted}
+                />
+              ) : activeTab === "prompts" ? (
+                <div className="flex h-full w-full items-center justify-center overflow-hidden">
+                  <div className="
+
+       [@media(max-height:1000px)]:scale-[1] 
+          
+    [@media(max-height:800px)]:scale-[0.80] 
+]"
+                  >
+                    <PromptsTab user={user} setUser={setUser} />
+                  </div>
+                </div>
+              ) : activeTab === "rewards" ? (
+                <RewardsTab onBack={() => setActiveTab("default")} />
+              ) : (
+                <StickersTab user={user} setUser={setUser} />
+              )}
             </div>
           )}
         </div>

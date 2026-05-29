@@ -15,6 +15,10 @@ export default function GiftOverlay({
   selectedGiftId,
   coins,
   onSendGift,
+  className,
+  desktopBottomBarClassName,
+  mobileBottomBarClassName,
+  hideSendButton = false,
 }) {
   const [giftItems, setGiftItems] = useState([]);
   const [animGift, setAnimGift] = useState(null);
@@ -27,13 +31,17 @@ export default function GiftOverlay({
       apiRequest(API.FRIENDS.GET_GIFT_CATALOG)
         .then(data => {
           if (data && data.gifts) {
-            const formatted = data.gifts.map((g, idx) => ({
-              id: g.giftId || idx,
-              name: g.name,
-              price: g.diamonds || 0,
-              img: g.emoji || "🎁",
-              imageUrl: g.imageUrl
-            }));
+            const formatted = data.gifts.map((g, idx) => {
+              const diamondsVal = g.diamonds ?? g.coins ?? 0;
+              return {
+                id: g.giftId || idx,
+                name: g.name,
+                price: diamondsVal * 100,
+                diamonds: diamondsVal,
+                img: g.emoji || "🎁",
+                imageUrl: g.imageUrl
+              };
+            });
             setGiftItems(formatted);
           }
         })
@@ -78,7 +86,10 @@ export default function GiftOverlay({
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
       <div className="fixed inset-0 z-20 " onClick={onClose} />
       {/* Main UI */}
-      <div className="absolute md:bottom-3 right-0 bottom-26  md:right-5  md:-translate-y-[34%] z-30 flex flex-col items-end w-full px-4">
+      <div className={clsx(
+        "absolute z-30 flex flex-col items-end w-full px-4",
+        className || "md:bottom-3 right-0 bottom-26 md:right-5 md:-translate-y-[34%]"
+      )}>
         <div
           onClick={(e) => e.stopPropagation()}
           className="border-2 border-white md:rounded-[40px] rounded-[32px] w-full max-w-[500px] md:p-8 p-6  relative overflow-hidden"
@@ -118,7 +129,7 @@ export default function GiftOverlay({
                 onClick={() => onSelectGift(gift)}
                 onDoubleClick={() => setAnimGift(gift)}
                 className={clsx(
-                  "md:border-[2px] border-[1px] border-white/60 md:border-b-[4px] border-b-[3px] md:rounded-3xl rounded-xl md:px-4 md:py-3 px-1 py-2 flex flex-col items-center gap-2 cursor-pointer transition-all hover:scale-105",
+                  "md:border-[2px] border-[1px] border-white/60 md:border-b-[4px] border-b-[3px] md:rounded-[16.8px] rounded-xl md:px-4 md:py-3 px-1 py-2 flex flex-col items-center gap-2 cursor-pointer transition-all hover:scale-105",
                   selectedGiftId === gift.id
                     ? "border-yellow-400 bg-white/5"
                     : "border-white/10"
@@ -131,7 +142,7 @@ export default function GiftOverlay({
                     gift.img
                   )}
                 </div>
-                <div className="text-white md:text-xs text-[10px]">💎 {gift.price}</div>
+                <div className="text-white md:text-xs text-[10px]">💎 {gift.diamonds}</div>
               </div>
             ))}
           </div>
@@ -151,112 +162,116 @@ export default function GiftOverlay({
         </div>
       </div>
 
-      {/* Bottom Bar */}
       {/* Bottom Bar Desktop */}
-      <div className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
-        {!hasSufficientCoins ? (
-          <>
-            <div className="text-white text-sm">Insufficient balance</div>
-            <button
-              onClick={onOpenCoinModal}
-              className="bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
-            >
-              Buy Coins
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="text-white text-sm flex items-center gap-2">
-              Spend Coin:
-              <span className="flex justify-center items-center gap-1 font-semibold">
-                <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
-                {currentPrice}
-              </span>
-            </div>
-            <button
-              onClick={handleSend}
-              className={clsx(
-                "bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white active:scale-95 transition-all",
-                !selectedGift ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"
+      {selectedGift && (
+        <div className={clsx(
+          "absolute hidden md:flex z-50 justify-between items-center",
+          desktopBottomBarClassName || "bottom-6 md:left-[53%] right-10"
+        )}>
+          {!hasSufficientCoins ? (
+            <>
+              <div className="text-white text-sm">Insufficient balance</div>
+              <button
+                onClick={onOpenCoinModal}
+                className=" border border-white/20 px-6 py-2 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
+              >
+                Buy Coins
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-white text-sm flex items-center gap-2">
+                Spend Coin:
+                <span className="flex justify-center items-center gap-1 font-semibold">
+                  <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
+                  {currentPrice}
+                </span>
+              </div>
+              {!hideSendButton && (
+                <button
+                  onClick={handleSend}
+                  className={clsx(
+                    "bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white active:scale-95 transition-all",
+                    !selectedGift ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"
+                  )}
+                  disabled={!selectedGift}
+                >
+                  Send Gift
+                </button>
               )}
-              disabled={!selectedGift}
-            >
-              Send Gift
-            </button>
-          </>
-        )}
-      </div>
-
-
-
-
-
-
-
+            </>
+          )}
+        </div>
+      )}
 
       {/* Bottom Bar Mobile */}
-      <div className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: "url(/assets/mb.jpg)",
-            backgroundSize: "cover",
-            opacity: 0.9,
-          }}
-        />
+      {selectedGift && (
+        <div className={clsx(
+          "absolute z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden",
+          mobileBottomBarClassName || "bottom-0"
+        )}>
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              backgroundImage: "url(/assets/mb.jpg)",
+              backgroundSize: "cover",
+              opacity: 0.9,
+            }}
+          />
 
-        {!hasSufficientCoins ? (
-          <>
-            <div className="z-10 text-sm text-white">
-              Insufficient balance
-            </div>
+          {!hasSufficientCoins ? (
+            <>
+              <div className="z-10 text-sm text-white">
+                Insufficient balance
+              </div>
 
-            <button
-              onClick={onOpenCoinModal}
-              className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95"
-            >
-              Buy Coins
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="z-10 flex items-center gap-2 text-sm text-white">
-              <span>Spend Coin:</span>
+              <button
+                onClick={onOpenCoinModal}
+                className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95"
+              >
+                Buy Coins
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="z-10 flex items-center gap-2 text-sm text-white">
+                <span>Spend Coin:</span>
 
-              <span className="flex items-center justify-center gap-1 font-semibold">
+                <span className="flex items-center justify-center gap-1 font-semibold">
+                  <img
+                    src="/Coins/coin10.png"
+                    className="w-4 rounded-full"
+                    alt=""
+                  />
+                  {currentPrice}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                disabled={!selectedGift}
+                onClick={handleSend}
+                className={clsx(
+                  "group relative z-10 flex items-center justify-center w-14 h-14",
+                  !selectedGift && "opacity-50"
+                )}
+              >
                 <img
-                  src="/Coins/coin10.png"
-                  className="w-4 rounded-full"
+                  src="/circle.png"
+                  className="absolute inset-0 block w-full h-full transition-none rounded-full bg-pink-800 group-active:rotate-180"
                   alt=""
                 />
-                {currentPrice}
-              </span>
-            </div>
 
-            <button
-              type="button"
-              disabled={!selectedGift}
-              onClick={handleSend}
-              className={clsx(
-                "group relative z-10 flex items-center justify-center w-14 h-14",
-                !selectedGift && "opacity-50"
-              )}
-            >
-              <img
-                src="/circle.png"
-                className="absolute inset-0 block w-full h-full transition-none rounded-full bg-pink-800 group-active:rotate-180"
-                alt=""
-              />
-
-              <img
-                src="/giftboc.png"
-                className="relative object-contain w-8 h-8 transition-none group-active:scale-80"
-                alt="GIFT"
-              />
-            </button>
-          </>
-        )}
-      </div>
+                <img
+                  src="/giftboc.png"
+                  className="relative object-contain w-8 h-8 transition-none group-active:scale-80"
+                  alt="GIFT"
+                />
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </>
 
 

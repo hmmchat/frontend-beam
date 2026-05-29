@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { FaShare } from "react-icons/fa";
 
-import { useState, useEffect } from "react";
-import { API } from "../../../lib/api";
+import { useState, useEffect, useRef } from "react";
+import html2canvas from "html2canvas";
+import { API, apiRequest } from "../../../lib/api";
 import FaceCard2 from '@/components/Home/FaceCard2';
 import { calculateAge } from '@/lib/facecard-utils';
 
@@ -18,6 +19,7 @@ export default function FriendWall() {
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const wallRef = useRef(null);
 
   useEffect(() => {
     fetchFriends();
@@ -32,19 +34,8 @@ export default function FriendWall() {
         return;
       }
 
-      const response = await fetch(API.FRIENDS.GET_FRIENDS_WALL, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setFriends(data.friends || []);
-      } else {
-        console.error('❌ Failed to fetch wall:', response.status);
-      }
+      const data = await apiRequest(API.FRIENDS.GET_FRIENDS_WALL);
+      setFriends(data.friends || []);
     } catch (error) {
       console.error('Error fetching wall:', error);
     } finally {
@@ -56,19 +47,18 @@ export default function FriendWall() {
     try {
       setSharing(true);
       const token = localStorage.getItem('accessToken');
+      if (!token) {
+        router.push('/');
+        return;
+      }
 
-      const response = await fetch(API.FRIENDS.GET_FRIENDS_WALL + '/share', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Try backend share endpoint first
+      try {
+        const data = await apiRequest(API.FRIENDS.GET_FRIENDS_WALL + '/share', {
+          method: 'POST'
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.imageUrl) {
-          // Open share link or copy to clipboard
+        if (data.imageUrl || data.deepLink) {
           if (navigator.share) {
             await navigator.share({
               title: 'My HMM Friend Wall',
@@ -79,32 +69,64 @@ export default function FriendWall() {
             await navigator.clipboard.writeText(data.deepLink || data.imageUrl);
             alert('Share link copied to clipboard!');
           }
+          return; // Success — done
         }
+      } catch (backendErr) {
+        console.warn('Backend share failed, using client-side fallback:', backendErr.code || backendErr.message);
+      }
+
+      // Fallback: capture wall grid client-side with html2canvas
+      const node = wallRef.current;
+      if (!node) {
+        alert('Nothing to share yet.');
+        return;
+      }
+
+      const canvas = await html2canvas(node, {
+        backgroundColor: '#1a0533',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: true,
+      });
+
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
+      const file = new File([blob], 'friend-wall.jpg', { type: 'image/jpeg' });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: 'My HMM Friend Wall',
+          text: 'Check out my friends on HMM!',
+          files: [file],
+        });
+      } else {
+        // Desktop fallback: download the image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'friend-wall.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Error sharing wall:', error);
+      alert(error.message || 'Failed to share friend wall');
     } finally {
       setSharing(false);
     }
   };
+
   const handleFriendClick = async (friendId) => {
     try {
       setPreviewLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch(API.USERS.GET_USER(friendId), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedFriend(data.user);
-        setIsPreviewOpen(true);
-      }
+      const data = await apiRequest(API.USERS.GET_USER(friendId));
+      setSelectedFriend(data.user);
+      setIsPreviewOpen(true);
     } catch (error) {
       console.error('Error fetching friend details:', error);
     } finally {
@@ -156,14 +178,14 @@ export default function FriendWall() {
 
           <div className="flex flex-col h-full">
             {/* Subtitle */}
-            <p className="text-xs md:text-lg text-white/80 leading-relaxed mb-8 max-w-2xl px-2">
+            <p className="text-xs md:text-lg font-outfit text-white/80 leading-relaxed mb-8 max-w-2xl px-2">
               Once they were drifters now they are your real friend,
               and you are to them as well
             </p>
 
             {/* Wall Content Container */}
-            <div className="flex-1 border border-white/50 rounded-3xl p-2 overflow-hidden flex flex-col">
-              <div className="flex-1 overflow-y-auto pr-2">
+            <div ref={wallRef} className="flex-1 border border-white/50 rounded-3xl p-2 overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-y-auto scrollbar-hide pr-2">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
                     <p className="text-white/60">Loading your friends...</p>
@@ -179,7 +201,7 @@ export default function FriendWall() {
                       <div
                         key={friend.friendId || i}
                         onClick={() => handleFriendClick(friend.friendId)}
-                        className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group cursor-pointer hover:border-white/80 transition-all shadow-lg shadow-black/20"
+                        className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group cursor-pointer hover:border-white/80 transition-all "
                       >
                         <Image
                           src={friend.photoUrl}
@@ -188,9 +210,9 @@ export default function FriendWall() {
                           className="object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                         {previewLoading && selectedFriend?.id === friend.friendId && (
-                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                           </div>
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          </div>
                         )}
                       </div>
                     ))}
@@ -220,7 +242,7 @@ export default function FriendWall() {
             style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             onClick={(e) => e.stopPropagation()}
           >
- 
+
             <button
               type="button"
               className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
@@ -230,12 +252,12 @@ export default function FriendWall() {
             </button>
 
             <div className="relative z-10 flex flex-col items-center gap-4 max-h-[90vh]">
-            
+
 
               <div className="w-full flex justify-center py-4">
                 <div className="origin-center w-full transition-transform">
 
-                  
+
                   <FaceCard2
                     user={{
                       ...selectedFriend,

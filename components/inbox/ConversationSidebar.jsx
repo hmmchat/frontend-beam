@@ -109,10 +109,12 @@ export default function ConversationSidebar({
           : "text-white/70"
       }`}
     >
-      <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+      {requestsTabCount > 0 && (
+        <span className="w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_8px_#FACC15] animate-pulse shrink-0"></span>
+      )}
       Requests
       <span className="text-xs font-light font-outfit">
-       ({notif ? requestsTabCount : ""})
+       {requestsTabCount > 0 ? `(${requestsTabCount})` : ""}
       </span>
     </button>
 
@@ -165,7 +167,7 @@ export default function ConversationSidebar({
             </button>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto  md:px-0">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto scrollbar-hide md:px-0">
             {currentList.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-white/60">No conversations yet</p>

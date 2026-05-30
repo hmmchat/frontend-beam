@@ -44,7 +44,9 @@ export default function RemoteVideoTile({
   onGiftAnimationComplete,
   forceDismiss,
   showMinusButton = false,
-  onMinus
+  onMinus,
+  activeBadgeImageUrl,
+  activeBadge
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
@@ -422,13 +424,21 @@ export default function RemoteVideoTile({
                 </div>
               )}
             </div>
-            <div className="absolute left-5 top-5 w-10 md:w-11 pointer-events-none">
-              <img
-                src="/your-sticker.png"
-                className="w-full h-auto"
-                alt=""
-              />
-            </div>
+            {activeBadgeImageUrl ? (
+              <div className="absolute left-5 top-5 w-10 md:w-11 pointer-events-none">
+                <img
+                  src={activeBadgeImageUrl}
+                  className="w-full h-auto object-contain"
+                  alt="sticker"
+                />
+              </div>
+            ) : activeBadge?.giftEmoji ? (
+              <div className="absolute left-5 top-5 w-10 md:w-11 pointer-events-none flex items-center justify-center">
+                <span className="text-xl md:text-2xl leading-none">
+                  {activeBadge.giftEmoji}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* New Mobile Multi-User Overlapping Avatars */}

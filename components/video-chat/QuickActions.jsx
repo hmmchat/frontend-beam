@@ -8,11 +8,13 @@ export default function QuickActions({
   toggleRandomness,
   handleIcebreaker,
   isDareOpen,
-  isGiftModalOpen
+  isGiftModalOpen,
+  isRolling,
+  setIsRolling,
+  isBroken,
+  setIsBroken
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
-  const [isRolling, setIsRolling] = useState(false);
-  const [isBroken, setIsBroken] = useState(false);
 
   const diceImages = [
     '/dice/dice11.png',
@@ -45,12 +47,9 @@ export default function QuickActions({
     }
   }, [isRolling]);
 
-
-
   const isOverlayOpen = isGiftModalOpen || isDareOpen;
 
   const handleDiceClick = () => {
-    setIsRolling(true);
     toggleRandomness?.();
   };
 
@@ -61,28 +60,27 @@ export default function QuickActions({
     )}>
 
       {/* LEFT (Dice) - Positioned far left */}
-      {callRoles.isLocalHost && (
-        <button
-          onClick={handleDiceClick}
-          className="absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto shadow-2xl"
-        >
-          <img
-            src={isRolling ? diceImages[diceIndex] : '/dice.png'}
-            className={`w-7 h-7 ${isRolling ? 'rotate-180 scale-110' : ''
-              }`}
-          />
-        </button>
-      )}
-      {/* CENTER LOGO - Desktop Only */}
-      {/* <div className="hidden md:flex absolute bottom-2 left-1/2 -translate-x-1/2 h-14 items-center justify-center pointer-events-none">
-    <img src="/logotransparent.png" className="h-8 w-auto object-contain z-10" alt="Beam" />
-  </div> */}
+      <button
+        onClick={handleDiceClick}
+        disabled={!callRoles.isLocalHost}
+        className={clsx(
+          "absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 transition pointer-events-auto shadow-2xl",
+          callRoles.isLocalHost ? "hover:bg-[#0A032D]/40 cursor-pointer" : "opacity-85 cursor-not-allowed pointer-events-none"
+        )}
+      >
+        <img
+          src={isRolling ? diceImages[diceIndex] : '/dice.png'}
+          className={clsx(
+            "w-7 h-7 transition-transform",
+            isRolling && "rotate-180 scale-110"
+          )}
+        />
+      </button>
+
       {/* CENTER-RIGHT (Icecream) - Positioned at the right side of the left video (near 50% mark) */}
       <button
         onClick={() => {
-          setIsBroken(true);
           handleIcebreaker?.();
-          setTimeout(() => setIsBroken(false), 3000);
         }}
         className={clsx(
           "absolute top-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto ",

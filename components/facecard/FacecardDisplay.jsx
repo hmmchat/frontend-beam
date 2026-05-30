@@ -41,28 +41,28 @@ export default function FacecardDisplay({ user, age, setView, router }) {
           className="flex flex-1 flex-col items-center justify-center md:justify-center
                       min-h-[100dvh] md:min-h-0
                       overflow-y-auto md:overflow-visible
-                      rounded-[2rem] 
+                      
                       md:border md:border-white/30 md:rounded-[60px] 
-                      px-3 py-3 sm:px-4"
+                      px-3 py-3 sm:px-4 mx-auto"
         >
           <div
             className="flex w-full flex-col items-center text-center gap-6 
                        flex-1 justify-center 
-                       -mt-28 md:mt-0
-                       scale-[0.85] sm:scale-90 md:scale-100"
+                       -mt-18 md:mt-0
+                       scale-[0.85] sm:scale-90 md:scale-100 mx-auto"
           >
             <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden -mb-5">
               This is Your FaceCard
             </p>
 
-            <p className="text-[10px] sm:text-xs md:text-[11px] font-thin mb-4 md:hidden">
+            <p className="text-[10px] sm:text-[14xpx] font-outfit md:text-[11px] font-thin  md:hidden">
               People will see this before meeting you <br />
               You can add more info to get better matches
             </p>
 
             {/* CARD */}
-            <div className="flex justify-center w-full">
-              <div className="w-full">
+            <div className="flex justify-center w-full items-cener ">
+              <div className="w-full mx-auto">
                 <FaceCard
                   user={{
                     ...user,
@@ -76,34 +76,24 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full justify-center gap-4 px-2 md:hidden">
-              <button
-                onClick={handlePrev}
-                className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
-              >
-                <IoIosArrowBack />
-              </button>
+            <div className="flex w-full justify-center gap-4 mx-auto md:hidden ">
+
 
               <button
                 onClick={() => router.push("/")}
-                className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+                className="rounded-full w-full px-6 py-4 text-xs sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
               >
                 Later 🥱
               </button>
 
               <button
                 onClick={() => setView("editor")}
-                className="rounded-full px-6 py-4 text-xs sm:text-sm font-semibold border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+                className="rounded-full px-6 py-4 w-full text-xs sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
               >
-                Add Info 😤
+                Add Info More 😤
               </button>
 
-              <button
-                onClick={handleNext}
-                className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
-              >
-                <IoIosArrowForward />
-              </button>
+
             </div>
           </div>
         </div>

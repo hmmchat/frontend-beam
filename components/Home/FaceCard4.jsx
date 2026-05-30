@@ -238,7 +238,7 @@ const FaceCard4 = ({
             </div>
           )}
 
-         
+
           <div className="absolute bottom-0 left-1 right-1 top-[3.3rem] rounded-[34.46px] border border-white/45">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-2 z-20 px-2">
@@ -267,7 +267,7 @@ const FaceCard4 = ({
                             <img
                               src={src}
                               className="h-full w-full object-cover object-center"
-                      
+
                               alt=""
                             />
                           )}
@@ -293,7 +293,7 @@ const FaceCard4 = ({
                     </div>
                   )}
                   <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                    {user?.zodiac?.name }
+                    {user?.zodiac?.name}
                   </span>
                 </div>
 
@@ -301,12 +301,12 @@ const FaceCard4 = ({
                 <div className="flex h-[125px] w-[80px] shrink-0 flex-col items-center  border border-white/40 rounded-t-[79.52px] rounded-b-[49.52px] px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
 
 
-<img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
+                  <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
                   <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover animate-spin-slow"
                         alt=""
                       />
                     ) : (
@@ -314,21 +314,21 @@ const FaceCard4 = ({
                     )}
                   </div>
 
-                  
+
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
                   <div className="mt-1.5 w-full px-0.5 text-center text-white">
 
                     <div className="marquee">
-    <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
-      {user.musicPreference ? songTitle : '\u00a0'}
-    </p>
-  </div>
+                      <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
+                        {user.musicPreference ? songTitle : '\u00a0'}
+                      </p>
+                    </div>
 
-  <div className="marquee  mt-[1px]">
-    <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
-      {user.musicPreference ? artist : '\u00a0'}
-    </p>
-  </div>
+                    <div className="marquee  mt-[1px]">
+                      <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
+                        {user.musicPreference ? artist : '\u00a0'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -336,7 +336,7 @@ const FaceCard4 = ({
               </div>
 
               {/* RIGHT IMAGE */}
-            <div className="flex-1 h-full overflow-hidden ">
+              <div className="flex-1 h-full overflow-hidden ">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover rounded-[20px]"
@@ -344,7 +344,7 @@ const FaceCard4 = ({
                 />
               </div>
 
-              
+
             </div>
 
             {/* Pagination */}
@@ -364,7 +364,7 @@ const FaceCard4 = ({
             </div>
 
 
-            
+
           </div>
         </div>
       </div>

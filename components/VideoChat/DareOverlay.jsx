@@ -5,22 +5,6 @@ import clsx from "clsx";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { FaRegBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
 
-const giftItems = [
-  { id: 1, name: "Monkey", price: 50, img: "🐒" },
-  { id: 2, name: "Pika", price: 250, img: "⚡" },
-  { id: 3, name: "Super", price: 2000, img: "🦸" },
-  { id: 4, name: "Iron", price: 25000, img: "🤖" },
-];
-
-const daresList = [
-  "Eat a chilli",
-  "Do 10 pushups",
-  "Sing a song out loud",
-  "Show your last photo",
-  "Dance for 15 seconds",
-  "Bark like a dog"
-];
-
 export default function DareOverlay({
   isOpen,
   onClose,
@@ -31,24 +15,41 @@ export default function DareOverlay({
   onSendDare,
   coins = 0,
   onOpenCoinModal,
-  recipientName = "Sanya"
+  recipientName = "Sanya",
+  randomDares = [],
+  savedDares = [],
+  onSaveCustomDare,
+  onDeleteCustomDare,
+  giftItems = []
 }) {
   const [dareTab, setDareTab] = useState("Random");
   const [dareIndex, setDareIndex] = useState(0);
   const [stage, setStage] = useState(1);
-  const [synced, setSynced] = useState(false);
+  const [dareText, setDareText] = useState("");
+
+  const currentList = dareTab === "Random" ? randomDares : savedDares;
+  const activeDare = currentList[dareIndex];
+
+  // Sync state whenever active dare changes
+  useEffect(() => {
+    if (activeDare) {
+      setDareText(activeDare.text || "");
+    } else {
+      setDareText("");
+    }
+  }, [activeDare]);
 
   const selectedGift = giftItems.find((g) => g.id === selectedGiftId);
 
   useEffect(() => {
-    if (isOpen && onDareSync) {
+    if (isOpen && onDareSync && activeDare) {
       onDareSync({
-        dareText: daresList[dareIndex],
+        dareId: activeDare.id,
+        dareText: dareText,
         gift: selectedGift,
       });
-      setSynced(true);
     }
-  }, [dareIndex, selectedGiftId, isOpen, onDareSync]); // Also including onDareSync in dependency array is a good practice
+  }, [dareText, selectedGift, isOpen, onDareSync, activeDare]);
 
   // Transition to stage 2 when accepted
   useEffect(() => {
@@ -62,11 +63,18 @@ export default function DareOverlay({
   if (!isOpen) return null;
 
   const handleNextDare = () => {
-    setDareIndex((prev) => (prev + 1) % daresList.length);
+    if (currentList.length === 0) return;
+    setDareIndex((prev) => (prev + 1) % currentList.length);
   };
 
   const handlePrevDare = () => {
-    setDareIndex((prev) => (prev - 1 + daresList.length) % daresList.length);
+    if (currentList.length === 0) return;
+    setDareIndex((prev) => (prev - 1 + currentList.length) % currentList.length);
+  };
+
+  const handleTabChange = (tab) => {
+    setDareTab(tab);
+    setDareIndex(0);
   };
 
   const currentPrice = selectedGift ? selectedGift.price : 0;
@@ -78,14 +86,20 @@ export default function DareOverlay({
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Overlay Container */}
-      <div className="absolute z-50 md:bottom-0 bottom-[0%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4">
+      <div
+        onClick={onClose}
+        className="absolute z-50 md:bottom-0 bottom-[0%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4"
+      >
         {/* 1st VIEW */}
         {stage === 1 && (
-          <div className="flex flex-col items-center md:items-end w-full max-w-[480px] relative">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center md:items-end w-full max-w-[480px] relative"
+          >
             {/* Tabs */}
             <div className="flex gap-2 md:mr-6 ml-40 -mb-[2px] relative z-20">
               <button
-                onClick={(e) => { e.stopPropagation(); setDareTab("Saved"); }}
+                onClick={(e) => { e.stopPropagation(); handleTabChange("Saved"); }}
                 className={clsx(
                   "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[10px] border-2 border-b-0 text-sm font-medium transition-colors",
                   dareTab === "Saved" ? "bg-white text-[#4C1A99] border-white" : "bg-[#1A1A1A] text-white border-white"
@@ -94,7 +108,7 @@ export default function DareOverlay({
                 Saved
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); setDareTab("Random"); }}
+                onClick={(e) => { e.stopPropagation(); handleTabChange("Random"); }}
                 className={clsx(
                   "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[10px] border-2 border-b-0 text-sm font-medium transition-colors",
                   dareTab === "Random" ? "bg-white text-[#4C1A99] border-white" : "bg-[#1A1A1A] text-white border-white"
@@ -106,7 +120,7 @@ export default function DareOverlay({
 
             <div
               onClick={(e) => e.stopPropagation()}
-              className="border-2 border-white md:rounded-[40px] rounded-[24px] w-full md:p-8 p-3 shadow-2xl relative overflow-hidden"
+              className="border-2 border-white md:rounded-[40px] rounded-[24px] w-full md:p-8 p-3  relative overflow-hidden"
             >
               {/* Background */}
               <div
@@ -129,11 +143,24 @@ export default function DareOverlay({
                   {dareTab === "Random" ? (
                     <FaRegBookmark
                       className="text-white text-xl cursor-pointer hover:text-white/80 transition"
-                      onClick={() => setDareTab("Saved")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (dareText.trim() && onSaveCustomDare) {
+                          onSaveCustomDare(dareText.trim());
+                        }
+                      }}
                     />
                   ) : (
                     <FaRegTrashAlt
                       className="text-white text-xl cursor-pointer hover:text-white/80 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeDare && onDeleteCustomDare) {
+                          onDeleteCustomDare(activeDare.id);
+                          const nextLength = Math.max(0, currentList.length - 1);
+                          setDareIndex(prev => nextLength > 0 ? Math.min(prev, nextLength - 1) : 0);
+                        }
+                      }}
                     />
                   )}
                   <FaRegQuestionCircle className="text-white text-2xl cursor-pointer hover:text-white/80 transition" />
@@ -152,13 +179,14 @@ export default function DareOverlay({
 
 
 
-                  <div className="text-center w-full">
-
-                    <div className=" md:px-4 px-2 py-2 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm font-medium">
-                      {daresList[dareIndex]}
-                    </div>
-
-
+                  <div className="text-center w-full relative z-20">
+                    <input
+                      type="text"
+                      value={dareText}
+                      onChange={(e) => setDareText(e.target.value)}
+                      placeholder="Type a custom dare..."
+                      className="md:px-4 px-2 py-2 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm font-medium text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
+                    />
                   </div>
 
                   <FaAngleRight
@@ -199,8 +227,14 @@ export default function DareOverlay({
                             : "border-white/60",
                         )}
                       >
-                        <div className="md:text-3xl text-2xl">{gift.img}</div>
-                        <div className="md:text-xs text-[9px] mt-1 flex justify-center items-center gap-1">💎 {gift.price}</div>
+                        <div className="md:text-3xl text-2xl flex items-center justify-center">
+                          {gift.imageUrl ? (
+                            <img src={gift.imageUrl} className="w-10 h-10 object-contain" alt={gift.name} />
+                          ) : (
+                            gift.img
+                          )}
+                        </div>
+                        <div className="md:text-xs text-[9px] mt-1 flex justify-center items-center gap-1">💎 {gift.diamonds}</div>
                       </div>
                     ))}
                   </div>
@@ -219,78 +253,81 @@ export default function DareOverlay({
 
         {/* {2nd view} */}
         {stage === 2 && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className=" w-full max-w-[360px] border-32 border-white/40 rounded-[32px] p-6  relative overflow-hidden"
-          >
+
+
+          <div className="absolute z-[65] md:bottom-[14vh] bottom-6 left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
             <div
-              className="absolute inset-0"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[32px] p-6 relative overflow-hidden"
               style={{
                 backgroundImage: "url(/assets/mb.jpg)",
                 backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.9,
               }}
-            />
-            {/* Header Icons */}
-            <div className="flex justify-between items-center mb-0 px-2 z-10 relative">
-              <button className="text-white/80 z-10 cursor-pointer" onClick={() => setStage(1)}>
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-                </svg>
-              </button>
-              <button className="text-white/80 z-10">
-                <FaRegQuestionCircle className="text-white text-2xl cursor-pointer hover:text-white/80 transition" />
-              </button>
-            </div>
-
-            {/* Sanya Text */}
-            <div className="text-center -mt-4 mb-4 relative px-8">
-
-              <p className="text-[10px] text-white/70 uppercase tracking-widest font-medium">
-                {recipientName} is ready to
-              </p>
-              <div className="mt-2 inline-block px-14 py-2.5 border border-white/60 rounded-full text-white font-bold text-base bg-white/5">
-                {daresList[dareIndex]}
+            >
+              {/* Header Icons */}
+              <div className="flex justify-between items-center relative z-10">
+                <button
+                  className="text-white/85 z-10 cursor-pointer hover:text-white active:scale-95 transition"
+                  onClick={() => setStage(1)}
+                >
+                  <FaAngleLeft className="text-2xl" />
+                </button>
+                <button className="text-white/80 z-10">
+                  <FaRegQuestionCircle className="text-white text-2xl cursor-pointer hover:text-white/80 transition" />
+                </button>
               </div>
 
-            </div>
+              {/* Dare Info */}
+              <div className="text-center relative z-10 px-4 mb-2">
+                <p className="text-[11px] text-white/90 font-medium mb-2">
+                  {recipientName} is ready to
+                </p>
+                <div className="inline-block px-8 w-[80%] py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm whitespace-nowrap">
+                  {dareText || "Do a dare"}
+                </div>
+              </div>
 
-            <div className="relative flex items-center justify-center mt-8 pb-4">
-              {/* Circular Connector HUD Style Overlay */}
-
-
-              <div className="relative flex items-center justify-between w-full px-2 py-2 z-10 gap-2 border-[1px] border-white/40 rounded-full">
+              {/* Circular HUD Display */}
+              <div className="relative flex items-center justify-between w-full px-2 py-2 z-10 gap-2 border border-white/40 rounded-full mt-4">
                 {/* Price Circle */}
-                <div className="w-16 h-16 rounded-full border border-white/30 flex flex-col items-center justify-center ">
-                  <div className="text-[10px] scale-125 mb-0.5">💎</div>
-                  <div className="text-[10px] font-bold text-white leading-none">
-                    {selectedGift?.price || "---"}
+                <div className="w-16 h-16 rounded-full border border-white/30 flex flex-col items-center justify-center shrink-0">
+                  <div className="text-xs mb-0.5">💎</div>
+                  <div className="text-[11px] font-bold text-white leading-none">
+                    {selectedGift?.diamonds || "---"}
                   </div>
                 </div>
 
-                {/* Status Middle Circle */}
-                <div className="flex flex-col items-center justify-center min-w-[80px]">
-                  <div className="w-10 h-10 flex items-center justify-center ">
-                    <img src="/gift-light.svg" alt="coin" className="w-7" />
+                {/* Status Middle */}
+                <div className="flex flex-col items-center justify-center flex-1">
+                  <div className="w-8 h-8 flex items-center justify-center mb-1">
+                    <img src="/gift-light.svg" alt="gift" className="w-6" />
                   </div>
-                  <p className="text-[9px] text-white/80 font-medium whitespace-nowrap uppercase tracking-tighter">
+                  <p className="text-[10px] text-white/90 font-medium whitespace-nowrap uppercase tracking-tighter">
                     Gift added
                   </p>
                 </div>
 
                 {/* Gift Image Circle */}
-                <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center ">
+                <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center shrink-0 ">
                   <div className="text-3xl filter drop-shadow-md">
-                    {selectedGift?.img || "🎁"}
+                    {selectedGift?.imageUrl ? (
+                      <img src={selectedGift.imageUrl} className="w-10 h-10 object-contain" alt={selectedGift.name} />
+                    ) : (
+                      selectedGift?.img || "🎁"
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
         )}
       </div>
 
       {/* Bottom Bar */}
-      <div className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
+      <div onClick={(e) => e.stopPropagation()} className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
         {/* Background */}
         <div
           className="absolute inset-0 z-0 pointer-events-auto"
@@ -357,7 +394,7 @@ export default function DareOverlay({
           >
             <div
               className={clsx(
-                "absolute inset-0 rounded-full flex items-center justify-center shadow-xl border-2 sm:border-4 border-black/20",
+                "absolute inset-0 rounded-full flex items-center justify-center  border-2 sm:border-4 border-black/20",
                 dareAcceptanceStatus === "accepted"
                   ? "bg-red-600"
                   : "bg-gray-600"
@@ -374,7 +411,7 @@ export default function DareOverlay({
       </div>
 
       {/* Bottom Bar Mobile */}
-      <div className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
+      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
         <div
           className="absolute inset-0 z-0 pointer-events-auto"
           style={{
@@ -429,7 +466,7 @@ export default function DareOverlay({
             >
               <div
                 className={clsx(
-                  "absolute inset-0 rounded-full flex items-center justify-center shadow-xl border-2 border-black/20",
+                  "absolute inset-0 rounded-full flex items-center justify-center  border-2 border-black/20",
                   dareAcceptanceStatus === "accepted" ? "bg-red-600" : "bg-gray-600"
                 )}
               >

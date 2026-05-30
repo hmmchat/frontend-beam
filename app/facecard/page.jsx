@@ -606,11 +606,11 @@ function FacecardContent() {
     setActiveSlot(slotIndex);
     fileInputRef.current?.click();
   };
-  
+
   const handleDeletePhoto = async (photoId) => {
     const token = localStorage.getItem("accessToken");
     if (!token) return;
-    
+
     try {
       setPhotoUploading(true);
       const res = await fetch(API.USERS.DELETE_PHOTO(photoId), {
@@ -620,12 +620,12 @@ function FacecardContent() {
           "Content-Type": "application/json",
         },
       });
-      
+
       if (!res.ok) {
         const msg = await readHttpErrorMessage(res);
         throw new Error(msg || "Delete failed");
       }
-      
+
       setUser((prev) => ({
         ...prev,
         photos: (prev.photos || []).filter((p) => p.id !== photoId),
@@ -1031,7 +1031,10 @@ function FacecardContent() {
   const firstName = user?.username?.split(" ")[0] || "User";
   const city = user?.preferredCity || user?.city || "Unknown";
   return (
-    <div className={clsx('relative', 'flex', 'h-dvh', 'max-h-dvh', 'min-h-0', 'flex-col', 'overflow-hidden', 'overscroll-none')}>
+    <div className={clsx(
+      'relative', 'flex', 'min-h-0', 'flex-col',
+      view === "success" ? "min-h-screen h-auto overflow-y-auto" : "h-dvh max-h-dvh overflow-hidden overscroll-none"
+    )}>
       <PortraitImageCropModal
         open={cropModalOpen && !!cropImageUrl}
         imageUrl={cropImageUrl}
@@ -1039,7 +1042,7 @@ function FacecardContent() {
         onComplete={handleCroppedPhoto}
         busy={photoUploading}
       />
-      <div className={clsx('flex', 'min-h-0', 'flex-1', 'flex-col', 'overflow-hidden')}>
+      <div className={clsx('flex', 'min-h-0', 'flex-1', 'flex-col', view === "success" ? "" : "overflow-hidden")}>
         {view === "success" ? (
           <FacecardDisplay
             user={user}
@@ -1112,12 +1115,12 @@ function FacecardContent() {
           >
 
 
-      
+
 
             <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-[98vh]', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'w-[960px]')}>
-        
 
-   {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
+
+              {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
    
          
             
@@ -1151,22 +1154,22 @@ function FacecardContent() {
 
 
               <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'max-h-[96vh]')}>
-  <div
-    ref={facecardPreviewExportRef}
-    className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full',  'mx-auto' ,'      md:[@media(max-height:1000px)]:scale-[0.90]')}
-  >
-    <FaceCard2
-      user={{
-        ...user,
-        age,
-        city: user?.preferredCity || user?.city,
-      }}
-      onClose={() => setFacecardPreviewOpen(false)}
-      onDownload={handleDownloadFacecard}
-      onShare={handleShareFacecard}
-    />
-  </div>
-</div>
+                <div
+                  ref={facecardPreviewExportRef}
+                  className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full', 'mx-auto', '      md:[@media(max-height:1000px)]:scale-[0.90]')}
+                >
+                  <FaceCard2
+                    user={{
+                      ...user,
+                      age,
+                      city: user?.preferredCity || user?.city,
+                    }}
+                    onClose={() => setFacecardPreviewOpen(false)}
+                    onDownload={handleDownloadFacecard}
+                    onShare={handleShareFacecard}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

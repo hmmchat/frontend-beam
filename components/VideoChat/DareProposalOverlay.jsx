@@ -13,7 +13,7 @@ export default function DareProposalOverlay({
 
   return (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={onReject} />
+      <div className="fixed inset-0 z-[60]" />
 
       <div className="absolute z-[65] md:bottom-8 bottom-6 left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
 
@@ -29,11 +29,7 @@ export default function DareProposalOverlay({
         >
           {/* Header Icons */}
           <div className="flex justify-between items-center  relative z-10">
-            <button className="text-white/80 cursor-pointer" onClick={onReject}>
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-              </svg>
-            </button>
+            <div className="w-6 h-6" />
             <button className="text-white/80">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
@@ -74,7 +70,11 @@ export default function DareProposalOverlay({
             {/* Gift Image Circle */}
             <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center shrink-0 ">
               <div className="text-3xl filter drop-shadow-md">
-                {proposal.giftImg || "🎁"}
+                {proposal.giftImg && (proposal.giftImg.startsWith("http") || proposal.giftImg.startsWith("/")) ? (
+                  <img src={proposal.giftImg} className="w-10 h-10 object-contain" alt="" />
+                ) : (
+                  proposal.giftImg || "🎁"
+                )}
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function DareProposalOverlay({
 
         </div>
 
-        <div className="flex justify-between items-center gap-3 relative w-[350px] mt-3 z-10">
+        <div className="flex justify-between items-center gap-3 relative w-[350px] mt-3 z-10 pointer-events-auto">
           <button
             onClick={onReject}
             style={{

@@ -94,25 +94,110 @@ const FaceCard = ({
   return (
     <>
 
-     <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+      <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+        <div>
+          <h1 className="font-sigmar text-xl font-extrabold text-[#F2AD00]">
+            {user.username || "User"}
+            {!hideFacecardAge && (
+              <>
+                {" "}
+                <span
+                  className="text-stroke-yellow"
+
+                >
+                  {age || "—"}
+                </span>
+              </>
+            )}
+          </h1>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          {inSquad && (
+            <button
+              type="button"
+              className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+            >
+              Squad
+            </button>
+          )}
+          {isBroadcasting && (
+            <span
+              className="flex h-6 w-6 items-center justify-center text-white"
+              title="Broadcasting"
+            >
+              <IoRadio className="h-5 w-5" />
+            </span>
+          )}
+          {/* <span
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                    title={isVideoOn ? "Video on" : "Video off"}
+                  >
+                    {isVideoOn ? (
+                      <IoVideocam className="h-5 w-5" />
+                    ) : (
+                      <IoVideocamOff className="h-5 w-5" />
+                    )}
+                  </span> */}
+          <button
+            type="button"
+            className="flex h-6 w-6 items-center justify-center text-white"
+          >
+            <IoEllipsisVerticalSharp />
+          </button>
+        </div>
+      </div>
+
+
+
+
+
+      <div
+        className="
+          w-[100vw] max-w-[360px] 
+          aspect-[364/680]
+          mx-auto
+      
+          [@media(max-height:950px)]:scale-[0.95]
+          [@media(max-height:850px)]:scale-[0.9]
+          [@media(max-height:750px)]:scale-[0.85]
+          [@media(max-height:650px)]:scale-[0.8]
+          [@media(max-height:550px)]:scale-[0.75]
+          origin-top
+        "
+      >
+        <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/40 md:border-none ">
+          {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
+          {!hideHeader && (
+            <>
+              {/* Desktop header (larger laptops) */}
+
+
+
+
+
+
+
+
+
+
+              {/* Mobile header (phones + very small tablets) */}
+              <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
                 <div>
-                  <h1 className="text-[18px] font-extrabold text-[#FFB800] text-start">
+                  <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
                     {user.username || "User"}
                     {!hideFacecardAge && (
                       <>
                         {" "}
                         <span
-                          className="font-sm text-transparent px-2 py-0.5 rounded-full"
-                          style={{ WebkitTextStroke: "0.7px white" }}
+                          className="text-stroke-yellow "
+
                         >
                           {age || "—"}
                         </span>
                       </>
                     )}
                   </h1>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-                    <span className="font-outfit">{city}</span>
-                  </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -150,98 +235,6 @@ const FaceCard = ({
                   </button>
                 </div>
               </div>
-
-
-
-
-
-      <div
-        className="
-          w-[100vw] max-w-[360px] 
-          aspect-[364/680]
-          mx-auto
-      
-          [@media(max-height:950px)]:scale-[0.95]
-          [@media(max-height:850px)]:scale-[0.9]
-          [@media(max-height:750px)]:scale-[0.85]
-          [@media(max-height:650px)]:scale-[0.8]
-          [@media(max-height:550px)]:scale-[0.75]
-          origin-top
-        "
-      >
-        <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/40 md:border-none ">
-          {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
-          {!hideHeader && (
-            <>
-              {/* Desktop header (larger laptops) */}
-         
-
-
-
-
-
-
-
-              
-
-              {/* Mobile header (phones + very small tablets) */}
-              <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
-                <div>
-                  <h1 className="text-[14px] text-left text-[#FFB800]">
-                    {user.username || "User"}
-                    {!hideFacecardAge && (
-                      <>
-                        {" "}
-                        <span
-                          className="font-xs text-xs  text-transparent px-2 py-0.5 rounded-full"
-                          style={{ WebkitTextStroke: "0.7px white" }}
-                        >
-                          {age || "—"}
-                        </span>
-                      </>
-                    )}
-                  </h1>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-                    <IoLocationOutline className="shrink-0" />
-                    <span className="truncate font-outfit">{city}</span>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {inSquad && (
-                    <button
-                      type="button"
-                      className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-                    >
-                      Squad
-                    </button>
-                  )}
-                  {isBroadcasting && (
-                    <span
-                      className="flex h-6 w-6 items-center justify-center text-white"
-                      title="Broadcasting"
-                    >
-                      <IoRadio className="h-5 w-5" />
-                    </span>
-                  )}
-                  <span
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                    title={isVideoOn ? "Video on" : "Video off"}
-                  >
-                    {isVideoOn ? (
-                      <IoVideocam className="h-5 w-5" />
-                    ) : (
-                      <IoVideocamOff className="h-5 w-5" />
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                  >
-                    <IoEllipsisVerticalSharp />
-                  </button>
-                </div>
-              </div>
             </>
           )}
 
@@ -256,9 +249,9 @@ const FaceCard = ({
               </div>
             </div>
 
-            <div className="absolute bottom-2 left-2 right-2 top-[6.10rem] md:top-[7rem] flex gap-2">
+            <div className="absolute bottom-2 left-2 right-2 top-[6.5rem] md:top-[7rem] flex gap-2">
               {/* LEFT SIDEBAR */}
-              <div className="w-[23%] flex flex-col items-center gap-[6px] z-20">
+              <div className="w-[23%] flex flex-col items-center gap-[9px] md:gap-[6px] z-20">
                 {/* Brands capsule */}
                 <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
                   <div className="flex flex-col items-center gap-1">
@@ -304,15 +297,15 @@ const FaceCard = ({
                 </div>
 
                 {/* Music — FIXED: added "relative" so the musicline.svg stays inside the music capsule on ALL screen sizes */}
-                 <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[79.52px] rounded-b-[49.52px] border border-white/40 px-1 pb-1 pt-1 shadow-inner backdrop-blur-sm">
 
 
-<img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
-                  <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                  <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
+                  <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 ">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover animate-spin-slow"
                         alt=""
                       />
                     ) : (
@@ -320,16 +313,19 @@ const FaceCard = ({
                     )}
                   </div>
 
-                  
+
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
                   <div className="mt-1.5 w-full px-0.5 text-center text-white">
-
-                  <p className="text-[9px] font-medium leading-tight tracking-wide truncate whitespace-nowrap overflow-hidden">
-  {user.musicPreference ? songTitle : '\u00a0'}
-</p>
-                 <p className="mt-0.5 text-[7px] font-extralight leading-tight text-white/70 truncate">
-  {user.musicPreference ? artist : '\u00a0'}
-</p>
+                    <div className="marquee">
+                      <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
+                        {user.musicPreference ? songTitle : '\u00a0'}
+                      </p>
+                    </div>
+                    <div className="marquee mt-[1px]">
+                      <p className="text-[9px] marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
+                        {user.musicPreference ? artist : '\u00a0'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -369,7 +365,7 @@ const FaceCard = ({
         </div>
       </div>
 
-      
+
     </>
   );
 };

@@ -670,7 +670,7 @@ export default function MeetSomeoneNew({
 
             {/* Mic/Audio Controls */}
             {canSquadMeet && (
-              <div className="flex items-center gap-4 rounded-full border border-white/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center w-[38%] mx-auto gap-4 rounded-full border border-white/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
 
                 <button
                   onClick={() => setSquadLobbyMicMuted?.((prev) => !prev)}
@@ -700,7 +700,7 @@ export default function MeetSomeoneNew({
             )}
 
             {/* Share Icons */}
-            <div className="flex items-center gap-4 rounded-full  bg-[#08002C]/40 w-[100%] mx-auto py-2 px-10">
+            <div className="flex items-center gap-4 rounded-full mb-3  bg-[#08002C]/40 w-[100%] mx-auto py-2 px-10">
 
               <div className="flex-1 text-[11px] text-white/90 font-outfit">
                 Share to
@@ -743,7 +743,7 @@ export default function MeetSomeoneNew({
           </div>
 
           {/* Squad CTA */}
-          <div className="w-full mx-auto">
+          <div className="w-full mx-auto mt-3" >
 
             {canSquadMeet ? (
               <MeetNowButton

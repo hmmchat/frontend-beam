@@ -18,6 +18,7 @@ import clsx from 'clsx';
 import FaceCard from '@/components/Home/FaceCard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
 import CoinModal from '@/components/modals/CoinModal';
+import { enrichUserStickerFields } from '@/lib/stickers';
 
 import ProfileGuard from '@/components/auth/ProfileGuard';
 
@@ -170,6 +171,11 @@ function VideoChatContent() {
   const [activeLocalGift, setActiveLocalGift] = useState(null);
   const [activeDareProposal, setActiveDareProposal] = useState(null);
   const [dareAcceptanceStatus, setDareAcceptanceStatus] = useState("idle");
+  const [randomDares, setRandomDares] = useState([]);
+  const [savedDares, setSavedDares] = useState([]);
+  const [giftItems, setGiftItems] = useState([]);
+  const [isRolling, setIsRolling] = useState(false);
+  const [isBroken, setIsBroken] = useState(false);
   const [waitlist, setWaitlist] = useState([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
@@ -185,6 +191,7 @@ function VideoChatContent() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null); // Separate ref so srcObject can be re-assigned via useEffect
+  const currentDareRef = useRef(null);
   const wsRef = useRef(null);
   const deviceRef = useRef(null);
   const sendTransportRef = useRef(null);
@@ -332,6 +339,109 @@ function VideoChatContent() {
     refreshWallet();
   }, [refreshWallet]);
 
+  const fetchRandomDares = useCallback(async () => {
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    const userId = userIdRef.current;
+    if (!roomId || !userId) return;
+    try {
+      const res = await apiRequest(API.STREAMING.GET_RANDOM_DARES(roomId, userId));
+      if (res && res.dares) {
+        const mapped = res.dares.map(d => ({
+          id: d.id,
+          text: d.text,
+          isCustom: d.isCustom || false,
+          customDareId: d.customDareId || null
+        }));
+        setRandomDares(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch random dares:", err);
+    }
+  }, [roomInfo]);
+
+  const fetchSavedDares = useCallback(async () => {
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    const userId = userIdRef.current;
+    if (!roomId || !userId) return;
+    try {
+      const res = await apiRequest(API.STREAMING.GET_SAVED_DARES(roomId, userId));
+      if (res && res.dares) {
+        const mapped = res.dares.map(d => ({
+          id: d.id,
+          text: d.dareText,
+          isCustom: true
+        }));
+        setSavedDares(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved dares:", err);
+    }
+  }, [roomInfo]);
+
+  const handleSaveCustomDare = useCallback(async (dareText) => {
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    const userId = userIdRef.current;
+    if (!roomId || !userId || !dareText) return;
+    try {
+      await apiRequest(API.STREAMING.SAVE_CUSTOM_DARE(roomId), {
+        method: 'POST',
+        body: JSON.stringify({ userId, dareText, category: 'custom' })
+      });
+      await fetchSavedDares();
+    } catch (err) {
+      console.error("Failed to save custom dare:", err);
+      alert("Failed to save custom dare");
+    }
+  }, [roomInfo, fetchSavedDares]);
+
+  const handleDeleteCustomDare = useCallback(async (dareId) => {
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    const userId = userIdRef.current;
+    if (!roomId || !userId || !dareId) return;
+    try {
+      await apiRequest(API.STREAMING.DELETE_CUSTOM_DARE(roomId, dareId, userId), {
+        method: 'DELETE'
+      });
+      await fetchSavedDares();
+    } catch (err) {
+      console.error("Failed to delete custom dare:", err);
+      alert("Failed to delete custom dare");
+    }
+  }, [roomInfo, fetchSavedDares]);
+
+  useEffect(() => {
+    if (isDareOpen) {
+      fetchRandomDares();
+      fetchSavedDares();
+    }
+  }, [isDareOpen, fetchRandomDares, fetchSavedDares]);
+
+  const fetchGiftItems = useCallback(async () => {
+    try {
+      const data = await apiRequest(API.FRIENDS.GET_GIFT_CATALOG);
+      if (data && data.gifts) {
+        const formatted = data.gifts.map((g, idx) => {
+          const diamondsVal = g.diamonds ?? g.coins ?? 0;
+          return {
+            id: g.giftId || idx,
+            name: g.name,
+            price: diamondsVal * 100,
+            diamonds: diamondsVal,
+            img: g.emoji || "🎁",
+            imageUrl: g.imageUrl
+          };
+        });
+        setGiftItems(formatted);
+      }
+    } catch (err) {
+      console.error("Failed to load gifts", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGiftItems();
+  }, [fetchGiftItems]);
+
   function teardownMediasoupState({ clearRemoteStreams = true } = {}) {
     if (wsReconnectTimerRef.current) {
       clearTimeout(wsReconnectTimerRef.current);
@@ -438,7 +548,8 @@ function VideoChatContent() {
         const uid = String(streamInfo.userId);
         try {
           const profileResp = await apiRequest(API.USERS.GET_USER(uid));
-          const profile = profileResp?.user || {};
+          const rawProfile = profileResp?.user || {};
+          const profile = await enrichUserStickerFields(rawProfile);
           let age = '';
           if (profile.dateOfBirth) {
             const dob = new Date(profile.dateOfBirth);
@@ -462,6 +573,8 @@ function VideoChatContent() {
                   age,
                   displayPictureUrl: profile.displayPictureUrl || '/avatar-placeholder.png',
                   city: profile.preferredCity || '',
+                  activeBadgeImageUrl: profile.activeBadgeImageUrl || null,
+                  activeBadge: profile.activeBadge || null,
                   profileFetched: true
                 }
                 : s
@@ -700,12 +813,15 @@ function VideoChatContent() {
       mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
       setRoomInfo(info);
       if (info.partner) {
+        const enrichedPartner = await enrichUserStickerFields(info.partner);
         const pInfo = {
-          id: info.partner.id || '',
-          name: info.partner.username || 'Matched!',
-          age: info.partner.age || '',
-          city: info.partner.city || '',
-          displayPictureUrl: info.partner.displayPictureUrl || '/avatar-placeholder.png'
+          id: enrichedPartner.id || '',
+          name: enrichedPartner.username || 'Matched!',
+          age: enrichedPartner.age || '',
+          city: enrichedPartner.city || '',
+          displayPictureUrl: enrichedPartner.displayPictureUrl || '/avatar-placeholder.png',
+          activeBadgeImageUrl: enrichedPartner.activeBadgeImageUrl || null,
+          activeBadge: enrichedPartner.activeBadge || null
         };
         setPartnerInfo(pInfo);
         partnerInfoRef.current = pInfo;
@@ -2114,16 +2230,21 @@ function VideoChatContent() {
         const myId = userIdRef.current;
         const pInfo = partnerInfoRef.current;
         const remotes = remoteStreamsRef.current;
-
-        // Try to parse message as JSON gift reaction or dismissal
+               // Try to parse message as JSON gift reaction or dismissal
         let isGift = false;
         let isGiftDismiss = false;
         let isDareSync = false;
         let isDareResponse = false;
+        let isDareClose = false;
+        let isDiceRoll = false;
+        let isIcebreakerTrigger = false;
         let giftData = null;
         let dismissData = null;
         let dareSyncData = null;
         let dareResponseData = null;
+        let dareCloseData = null;
+        let diceRollData = null;
+        let icebreakerTriggerData = null;
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
@@ -2139,6 +2260,15 @@ function VideoChatContent() {
             } else if (parsed && parsed.isDareResponse) {
               isDareResponse = true;
               dareResponseData = parsed;
+            } else if (parsed && parsed.isDareClose) {
+              isDareClose = true;
+              dareCloseData = parsed;
+            } else if (parsed && parsed.isDiceRoll) {
+              isDiceRoll = true;
+              diceRollData = parsed;
+            } else if (parsed && parsed.isIcebreakerTrigger) {
+              isIcebreakerTrigger = true;
+              icebreakerTriggerData = parsed;
             }
           }
         } catch (e) { }
@@ -2146,13 +2276,15 @@ function VideoChatContent() {
         if (isDareSync && dareSyncData) {
           // If we are the target of this dare sync, update our proposal UI
           if (String(dareSyncData.targetUserId) === String(myId)) {
+            const senderStream = remotes.find(s => String(s.userId) === String(dareSyncData.senderId));
+            const displayName = senderStream?.name || dareSyncData.senderName || "Someone";
             setActiveDareProposal({
               dareText: dareSyncData.dareText,
               giftId: dareSyncData.giftId,
               giftImg: dareSyncData.giftImg,
               giftPrice: dareSyncData.giftPrice,
               senderId: dareSyncData.senderId,
-              senderName: dareSyncData.senderName
+              senderName: displayName === 'You' ? 'Someone' : displayName
             });
           }
           break;
@@ -2169,10 +2301,35 @@ function VideoChatContent() {
           break;
         }
 
+        if (isDareClose && dareCloseData) {
+          if (String(dareCloseData.targetUserId) === String(myId)) {
+            setActiveDareProposal(null);
+          }
+          break;
+        }
+
+        if (isDiceRoll && diceRollData) {
+          if (String(diceRollData.senderId) !== String(myId)) {
+            setIsRolling(true);
+          }
+          break;
+        }
+
+        if (isIcebreakerTrigger && icebreakerTriggerData) {
+          if (String(icebreakerTriggerData.senderId) !== String(myId)) {
+            setIsBroken(true);
+            setTimeout(() => setIsBroken(false), 3000);
+          }
+          break;
+        }
+
         if (isGiftDismiss && dismissData) {
           const { messageId } = dismissData;
           setActiveRemoteGift((prev) =>
             prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev
+          );
+          setActiveLocalGift((prev) =>
+            prev && prev.messageId === messageId ? { ...prev, isDismissed: true } : prev
           );
           break; // Stop execution, don't display in regular chat history
         }
@@ -2194,14 +2351,13 @@ function VideoChatContent() {
             senderId
           };
 
-          // Gift animation always shows on a REMOTE tile — never on local.
-          // - If I'm the recipient (targetUserId === me): show on the sender's remote tile
-          // - Otherwise: show on the recipient's remote tile
-          const tileUserId = String(targetUserId) === String(myId)
-            ? String(senderId)      // I received it → show on sender's tile
-            : String(targetUserId); // I'm 3rd party or sender → show on recipient's tile
-
-          setActiveRemoteGift({ gift: giftObj, targetUserId: tileUserId, isDismissed: false });
+          // If I'm the recipient (targetUserId === me), show the gift animation on my local tile.
+          // Otherwise, show on the recipient's remote tile.
+          if (String(targetUserId) === String(myId)) {
+            setActiveLocalGift({ ...giftObj, isDismissed: false });
+          } else {
+            setActiveRemoteGift({ gift: giftObj, targetUserId: String(targetUserId), isDismissed: false });
+          }
           break; // Stop execution, don't display in regular chat history
         }
 
@@ -2356,10 +2512,36 @@ function VideoChatContent() {
 
   const handleIcebreaker = () => {
     if (!roomInfo?.roomId) return;
+    setIsBroken(true);
+    setTimeout(() => setIsBroken(false), 3000);
     send({ type: 'get-icebreaker', data: { roomId: roomInfo.roomId } });
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfo.roomId,
+        message: JSON.stringify({
+          isIcebreakerTrigger: true,
+          senderId: userIdRef.current
+        })
+      }
+    });
   };
 
-  const toggleRandomness = () => setShowRandomness(!showRandomness);
+  const toggleRandomness = () => {
+    if (!roomInfo?.roomId) return;
+    setIsRolling(true);
+    setShowRandomness(!showRandomness);
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfo.roomId,
+        message: JSON.stringify({
+          isDiceRoll: true,
+          senderId: userIdRef.current
+        })
+      }
+    });
+  };
 
   const handlePullStranger = async () => {
     const participantCount = remoteStreams.length + 1;
@@ -2623,6 +2805,10 @@ function VideoChatContent() {
   }, [activeRemoteGift]);
 
   const handleDareSync = useCallback((syncData) => {
+    currentDareRef.current = {
+      id: syncData.dareId,
+      text: syncData.dareText
+    };
     if (!roomInfo?.roomId || !remoteStreams[0]?.userId) return;
     const targetId = remoteStreams[0].userId;
     send({
@@ -2637,11 +2823,11 @@ function VideoChatContent() {
           giftPrice: syncData.gift?.price,
           targetUserId: targetId,
           senderId: userIdRef.current,
-          senderName: 'You'
+          senderName: localUserInfo?.name || 'Someone'
         })
       }
     });
-  }, [roomInfo, remoteStreams]);
+  }, [roomInfo, remoteStreams, localUserInfo]);
 
   const handleDareResponse = useCallback((accepted) => {
     if (!activeDareProposal || !roomInfo?.roomId) return;
@@ -2660,28 +2846,40 @@ function VideoChatContent() {
     setActiveDareProposal(null); // hide popup
   }, [activeDareProposal, roomInfo]);
 
-  const dareGiftItems = [
-    { id: 1, name: "Monkey", price: 50, img: "🐒" },
-    { id: 2, name: "Pika", price: 250, img: "⚡" },
-    { id: 3, name: "Super", price: 2000, img: "🦸" },
-    { id: 4, name: "Iron", price: 25000, img: "🤖" },
-  ];
+  const handleCancelDare = useCallback(() => {
+    setIsDareOpen(false);
+    setSelectedGiftId(null);
+    setDareAcceptanceStatus("idle");
+
+    if (roomInfo?.roomId && remoteStreams[0]?.userId) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomInfo.roomId,
+          message: JSON.stringify({
+            isDareClose: true,
+            targetUserId: remoteStreams[0].userId,
+            senderId: userIdRef.current
+          })
+        }
+      });
+    }
+  }, [roomInfo, remoteStreams]);
 
   const handleSendDare = useCallback(async () => {
     const targetId = remoteStreamsRef.current[0]?.userId;
     if (!targetId || !roomInfoRef.current?.roomId || !selectedGiftId) return;
 
-    const giftObj = dareGiftItems.find(g => g.id === selectedGiftId);
+    const giftObj = giftItems.find(g => g.id === selectedGiftId);
     if (!giftObj) return;
 
-    const giftAmount = Number(giftObj.price) || 0;
-    const giftIdMap = {
-      1: "monkey",
-      2: "pikachu",
-      3: "superman",
-      4: "ironman"
-    };
-    const backendGiftId = giftIdMap[selectedGiftId];
+    const giftAmount = Number(giftObj.diamonds) || 0;
+    const backendGiftId = giftObj.id;
+
+    const activeDareId = currentDareRef.current?.id || "dare-1";
+    const backendDareId = (activeDareId && !activeDareId.startsWith("custom-") && activeDareId.startsWith("dare-"))
+      ? activeDareId
+      : "dare-1";
 
     try {
       // Always purchase the exact diamond amount needed for the dare from coins, so the sender's existing diamonds are not used/subtracted
@@ -2700,7 +2898,7 @@ function VideoChatContent() {
       await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), {
         method: "POST",
         body: JSON.stringify({
-          dareId: "dare-1",
+          dareId: backendDareId,
           giftId: backendGiftId,
           userId: targetId
         })
@@ -2718,7 +2916,14 @@ function VideoChatContent() {
             isGift: true,
             isDare: true,
             messageId: msgId,
-            gift: giftObj,
+            gift: {
+              name: giftObj.name,
+              img: giftObj.img,
+              imageUrl: giftObj.imageUrl,
+              price: giftObj.price,
+              diamonds: giftObj.diamonds
+            },
+            dareText: currentDareRef.current?.text || "Do a dare",
             targetUserId: targetId,
             senderId: userIdRef.current
           })
@@ -2729,8 +2934,9 @@ function VideoChatContent() {
       const popupGiftObj = {
         name: giftObj.name,
         img: giftObj.img,
-        price: giftAmount * 100,
-        diamonds: giftAmount
+        imageUrl: giftObj.imageUrl,
+        price: giftObj.price,
+        diamonds: giftObj.diamonds
       };
       setSuccessGift(popupGiftObj);
       setSuccessRecipientName(remoteStreamsRef.current[0]?.name || "Partner");
@@ -2744,7 +2950,7 @@ function VideoChatContent() {
     setIsDareOpen(false);
     setSelectedGiftId(null);
     setDareAcceptanceStatus("idle");
-  }, [coins, diamonds, selectedGiftId, refreshWallet]);
+  }, [coins, diamonds, selectedGiftId, refreshWallet, giftItems]);
 
   // --- Render Helpers ---
   const isRoomFull = (remoteStreams.length + 1) >= 4;
@@ -2773,6 +2979,7 @@ function VideoChatContent() {
     selectedGiftId,
     gift: activeLocalGift,
     onGiftAnimationComplete: handleLocalGiftComplete,
+    forceDismiss: activeLocalGift?.isDismissed,
     hideAllControls: !!activeDareProposal
   };
   const getRemoteFriendTileProps = (streamInfo) => {
@@ -2808,14 +3015,18 @@ function VideoChatContent() {
         name: s.name || partnerInfo.name || 'Matched!',
         age: s.age || partnerInfo.age || '',
         city: s.city || partnerInfo.city || '',
-        displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '/avatar-placeholder.png'
+        displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '/avatar-placeholder.png',
+        activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null,
+        activeBadge: s.activeBadge || partnerInfo.activeBadge || null
       };
     }
     return {
       name: s.name || 'Guest',
       age: s.age || '',
       city: s.city || '',
-      displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png'
+      displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png',
+      activeBadgeImageUrl: s.activeBadgeImageUrl || null,
+      activeBadge: s.activeBadge || null
     };
   };
 
@@ -3518,6 +3729,10 @@ function VideoChatContent() {
             isDareOpen={isDareOpen}
             onLeaveOrNext={remoteStreams.length >= 2 ? handleLeaveGroupOrRaincheck : null}
             isRainchecking={isRainchecking}
+            isRolling={isRolling}
+            setIsRolling={setIsRolling}
+            isBroken={isBroken}
+            setIsBroken={setIsBroken}
           />
         )}
 
@@ -3604,11 +3819,7 @@ function VideoChatContent() {
 
         <DareOverlay
           isOpen={isDareOpen}
-          onClose={() => {
-            setIsDareOpen(false);
-            setSelectedGiftId(null);
-            setDareAcceptanceStatus("idle");
-          }}
+          onClose={handleCancelDare}
           selectedGiftId={selectedGiftId}
           onSelectGift={(giftId) => setSelectedGiftId(giftId)}
           onDareSync={handleDareSync}
@@ -3617,6 +3828,11 @@ function VideoChatContent() {
           coins={coins}
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
           recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || "Stranger") : "Sanya"}
+          randomDares={randomDares}
+          savedDares={savedDares}
+          onSaveCustomDare={handleSaveCustomDare}
+          onDeleteCustomDare={handleDeleteCustomDare}
+          giftItems={giftItems}
         />
 
         <DareProposalOverlay

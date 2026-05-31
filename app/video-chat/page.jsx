@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
 import { recordSquadCallPeersAsync, recordSquadCallPeersKeepalive } from '@/lib/squad-quick-invite-backend';
 import {
   exitCallToHome,
@@ -2477,14 +2478,17 @@ function VideoChatContent() {
     }
     // Determine reportType based on role:
     const roleInCall = callRoles.byUserId[tid];
-    const reportType = roleInCall === 'HOST' ? 'host' : 'participant';
+    const reportType = resolveInCallReportType(roleInCall);
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    const callSessionId = roomInfoRef.current?.sessionId || roomInfo?.sessionId;
 
-    console.log('[Report] Reporting user:', tid, 'with type:', reportType);
+    console.log('[Report] Reporting user:', tid, 'with type:', reportType, 'roomId:', roomId);
     try {
-      const res = await apiRequest(API.USERS.REPORT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reportedUserId: tid, reportType })
+      const res = await submitUserReport({
+        reportedUserId: tid,
+        reportType,
+        roomId,
+        callSessionId,
       });
       if (res.success) {
         setReportedUserIds(prev => new Set([...prev, tid]));

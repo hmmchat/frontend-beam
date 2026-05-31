@@ -3,7 +3,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
-import { exitBeamTvViewer, exitBeamTvViewerKeepalive, markEnteringVideoChat } from '@/lib/discovery-presence';
+import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
+import { exitBeamTvViewer, exitBeamTvViewerKeepalive } from '@/lib/discovery-presence';
 import clsx from 'clsx';
 import BroadcastSkeleton from '@/components/beam-tv/BroadcastSkeleton';
 import BroadcastHud from '@/components/VideoChat/BroadcastHud';
@@ -630,7 +631,6 @@ function BeamTVInner() {
           try {
             sessionStorage.setItem('waitlistJoinRedirect', '1');
           } catch (_) {}
-          markEnteringVideoChat();
           router.push('/video-chat');
         }
       } catch (_) {}
@@ -1399,11 +1399,16 @@ function BeamTVInner() {
       setEngagementMsg('You have already reported this user.');
       return;
     }
+    const roomId = currentBroadcast?.roomId;
+    const participant = (currentBroadcast?.participants || []).find(
+      (p) => String(p?.userId || '') === tid
+    );
+    const reportType = resolveInCallReportType(participant?.role);
     try {
-      const res = await apiRequest(API.USERS.REPORT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reportedUserId: tid, reportType: 'participant' })
+      const res = await submitUserReport({
+        reportedUserId: tid,
+        reportType,
+        roomId,
       });
       if (res.success) {
         setReportedUserIds((prev) => new Set([...prev, tid]));

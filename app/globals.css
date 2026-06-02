@@ -292,6 +292,16 @@
   /* Firefox */
 }
 
+@media (max-width: 768px) {
+  .phone-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .phone-scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 
 .text-stroke-yellow {
   font-feature-settings: "liga" off, "clig" off;

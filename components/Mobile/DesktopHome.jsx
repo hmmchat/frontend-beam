@@ -167,10 +167,10 @@ export default function DesktopHome() {
           <div
             className={clsx('absolute', 'inset-0', 'z-[1]', 'opacity-70', 'mix-blend-hard-light', 'md:animate-zoom-slow')}
             style={{
-              backgroundImage: "url(/bg.jpg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "repeat",
+              backgroundImage: 'url(/bg.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+
             }}
           />
 

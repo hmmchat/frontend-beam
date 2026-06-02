@@ -193,10 +193,10 @@ function SettingsContent() {
         <button
           type="button"
           onClick={() => router.push("/profile")}
-          className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white transition-colors hover:bg-white/10"
+          className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white "
           aria-label="Back to profile"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 transition-colors hover:bg-white/10">
             <ArrowLeft size={18} />
           </span>
           <span className="text-base font-medium">Settings</span>

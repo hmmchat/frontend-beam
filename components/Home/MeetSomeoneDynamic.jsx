@@ -2441,7 +2441,11 @@ export default function MeetSomeoneDynamic() {
                           genderFilter === "FEMALE" ? "Female" :
                             genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
                       }
-                      locationLabel={myProfile?.preferredCity === 'ANYWHERE_IN_INDIA' ? 'Anywhere' : (myProfile?.preferredCity || 'Anywhere')}
+                      locationLabel={
+                        !myProfile?.preferredCity || myProfile.preferredCity === 'ANYWHERE_IN_INDIA'
+                          ? 'Anywhere'
+                          : myProfile.preferredCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+                      }
                       className={clsx('text-white')}
                     />
                     {discoveryBlockedByOtherTab ? (

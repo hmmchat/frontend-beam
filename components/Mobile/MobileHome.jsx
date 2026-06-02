@@ -4,15 +4,25 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import SignUpModal from "@/components/auth/SignUpModal";
 import Button from "@/components/ui/Button";
+import MeetLogo from "@/components/ui/MeetLogo";
 import { API, apiRequest } from "@/lib/api";
 import Link from "next/link";
+import clsx from 'clsx';
 
 import { IoIosInformationCircleOutline, IoMdClose } from "react-icons/io";
+import MeetNowButton from "@/components/ui/MeetNowButton";
 
-export default function Home() {
+export default function Home(
+
+
+) {
+
+
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [activeMeetingCount, setActiveMeetingCount] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+
+  const [isVideoOn, setIsVideoOn] = useState(false);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -23,7 +33,7 @@ export default function Home() {
         if (res && typeof res.count === "number") {
           setActiveMeetingCount(res.count);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 15000);
@@ -160,65 +170,55 @@ export default function Home() {
               </div>
             )}
 
+            <MeetLogo
+              activeCount={activeMeetingCount}
+              className={`absolute bottom-[70%] left-1/2 -translate-x-1/2 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
+            />
+
             <div
-              className={`flex flex-col items-center justify-center mb-52 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
+              className={`absolute bottom-[25%] sm:bottom-[20%] left-1/2 -translate-x-1/2 z-40 pointer-events-none w-full max-w-[520px] px-3 sm:px-4 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
             >
-              <img src="/logo.png" className="w-[115px] h[55px] " />
-
-              <p className="text-white text-[10.8px] font-medium font font-[family-name:var(--font-otomanopee)]  -mt-1">
-                Meet someone here
-              </p>
-
-              <div className="flex font-outfit items-center gap-1 mt-2 text-white text-[12px] font-[family-name:var(--font-otomanopee)]">
-                <img src="/assets/video-on.svg" className="w-4 h-4" />
-                {activeMeetingCount} beaming now
+              <div className="w-full pointer-events-auto flex justify-center">
+                <MeetNowButton
+                  onClick={() => setIsSignUpOpen(true)}
+                  isVideoOn={isVideoOn}
+                  onVideoClick={() => setIsVideoOn(!isVideoOn)}
+                  className="w-[clamp(300px,85vw,520px)] aspect-[23/5]"
+                  iconClass="transition-all w-[clamp(25px,6.5vw,36px)] h-[clamp(25px,6.5vw,36px)] md:w-8 md:h-8"
+                  borderClass="border border-b-[3px] md:border-b-[5px] md:border-[1.89px] rounded-[16px] md:rounded-[26px]"
+                />
               </div>
-            </div>
-
-            <div
-              className={`w-full mb-10 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
-            >
-              <Button
-                fullWidth
-                className="w-full py-5 bg-black/15 backdrop-blur-[1px] border-[1px] border-white/70 border-b-4 text-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                onClick={() => setIsSignUpOpen(true)}
-                
-              >
-                <div className="flex items-center justify-center gap-3 text-[14px]">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center border border-white ">
-                    <img src="/assets/video-on.svg" className="w-5 h-5" />
-                  </div>
-                  <p className="font-[family-name:var(--font-otomanopee)]">
-                    {" "}
-                    Meet Someone now
-                  </p>
-                </div>
-              </Button>
             </div>
           </div>
         </div>
 
+
+
+
+
+
+
         {/* 🔥 BOTTOM BAR (NOW HAS BG BEHIND IT) */}
         <div className="w-full flex items-center justify-between px-4 py-4">
 
-                          <div className="border border-white/50 p-3 rounded-full flex items-center justify-center border-b-[3px]  hover:scale-110 active:scale-95 active:border-b-2 transition-all duration-300">
-          <Link href="/beam-tv">
-                    <button className="relative h-8 w-8 l p-3 shadow-md hover:border-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                      {/* TV Frame (background) */}
-                      <img
-                        src="/tvfame.png"
-                        className="absolute inset-0 w-full h-full object-contain"
-                      />
+          <div className="border border-white/50 p-3 rounded-full flex items-center justify-center border-b-[3px]  hover:scale-110 active:scale-95 active:border-b-2 transition-all duration-300">
+            <Link href="/beam-tv">
+              <button className="relative h-8 w-8 l p-3 shadow-md hover:border-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                {/* TV Frame (background) */}
+                <img
+                  src="/tvfame.png"
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
 
-                      {/* Beam TV inside frame */}
-                      <img
-                        src="/beamtv.png"
-                        className="absolute inset-0 m-auto w-5 h-5 object-contain ml-1 mt-2"
-                      />
-                    </button>
-                  </Link>
+                {/* Beam TV inside frame */}
+                <img
+                  src="/beamtv.png"
+                  className="absolute inset-0 m-auto w-5 h-5 object-contain ml-1 mt-2"
+                />
+              </button>
+            </Link>
 
-                  </div>
+          </div>
 
           <button
             className="border border-white/60 border-b-4 text-white px-6 py-4 rounded-full"

@@ -193,7 +193,7 @@ export default function OfflineCardsPage() {
 
       // Close modal and reset selection
       setIsGiftModalOpen(false);
-      
+
       // Store sent gift and open success popup
       setSuccessGift(gift);
       setShowSuccessPopup(true);
@@ -336,7 +336,7 @@ export default function OfflineCardsPage() {
                   </div>
 
                   {/* Center group: ← → photo nav */}
-                  <div className="absolute left-1/2 flex gap-3 items-center" style={{ transform: 'translateX(-50%)' }}>
+                  <div className="absolute left-1/2 flex gap-3 items-center hidden " style={{ transform: 'translateX(-50%)' }}>
                     <button
                       onClick={handlePrevImage}
                       disabled={allPhotos.length <= 1}
@@ -435,24 +435,7 @@ export default function OfflineCardsPage() {
                   </div>
 
                   {/* Center: ← → photo nav */}
-                  <div className="absolute left-1/2 flex gap-2 items-center" style={{ transform: 'translateX(-50%)' }}>
-                    <button
-                      onClick={handlePrevImage}
-                      disabled={allPhotos.length <= 1}
-                      className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                      aria-label="Previous photo"
-                    >
-                      <IoIosArrowBack />
-                    </button>
-                    <button
-                      onClick={handleNextImage}
-                      disabled={allPhotos.length <= 1}
-                      className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
-                      aria-label="Next photo"
-                    >
-                      <IoIosArrowForward />
-                    </button>
-                  </div>
+
                 </>
               )}
 

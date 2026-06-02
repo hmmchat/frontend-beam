@@ -67,9 +67,11 @@ export default function MobileMultiUserControls({
       </div>
 
       {/* Center Logo */}
-      <div className="mb-4 mr-4">
-        <img src="/logotransparent.png" className="h-7 w-auto object-contain" alt="Beam" />
-      </div>
+      <img
+        src="/logotransparent.png"
+        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-7 w-auto object-contain pointer-events-none z-10"
+        alt="Beam"
+      />
 
       {/* Right buttons (Dare + Gift) */}
       <div className="flex gap-1.5 ">

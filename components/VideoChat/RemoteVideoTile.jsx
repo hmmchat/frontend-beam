@@ -51,6 +51,11 @@ export default function RemoteVideoTile({
   const videoRef = useRef(null);
   const screenRef = useRef(null);
   const pipRef = useRef(null);
+  const formattedCity = (() => {
+    if (!city || city === 'ANYWHERE_IN_INDIA' || city === 'Anywhere') return 'Anywhere';
+    if (city === 'Unknown') return '';
+    return city.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  })();
   const [showReportModal, setShowReportModal] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [areControlsVisible, setAreControlsVisible] = useState(() => {
@@ -409,7 +414,7 @@ export default function RemoteVideoTile({
                 </div>
               </div>
 
-              {(city && city !== "Unknown") && (
+              {formattedCity && (
                 <div className="flex items-center ">
                   <svg
                     className="w-3 h-3 md:w-4 md:h-4 fill-white"
@@ -419,7 +424,7 @@ export default function RemoteVideoTile({
                   </svg>
 
                   <span className="text-white text-[10px] md:text-sm font-normal font-['Outfit']">
-                    {city}
+                    {formattedCity}
                   </span>
                 </div>
               )}

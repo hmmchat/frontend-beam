@@ -127,7 +127,7 @@ export default function LocalVideoSection({
               className="flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
             >
               <img
-                src={msg.displayPictureUrl || '/avatar-placeholder.png'}
+                src={msg.displayPictureUrl || ''}
                 alt=""
                 className="w-8 h-8 rounded-full border border-white/20 object-cover flex-shrink-0 shadow-md"
               />
@@ -255,7 +255,7 @@ export default function LocalVideoSection({
             </div>
             <img
               src="/logotransparent.png"
-              className={clsx("z-10 mr-[10%] md:hidden h-6 w-auto shrink-0 mb-[2%]", hideMobileControlsRow && "hidden")}
+              className={clsx("z-10 absolute left-1/2 -translate-x-1/2 bottom-3 md:hidden h-6 w-auto pointer-events-none", hideMobileControlsRow && "hidden")}
             />
             {/* 2 gift button  */}
             <div className={clsx("gap-2 md:gap-1 ", hideMobileControlsRow ? "hidden md:flex" : "flex")}>

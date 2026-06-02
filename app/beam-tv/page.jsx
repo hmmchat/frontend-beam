@@ -26,11 +26,11 @@ const getWsUrl = () => {
   }
   try {
     const restUrl = process.env.NEXT_PUBLIC_STREAMING_SERVICE_URL || 'http://localhost:3006';
-    const base = restUrl.replace(/\/v1$/, ''); 
+    const base = restUrl.replace(/\/v1$/, '');
     const wsBase = base.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
     return wsBase + '/streaming/ws';
   } catch (e) {
-    return 'ws://localhost:3006/streaming/ws'; 
+    return 'ws://localhost:3006/streaming/ws';
   }
 };
 const buildWsUrl = (baseUrl, params = {}) => {
@@ -115,12 +115,12 @@ function BeamTVInner() {
   });
   const [showLikedModal, setShowLikedModal] = useState(false);
   const [likedBroadcasters, setLikedBroadcasters] = useState([]);
-  
+
   // Track current beamcast room metadata
   const [currentBroadcast, setCurrentBroadcast] = useState(null);
   const [sessionId, setSessionId] = useState('');
   const [requestedJoin, setRequestedJoin] = useState({ roomId: '', userId: '' }); // for cancel on leave
-  
+
   const wsRef = useRef(null);
   const deviceRef = useRef(null);
   const recvTransportRef = useRef(null);
@@ -153,11 +153,11 @@ function BeamTVInner() {
       try {
         consumer?.track?.stop?.();
         consumer?.close?.();
-      } catch (_) {}
+      } catch (_) { }
     });
     try {
       recvTransportRef.current?.close?.();
-    } catch (_) {}
+    } catch (_) { }
     consumeRetryTimeoutsRef.current.forEach((tid) => clearTimeout(tid));
     consumeRetryTimeoutsRef.current.clear();
     consumingProducerIdsRef.current.clear();
@@ -231,7 +231,7 @@ function BeamTVInner() {
           } else {
             consumer.resume?.();
           }
-        } catch (_) {}
+        } catch (_) { }
       });
     };
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
@@ -425,7 +425,7 @@ function BeamTVInner() {
         method: 'POST',
         body: JSON.stringify({ userId })
       });
-    } catch (_) {}
+    } catch (_) { }
     setRequestedJoin({ roomId: '', userId: '' });
     setJoinState({ state: 'idle', message: '' });
   }, [requestedJoin.roomId, requestedJoin.userId]);
@@ -434,7 +434,7 @@ function BeamTVInner() {
     if (!currentBroadcast || !sessionId) return;
     // If user was in waitlist for this broadcast, remove them before switching.
     await cancelJoinIfNeeded();
-    
+
     let did = localStorage.getItem('deviceId');
     const durationMs = broadcastStartedAtRef.current ? Math.max(0, Date.now() - broadcastStartedAtRef.current) : undefined;
     const payload = JSON.stringify({
@@ -456,7 +456,7 @@ function BeamTVInner() {
       const msg = (err && err.message ? String(err.message) : '').toLowerCase();
       if (err?.status === 401 || msg.includes('401') || msg.includes('unauthorized')) {
         console.log('[BeamTV] Auth token expired, marking viewed anonymously...');
-        await fetch(API.DISCOVERY.MARK_BROADCAST_VIEWED, options).catch(() => {});
+        await fetch(API.DISCOVERY.MARK_BROADCAST_VIEWED, options).catch(() => { });
       } else {
         console.warn('Failed to mark broadcast as viewed:', err);
       }
@@ -493,7 +493,7 @@ function BeamTVInner() {
       try {
         const payload = JSON.parse(atob(accessToken.split('.')[1]));
         userId = payload.sub || payload.uid || payload.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     sfuRerouteAttemptRef.current = 0;
@@ -534,7 +534,7 @@ function BeamTVInner() {
           try {
             ws.onclose = null;
             ws.close();
-          } catch (_) {}
+          } catch (_) { }
           openBroadcastSocket(rerouteUrl);
           return;
         }
@@ -593,7 +593,7 @@ function BeamTVInner() {
                 type: 'preserve-participant-on-close',
                 data: { roomId: room.roomId }
               });
-            } catch (_) {}
+            } catch (_) { }
           }
 
           // Align user-service status with broadcast vs squad (backend sets IN_BROADCAST on accept).
@@ -607,7 +607,7 @@ function BeamTVInner() {
                 body: JSON.stringify({ status: targetStatus })
               });
             }
-          } catch (_) {}
+          } catch (_) { }
 
           // Build partner info from current broadcast participants (best effort)
           const participants = currentBroadcast?.participants || room.participants || [];
@@ -624,16 +624,16 @@ function BeamTVInner() {
                 username: partner.username || 'Host',
                 age: partner.age || '',
                 city: partner.city || '',
-                displayPictureUrl: partner.displayPictureUrl || '/avatar-placeholder.png',
+                displayPictureUrl: partner.displayPictureUrl || '',
               }
             } : {})
           }));
           try {
             sessionStorage.setItem('waitlistJoinRedirect', '1');
-          } catch (_) {}
+          } catch (_) { }
           router.push('/video-chat');
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     intervalId = setInterval(tick, 2000);
     tick();
@@ -709,7 +709,7 @@ function BeamTVInner() {
     return {
       id,
       username: s.name || 'User',
-      displayPictureUrl: s.displayPictureUrl ,
+      displayPictureUrl: s.displayPictureUrl,
       preferredCity: s.city || ''
     };
   };
@@ -730,14 +730,14 @@ function BeamTVInner() {
         const mapped = {
           id: String(u.id || id),
           username: u.username || 'User',
-          displayPictureUrl: u.displayPictureUrl ,
+          displayPictureUrl: u.displayPictureUrl,
           preferredCity: u.preferredCity || ''
         };
         chatProfileCacheRef.current.set(id, mapped);
-      setChatProfilesByUserId((prev) => ({ ...prev, [id]: mapped }));
+        setChatProfilesByUserId((prev) => ({ ...prev, [id]: mapped }));
         return mapped;
       }
-    } catch (_) {}
+    } catch (_) { }
     return null;
   };
 
@@ -747,7 +747,7 @@ function BeamTVInner() {
     const p = (await ensureChatProfile(id)) || {
       id,
       username: resolveChatName(id, false),
-      displayPictureUrl: '/avatar-placeholder.png',
+      displayPictureUrl: '',
       preferredCity: ''
     };
     setChatProfileSheet({ open: true, user: p });
@@ -771,7 +771,7 @@ function BeamTVInner() {
         };
         chatProfileCacheRef.current.set(myId, mapped);
         setChatProfilesByUserId((prev) => ({ ...prev, [myId]: mapped }));
-      } catch (_) {}
+      } catch (_) { }
     })();
   }, []);
 
@@ -827,7 +827,7 @@ function BeamTVInner() {
       const body = JSON.stringify({ shareType: 'link', deviceId: did || undefined });
       // apiRequest includes auth header if logged in; otherwise it still works if endpoint is public.
       await apiRequest(API.DISCOVERY.SHARE_BROADCAST(roomId), { method: 'POST', body });
-    } catch (_) {}
+    } catch (_) { }
 
     const link = `${window.location.origin}/beam-tv?roomId=${encodeURIComponent(roomId)}`;
     setShareUrl(link);
@@ -980,8 +980,8 @@ function BeamTVInner() {
           },
           body: JSON.stringify({ userId: requestedJoin.userId }),
           keepalive: true
-        }).catch(() => {});
-      } catch (_) {}
+        }).catch(() => { });
+      } catch (_) { }
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pagehide', onBeforeUnload);
@@ -1135,7 +1135,7 @@ function BeamTVInner() {
               profileFetched: false,
               name: 'Broadcaster',
               age: '?',
-              displayPictureUrl: '/avatar-placeholder.png',
+              displayPictureUrl: '',
               city: '',
               forceMuted: !(soundEnabled && audioUnlocked)
             };
@@ -1159,7 +1159,7 @@ function BeamTVInner() {
             profileFetched: false,
             name: 'Broadcaster',
             age: '?',
-            displayPictureUrl: '/avatar-placeholder.png',
+            displayPictureUrl: '',
             city: '',
             forceMuted: !(soundEnabled && audioUnlocked)
           };
@@ -1192,7 +1192,7 @@ function BeamTVInner() {
         if (foundConsumer) {
           try {
             foundConsumer.close();
-          } catch (_) {}
+          } catch (_) { }
           delete consumersRef.current[foundCid];
         }
         if (meta) {
@@ -1226,7 +1226,7 @@ function BeamTVInner() {
         const name = resolveChatName(senderId, isParticipant);
         const streamProfile = getStreamProfileByUserId(senderId);
         const cachedProfile = chatProfileCacheRef.current.get(senderId);
-        const avatarUrl = cachedProfile?.displayPictureUrl || streamProfile?.displayPictureUrl || '/avatar-placeholder.png';
+        const avatarUrl = cachedProfile?.displayPictureUrl || streamProfile?.displayPictureUrl || '';
         // Lazy-fetch sender profile so avatar and profile sheet are available for viewer chat senders too.
         if (isValidChatUserId(senderId) && !chatProfileCacheRef.current.has(senderId)) {
           ensureChatProfile(senderId);
@@ -1273,19 +1273,19 @@ function BeamTVInner() {
           const profile = profileResp?.user || {};
           let age = '?';
           if (profile.dateOfBirth) {
-             const dob = new Date(profile.dateOfBirth);
-             const now = new Date();
-             let years = now.getFullYear() - dob.getFullYear();
-             const m = now.getMonth() - dob.getMonth();
-             if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
-             if (years > 0) age = String(years);
+            const dob = new Date(profile.dateOfBirth);
+            const now = new Date();
+            let years = now.getFullYear() - dob.getFullYear();
+            const m = now.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
+            if (years > 0) age = String(years);
           }
-          setRemoteStreams((prev) => prev.map(s => 
+          setRemoteStreams((prev) => prev.map(s =>
             s.userId === streamInfo.userId ? {
               ...s,
               name: profile.username || 'Broadcaster',
               age,
-              displayPictureUrl: profile.displayPictureUrl || '/avatar-placeholder.png',
+              displayPictureUrl: profile.displayPictureUrl || '',
               city: profile.preferredCity || '',
               profileFetched: true
             } : s
@@ -1336,7 +1336,7 @@ function BeamTVInner() {
         if (!cancelled) {
           setFavouriteByUserId((prev) => ({ ...prev, ...next }));
         }
-      } catch (_) {}
+      } catch (_) { }
     })();
     return () => {
       cancelled = true;
@@ -1509,9 +1509,9 @@ function BeamTVInner() {
     <div className="h-screen w-screen bg-black flex flex-col font-sans overflow-hidden">
 
       {isLoggedIn() && favouritesPanelOpen && (
-        <FavouritesPanel 
-          favouriteProfiles={sortedFavouriteProfiles} 
-          onAvatarClick={handleFavouriteAvatarClick} 
+        <FavouritesPanel
+          favouriteProfiles={sortedFavouriteProfiles}
+          onAvatarClick={handleFavouriteAvatarClick}
         />
       )}
 
@@ -1525,67 +1525,67 @@ function BeamTVInner() {
             feedTransitionPhase === 'in' && 'translate-y-0'
           )}
         >
-        {status === 'loading' && (
-          <BroadcastSkeleton />
-        )}
+          {status === 'loading' && (
+            <BroadcastSkeleton />
+          )}
 
-        {status === 'empty' && (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
-             <div className="text-6xl mb-6 opacity-30">📺</div>
-             <p className="text-white/60 font-bold tracking-widest uppercase text-xl mb-2">No Active Broadcasts</p>
-             <p className="text-white/30 text-sm mb-8">Come back later or start your own Beamcast in the chat.</p>
-             <button 
-                onClick={() => fetchNextBroadcast(sessionId)} 
+          {status === 'empty' && (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
+              <div className="text-6xl mb-6 opacity-30">📺</div>
+              <p className="text-white/60 font-bold tracking-widest uppercase text-xl mb-2">No Active Broadcasts</p>
+              <p className="text-white/30 text-sm mb-8">Come back later or start your own Beamcast in the chat.</p>
+              <button
+                onClick={() => fetchNextBroadcast(sessionId)}
                 className="px-8 py-3 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition border border-white/20"
-             >
-               Refresh Channel
-             </button>
-          </div>
-        )}
+              >
+                Refresh Channel
+              </button>
+            </div>
+          )}
 
-        {status === 'error' && (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-red-950/30 rounded-[2.5rem] border border-red-500/20 shadow-2xl">
-             <div className="text-5xl mb-4">⚠️</div>
-             <p className="text-red-400 font-bold tracking-widest uppercase mb-6">{error}</p>
-             <button 
-                onClick={() => fetchNextBroadcast(sessionId)} 
+          {status === 'error' && (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-red-950/30 rounded-[2.5rem] border border-red-500/20 shadow-2xl">
+              <div className="text-5xl mb-4">⚠️</div>
+              <p className="text-red-400 font-bold tracking-widest uppercase mb-6">{error}</p>
+              <button
+                onClick={() => fetchNextBroadcast(sessionId)}
                 className="px-8 py-3 bg-red-500/20 text-red-100 font-bold rounded-full hover:bg-red-500/40 transition border border-red-500/30"
-             >
-               Try Again
-             </button>
-          </div>
-        )}
+              >
+                Try Again
+              </button>
+            </div>
+          )}
 
-        {status === 'connected' && remoteStreams.length > 0 && (
-          <div className="w-full h-full relative">
-             <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
+          {status === 'connected' && remoteStreams.length > 0 && (
+            <div className="w-full h-full relative">
+              <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
 
 
 
-             {/* Sound toggle */}
-             <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
-               <button
-                 type="button"
-                 onClick={toggleSound}
-                 className={clsx(
-                   'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
-                   soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-                 )}
-                 title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
-               >
-                 {soundEnabled ? '🔊' : '🔇'}
-                 <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
-               </button>
-             </div>
+              {/* Sound toggle */}
+              <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
+                <button
+                  type="button"
+                  onClick={toggleSound}
+                  className={clsx(
+                    'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
+                    soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                  )}
+                  title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
+                >
+                  {soundEnabled ? '🔊' : '🔇'}
+                  <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
+                </button>
+              </div>
 
-             {/* Realtime chat overlay */}
-             <ChatMessagesOverlay 
-               chatMessages={chatMessages} 
-               chatProfilesByUserId={chatProfilesByUserId} 
-               openChatProfileSheet={openChatProfileSheet} 
-             />
-             {/* Bottom Right Actions: Chat Input, Join, Gift */}
-              <BeamTVActions 
+              {/* Realtime chat overlay */}
+              <ChatMessagesOverlay
+                chatMessages={chatMessages}
+                chatProfilesByUserId={chatProfilesByUserId}
+                openChatProfileSheet={openChatProfileSheet}
+              />
+              {/* Bottom Right Actions: Chat Input, Join, Gift */}
+              <BeamTVActions
                 viewerChatInput={viewerChatInput}
                 setViewerChatInput={setViewerChatInput}
                 sendViewerChat={sendViewerChat}
@@ -1593,49 +1593,49 @@ function BeamTVInner() {
                 handleJoinBroadcast={handleJoinBroadcast}
               />
 
-             {engagementMsg && (
-               <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-black/70 border border-white/15 text-white/80 text-xs font-bold px-4 py-2 rounded-full">
-                 {engagementMsg}
-               </div>
-             )}
+              {engagementMsg && (
+                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-black/70 border border-white/15 text-white/80 text-xs font-bold px-4 py-2 rounded-full">
+                  {engagementMsg}
+                </div>
+              )}
 
-            
 
-             {/* Viewer share sheet */}
-             {shareOpen && (
-               <ShareSheet 
-                 shareUrl={shareUrl} 
-                 copyShareUrl={copyShareUrl} 
-                 setShareOpen={setShareOpen} 
-               />
-             )}
 
-             {/* Chat profile card (friend-request only) */}
-             {chatProfileSheet.open && chatProfileSheet.user && (
-               <ChatProfileCard 
-                 user={chatProfileSheet.user}
-                 isLoggedIn={isLoggedIn()}
-                 friendRequestSent={Boolean(friendRequestSentTo[String(chatProfileSheet.user.id || '')])}
-                 onSendFriendRequest={handleSendFriendRequest}
-                 onClose={() => setChatProfileSheet({ open: false, user: null })}
-               />
-             )}
+              {/* Viewer share sheet */}
+              {shareOpen && (
+                <ShareSheet
+                  shareUrl={shareUrl}
+                  copyShareUrl={copyShareUrl}
+                  setShareOpen={setShareOpen}
+                />
+              )}
 
-             {/* Broadcast HUD (Eye, Heart, Share) */}
-             <BroadcastHud
-               isBroadcasting={true}
-               variant="beam-tv"
-               className="mr-20"
-               broadcastHud={broadcastHud}
-               setBroadcastHud={setBroadcastHud}
-               setShowWaitlist={openLikedModal}
-               handleShareBroadcastLink={handleShare}
-               copyShareUrl={copyShareUrl}
-             />
+              {/* Chat profile card (friend-request only) */}
+              {chatProfileSheet.open && chatProfileSheet.user && (
+                <ChatProfileCard
+                  user={chatProfileSheet.user}
+                  isLoggedIn={isLoggedIn()}
+                  friendRequestSent={Boolean(friendRequestSentTo[String(chatProfileSheet.user.id || '')])}
+                  onSendFriendRequest={handleSendFriendRequest}
+                  onClose={() => setChatProfileSheet({ open: false, user: null })}
+                />
+              )}
+
+              {/* Broadcast HUD (Eye, Heart, Share) */}
+              <BroadcastHud
+                isBroadcasting={true}
+                variant="beam-tv"
+                className="mr-20"
+                broadcastHud={broadcastHud}
+                setBroadcastHud={setBroadcastHud}
+                setShowWaitlist={openLikedModal}
+                handleShareBroadcastLink={handleShare}
+                copyShareUrl={copyShareUrl}
+              />
 
               {/* Liked Users Modal (Beamcasting rn) */}
               {showLikedModal && (
-                <LikedBroadcastersModal 
+                <LikedBroadcastersModal
                   likedBroadcasters={likedBroadcasters}
                   onClose={() => setShowLikedModal(false)}
                   onSelectBroadcaster={(b) => {
@@ -1647,9 +1647,9 @@ function BeamTVInner() {
 
 
 
-             
-          </div>
-        )}
+
+            </div>
+          )}
         </div>
       </div>
     </div>

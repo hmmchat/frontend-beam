@@ -134,7 +134,7 @@ function VideoChatContent() {
     name: 'Matched!',
     age: '?',
     city: '',
-    displayPictureUrl: '/avatar-placeholder.png'
+    displayPictureUrl: ''
   });
   /** Per remote userId: friend request sent during this session */
   const [friendRequestSentTo, setFriendRequestSentTo] = useState({});
@@ -572,7 +572,7 @@ function VideoChatContent() {
                   ...s,
                   name: profile.username || 'Guest',
                   age,
-                  displayPictureUrl: profile.displayPictureUrl || '/avatar-placeholder.png',
+                  displayPictureUrl: profile.displayPictureUrl,
                   city: profile.preferredCity || '',
                   activeBadgeImageUrl: profile.activeBadgeImageUrl || null,
                   activeBadge: profile.activeBadge || null,
@@ -656,7 +656,7 @@ function VideoChatContent() {
             name: info.partner.username || 'Matched!',
             age: info.partner.age || '',
             city: info.partner.city || '',
-            displayPictureUrl: info.partner.displayPictureUrl || '/avatar-placeholder.png'
+            displayPictureUrl: info.partner.displayPictureUrl || ''
           });
 
           // If info is incomplete, fetch full profile (robust)
@@ -682,7 +682,7 @@ function VideoChatContent() {
                 name: profile.username || 'Matched!',
                 age,
                 city: profile.preferredCity || '',
-                displayPictureUrl: profile.displayPictureUrl || '/avatar-placeholder.png'
+                displayPictureUrl: profile.displayPictureUrl || ''
               });
             } catch (err) {
               console.warn('[Init] Failed to fetch partner profile fallback:', err);
@@ -820,7 +820,7 @@ function VideoChatContent() {
           name: enrichedPartner.username || 'Matched!',
           age: enrichedPartner.age || '',
           city: enrichedPartner.city || '',
-          displayPictureUrl: enrichedPartner.displayPictureUrl || '/avatar-placeholder.png',
+          displayPictureUrl: enrichedPartner.displayPictureUrl || '',
           activeBadgeImageUrl: enrichedPartner.activeBadgeImageUrl || null,
           activeBadge: enrichedPartner.activeBadge || null
         };
@@ -2023,7 +2023,7 @@ function VideoChatContent() {
                   screenStream: replaceScreenTrackInStream(null, consumer.track),
                   name: '',
                   age: '',
-                  displayPictureUrl: '/avatar-placeholder.png',
+                  displayPictureUrl: '',
                   city: '',
                   profileFetched: false
                 }
@@ -2043,7 +2043,7 @@ function VideoChatContent() {
                 stream: replaceKindTrackInStream(null, consumer.track),
                 name: '',
                 age: '',
-                displayPictureUrl: '/avatar-placeholder.png',
+                displayPictureUrl: '',
                 city: '',
                 profileFetched: false
               }
@@ -2231,7 +2231,7 @@ function VideoChatContent() {
         const myId = userIdRef.current;
         const pInfo = partnerInfoRef.current;
         const remotes = remoteStreamsRef.current;
-               // Try to parse message as JSON gift reaction or dismissal
+        // Try to parse message as JSON gift reaction or dismissal
         let isGift = false;
         let isGiftDismiss = false;
         let isDareSync = false;
@@ -2365,21 +2365,21 @@ function VideoChatContent() {
         console.log('[Chat] Received:', data.message, { myId, remoteIds: remotes.map(s => s.userId) });
 
         let name = 'Unknown';
-        let displayPictureUrl = '/avatar-placeholder.png';
+        let displayPictureUrl = '';
         if (data.userId === myId) {
           name = 'You';
           displayPictureUrl = localUserInfoRef.current?.displayPictureUrl || '/assets/ico.png';
         } else if (pInfo && data.userId === pInfo.id) {
           name = pInfo.name;
-          displayPictureUrl = pInfo.displayPictureUrl || '/avatar-placeholder.png';
+          displayPictureUrl = pInfo.displayPictureUrl || '';
         } else {
           const remote = remotes.find(s => s.userId === data.userId);
           if (remote) {
             name = remote.name;
-            displayPictureUrl = remote.displayPictureUrl || '/avatar-placeholder.png';
+            displayPictureUrl = remote.displayPictureUrl || '';
           } else if (remotes.length > 0) {
             name = remotes[0].name;
-            displayPictureUrl = remotes[0].displayPictureUrl || '/avatar-placeholder.png';
+            displayPictureUrl = remotes[0].displayPictureUrl || '';
           }
         }
 
@@ -3019,7 +3019,7 @@ function VideoChatContent() {
         name: s.name || partnerInfo.name || 'Matched!',
         age: s.age || partnerInfo.age || '',
         city: s.city || partnerInfo.city || '',
-        displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '/avatar-placeholder.png',
+        displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '',
         activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null,
         activeBadge: s.activeBadge || partnerInfo.activeBadge || null
       };
@@ -3028,7 +3028,7 @@ function VideoChatContent() {
       name: s.name || 'Guest',
       age: s.age || '',
       city: s.city || '',
-      displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png',
+      displayPictureUrl: s.displayPictureUrl || '',
       activeBadgeImageUrl: s.activeBadgeImageUrl || null,
       activeBadge: s.activeBadge || null
     };

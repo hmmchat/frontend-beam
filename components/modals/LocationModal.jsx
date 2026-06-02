@@ -5,24 +5,11 @@ import { IoSearchOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
 import { API, apiRequest } from '@/lib/api';
 
-const defaultCities = [
-  { name: "Mumbai", value: "MUMBAI", availableCount: 24500 },
-  { name: "Delhi", value: "DELHI", availableCount: 18200 },
-  { name: "Bangalore", value: "BANGALORE", availableCount: 15400 },
-  { name: "Hyderabad", value: "HYDERABAD", availableCount: 12100 },
-  { name: "Ahmedabad", value: "AHMEDABAD", availableCount: 9800 },
-  { name: "Chennai", value: "CHENNAI", availableCount: 8900 },
-  { name: "Kolkata", value: "KOLKATA", availableCount: 7600 },
-  { name: "Pune", value: "PUNE", availableCount: 6500 },
-  { name: "Jaipur", value: "JAIPUR", availableCount: 5400 },
-  { name: "Surat", value: "SURAT", availableCount: 4300 }
-];
-
 export default function LocationModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  const [masterCities, setMasterCities] = useState(defaultCities);
-  const [cities, setCities] = useState(defaultCities);
+  const [masterCities, setMasterCities] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -46,13 +33,13 @@ export default function LocationModal({ isOpen, onClose }) {
         setMasterCities(options);
         setCities(options);
       } else {
-        setMasterCities(defaultCities);
-        setCities(defaultCities);
+        setMasterCities([]);
+        setCities([]);
       }
     } catch (error) {
-      console.error('Error fetching cities, using defaults:', error);
-      setMasterCities(defaultCities);
-      setCities(defaultCities);
+      console.error('Error fetching cities:', error);
+      setMasterCities([]);
+      setCities([]);
     } finally {
       setSearchLoading(false);
     }
@@ -161,7 +148,7 @@ export default function LocationModal({ isOpen, onClose }) {
             }}
           />
 
-          <div className="relative z-10 md:px-6 px-4 py-8 flex flex-col h-full md:w-[70%] mx-auto overflow-hidden">
+          <div className="relative z-10 md:px-6 px-6 py-8 flex flex-col h-full md:w-[70%] md:mx-auto overflow-hidden">
             {/* Header */}
             <div className="flex items-center mb-3">
               <button
@@ -239,6 +226,8 @@ export default function LocationModal({ isOpen, onClose }) {
                 </div>
               )}
             </div>
+
+
           </div>
         </div>
 
@@ -247,7 +236,7 @@ export default function LocationModal({ isOpen, onClose }) {
           <button
             onClick={handleSave}
             disabled={loading || !selectedCity}
-            className="px-12 py-4 border-[1px] border-b-[3px] border-white/40 rounded-2xl text-white font-bold  hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:bg-white/5"
+            className="px-12 py-4  w-[90vh] md:w-auto border-[1px] border-b-[3px] border-white/40 rounded-2xl text-white font-bold  hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:bg-white/5"
           >
             {loading ? 'Saving...' : 'Start Beaming'}
           </button>

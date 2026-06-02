@@ -17,25 +17,32 @@ export default function MeetNowButton({
 }) {
   return (
     <>
-      <svg className="absolute w-0 h-0 pointer-events-none" style={{ position: 'absolute', width: 0, height: 0 }}>
-        <defs>
-          <filter id="glass-distortion">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.005 0.008"
-              numOctaves="2"
-              seed="3"
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale="6"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
+      <svg style={{ display: "none" }}>
+
+        <filter id="displacementFilter">
+
+          <feTurbulence type="turbulence"
+
+            baseFrequency="0.01"
+
+            numOctaves="900"
+
+            result="turbulence" />
+
+
+
+          <feDisplacementMap in="SourceGraphic"
+
+            in2="turbulence"
+
+            scale="20" xChannelSelector="R" yChannelSelector="U" />
+
+        </filter>
+
+
+
+
+
       </svg>
       <div
         onClick={(e) => {
@@ -47,18 +54,18 @@ export default function MeetNowButton({
         tabIndex={isSearching ? -1 : 0}
         aria-disabled={isSearching}
         className={clsx(
-          'group relative  flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-xl hover:scale-[1.01] hover:brightness-110 duration-300 select-none',
+          'group relative  flex items-center justify-center gap-4 active:scale-[0.98] transition-all overflow-hidden shadow-xl hover:scale-[1.01]  duration-300 select-none',
           isSearching
             ? 'bg-yellow-500/80 text-black border-black animate-pulse cursor-wait'
-            : 'bg-black/[0.04] text-white border-white hover:bg-black/[0.08]  cursor-pointer',
+            : 'bg-black/[0.04] text-white border-white   cursor-pointer',
           borderClass,   // ✅ custom border
           containerClass,
           className
         )}
-        style={{
-          backdropFilter: "blur(3px)",
-          WebkitBackdropFilter: "blur(3px)",
 
+        style={{
+          filter: 'drop-shadow(-8px -10px 46px #3030305f)',
+          backdropFilter: 'brightness(1.1) blur(1px) url(#displacementFilter)',
         }}
       >
         {!isSearching && (
@@ -69,6 +76,9 @@ export default function MeetNowButton({
 
           />
         )}
+
+
+
 
 
 
@@ -98,6 +108,8 @@ export default function MeetNowButton({
             alt="video toggle"
           />
         </div>
+
+
         <span
           className={clsx(
             "z-10 font-bold leading-none",

@@ -51,7 +51,12 @@ const FaceCard3 = ({
   if (!user) return null;
 
   const age = user.age ?? calculateAge(user.dateOfBirth);
-  const city = user.city || user.preferredCity || "Unknown";
+  const rawCity = user.city || user.preferredCity || "Unknown";
+  const city = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
+    ? 'Anywhere'
+    : rawCity === 'Unknown'
+      ? 'Unknown'
+      : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
 

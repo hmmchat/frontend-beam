@@ -23,6 +23,7 @@ import OverlayLayer from '@/components/ui/OverlayLayer';
 import Link from 'next/link';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
+import MeetLogo from '@/components/ui/MeetLogo';
 
 
 export default function MeetSomeoneNew({
@@ -413,20 +414,10 @@ export default function MeetSomeoneNew({
         {/* Main Content Area */}
         <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-4">
 
-          <div className="text-center flex flex-col items-center justify-center mx-auto mt-7">
-            <img src="./logo.png" className="w-34 mx-auto" />
-
-            <p className="text-white text-[13px] font-medium ">
-              Meet Someone here
-            </p>
-
-            <div className="flex items-center justify-center gap-2 mt-3 ">
-              <img src="/assets/video-on.svg" className="w-4 h-4" />
-              <p className="text-white/90 text-sm font-thin font-outfit">
-                {activeUsers.toLocaleString()} beaming now
-              </p>
-            </div>
-          </div>
+          <MeetLogo
+            activeCount={activeUsers}
+            className="mt-[16%]"
+          />
 
 
 
@@ -495,7 +486,11 @@ export default function MeetSomeoneNew({
                 genderFilter === "FEMALE" ? "Female" :
                   genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
             }
-            locationLabel={myProfile?.preferredCity || "Location"}
+            locationLabel={
+              !myProfile?.preferredCity || myProfile.preferredCity === 'ANYWHERE_IN_INDIA'
+                ? 'Anywhere'
+                : myProfile.preferredCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+            }
             className="mt-6 pointer-events-auto w-[clamp(295px,65vw,520px)]"
           />
         </div>
@@ -534,11 +529,28 @@ export default function MeetSomeoneNew({
           >
             <img src="./mobmessage.svg" alt="chat" className="w-[30px] h-[30px]" />
             {unreadCount > 0 && (
-              <div className="absolute top-0 -right-1 w-3 h-3 bg-[#ACE723] border-2 border-[#1ECB00] rounded-full shadow-[0_0_8px_rgba(172,231,35,0.6)]" />
+              <span
+                className={clsx(
+                  'absolute',
+                  'top-[9px]',
+                  '-right-[10px]',
+                  'w-[10px]',
+                  'h-[10px]',
+                  'bg-[#ACE723]',
+                  'border-2',
+                  'border-[#1ECB00]',
+                  'z-50',
+                  'rounded-full',
+                  'shadow-[0_0_16px_8px_rgba(34,197,94,0.9),0_0_24px_8px_rgba(34,197,94,0.6),0_0_40px_12px_rgba(34,197,94,0.4)]'
+                )}
+              />
             )}
 
 
             <span className="border rounded-full h-2 w-2   -right-2  absolute top-2.5   "> </span>
+
+
+
           </button>
 
 
@@ -584,7 +596,7 @@ export default function MeetSomeoneNew({
 
 
       {mode === 'squad' ? (
-        <div className="flex flex-col items-center w-full absolute bottom-[16%]">
+        <div className="flex flex-col items-center w-full absolute bottom-[15%]">
 
           {squadProductMessage && (
             <div
@@ -595,14 +607,14 @@ export default function MeetSomeoneNew({
             </div>
           )}
 
-          <div className="flex flex-col gap-6 mx-auto">
+          <div className="flex flex-col gap-[1vh] mx-auto">
 
             {/* Avatars */}
             <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
 
               {/* Me */}
               <div className="flex flex-col items-center gap-1">
-                <div className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
+                <div className="h-[8vh] aspect-square rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
                   <img
                     src={myProfile?.displayPictureUrl || '/assets/avatar1.png'}
                     alt="me"
@@ -626,7 +638,7 @@ export default function MeetSomeoneNew({
 
                   <div className="flex flex-col items-center gap-1">
 
-                    <div className="relative w-[60px] h-[60px] sm:w-18 sm:h-18">
+                    <div className="relative h-[8vh] aspect-square  sm:w-18 sm:h-18">
 
                       <div className="w-full h-full rounded-full border-[3px] border-white/90 flex items-center justify-center overflow-hidden bg-black/10">
 
@@ -670,12 +682,12 @@ export default function MeetSomeoneNew({
 
             {/* Mic/Audio Controls */}
             {canSquadMeet && (
-              <div className="flex items-center w-[38%] mx-auto gap-4 rounded-full border border-white/20 bg-black/40 px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center w-[38%] mx-auto gap-4 rounded-full border border-white/20 bg-black/40 px-4 py-[1vh] backdrop-blur-sm">
 
                 <button
                   onClick={() => setSquadLobbyMicMuted?.((prev) => !prev)}
                   className={clsx(
-                    'p-2 rounded-full border',
+                    'p-[1vh] rounded-full border',
                     squadLobbyMicMuted
                       ? 'border-red-400 bg-red-500/20 text-red-100'
                       : 'border-white/40 text-white'
@@ -687,7 +699,7 @@ export default function MeetSomeoneNew({
                 <button
                   onClick={() => setSquadLobbyAudioOff?.((prev) => !prev)}
                   className={clsx(
-                    'p-2 rounded-full border',
+                    'p-[1vh] rounded-full border',
                     squadLobbyAudioOff
                       ? 'border-yellow-400 bg-yellow-500/20 text-yellow-100'
                       : 'border-white/40 text-white'
@@ -700,7 +712,7 @@ export default function MeetSomeoneNew({
             )}
 
             {/* Share Icons */}
-            <div className="flex items-center gap-4 rounded-full mb-3  bg-[#08002C]/40 w-[100%] mx-auto py-2 px-10">
+            <div className="flex items-center gap-4 rounded-full   bg-[#08002C]/40 w-[100%] mx-auto py-2 px-8">
 
               <div className="flex-1 text-[11px] text-white/90 font-outfit">
                 Share to
@@ -711,7 +723,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon4.png" className="w-7 h-7" alt="" />
+                <img src="/shareicon4.png" className="w-[3.2vh] h-[3.2vh]" alt="" />
               </button>
 
               <button
@@ -719,7 +731,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon2.png" className="w-6 h-6" alt="" />
+                <img src="/shareicon2.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
               </button>
 
               <button
@@ -727,7 +739,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon1.png" className="w-6 h-6" alt="" />
+                <img src="/shareicon1.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
               </button>
 
               <button
@@ -735,7 +747,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon3.png" className="w-6 h-6" alt="" />
+                <img src="/shareicon3.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
               </button>
 
             </div>
@@ -743,7 +755,7 @@ export default function MeetSomeoneNew({
           </div>
 
           {/* Squad CTA */}
-          <div className="w-full mx-auto mt-3" >
+          <div className="w-full mx-auto mt-[1.5vh]" >
 
             {canSquadMeet ? (
               <MeetNowButton

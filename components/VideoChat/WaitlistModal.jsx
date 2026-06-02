@@ -47,7 +47,7 @@ export default function WaitlistModal({
               const u = w.profile || {
                 id: w.userId,
                 username: w.username || w.userId,
-                displayPictureUrl: w.displayPictureUrl || '/avatar-placeholder.png',
+                displayPictureUrl: w.displayPictureUrl,
                 preferredCity: '',
                 city: ''
               };

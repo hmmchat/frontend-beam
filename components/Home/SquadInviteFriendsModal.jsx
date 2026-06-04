@@ -28,13 +28,13 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
             const u = await apiRequest(API.USERS.GET_USER(f.friendId));
             return {
               friendId: f.friendId,
-              photoUrl: f.photoUrl || u?.user?.displayPictureUrl || '/assets/avatar1.png',
+              photoUrl: f.photoUrl || u?.user?.displayPictureUrl,
               username: u?.user?.username || f.friendId,
             };
           } catch {
             return {
               friendId: f.friendId,
-              photoUrl: f.photoUrl || '/assets/avatar1.png',
+              photoUrl: f.photoUrl,
               username: f.friendId,
             };
           }

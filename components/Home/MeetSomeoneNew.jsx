@@ -416,10 +416,39 @@ export default function MeetSomeoneNew({
 
           <MeetLogo
             activeCount={activeUsers}
-            className="mt-[16%]"
+            className="mt-[7vh] "
           />
 
+          {/* Mic/Audio Controls */}
+          {canSquadMeet && (
+            <div className="flex items-center w-[28%] mx-auto gap-2 rounded-full bg-[#0A032D]/20 px-[19px] py-[1vh] ">
 
+              <button
+                onClick={() => setSquadLobbyMicMuted?.((prev) => !prev)}
+                className={clsx(
+                  'p-[0.8vh] rounded-full border',
+                  squadLobbyMicMuted
+                    ? 'border-red-400 bg-red-500/20 text-red-100'
+                    : 'border-none text-white'
+                )}
+              >
+                {squadLobbyMicMuted ? <IoMicOff /> : <IoMic />}
+              </button>
+
+              <button
+                onClick={() => setSquadLobbyAudioOff?.((prev) => !prev)}
+                className={clsx(
+                  'p-[0.8vh] rounded-full border',
+                  squadLobbyAudioOff
+                    ? 'border-yellow-400 bg-yellow-500/20 text-yellow-100'
+                    : 'border-none text-white'
+                )}
+              >
+                {squadLobbyAudioOff ? <IoVolumeMute /> : <IoVolumeHigh />}
+              </button>
+
+            </div>
+          )}
 
 
 
@@ -596,7 +625,7 @@ export default function MeetSomeoneNew({
 
 
       {mode === 'squad' ? (
-        <div className="flex flex-col items-center w-full absolute bottom-[15%]">
+        <div className={`flex flex-col items-center w-full absolute ${canSquadMeet ? 'bottom-[18vh]' : 'bottom-[16vh]'}`}>
 
           {squadProductMessage && (
             <div
@@ -607,16 +636,16 @@ export default function MeetSomeoneNew({
             </div>
           )}
 
-          <div className="flex flex-col gap-[1vh] mx-auto">
+          <div className="flex flex-col gap-[2vh] mx-auto">
 
             {/* Avatars */}
             <div className="flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
 
               {/* Me */}
               <div className="flex flex-col items-center gap-1">
-                <div className="h-[8vh] aspect-square rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
+                <div className="h-[7.5vh] aspect-square rounded-full border-[3px] border-white/90 overflow-hidden bg-black/10">
                   <img
-                    src={myProfile?.displayPictureUrl || '/assets/avatar1.png'}
+                    src={myProfile?.displayPictureUrl}
                     alt="me"
                     className="w-full h-full object-cover"
                   />
@@ -638,7 +667,7 @@ export default function MeetSomeoneNew({
 
                   <div className="flex flex-col items-center gap-1">
 
-                    <div className="relative h-[8vh] aspect-square  sm:w-18 sm:h-18">
+                    <div className="relative h-[7.5vh] aspect-square  sm:w-18 sm:h-18">
 
                       <div className="w-full h-full rounded-full border-[3px] border-white/90 flex items-center justify-center overflow-hidden bg-black/10">
 
@@ -680,39 +709,10 @@ export default function MeetSomeoneNew({
               ))}
             </div>
 
-            {/* Mic/Audio Controls */}
-            {canSquadMeet && (
-              <div className="flex items-center w-[38%] mx-auto gap-4 rounded-full border border-white/20 bg-black/40 px-4 py-[1vh] backdrop-blur-sm">
 
-                <button
-                  onClick={() => setSquadLobbyMicMuted?.((prev) => !prev)}
-                  className={clsx(
-                    'p-[1vh] rounded-full border',
-                    squadLobbyMicMuted
-                      ? 'border-red-400 bg-red-500/20 text-red-100'
-                      : 'border-white/40 text-white'
-                  )}
-                >
-                  {squadLobbyMicMuted ? <IoMicOff /> : <IoMic />}
-                </button>
-
-                <button
-                  onClick={() => setSquadLobbyAudioOff?.((prev) => !prev)}
-                  className={clsx(
-                    'p-[1vh] rounded-full border',
-                    squadLobbyAudioOff
-                      ? 'border-yellow-400 bg-yellow-500/20 text-yellow-100'
-                      : 'border-white/40 text-white'
-                  )}
-                >
-                  {squadLobbyAudioOff ? <IoVolumeMute /> : <IoVolumeHigh />}
-                </button>
-
-              </div>
-            )}
 
             {/* Share Icons */}
-            <div className="flex items-center gap-4 rounded-full   bg-[#08002C]/40 w-[100%] mx-auto py-2 px-8">
+            <div className="flex items-center gap-4 rounded-full   bg-[#0A032D]/35 w-[100%] mx-auto py-2.5 px-8">
 
               <div className="flex-1 text-[11px] text-white/90 font-outfit">
                 Share to
@@ -723,7 +723,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon4.png" className="w-[3.2vh] h-[3.2vh]" alt="" />
+                <img src="/shareicon3.svg" className="w-[3.1vh] h-[3.1vh]" alt="" />
               </button>
 
               <button
@@ -731,7 +731,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon2.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
+                <img src="/shareicon2.svg" className="w-[3.1vh] h-[3.1vh]" alt="" />
               </button>
 
               <button
@@ -739,7 +739,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon1.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
+                <img src="/shareicon1.svg" className="w-[3.1vh] h-[3.1vh]" alt="" />
               </button>
 
               <button
@@ -747,7 +747,7 @@ export default function MeetSomeoneNew({
                 disabled={squadShareBusy}
                 className="p-1 hover:bg-white/10 rounded-full transition"
               >
-                <img src="/shareicon3.png" className="w-[3.3vh] h-[3.3vh]" alt="" />
+                <img src="/shareicon4.svg" className="w-[3.1vh] h-[3.1vh]" alt="" />
               </button>
 
             </div>
@@ -755,7 +755,7 @@ export default function MeetSomeoneNew({
           </div>
 
           {/* Squad CTA */}
-          <div className="w-full mx-auto mt-[1.5vh]" >
+          <div className="w-full mx-auto mt-[2vh]" >
 
             {canSquadMeet ? (
               <MeetNowButton

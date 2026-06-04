@@ -22,12 +22,12 @@ export default function ChatMessagesOverlay({ chatMessages, chatProfilesByUserId
             title="Open profile"
           >
             <img
-              src={chatProfilesByUserId[String(m.userId || '')]?.displayPictureUrl || m.avatarUrl || '/avatar-placeholder.png'}
+              src={chatProfilesByUserId[String(m.userId || '')]?.displayPictureUrl || m.avatarUrl}
               alt={m.name || 'User'}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.onerror = null;
-                e.currentTarget.src = '/avatar-placeholder.png';
+                e.currentTarget.src = '';
               }}
             />
           </button>

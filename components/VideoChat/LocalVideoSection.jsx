@@ -255,7 +255,7 @@ export default function LocalVideoSection({
             </div>
             <img
               src="/logotransparent.png"
-              className={clsx("z-10 absolute left-1/2 -translate-x-1/2 bottom-3 md:hidden h-6 w-auto pointer-events-none", hideMobileControlsRow && "hidden")}
+              className={clsx("z-10 absolute left-1/2 -translate-x-1/2 bottom-2 md:hidden h-6 w-auto pointer-events-none", hideMobileControlsRow && "hidden")}
             />
             {/* 2 gift button  */}
             <div className={clsx("gap-2 md:gap-1 ", hideMobileControlsRow ? "hidden md:flex" : "flex")}>

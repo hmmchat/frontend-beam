@@ -20,6 +20,8 @@ const defaultFilters = [
 export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated }) {
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [initialGender, setInitialGender] = useState("ALL");
+  const [coinsPerScreen, setCoinsPerScreen] = useState(200);
+  const [screensPerPurchase, setScreensPerPurchase] = useState(10);
   const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(false);
   const [internalUserCoins, setInternalUserCoins] = useState(25500);
@@ -52,6 +54,12 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
     try {
       // GET /gender-filters — authenticated via JWT, no userId param
       const data = await apiRequest(API.DISCOVERY.GENDER_FILTERS);
+
+      const coinsPer = data && data.coinsPerScreen !== undefined ? data.coinsPerScreen : (data && data.coinsperScreen !== undefined ? data.coinsperScreen : 200);
+      const screensPer = data && data.screensPerPurchase !== undefined ? data.screensPerPurchase : 10;
+      setCoinsPerScreen(coinsPer);
+      setScreensPerPurchase(screensPer);
+
       if (data && data.availableFilters && data.availableFilters.length > 0) {
         const apiFilters = data.availableFilters;
         const hasNonBinary = apiFilters.some(f => f.gender === "NON_BINARY");
@@ -61,22 +69,29 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
           apiFilters.push({
             gender: "NON_BINARY",
             label: "Non-binary",
-            cost: NON_BINARY_COST
+            cost: coinsPer
           });
         }
 
-        // Override costs with env variables
+        // Override costs with backend values
         const updatedFilters = apiFilters.map(f => {
-          if (f.gender === "MALE") return { ...f, cost: MALE_COST };
-          if (f.gender === "FEMALE") return { ...f, cost: FEMALE_COST };
-          if (f.gender === "NON_BINARY") return { ...f, cost: NON_BINARY_COST };
+          if (f.gender === "MALE") return { ...f, cost: coinsPer };
+          if (f.gender === "FEMALE") return { ...f, cost: coinsPer };
+          if (f.gender === "NON_BINARY") return { ...f, cost: coinsPer };
           if (f.gender === "ALL") return { ...f, cost: 0 };
           return f;
         });
 
         setFilters(updatedFilters);
       } else {
-        setFilters(defaultFilters);
+        // Fallback using coinsPer
+        const fallbackFilters = [
+          { gender: "ALL", label: "All Genders", cost: 0 },
+          { gender: "MALE", label: "Male", cost: coinsPer },
+          { gender: "FEMALE", label: "Female", cost: coinsPer },
+          { gender: "NON_BINARY", label: "Non-binary", cost: coinsPer }
+        ];
+        setFilters(fallbackFilters);
       }
 
       if (data && data.currentPreference && data.currentPreference.genders && data.currentPreference.genders.length > 0) {
@@ -89,7 +104,15 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
       }
     } catch (error) {
       console.error("Error fetching filters, using defaults:", error);
-      setFilters(defaultFilters);
+      // Fallback
+      const coinsPer = 200;
+      const fallbackFilters = [
+        { gender: "ALL", label: "All Genders", cost: 0 },
+        { gender: "MALE", label: "Male", cost: coinsPer },
+        { gender: "FEMALE", label: "Female", cost: coinsPer },
+        { gender: "NON_BINARY", label: "Non-binary", cost: coinsPer }
+      ];
+      setFilters(fallbackFilters);
       const savedPreference = localStorage.getItem("genderPreference") || "ALL";
       setSelectedGender(savedPreference);
       setInitialGender(savedPreference);
@@ -216,7 +239,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                           {filter.label}
                         </div>
                         <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
-                          10+ Matches
+                          {screensPerPurchase}+ Matches
                         </div>
                         <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
                           <img

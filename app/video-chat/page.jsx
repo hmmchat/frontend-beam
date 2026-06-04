@@ -2223,7 +2223,6 @@ function VideoChatContent() {
         console.log('[Icebreaker] Received:', data.question);
         setIcebreaker(data.question);
         setShowIcebreaker(true);
-        setTimeout(() => setShowIcebreaker(false), 8000);
         break;
       }
 
@@ -2231,135 +2230,126 @@ function VideoChatContent() {
         const myId = userIdRef.current;
         const pInfo = partnerInfoRef.current;
         const remotes = remoteStreamsRef.current;
-        // Try to parse message as JSON gift reaction or dismissal
-        let isGift = false;
-        let isGiftDismiss = false;
-        let isDareSync = false;
-        let isDareResponse = false;
-        let isDareClose = false;
-        let isDiceRoll = false;
-        let isIcebreakerTrigger = false;
-        let giftData = null;
-        let dismissData = null;
-        let dareSyncData = null;
-        let dareResponseData = null;
-        let dareCloseData = null;
-        let diceRollData = null;
-        let icebreakerTriggerData = null;
+        // Try to parse message as JSON control message
+        let isControlMessage = false;
+        let controlParsed = null;
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
-            if (parsed && parsed.isGift) {
-              isGift = true;
-              giftData = parsed;
-            } else if (parsed && parsed.isGiftDismissed) {
-              isGiftDismiss = true;
-              dismissData = parsed;
-            } else if (parsed && parsed.isDareSync) {
-              isDareSync = true;
-              dareSyncData = parsed;
-            } else if (parsed && parsed.isDareResponse) {
-              isDareResponse = true;
-              dareResponseData = parsed;
-            } else if (parsed && parsed.isDareClose) {
-              isDareClose = true;
-              dareCloseData = parsed;
-            } else if (parsed && parsed.isDiceRoll) {
-              isDiceRoll = true;
-              diceRollData = parsed;
-            } else if (parsed && parsed.isIcebreakerTrigger) {
-              isIcebreakerTrigger = true;
-              icebreakerTriggerData = parsed;
+            if (parsed && (
+              parsed.isGift ||
+              parsed.isGiftDismissed ||
+              parsed.isDareSync ||
+              parsed.isDareResponse ||
+              parsed.isDareClose ||
+              parsed.isDareInitiated ||
+              parsed.isDiceRoll ||
+              parsed.isIcebreakerTrigger !== undefined
+            )) {
+              isControlMessage = true;
+              controlParsed = parsed;
             }
           }
         } catch (e) { }
 
-        if (isDareSync && dareSyncData) {
-          // If we are the target of this dare sync, update our proposal UI
-          if (String(dareSyncData.targetUserId) === String(myId)) {
-            const senderStream = remotes.find(s => String(s.userId) === String(dareSyncData.senderId));
-            const displayName = senderStream?.name || dareSyncData.senderName || "Someone";
-            setActiveDareProposal({
-              dareText: dareSyncData.dareText,
-              giftId: dareSyncData.giftId,
-              giftImg: dareSyncData.giftImg,
-              giftPrice: dareSyncData.giftPrice,
-              senderId: dareSyncData.senderId,
-              senderName: displayName === 'You' ? 'Someone' : displayName
-            });
-          }
-          break;
-        }
+        if (isControlMessage && controlParsed) {
+          if (controlParsed.isDareSync) {
+            // If we are the target of this dare sync, update our proposal UI
+            if (String(controlParsed.targetUserId) === String(myId)) {
+              // Close our own outgoing dare overlay if open
+              setIsDareOpen(false);
+              setSelectedGiftId(null);
+              setDareAcceptanceStatus("idle");
 
-        if (isDareResponse && dareResponseData) {
-          if (String(dareResponseData.targetUserId) === String(myId)) {
-            setDareAcceptanceStatus(dareResponseData.accepted ? "accepted" : "rejected");
-            if (!dareResponseData.accepted) {
-              // Automatically reset selection or close if rejected?
-              // The plan leaves the user on stage 1
+              const senderStream = remotes.find(s => String(s.userId) === String(controlParsed.senderId));
+              const displayName = senderStream?.name || controlParsed.senderName || "Someone";
+              setActiveDareProposal({
+                dareText: controlParsed.dareText,
+                giftId: controlParsed.giftId,
+                giftImg: controlParsed.giftImg,
+                giftPrice: controlParsed.giftPrice,
+                senderId: controlParsed.senderId,
+                senderName: displayName === 'You' ? 'Someone' : displayName
+              });
+            }
+          } else if (controlParsed.isDareResponse) {
+            if (String(controlParsed.targetUserId) === String(myId)) {
+              setDareAcceptanceStatus(controlParsed.accepted ? "accepted" : "rejected");
+              if (!controlParsed.accepted) {
+                setIsDareOpen(false);
+                setSelectedGiftId(null);
+              }
+            }
+          } else if (controlParsed.isDareClose) {
+            if (String(controlParsed.targetUserId) === String(myId)) {
+              setActiveDareProposal(null);
+            }
+          } else if (controlParsed.isDareInitiated) {
+            if (String(controlParsed.targetUserId) === String(myId)) {
+              setIsDareOpen(false);
+              setSelectedGiftId(null);
+              setDareAcceptanceStatus("idle");
+              setActiveDareProposal(null);
+            }
+          } else if (controlParsed.isDiceRoll) {
+            if (String(controlParsed.senderId) !== String(myId)) {
+              setIsRolling(true);
+            }
+          } else if (controlParsed.isIcebreakerTrigger !== undefined) {
+            if (String(controlParsed.senderId) !== String(myId)) {
+              const triggered = Boolean(controlParsed.isIcebreakerTrigger);
+              setIsBroken(triggered);
+              if (!triggered) {
+                setShowIcebreaker(false);
+                setIcebreaker('');
+              }
+            }
+          } else if (controlParsed.isGiftDismissed) {
+            const { messageId } = controlParsed;
+            setActiveRemoteGift((prev) =>
+              prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev
+            );
+            setActiveLocalGift((prev) =>
+              prev && prev.messageId === messageId ? { ...prev, isDismissed: true } : prev
+            );
+          } else if (controlParsed.isGift) {
+            const messageId = data.id || data.messageId || controlParsed.messageId || Date.now().toString();
+            let isProcessed = false;
+            if (messageId) {
+              if (processedGiftIdsRef.current.has(messageId)) {
+                isProcessed = true;
+              } else {
+                processedGiftIdsRef.current.add(messageId);
+              }
+            }
+
+            if (!isProcessed) {
+              const { gift, targetUserId, senderId } = controlParsed;
+              const giftObj = {
+                ...gift,
+                messageId,
+                targetUserId,
+                senderId
+              };
+
+              // If I'm the recipient (targetUserId === me), show the gift animation on my local tile.
+              // Otherwise, show on the recipient's remote tile.
+              if (String(targetUserId) === String(myId)) {
+                setActiveLocalGift({ ...giftObj, isDismissed: false });
+              } else {
+                setActiveRemoteGift({ gift: giftObj, targetUserId: String(targetUserId), isDismissed: false });
+              }
             }
           }
-          break;
-        }
-
-        if (isDareClose && dareCloseData) {
-          if (String(dareCloseData.targetUserId) === String(myId)) {
-            setActiveDareProposal(null);
-          }
-          break;
-        }
-
-        if (isDiceRoll && diceRollData) {
-          if (String(diceRollData.senderId) !== String(myId)) {
-            setIsRolling(true);
-          }
-          break;
-        }
-
-        if (isIcebreakerTrigger && icebreakerTriggerData) {
-          if (String(icebreakerTriggerData.senderId) !== String(myId)) {
-            setIsBroken(true);
-            setTimeout(() => setIsBroken(false), 3000);
-          }
-          break;
-        }
-
-        if (isGiftDismiss && dismissData) {
-          const { messageId } = dismissData;
-          setActiveRemoteGift((prev) =>
-            prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev
-          );
-          setActiveLocalGift((prev) =>
-            prev && prev.messageId === messageId ? { ...prev, isDismissed: true } : prev
-          );
           break; // Stop execution, don't display in regular chat history
         }
 
-        if (isGift && giftData) {
-          const messageId = data.id || data.messageId || giftData.messageId || Date.now().toString();
-          if (messageId) {
-            if (processedGiftIdsRef.current.has(messageId)) {
-              break;
-            }
-            processedGiftIdsRef.current.add(messageId);
-          }
-
-          const { gift, targetUserId, senderId } = giftData;
-          const giftObj = {
-            ...gift,
-            messageId,
-            targetUserId,
-            senderId
-          };
-
-          // If I'm the recipient (targetUserId === me), show the gift animation on my local tile.
-          // Otherwise, show on the recipient's remote tile.
-          if (String(targetUserId) === String(myId)) {
-            setActiveLocalGift({ ...giftObj, isDismissed: false });
-          } else {
-            setActiveRemoteGift({ gift: giftObj, targetUserId: String(targetUserId), isDismissed: false });
-          }
-          break; // Stop execution, don't display in regular chat history
+        // Fallback safety check: do not render any JSON control messages in the chat log
+        if (data.message && data.message.startsWith('{')) {
+          try {
+            JSON.parse(data.message);
+            break;
+          } catch (e) {}
         }
 
         console.log('[Chat] Received:', data.message, { myId, remoteIds: remotes.map(s => s.userId) });
@@ -2516,15 +2506,20 @@ function VideoChatContent() {
 
   const handleIcebreaker = () => {
     if (!roomInfo?.roomId) return;
-    setIsBroken(true);
-    setTimeout(() => setIsBroken(false), 3000);
-    send({ type: 'get-icebreaker', data: { roomId: roomInfo.roomId } });
+    const nextBroken = !isBroken;
+    setIsBroken(nextBroken);
+    if (nextBroken) {
+      send({ type: 'get-icebreaker', data: { roomId: roomInfo.roomId } });
+    } else {
+      setShowIcebreaker(false);
+      setIcebreaker('');
+    }
     send({
       type: 'chat-message',
       data: {
         roomId: roomInfo.roomId,
         message: JSON.stringify({
-          isIcebreakerTrigger: true,
+          isIcebreakerTrigger: nextBroken,
           senderId: userIdRef.current
         })
       }
@@ -2824,7 +2819,7 @@ function VideoChatContent() {
           dareText: syncData.dareText,
           giftId: syncData.gift?.id,
           giftImg: syncData.gift?.img,
-          giftPrice: syncData.gift?.price,
+          giftPrice: syncData.gift?.diamonds,
           targetUserId: targetId,
           senderId: userIdRef.current,
           senderName: localUserInfo?.name || 'Someone'
@@ -2956,6 +2951,41 @@ function VideoChatContent() {
     setDareAcceptanceStatus("idle");
   }, [coins, diamonds, selectedGiftId, refreshWallet, giftItems]);
 
+  const openDareOverlay = () => {
+    const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
+    if (activeDareProposal) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomId,
+          message: JSON.stringify({
+            isDareResponse: true,
+            accepted: false,
+            targetUserId: activeDareProposal.senderId,
+            senderId: userIdRef.current
+          })
+        }
+      });
+      setActiveDareProposal(null);
+    }
+    
+    // Notify the other user that we are initiating/taking over the dare flow
+    if (roomId && remoteStreams[0]?.userId) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomId,
+          message: JSON.stringify({
+            isDareInitiated: true,
+            targetUserId: remoteStreams[0].userId,
+            senderId: userIdRef.current
+          })
+        }
+      });
+    }
+    setIsDareOpen(true);
+  };
+
   // --- Render Helpers ---
   const isRoomFull = (remoteStreams.length + 1) >= 4;
   const isPullStrangerDisabled = isRoomFull || isEnablingPullStranger || pullStrangerCooldownSec > 0;
@@ -2977,7 +3007,7 @@ function VideoChatContent() {
     isGiftModalOpen,
     setIsGiftModalOpen,
     isDareOpen,
-    setIsDareOpen,
+    setIsDareOpen: openDareOverlay,
     setIsCoinModalOpen,
     coins,
     selectedGiftId,
@@ -3822,7 +3852,7 @@ function VideoChatContent() {
         />
 
         <DareOverlay
-          isOpen={isDareOpen}
+          isOpen={isDareOpen && !activeDareProposal}
           onClose={handleCancelDare}
           selectedGiftId={selectedGiftId}
           onSelectGift={(giftId) => setSelectedGiftId(giftId)}

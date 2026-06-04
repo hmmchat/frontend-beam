@@ -24,7 +24,7 @@ export default function DareProposalOverlay({
             backgroundImage: "url(/assets/mb.jpg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.9,
+            opacity: 0.8,
           }}
         >
           {/* Header Icons */}
@@ -73,7 +73,7 @@ export default function DareProposalOverlay({
                 {proposal.giftImg && (proposal.giftImg.startsWith("http") || proposal.giftImg.startsWith("/")) ? (
                   <img src={proposal.giftImg} className="w-10 h-10 object-contain" alt="" />
                 ) : (
-                  proposal.giftImg || "🎁"
+                  proposal.giftImg
                 )}
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function DareProposalOverlay({
               backgroundImage: "url(/assets/mb.jpg)",
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.9,
+              opacity: 0.8,
             }}
             className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
           >
@@ -103,7 +103,7 @@ export default function DareProposalOverlay({
               backgroundImage: "url(/assets/mb.jpg)",
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.9,
+              opacity: 0.8,
             }}
             className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md"
           >

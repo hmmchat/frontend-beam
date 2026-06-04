@@ -29,12 +29,12 @@ export default function FavouritesPanel({ favouriteProfiles, onAvatarClick }) {
                 title={isLive ? 'Live now - open broadcast' : 'Offline'}
               >
                 <img
-                  src={fav?.displayPictureUrl || '/avatar-placeholder.png'}
+                  src={fav?.displayPictureUrl || ''}
                   alt={fav?.username || 'Favourite'}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/avatar-placeholder.png';
+                    e.currentTarget.src = '';
                   }}
                 />
                 {isLive && (

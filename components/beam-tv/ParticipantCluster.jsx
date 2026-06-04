@@ -29,18 +29,18 @@ export default function ParticipantCluster({ participants }) {
           if (i === 2) style = { ...style, bottom: '0', left: '0', zIndex: 30, width: '32px', height: '32px' };
           if (i === 3) style = { ...style, bottom: '0', right: '0', zIndex: 40, width: '32px', height: '32px' };
         }
-        
+
         return (
-          <div 
+          <div
             key={p.userId || i}
             className="absolute rounded-full overflow-hidden border-2 border-white shadow-xl bg-gray-300"
             style={style}
           >
-            <img 
-              src={p.displayPictureUrl || '/avatar-placeholder.png'} 
-              className="w-full h-full object-cover" 
-              alt="" 
-              onError={(e) => { e.currentTarget.src = '/avatar-placeholder.png'; }}
+            <img
+              src={p.displayPictureUrl || ''}
+              className="w-full h-full object-cover"
+              alt=""
+              onError={(e) => { e.currentTarget.src = ''; }}
             />
           </div>
         );

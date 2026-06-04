@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { FaRegBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
+import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
+import { IoWarningOutline } from "react-icons/io5";
+import { IoEyeOutline } from "react-icons/io5";
 
 export default function DareOverlay({
   isOpen,
@@ -26,6 +28,31 @@ export default function DareOverlay({
   const [dareIndex, setDareIndex] = useState(0);
   const [stage, setStage] = useState(1);
   const [dareText, setDareText] = useState("");
+
+  const matchedSavedDare = savedDares.find(
+    (d) => d.text?.trim().toLowerCase() === dareText?.trim().toLowerCase()
+  );
+  const isBookmarked = !!matchedSavedDare;
+
+  const ITEMS_PER_PAGE = 4;
+  const [giftPageIndex, setGiftPageIndex] = useState(0);
+  const totalPages = Math.ceil(giftItems.length / ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setGiftPageIndex(0);
+  }, [giftItems]);
+
+  const handleNextGiftPage = (e) => {
+    e.stopPropagation();
+    if (giftPageIndex >= totalPages - 1) return;
+    setGiftPageIndex((prev) => prev + 1);
+  };
+
+  const handlePrevGiftPage = (e) => {
+    e.stopPropagation();
+    if (giftPageIndex <= 0) return;
+    setGiftPageIndex((prev) => prev - 1);
+  };
 
   const currentList = dareTab === "Random" ? randomDares : savedDares;
   const activeDare = currentList[dareIndex];
@@ -88,7 +115,7 @@ export default function DareOverlay({
       {/* Overlay Container */}
       <div
         onClick={onClose}
-        className="absolute z-50 md:bottom-0 bottom-[0%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4"
+        className="absolute z-50 md:bottom-0 bottom-[0.5%] md:left-[48%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4"
       >
         {/* 1st VIEW */}
         {stage === 1 && (
@@ -97,12 +124,12 @@ export default function DareOverlay({
             className="flex flex-col items-center md:items-end w-full max-w-[480px] relative"
           >
             {/* Tabs */}
-            <div className="flex gap-2 md:mr-6 ml-40 -mb-[2px] relative z-20">
+            <div className="flex gap-2 md:mr-10 ml-40 -mb-[2px] relative z-20">
               <button
                 onClick={(e) => { e.stopPropagation(); handleTabChange("Saved"); }}
                 className={clsx(
-                  "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[10px] border-2 border-b-0 text-sm font-medium transition-colors",
-                  dareTab === "Saved" ? "bg-white text-[#4C1A99] border-white" : "bg-[#1A1A1A] text-white border-white"
+                  "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[12px] border-2 border-b-0 text-sm font-medium transition-colors",
+                  dareTab === "Saved" ? "bg-white text-[#4C1A99] border-white" : "text-white border-white"
                 )}
               >
                 Saved
@@ -110,8 +137,8 @@ export default function DareOverlay({
               <button
                 onClick={(e) => { e.stopPropagation(); handleTabChange("Random"); }}
                 className={clsx(
-                  "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[10px] border-2 border-b-0 text-sm font-medium transition-colors",
-                  dareTab === "Random" ? "bg-white text-[#4C1A99] border-white" : "bg-[#1A1A1A] text-white border-white"
+                  "md:px-6 px-4 md:py-2 py-1 md:rounded-t-[20px] rounded-t-[12px] border-2 border-b-0 text-sm font-medium transition-colors",
+                  dareTab === "Random" ? "bg-white text-[#4C1A99] border-white" : " text-white border-white"
                 )}
               >
                 Random
@@ -128,7 +155,7 @@ export default function DareOverlay({
                 style={{
                   backgroundImage: "url(/assets/mb.jpg)",
                   backgroundSize: "cover",
-                  opacity: 0.9,
+                  opacity: 0.8,
                 }}
               />
 
@@ -139,20 +166,29 @@ export default function DareOverlay({
               <div className="relative z-10 text-white">
 
                 {/* Top Icons */}
-                <div className="flex justify-between items-center w-full md:mb-2">
+                <div className="flex justify-between items-center w-full md:mb-2   md:px-[1px]">
                   {dareTab === "Random" ? (
-                    <FaRegBookmark
-                      className="text-white text-xl cursor-pointer hover:text-white/80 transition"
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (dareText.trim() && onSaveCustomDare) {
-                          onSaveCustomDare(dareText.trim());
+                        if (isBookmarked) {
+                          if (matchedSavedDare && onDeleteCustomDare) {
+                            onDeleteCustomDare(matchedSavedDare.id);
+                          }
+                        } else {
+                          if (dareText.trim() && onSaveCustomDare) {
+                            onSaveCustomDare(dareText.trim());
+                          }
                         }
                       }}
-                    />
+                      className="text-white hover:text-white/80 transition p-1 cursor-pointer active:scale-90"
+                    >
+                      {isBookmarked ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
+                    </button>
                   ) : (
-                    <FaRegTrashAlt
-                      className="text-white text-xl cursor-pointer hover:text-white/80 transition"
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (activeDare && onDeleteCustomDare) {
@@ -161,12 +197,20 @@ export default function DareOverlay({
                           setDareIndex(prev => nextLength > 0 ? Math.min(prev, nextLength - 1) : 0);
                         }
                       }}
-                    />
+                      className="text-white hover:text-white/80 transition p-1 cursor-pointer active:scale-90"
+                    >
+                      <FaRegTrashAlt size={20} />
+                    </button>
                   )}
-                  <FaRegQuestionCircle className="text-white text-2xl cursor-pointer hover:text-white/80 transition" />
+                  <button
+                    type="button"
+                    className="text-white hover:text-white/80 transition p-1 cursor-pointer active:scale-90"
+                  >
+                    <FaRegQuestionCircle size={20} />
+                  </button>
                 </div>
 
-                <p className="text-xs opacity-80 text-center mb-2">Dare {recipientName} to:</p>
+                <p className="text-xs opacity-80 text-center mb-2 -mt-2">Dare {recipientName} to:</p>
                 {/* Top Section */}
                 <div className="flex items-center justify-between md:mb-4 mb-2">
 
@@ -196,25 +240,50 @@ export default function DareOverlay({
                 </div>
 
                 {/* Visibility note */}
-                <div className="flex items-center justify-center gap-2 text-xs opacity-80 md:mb-6 mb-3">
-                  👁️ {recipientName} can see this Dare too
+                <div className="flex items-center justify-center gap-1 text-[10px] opacity-80 md:mb-6 mb-3">
+                  <IoEyeOutline className="text-yellow-400 " size={16} /> {recipientName} can see this Dare too
                 </div>
 
                 {/* Gift Section */}
                 <div className="border border-white/40 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <img src="/gift-light.svg" alt="coin" className="md:w-7 w-5" />
-                    <div>
-                      <p className="md:text-sm text-xs font-semibold">Add gift</p>
-                      <p className="md:text-xs text-[8px] opacity-70">
-                        Put bet to see what happens
-                      </p>
+
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 mb-3">
+                      <img src="/gift-light.svg" alt="coin" className="md:w-7 w-5" />
+                      <div>
+                        <p className="md:text-sm text-xs font-semibold">Add gift</p>
+                        <p className="md:text-[10px] text-[8px] ">
+                          Put bet to see what happens
+                        </p>
+                      </div>
                     </div>
+
+
+                    <div className="flex gap-2">
+                      <FaAngleLeft
+                        onClick={handlePrevGiftPage}
+                        className={clsx(
+                          "text-white text-xl border-2 border-white rounded-full w-5 h-5 md:w-7 md:h-7 p-[3px] flex items-center justify-center transition-all active:scale-90",
+                          giftPageIndex === 0 ? "opacity-35 cursor-not-allowed pointer-events-none" : "cursor-pointer"
+                        )}
+                      />
+
+
+                      <FaAngleRight
+                        onClick={handleNextGiftPage}
+                        className={clsx(
+                          "text-white text-xl border-2 border-white rounded-full w-5 h-5 md:w-7 md:h-7 p-[3px] flex items-center justify-center transition-all active:scale-90",
+                          giftPageIndex >= totalPages - 1 ? "opacity-35 cursor-not-allowed pointer-events-none" : "cursor-pointer"
+                        )}
+                      />
+                    </div>
+
                   </div>
 
+
                   {/* Gift Row */}
-                  <div className="flex md:gap-3  gap-[7px] overflow-x-auto pb-2">
-                    {giftItems.map((gift) => (
+                  <div className="flex md:gap-3 gap-[7px] overflow-hidden justify-start w-full">
+                    {giftItems.slice(giftPageIndex * ITEMS_PER_PAGE, (giftPageIndex + 1) * ITEMS_PER_PAGE).map((gift) => (
                       <div
                         key={gift.id}
                         onClick={() => {
@@ -241,9 +310,15 @@ export default function DareOverlay({
 
                   {/* Pagination dots */}
                   <div className="flex justify-center mt-3 gap-1">
-                    <div className="md:w-2 w-1 md:h-2 h-1 bg-white rounded-full" />
-                    <div className="md:w-2 w-1 md:h-2 h-1 bg-white/40 rounded-full" />
-                    <div className="md:w-2 w-1 md:h-2 h-1 bg-white/40 rounded-full" />
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={clsx(
+                          "md:w-2 w-1 md:h-2 h-1 rounded-full transition-colors",
+                          giftPageIndex === idx ? "bg-white" : "bg-white/40"
+                        )}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -255,7 +330,7 @@ export default function DareOverlay({
         {stage === 2 && (
 
 
-          <div className="absolute z-[65] md:bottom-[14vh] bottom-6 left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
+          <div className="absolute z-[65] md:bottom-[14vh] bottom-[13vh] left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
             <div
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[32px] p-6 relative overflow-hidden"
@@ -263,7 +338,7 @@ export default function DareOverlay({
                 backgroundImage: "url(/assets/mb.jpg)",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                opacity: 0.9,
+                opacity: 0.8,
               }}
             >
               {/* Header Icons */}
@@ -327,15 +402,15 @@ export default function DareOverlay({
       </div>
 
       {/* Bottom Bar */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center">
+      <div onClick={(e) => e.stopPropagation()} className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center ">
         {/* Background */}
         <div
-          className="absolute inset-0 z-0 pointer-events-auto"
+          className="absolute inset-0 z-0 pointer-events-auto bg-red-900"
           style={{
             backgroundImage: "url(/assets/mb.jpg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.9,
+            opacity: 0.8,
           }}
         />
 
@@ -411,25 +486,30 @@ export default function DareOverlay({
       </div>
 
       {/* Bottom Bar Mobile */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden">
+      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-6 md:hidden bg-[#4E0093]/20">
         <div
-          className="absolute inset-0 z-0 pointer-events-auto"
+          className="absolute inset-0 z-0 pointer-events-auto "
           style={{
             backgroundImage: "url(/assets/mb.jpg)",
             backgroundSize: "cover",
-            opacity: 0.9,
+            opacity: 0.8,
           }}
         />
 
         {!hasSufficientCoins ? (
           <>
-            <div className="z-10 text-sm text-white">
-              Insufficient balance
+
+            <div className="z-10 mb-3">
+              <div className="z-10 text-[10px]  text-white flex items-center gap-1">
+                <IoWarningOutline className="text-yellow-500 text-[10px]" />   Insufficient balance
+              </div>
+              <p className="text-[12px] text-white font-outfit">Spend coins:<span className="font-otomanopee text-[12px] flex mt-1 gap-1 "><img src="/Coins/coin10.png" className="w-4 rounded-full  " alt="" /> {currentPrice}</span> </p>
             </div>
+
 
             <button
               onClick={onOpenCoinModal}
-              className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95 pointer-events-auto"
+              className="z-10 px-6 py-4 mb-3 font-otomanopee text-white transition-all border border-white/50 border-b-[4px] rounded-xl bg-[#0A032D]/20 hover:bg-white/10 active:scale-95 pointer-events-auto text-sm"
             >
               Buy Coins
             </button>
@@ -465,16 +545,20 @@ export default function DareOverlay({
               )}
             >
               <div
-                className={clsx(
-                  "absolute inset-0 rounded-full flex items-center justify-center  border-2 border-black/20",
-                  dareAcceptanceStatus === "accepted" ? "bg-red-600" : "bg-gray-600"
-                )}
+                className=
+                "absolute inset-0 rounded-full flex items-center justify-center "
+
               >
-                <span className="text-white font-black text-[9px] leading-[10px] rotate-[-12deg] uppercase tracking-tight text-center">
-                  Send
-                  <br />
-                  Dare
-                </span>
+                <div
+                  className="relative md:w-14 md:h-14 w-12 h-12 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                >
+                  <img
+                    src="/circle.png"
+                    className="absolute inset-0 w-full h-full bg-red-900 rounded-full"
+                    alt=""
+                  />
+                  <p className="relative text-white rotate-[-12deg] text-[10px] leading-[9px] tracking-tighter font-otomanopee"> SEND <br />DARE</p>
+                </div>
               </div>
             </button>
           </>

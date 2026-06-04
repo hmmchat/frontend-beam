@@ -34,7 +34,7 @@ export default function LikedBroadcastersModal({ likedBroadcasters, onClose, onS
                 onClick={() => onSelectBroadcaster(b)}
               >
                 <img
-                  src={b.participants?.[0]?.displayPictureUrl || '/avatar-placeholder.png'}
+                  src={b.participants?.[0]?.displayPictureUrl}
                   alt=""
                   className="w-full h-full object-cover filter brightness-90 group-hover:scale-110 transition-transform duration-500"
                 />

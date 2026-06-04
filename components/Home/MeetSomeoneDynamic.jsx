@@ -95,6 +95,12 @@ export default function MeetSomeoneDynamic() {
   const [squadLobbyCall, setSquadLobbyCall] = useState(null);
   const [squadLobbyMicMuted, setSquadLobbyMicMuted] = useState(false);
   const [squadLobbyAudioOff, setSquadLobbyAudioOff] = useState(false);
+
+  const squadLobbyMicMutedRef = useRef(squadLobbyMicMuted);
+  squadLobbyMicMutedRef.current = squadLobbyMicMuted;
+
+  const squadLobbyAudioOffRef = useRef(squadLobbyAudioOff);
+  squadLobbyAudioOffRef.current = squadLobbyAudioOff;
   const [guestProfiles, setGuestProfiles] = useState({});
   const [isSearching, setIsSearching] = useState(false);
   const [isResumeLoading, setIsResumeLoading] = useState(false);
@@ -786,7 +792,7 @@ export default function MeetSomeoneDynamic() {
             username: u.username || 'Squad',
             age,
             city: u.preferredCity || '',
-            displayPictureUrl: u.displayPictureUrl || '/assets/avatar1.png',
+            displayPictureUrl: u.displayPictureUrl,
           };
         } catch {
           partner = {
@@ -794,7 +800,7 @@ export default function MeetSomeoneDynamic() {
             username: 'Squad',
             age: '',
             city: '',
-            displayPictureUrl: '/assets/avatar1.png',
+            displayPictureUrl: '',
           };
         }
       } else {
@@ -803,7 +809,7 @@ export default function MeetSomeoneDynamic() {
           username: 'Squad',
           age: '',
           city: '',
-          displayPictureUrl: '/assets/avatar1.png',
+          displayPictureUrl: '',
         };
       }
       isEnteringCallRef.current = true;
@@ -986,7 +992,7 @@ export default function MeetSomeoneDynamic() {
           return;
         }
         const micTrack = stream.getAudioTracks()[0];
-        if (micTrack) micTrack.enabled = !squadLobbyMicMuted;
+        if (micTrack) micTrack.enabled = !squadLobbyMicMutedRef.current;
         squadLobbyAudioLocalStreamRef.current = stream;
 
         const ws = new WebSocket(buildWsUrl(getStreamingWsUrl(), {
@@ -1119,7 +1125,7 @@ export default function MeetSomeoneDynamic() {
             audioEl.style.opacity = '0';
             audioEl.style.pointerEvents = 'none';
             audioEl.srcObject = streamOut;
-            audioEl.muted = squadLobbyAudioOff;
+            audioEl.muted = squadLobbyAudioOffRef.current;
             squadLobbyAudioElsRef.current[id] = audioEl;
             try {
               document.body.appendChild(audioEl);
@@ -1174,9 +1180,7 @@ export default function MeetSomeoneDynamic() {
     getStreamingWsUrl,
     isInSquadLobby,
     mode,
-    squadLobbyAudioOff,
     squadLobbyCall?.roomId,
-    squadLobbyMicMuted,
   ]);
 
   const handleRemoveSquadMember = async (memberId) => {
@@ -1285,7 +1289,7 @@ export default function MeetSomeoneDynamic() {
           if (!id) return null;
           return {
             friendId: String(id),
-            photoUrl: s.displayPictureUrl || s.photoUrl || '/assets/avatar1.png',
+            photoUrl: s.displayPictureUrl || s.photoUrl || '',
             username: s.username || 'Friend',
           };
         })
@@ -2720,7 +2724,7 @@ export default function MeetSomeoneDynamic() {
                             <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
                               <div className={clsx('relative', 'w-16', 'h-16', 'md:w-22', 'md:h-22', 'overflow-visible')}>
                                 <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
-                                  <img src={myProfile?.displayPictureUrl || '/assets/avatar1.png'} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
+                                  <img src={myProfile?.displayPictureUrl || ''} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
                                 </div>
                               </div>
                               <span className="text-xs">Me</span>
@@ -2787,17 +2791,24 @@ export default function MeetSomeoneDynamic() {
                               'mb-2',
                               'inline-flex',
                               'items-center',
-                              'gap-2',
+                              'gap-1',
                               'rounded-full',
-                              'border',
-                              'border-white/20',
-                              'bg-[#0A032D]/45',
-                              'px-2',
+
+
+                              'bg-[#0A032D]/20',
+                              'px-4.5',
                               'py-1.5',
-                              'backdrop-blur-sm',
+
 
                             )}
                           >
+
+
+
+
+
+
+
                             <button
                               type="button"
                               onClick={() => setSquadLobbyMicMuted((prev) => !prev)}
@@ -2805,7 +2816,7 @@ export default function MeetSomeoneDynamic() {
                                 'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
                                 squadLobbyMicMuted
                                   ? 'border-red-300/70 bg-red-500/20 text-red-100'
-                                  : 'border-white/40 text-white hover:bg-white/10',
+                                  : 'border-none text-white hover:bg-white/10',
                               )}
                               title={squadLobbyMicMuted ? 'Unmute microphone' : 'Mute microphone'}
                             >
@@ -2818,7 +2829,7 @@ export default function MeetSomeoneDynamic() {
                                 'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
                                 squadLobbyAudioOff
                                   ? 'border-yellow-300/70 bg-yellow-500/20 text-yellow-100'
-                                  : 'border-white/40 text-white hover:bg-white/10',
+                                  : 'border-none text-white hover:bg-white/10',
                               )}
                               title={squadLobbyAudioOff ? 'Turn audio on' : 'Turn audio off'}
                             >

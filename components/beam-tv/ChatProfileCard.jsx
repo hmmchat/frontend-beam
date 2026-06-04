@@ -17,7 +17,7 @@ export default function ChatProfileCard({ user, isLoggedIn, friendRequestSent, o
         </div>
         <div className="flex items-center gap-4 mb-5">
           <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-yellow-300/80 bg-gray-200">
-            <img src={user.displayPictureUrl || '/avatar-placeholder.png'} alt={user.username || 'User'} className="w-full h-full object-cover" />
+            <img src={user.displayPictureUrl} alt={user.username || 'User'} className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
             <div className="text-white text-xl font-black truncate">{user.username || 'User'}</div>

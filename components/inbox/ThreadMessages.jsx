@@ -126,7 +126,7 @@ export default function ThreadMessages({
                 {!isMe && (
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                     <Image
-                      src={activeChat?.otherUser?.displayPictureUrl || "/assets/avatar1.png"}
+                      src={activeChat?.otherUser?.displayPictureUrl}
                       alt="avatar"
                       fill
                       className="object-cover"
@@ -134,9 +134,8 @@ export default function ThreadMessages({
                   </div>
                 )}
                 <div
-                  className={`p-1 rounded-lg max-w-[75%] shadow-md overflow-hidden ${
-                    isMe ? "bg-black/20 text-white  " : "bg-black/20 text-white  "
-                  }`}
+                  className={`p-1 rounded-lg max-w-[75%] shadow-md overflow-hidden ${isMe ? "bg-black/20 text-white  " : "bg-black/20 text-white  "
+                    }`}
                 >
                   {isGif && (
                     <button
@@ -166,34 +165,33 @@ export default function ThreadMessages({
                   {(message.giftId ||
                     message.messageType === "GIFT" ||
                     message.messageType === "GIFT_WITH_MESSAGE") && (
-                    <div
-                      className={`bg-black/20 rounded-xl p-3 mb-1 flex flex-col items-center gap-2 border ${
-                        giftUnreadOnly
-                          ? "border-yellow-400/80 ring-2 ring-yellow-400/40"
-                          : "border-white/10"
-                      }`}
-                    >
-                      <div className="relative w-16 h-16">
-                        <Image
-                          src={
-                            message.giftImageUrl ||
-                            (message.giftId
-                              ? fallbackPresetGiftImagePath(message.giftId)
-                              : PRESET_GIFT_IMAGES[0])
-                          }
-                          alt="Gift"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                        <div className="relative w-3 h-3">
-                          <Image src="/gift/dimond.png" alt="coin" fill className="object-contain" />
+                      <div
+                        className={`bg-black/20 rounded-xl p-3 mb-1 flex flex-col items-center gap-2 border ${giftUnreadOnly
+                            ? "border-yellow-400/80 ring-2 ring-yellow-400/40"
+                            : "border-white/10"
+                          }`}
+                      >
+                        <div className="relative w-16 h-16">
+                          <Image
+                            src={
+                              message.giftImageUrl ||
+                              (message.giftId
+                                ? fallbackPresetGiftImagePath(message.giftId)
+                                : PRESET_GIFT_IMAGES[0])
+                            }
+                            alt="Gift"
+                            fill
+                            className="object-contain"
+                          />
                         </div>
-                        <span className="text-xs font-bold">{message.giftAmount || 0}</span>
+                        <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                          <div className="relative w-3 h-3">
+                            <Image src="/gift/dimond.png" alt="coin" fill className="object-contain" />
+                          </div>
+                          <span className="text-xs font-bold">{message.giftAmount || 0}</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   {(isSquadInvite || isSquadOutcome) && (
                     <div className="px-4 py-3 space-y-3">
                       <p className="md:text-[12px] text-[11px] font-outfit text-white/95 whitespace-pre-wrap break-words">
@@ -210,58 +208,58 @@ export default function ThreadMessages({
                         ) : (
                           <div className="flex flex-wrap gap-2">
 
-  {/* Reject (X icon) */}
-  <button
-    type="button"
-    disabled={squadBusyId === message.id}
-    onClick={async () => {
-      setSquadBusyId(message.id);
-      try {
-        await onSquadInviteResponse(
-          squadMeta.invitationId,
-          "reject",
-        );
-      } finally {
-        setSquadBusyId(null);
-      }
-    }}
-    className="w-8 h-8 text-red-500 flex items-center justify-center rounded-full bg-red/10  disabled:opacity-40"
-  >
-    ✕
-  </button>
+                            {/* Reject (X icon) */}
+                            <button
+                              type="button"
+                              disabled={squadBusyId === message.id}
+                              onClick={async () => {
+                                setSquadBusyId(message.id);
+                                try {
+                                  await onSquadInviteResponse(
+                                    squadMeta.invitationId,
+                                    "reject",
+                                  );
+                                } finally {
+                                  setSquadBusyId(null);
+                                }
+                              }}
+                              className="w-8 h-8 text-red-500 flex items-center justify-center rounded-full bg-red/10  disabled:opacity-40"
+                            >
+                              ✕
+                            </button>
 
-               <button
-    type="button"
-    disabled={squadBusyId === message.id}
-    onClick={async () => {
-      setSquadBusyId(message.id);
-      try {
-        await onSquadInviteResponse(
-          squadMeta.invitationId,
-          "accept",
-        );
-      } finally {
-        setSquadBusyId(null);
-      }
-    }}
-    className="flex items-center gap-2 px-5 py-3 rounded-[10px] border border-white/40 border-b-4 text-white text-xs font-semibold hover:bg-white/10 disabled:opacity-40"
-  >
-    Join now
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-4 h-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h7a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"
-      />
-    </svg>
-  </button>
+                            <button
+                              type="button"
+                              disabled={squadBusyId === message.id}
+                              onClick={async () => {
+                                setSquadBusyId(message.id);
+                                try {
+                                  await onSquadInviteResponse(
+                                    squadMeta.invitationId,
+                                    "accept",
+                                  );
+                                } finally {
+                                  setSquadBusyId(null);
+                                }
+                              }}
+                              className="flex items-center gap-2 px-5 py-3 rounded-[10px] border border-white/40 border-b-4 text-white text-xs font-semibold hover:bg-white/10 disabled:opacity-40"
+                            >
+                              Join now
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h7a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"
+                                />
+                              </svg>
+                            </button>
 
                           </div>
                         ))}
@@ -271,19 +269,18 @@ export default function ThreadMessages({
                     (!isGif || message.messageType === "GIF_WITH_MESSAGE") &&
                     !isSquadInvite &&
                     !isSquadOutcome && (
-                    <div
-                      className={`md:px-4  px-3 py-2 whitespace-pre-wrap break-words md:text-[12px] text-[11px] font-outfit   ${
-                        unreadBubble ? "font-bold" : ""
-                      }`}
-                    >
-                      {message.message}
-                    </div>
-                  )}
+                      <div
+                        className={`md:px-4  px-3 py-2 whitespace-pre-wrap break-words md:text-[12px] text-[11px] font-outfit   ${unreadBubble ? "font-bold" : ""
+                          }`}
+                      >
+                        {message.message}
+                      </div>
+                    )}
                 </div>
                 {isMe && (
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                     <Image
-                      src={myAvatarUrl || "/assets/avatar1.png"}
+                      src={myAvatarUrl}
                       alt="me"
                       fill
                       className="object-cover"

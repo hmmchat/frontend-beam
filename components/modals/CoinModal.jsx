@@ -70,14 +70,14 @@ export default function CoinModal({ isOpen, onClose }) {
         </button>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden md:overflow-y-auto py-6 px-3 md:p-10 md:pt-10 custom-scrollbar phone-scrollbar-hide z-10 flex flex-col">
+        <div className="flex-1 overflow-hidden md:overflow-y-auto py-6 px-3 md:p-10 md:pt-10 scrollbar-hide z-10 flex flex-col">
           {/* Header Message */}
 
 
           <h2 className="md:text-3xl text-2xl ml-2 font-bold text-white mb-6 md:mb-4 md:-mt-2 shrink-0">Buy Coins</h2>
 
 
-          <div className=' border md:border-0  md:mb-0 rounded-[30px] border-white/30 overflow-y-auto md:overflow-visible custom-scrollbar phone-scrollbar-hide'>
+          <div className=' border md:border-0  md:mb-0 rounded-[30px] border-white/30 overflow-y-auto md:overflow-visible scrollbar-hide'>
             {/* Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-3 py-4 md:px-0 md:py-0">
               {coinPackages.map((pkg, index) => (

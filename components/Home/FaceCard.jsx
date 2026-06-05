@@ -12,6 +12,7 @@ import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 
 import { IoIosArrowForward } from "react-icons/io";
+import ErrorUi from "../facecard/ErrorUi";
 
 function brandLogoUrl(entry) {
   if (!entry) return null;
@@ -134,16 +135,12 @@ const FaceCard = ({
               <IoRadio className="h-5 w-5" />
             </span>
           )}
-          {/* <span
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                    title={isVideoOn ? "Video on" : "Video off"}
-                  >
-                    {isVideoOn ? (
-                      <IoVideocam className="h-5 w-5" />
-                    ) : (
-                      <IoVideocamOff className="h-5 w-5" />
-                    )}
-                  </span> */}
+
+
+
+
+
+          <ErrorUi />
           <button
             type="button"
             className="flex h-6 w-6 items-center justify-center text-white"
@@ -376,3 +373,12 @@ const FaceCard = ({
 };
 
 export default FaceCard;
+
+
+
+
+
+
+
+
+

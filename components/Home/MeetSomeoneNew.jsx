@@ -412,11 +412,11 @@ export default function MeetSomeoneNew({
         </div>
 
         {/* Main Content Area */}
-        <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-4">
+        <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-1">
 
           <MeetLogo
             activeCount={activeUsers}
-            className="mt-[7vh] "
+            className="mt-[8%] "
           />
 
           {/* Mic/Audio Controls */}
@@ -625,7 +625,7 @@ export default function MeetSomeoneNew({
 
 
       {mode === 'squad' ? (
-        <div className={`flex flex-col items-center w-full absolute ${canSquadMeet ? 'bottom-[18vh]' : 'bottom-[16vh]'}`}>
+        <div className={`flex flex-col items-center w-full absolute ${canSquadMeet ? 'bottom-[15vh]' : 'bottom-[14vh]'}`}>
 
           {squadProductMessage && (
             <div

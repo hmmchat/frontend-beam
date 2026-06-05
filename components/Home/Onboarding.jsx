@@ -600,7 +600,7 @@ export default function Onboarding() {
 
   return (
 
-    <div className="w-full min-h-[100svh] overflow-x-hidden relative outfit-font text-white"
+    <div className="w-full h-full overflow-y-auto scrollbar-hide relative outfit-font text-white"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -624,7 +624,6 @@ export default function Onboarding() {
   lg:grid-cols-2
   gap-4
   min-h-screen
-  overflow-hidden
   p-3
   md:p-6
 ">
@@ -654,7 +653,7 @@ export default function Onboarding() {
 
               {/* Right - Form */}
 
-              <div className=" items-center h-[100dvh] overflow-hidden   ">
+              <div className=" items-center md:h-[96dvh] h-[100dvh] overflow-hidden   ">
 
                 <div className="flex flex-col items-center md:justify-center h-full  h-dvh overflow-hidden md:min-h-full 'h-screen',  md:border md:border-white/30 md:rounded-[60px]">
                   <div className=" overflow-hidden
@@ -1076,7 +1075,7 @@ export default function Onboarding() {
 
 
 
-              <div className="md:flex md:flex-col gap-6 items-center justify-center  overflow-hidden md:border md:border-white/30 md:rounded-[3rem]">
+              <div className="flex flex-col md:flex md:flex-col gap-6 items-center justify-center overflow-visible md:overflow-hidden md:border md:border-white/30 md:rounded-[3rem] w-full h-full pb-6 md:pb-0">
                 {/* Right */}
 
                 <div className="w-full max-w-lg  flex flex-col  ">
@@ -1096,7 +1095,7 @@ export default function Onboarding() {
 
 
                   {/* Bordered wrapper — matches step 1 form border */}
-                  <div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-hidden  mt-6 sm:mt-0">
+                  <div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-visible md:overflow-hidden  mt-6 sm:mt-0">
 
                     {/* Prompt box */}
                     <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
@@ -1117,7 +1116,7 @@ export default function Onboarding() {
 
 
                     {/* Suggestions */}
-                    <div className="border border-white/30 mt-3 md:rounded-[40px] rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-y-auto">
+                    <div className="border border-white/30 mt-3 md:rounded-[40px] rounded-[20px] p-4 flex flex-col  font-outfit flex-1 min-h-0 overflow-visible md:overflow-y-auto">
                       <div className="flex justify-between items-center text-white text-sm px-1 mt-4">
                         <span className="opacity-90 text-[12px]">Suggestions</span>
                         <button
@@ -1143,10 +1142,7 @@ export default function Onboarding() {
                         </button>
                       </div>
 
-                      <div
-                        className="flex flex-wrap gap-2 h-[255px] md:h-[300px] content-start items-start mt-6 overflow-hidden"
-
-                      >
+                      <div className="flex flex-wrap gap-2 h-auto md:h-[300px] content-start items-start mt-6 overflow-visible md:overflow-hidden">
                         {suggestions.map((text, i) => {
                           const isLong = text.length > 25;
                           const isSelected = selectedPrompts.includes(text);

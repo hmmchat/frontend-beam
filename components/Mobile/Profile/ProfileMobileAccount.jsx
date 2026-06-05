@@ -1,16 +1,15 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import FaceCard2 from "../../Home/FaceCard2";
-import FaceCard3 from "../../Home/FaceCard3";
+import FacecardProfile from "../../Home/FacecardProfile";
 
-export default function ProfileMobileAccount({ 
-  onBack, 
-  user, 
-  age, 
-  currentImageIndex, 
-  setCurrentImageIndex, 
-  handleDownloadFacecard, 
+export default function ProfileMobileAccount({
+  onBack,
+  user,
+  age,
+  currentImageIndex,
+  setCurrentImageIndex,
+  handleDownloadFacecard,
   handleShareFacecard,
   facecardExportRef
 }) {
@@ -30,7 +29,7 @@ export default function ProfileMobileAccount({
       {user ? (
         <div className="flex justify-center w-full">
           <div ref={facecardExportRef} className=" origin-top">
-            <FaceCard3
+            <FacecardProfile
               user={{
                 ...user,
                 age,

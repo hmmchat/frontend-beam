@@ -266,25 +266,25 @@ export default function RewardsReferralsPanel() {
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-hide px-3 py-2 md:py-4">
-      
+
       {/* === INVITE BOX === */}
       <div className="w-full h-full md:h-fit  mx-auto">
         <div className={`${box} px-8 py-20 md:px-8 md:py-6`}>
           <p className="mb-2 text-center font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
             Invite your gang and win
           </p>
-          
+
           <p className="mb-4 flex items-center justify-center gap-1  font-semibold text-white text-xl md:text-2xl">
-            <img 
-              src="/Coins/coin1.png" 
-              alt="" 
-              className="h-8 w-8 md:h-9 md:w-9" 
+            <img
+              src="/Coins/coin1.png"
+              alt=""
+              className="h-8 w-8 md:h-9 md:w-9"
             />
             {referralRewardCoins}
           </p>
 
           <div className="mx-auto mb-4 flex w-max justify-center">
-            <div 
+            <div
               className="relative p-[6px] h-[150px] w-[150px] md:h-[118px] md:w-[118px]"
               role="img"
               aria-label="Scan QR code to open your referral link"
@@ -322,7 +322,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on Snapchat"
             >
-              <Image src="/shareicon4.png" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon3.svg" alt="" width={40} height={40} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -330,7 +330,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on Instagram"
             >
-              <Image src="/shareicon2.png" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon2.svg" alt="" width={40} height={40} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -338,7 +338,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on WhatsApp"
             >
-              <Image src="/shareicon1.png" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon1.svg" alt="" width={40} height={40} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -346,7 +346,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Copy invite to clipboard"
             >
-              <Image src="/shareicon3.png" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon4.svg" alt="" width={40} height={40} className="brightness-0 invert" />
             </button>
           </div>
         </div>

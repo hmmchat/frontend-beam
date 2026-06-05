@@ -2485,128 +2485,131 @@ export default function MeetSomeoneDynamic() {
                             {/* 🔲 HUD BORDER FRAME (Mobile Top/Full) */}
                             <div className={clsx('absolute', 'inset-0', ' ', 'rounded-[2rem]', 'pointer-events-none', 'z-30')} />
 
-                            <div className={clsx(
-                              "origin-center transition-transform duration-500 mb-16 sm:mb-0",
-                              isFaceCardState ? "scale-[1.1] sm:scale-[1]" : "scale-[1.1] sm:scale-[1]"
-                            )}>
-                              {isSearchingState ? (
-                                <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', '')}>
-                                  {/* phone city */}
-                                </div>
-                              ) : isLocationState && discoveryCityFaceUser ? (
-                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing', 'w-full',)}>
-                                  <FaceCard
-                                    user={discoveryCityFaceUser}
-                                    hideArrows={true}
-                                    currentIndex={currentImageIndex}
-                                    onIndexChange={setCurrentImageIndex}
-                                  />
-                                  <div
-                                    className={clsx(
-                                      'relative',
-                                      'md:bottom-6',
-                                      'px-4',
-                                      'w-full',
-                                      'flex',
-                                      'gap-1',
-                                      'items-center',
-                                      'justify-between',
-                                      'bottom-4',
-
-                                    )}
-                                  >
-
-                                    {/* LEFT ARROW */}
-                                    {!waitingForMatch && (
-                                      <button
-                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
-                                      >
-                                        <IoIosArrowBack />
-                                      </button>
-                                    )}
-
-                                    {/* CENTER BUTTONS */}
-                                    {renderMatchButtons(true)}
-
-                                    {/* RIGHT ARROW */}
-                                    {!waitingForMatch && (
-                                      <button
-                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
-                                      >
-                                        <IoIosArrowForward />
-                                      </button>
-                                    )}
+                            {/* Scrollable container for the face card content */}
+                            <div className="absolute inset-0 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20">
+                              <div className={clsx(
+                                "origin-top transition-transform duration-500 mb-16 sm:mb-0",
+                                isFaceCardState ? "scale-[0.92] sm:scale-[1]" : "scale-[0.92] sm:scale-[1]"
+                              )}>
+                                {isSearchingState ? (
+                                  <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', '')}>
+                                    {/* phone city */}
                                   </div>
-                                </div>
-                              ) : (
+                                ) : isLocationState && discoveryCityFaceUser ? (
+                                  <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing', 'w-full',)}>
+                                    <FaceCard
+                                      user={discoveryCityFaceUser}
+                                      hideArrows={true}
+                                      currentIndex={currentImageIndex}
+                                      onIndexChange={setCurrentImageIndex}
+                                    />
+                                    <div
+                                      className={clsx(
+                                        'relative',
+                                        'md:bottom-6',
+                                        'px-4',
+                                        'w-full',
+                                        'flex',
+                                        'gap-1',
+                                        'items-center',
+                                        'justify-between',
+                                        'bottom-4',
 
+                                      )}
+                                    >
 
-                                <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing')}>
-                                  <FaceCard
-                                    user={currentCard}
-                                    hideArrows={true}
-                                    currentIndex={currentImageIndex}
-                                    onIndexChange={setCurrentImageIndex}
-                                  />
+                                      {/* LEFT ARROW */}
+                                      {!waitingForMatch && (
+                                        <button
+                                          className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
+                                        >
+                                          <IoIosArrowBack />
+                                        </button>
+                                      )}
 
-                                  <div
-                                    className={clsx(
-                                      'relative',
-                                      'md:bottom-6',
-                                      'px-4',
-                                      'w-full',
-                                      'flex',
-                                      'gap-1',
-                                      'items-center',
-                                      'justify-between',
-                                      'bottom-4',
+                                      {/* CENTER BUTTONS */}
+                                      {renderMatchButtons(true)}
 
-                                    )}
-                                  >
-
-                                    {/* LEFT ARROW */}
-                                    {!waitingForMatch && (
-                                      <button
-                                        onClick={handlePrevImage}
-                                        className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
-                                        <IoIosArrowBack />
-                                      </button>
-                                    )}
-
-                                    {/* CENTER BUTTONS */}
-                                    {renderMatchButtons(true)}
-
-                                    {/* RIGHT ARROW */}
-                                    {!waitingForMatch && (
-                                      <button
-                                        onClick={handleNextImage}
-                                        className={clsx(
-                                          'relative',
-                                          'z-[110]',
-                                          'w-10',
-                                          'h-10',
-                                          'rounded-full',
-                                          'border',
-                                          'border-white/40',
-                                          'flex',
-                                          'items-center',
-                                          'justify-center',
-                                          'text-white',
-                                          'text-2xl',
-                                          'hover:bg-white/10',
-                                          'transition',
-                                          'active:scale-75',
-                                          'cursor-pointer',
-                                          'backdrop-blur-sm',
-                                          'shrink-0'
-                                        )}
-                                      >
-                                        <IoIosArrowForward />
-                                      </button>
-                                    )}
+                                      {/* RIGHT ARROW */}
+                                      {!waitingForMatch && (
+                                        <button
+                                          className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:border-white transition active:scale-90 shrink-0"
+                                        >
+                                          <IoIosArrowForward />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                ) : (
+
+
+                                  <div className={clsx('relative', 'group/card', 'cursor-grab', 'active:cursor-grabbing')}>
+                                    <FaceCard
+                                      user={currentCard}
+                                      hideArrows={true}
+                                      currentIndex={currentImageIndex}
+                                      onIndexChange={setCurrentImageIndex}
+                                    />
+
+                                    <div
+                                      className={clsx(
+                                        'relative',
+                                        'md:bottom-6',
+                                        'px-4',
+                                        'w-full',
+                                        'flex',
+                                        'gap-1',
+                                        'items-center',
+                                        'justify-between',
+                                        'bottom-4',
+
+                                      )}
+                                    >
+
+                                      {/* LEFT ARROW */}
+                                      {!waitingForMatch && (
+                                        <button
+                                          onClick={handlePrevImage}
+                                          className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0">
+                                          <IoIosArrowBack />
+                                        </button>
+                                      )}
+
+                                      {/* CENTER BUTTONS */}
+                                      {renderMatchButtons(true)}
+
+                                      {/* RIGHT ARROW */}
+                                      {!waitingForMatch && (
+                                        <button
+                                          onClick={handleNextImage}
+                                          className={clsx(
+                                            'relative',
+                                            'z-[110]',
+                                            'w-10',
+                                            'h-10',
+                                            'rounded-full',
+                                            'border',
+                                            'border-white/40',
+                                            'flex',
+                                            'items-center',
+                                            'justify-center',
+                                            'text-white',
+                                            'text-2xl',
+                                            'hover:bg-white/10',
+                                            'transition',
+                                            'active:scale-75',
+                                            'cursor-pointer',
+                                            'backdrop-blur-sm',
+                                            'shrink-0'
+                                          )}
+                                        >
+                                          <IoIosArrowForward />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
                           </div>
@@ -2864,7 +2867,7 @@ export default function MeetSomeoneDynamic() {
                             onClick={() => void shareSquadInvite('generic')}
                             className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
                           >
-                            <img src="/shareicon4.png" className={clsx('w-8', 'h-8')} alt="" />
+                            <img src="/shareicon3.svg" className={clsx('w-8', 'h-8')} alt="" />
                           </button>
                           <button
                             type="button"
@@ -2872,7 +2875,7 @@ export default function MeetSomeoneDynamic() {
                             onClick={() => void shareSquadInvite('generic')}
                             className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
                           >
-                            <img src="/shareicon2.png" className={clsx('w-7', 'h-7')} alt="" />
+                            <img src="/shareicon2.svg" className={clsx('w-7', 'h-7')} alt="" />
                           </button>
                           <button
                             type="button"
@@ -2880,7 +2883,7 @@ export default function MeetSomeoneDynamic() {
                             onClick={() => void shareSquadInvite('whatsapp')}
                             className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
                           >
-                            <img src="/shareicon1.png" className={clsx('w-7', 'h-7')} alt="" />
+                            <img src="/shareicon1.svg" className={clsx('w-7', 'h-7')} alt="" />
                           </button>
                           <button
                             type="button"
@@ -2888,7 +2891,7 @@ export default function MeetSomeoneDynamic() {
                             onClick={() => void shareSquadInvite('copy')}
                             className={clsx('hover:bg-white/10', 'p-2', 'rounded-full', 'transition', 'text-white', 'disabled:opacity-50')}
                           >
-                            <img src="/shareicon3.png" className={clsx('w-7', 'h-7')} alt="" />
+                            <img src="/shareicon4.svg" className={clsx('w-7', 'h-7')} alt="" />
                           </button>
                         </div>
                       </div>

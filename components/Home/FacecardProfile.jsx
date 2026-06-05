@@ -39,7 +39,7 @@ function buildBrandLogos(prefs, legacy) {
   return logos.slice(0, 5);
 }
 
-const FaceCard3 = ({
+const FacecardProfile = ({
   user,
   hideArrows,
   currentIndex,
@@ -170,7 +170,7 @@ const FaceCard3 = ({
 
       <div
         data-facecard-boundary="true"
-        className="w-[85vw] aspect-[360/690] max-w-[360px] 
+        className="w-[85vw] aspect-[366/690] max-w-[360px] 
                 sm:w-[340px] md:w-[320px] lg:w-[360px] 
                 md:aspect-[346/660] shrink-0 rounded-[30px] 
                 border border-white/40 p-[2px]
@@ -230,7 +230,7 @@ const FaceCard3 = ({
           {/* Inner chrome */}
           <div className="absolute md:bottom-12  bottom-1 left-1 right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
             {/* Intent */}
-            <div className="absolute left-0 right-0 top-[9px] z-20 px-2 ">
+            <div className="absolute left-0 right-0 top-[8px] z-20 px-2 ">
               <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[90px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
                 <span className="line-clamp-3">
                   {user.intent || "Here to meet strangers and overthink later."}
@@ -239,7 +239,7 @@ const FaceCard3 = ({
             </div>
 
             {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute bottom-3 left-1 right-2 top-[6.8rem]  md:top-[7rem] flex gap-1 md:gap-0">
+            <div className="absolute md:bottom-2 bottom-1.5 left-1 right-2 top-[6.9rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
               {/* LEFT SIDEBAR */}
               <div className="w-[26%] flex flex-col items-center gap-2 z-20">
                 {/* Brands capsule */}
@@ -287,7 +287,7 @@ const FaceCard3 = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] rounded-b-[400px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
                   <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
@@ -300,30 +300,32 @@ const FaceCard3 = ({
                     )}
                   </div>
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
-            <div className="mt-1.5 w-full px-0.5 text-center text-white overflow-hidden">
-  <div className="marquee">
-    <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
-      {user.musicPreference ? songTitle : '\u00a0'}
-    </p>
-  </div>
+                  <div className="mt-1.5 w-full px-0.5 text-center text-white overflow-hidden">
+                    <div className="marquee">
+                      <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
+                        {user.musicPreference ? songTitle : '\u00a0'}
+                      </p>
+                    </div>
 
-  <div className="marquee  mt-[1px]">
-    <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
-      {user.musicPreference ? artist : '\u00a0'}
-    </p>
-  </div>
-</div>
+                    <div className="marquee  mt-[1px]">
+                      <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
+                        {user.musicPreference ? artist : '\u00a0'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex-1 h-full overflow-hidden ">
+              <div className="flex w-[74%] border  border-white/40 rounded-[20px] h-full flex flex-col items-center ">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover rounded-[20px] "
                   alt=""
                 />
               </div>
+
+
             </div>
 
             {/* Pagination */}
@@ -371,4 +373,4 @@ const FaceCard3 = ({
   );
 };
 
-export default FaceCard3;
+export default FacecardProfile;

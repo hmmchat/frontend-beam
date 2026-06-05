@@ -17,7 +17,7 @@ import SelectorOverlay from "@/components/facecard/SelectorOverlay";
 
 import Skeleton from "@/components/ui/Skeleton";
 import PortraitImageCropModal from "@/components/ui/PortraitImageCropModal";
-import FaceCard2 from "@/components/Home/FaceCard2";
+import FaceCard from "@/components/Home/FaceCard";
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = [
@@ -1158,7 +1158,7 @@ function FacecardContent() {
                   ref={facecardPreviewExportRef}
                   className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full', 'mx-auto', '      md:[@media(max-height:1000px)]:scale-[0.90]')}
                 >
-                  <FaceCard2
+                  <FaceCard
                     user={{
                       ...user,
                       age,

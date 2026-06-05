@@ -404,15 +404,7 @@ export default function DareOverlay({
       {/* Bottom Bar */}
       <div onClick={(e) => e.stopPropagation()} className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center ">
         {/* Background */}
-        <div
-          className="absolute inset-0 z-0 pointer-events-auto bg-red-900"
-          style={{
-            backgroundImage: "url(/assets/mb.jpg)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.8,
-          }}
-        />
+
 
         {/* Left Section */}
         <div className="relative z-10 flex-1 pointer-events-auto">

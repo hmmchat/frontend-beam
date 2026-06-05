@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import FaceCard3 from "../Home/FaceCard3";
+import FacecardProfile from "../Home/FacecardProfile";
 import { calculateProgress } from "@/lib/facecard-utils";
 import { toJpeg } from "html-to-image";
 import html2canvas from "html2canvas";
@@ -357,7 +357,7 @@ export default function ProfileDesktop({
                         ref={facecardExportRef}
                         data-facecard-export-root="true"
                       >
-                        <FaceCard3
+                        <FacecardProfile
                           user={{
                             ...user,
                             age,

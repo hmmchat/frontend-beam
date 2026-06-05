@@ -33,7 +33,6 @@ import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
 import QuickActions from '@/components/video-chat/QuickActions';
 import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserControls';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
-import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
 import DareOverlay from '@/components/VideoChat/DareOverlay';
 import DareProposalOverlay from '@/components/VideoChat/DareProposalOverlay';
 import {
@@ -164,9 +163,6 @@ function VideoChatContent() {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isDareOpen, setIsDareOpen] = useState(false);
-  const [successGift, setSuccessGift] = useState(null);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [successRecipientName, setSuccessRecipientName] = useState('');
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [activeRemoteGift, setActiveRemoteGift] = useState(null);
   const [activeLocalGift, setActiveLocalGift] = useState(null);
@@ -2275,10 +2271,6 @@ function VideoChatContent() {
           } else if (controlParsed.isDareResponse) {
             if (String(controlParsed.targetUserId) === String(myId)) {
               setDareAcceptanceStatus(controlParsed.accepted ? "accepted" : "rejected");
-              if (!controlParsed.accepted) {
-                setIsDareOpen(false);
-                setSelectedGiftId(null);
-              }
             }
           } else if (controlParsed.isDareClose) {
             if (String(controlParsed.targetUserId) === String(myId)) {
@@ -2349,7 +2341,7 @@ function VideoChatContent() {
           try {
             JSON.parse(data.message);
             break;
-          } catch (e) {}
+          } catch (e) { }
         }
 
         console.log('[Chat] Received:', data.message, { myId, remoteIds: remotes.map(s => s.userId) });
@@ -2381,7 +2373,7 @@ function VideoChatContent() {
             message: data.message,
             name,
             displayPictureUrl
-          }].slice(-5);
+          }];
         });
         break;
       }
@@ -2929,17 +2921,6 @@ function VideoChatContent() {
         }
       });
 
-      // Show animated success popup
-      const popupGiftObj = {
-        name: giftObj.name,
-        img: giftObj.img,
-        imageUrl: giftObj.imageUrl,
-        price: giftObj.price,
-        diamonds: giftObj.diamonds
-      };
-      setSuccessGift(popupGiftObj);
-      setSuccessRecipientName(remoteStreamsRef.current[0]?.name || "Partner");
-      setShowSuccessPopup(true);
 
     } catch (err) {
       console.error("Failed to send dare:", err);
@@ -2968,7 +2949,7 @@ function VideoChatContent() {
       });
       setActiveDareProposal(null);
     }
-    
+
     // Notify the other user that we are initiating/taking over the dare flow
     if (roomId && remoteStreams[0]?.userId) {
       send({
@@ -3014,7 +2995,8 @@ function VideoChatContent() {
     gift: activeLocalGift,
     onGiftAnimationComplete: handleLocalGiftComplete,
     forceDismiss: activeLocalGift?.isDismissed,
-    hideAllControls: !!activeDareProposal
+    hideAllControls: !!activeDareProposal,
+    isGroupCall: remoteStreams.length > 1,
   };
   const getRemoteFriendTileProps = (streamInfo) => {
     const uid = String(streamInfo.userId ?? '');
@@ -3252,7 +3234,7 @@ function VideoChatContent() {
           /* 1:1 Matched Layout: Peer 1 | Local */
           <>
 
-            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"
@@ -3361,7 +3343,7 @@ function VideoChatContent() {
           <>
 
 
-            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"
@@ -3541,7 +3523,7 @@ function VideoChatContent() {
 
           <>
 
-            <div className="absolute inset-3 bottom-[10.5%] flex justify-center md:hidden z-10 pointer-events-none">
+            <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
               <svg
                 viewBox="0 0 370 673"
                 preserveAspectRatio="none"
@@ -3772,15 +3754,6 @@ function VideoChatContent() {
 
         {/* In-call nav moved onto local tile */}
 
-        <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
-
-        <GiftSuccessPopup
-          isOpen={showSuccessPopup}
-          onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
-          gift={successGift}
-          recipientName={successRecipientName}
-        />
-
         <GiftOverlay
           isOpen={isGiftModalOpen}
           onClose={() => {
@@ -3791,8 +3764,12 @@ function VideoChatContent() {
           onSelectGift={(gift) => setSelectedGiftId(gift.id)}
           selectedGiftId={selectedGiftId}
           coins={coins}
-          onSendGift={async (gift) => {
-            const targetId = remoteStreamsRef.current[0]?.userId;
+          participants={remoteStreams.map((s) => ({
+            userId: s.userId,
+            ...getRemoteTileProfile(s),
+          }))}
+          onSendGift={async (gift, targetUserId) => {
+            const targetId = targetUserId || remoteStreamsRef.current[0]?.userId;
             if (targetId && roomInfoRef.current?.roomId) {
               try {
                 // Always purchase the exact diamond amount needed for the gift from coins, so the sender's existing diamonds are not used/subtracted
@@ -3822,10 +3799,6 @@ function VideoChatContent() {
                 // Refresh wallet
                 await refreshWallet();
 
-                // Show animated success popup
-                setSuccessGift(gift);
-                setSuccessRecipientName(remoteStreamsRef.current[0]?.name || "Partner");
-                setShowSuccessPopup(true);
 
                 const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
                 send({
@@ -4078,6 +4051,7 @@ function VideoChatContent() {
           </div>
         )}
       </div>
+      <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
     </div>
   );
 }

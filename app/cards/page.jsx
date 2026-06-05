@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
-import FaceCard2 from '@/components/Home/FaceCard2';
+import FaceCard from '@/components/Home/FaceCard';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
 import clsx from 'clsx';
@@ -265,28 +265,26 @@ export default function OfflineCardsPage() {
         >
           <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] w-[98vw] md:w-[750px]">
 
-            {/* FaceCard */}
-            <div className="origin-top w-full flex justify-center transition-transform mt-3 sm:mt-0
-        
-
-       [@media(max-height:1000px)]:scale-[0.90] 
-          
-    [@media(max-height:800px)]:scale-[0.80] 
-       
-       
-            ">
-              <FaceCard2
-                user={{
-                  ...card,
-                  age: age ?? card.age,
-                  city: card.preferredCity || card.city,
-                }}
-                currentIndex={currentImageIndex}
-                onIndexChange={setCurrentImageIndex}
-                onClose={null}
-                onDownload={null}
-                onShare={null}
-              />
+            {/* Scrollable container for the face card content */}
+            <div className="absolute inset-0 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 md:static md:inset-auto md:overflow-visible md:h-auto md:w-full md:pt-0 md:pb-0 md:z-auto">
+              <div className={clsx(
+                "origin-top transition-transform duration-500 mb-16 sm:mb-0 w-full flex justify-center mt-3 md:mt-0",
+                "",
+                ""
+              )}>
+                <FaceCard
+                  user={{
+                    ...card,
+                    age: age ?? card.age,
+                    city: card.preferredCity || card.city,
+                  }}
+                  currentIndex={currentImageIndex}
+                  onIndexChange={setCurrentImageIndex}
+                  onClose={null}
+                  onDownload={null}
+                  onShare={null}
+                />
+              </div>
             </div>
 
             {/* ── DESKTOP BOTTOM BAR ── */}

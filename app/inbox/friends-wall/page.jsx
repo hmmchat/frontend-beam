@@ -8,7 +8,7 @@ import { FaShare } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
 import html2canvas from "html2canvas";
 import { API, apiRequest } from "../../../lib/api";
-import FaceCard2 from '@/components/Home/FaceCard2';
+import FaceCard from '@/components/Home/FaceCard';
 import { calculateAge } from '@/lib/facecard-utils';
 
 export default function FriendWall() {
@@ -258,7 +258,7 @@ export default function FriendWall() {
                 <div className="origin-center w-full transition-transform">
 
 
-                  <FaceCard2
+                  <FaceCard
                     user={{
                       ...selectedFriend,
                       age: calculateAge(selectedFriend.dateOfBirth),

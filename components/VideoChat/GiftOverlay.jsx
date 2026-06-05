@@ -19,10 +19,20 @@ export default function GiftOverlay({
   desktopBottomBarClassName,
   mobileBottomBarClassName,
   hideSendButton = false,
+  participants = [],
 }) {
   const [giftItems, setGiftItems] = useState([]);
   const [animGift, setAnimGift] = useState(null);
   const [page, setPage] = useState(0);
+  const [selectedTargetUserId, setSelectedTargetUserId] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && participants && participants.length > 0) {
+      if (!selectedTargetUserId || !participants.some(p => p.userId === selectedTargetUserId)) {
+        setSelectedTargetUserId(participants[0].userId);
+      }
+    }
+  }, [isOpen, participants, selectedTargetUserId]);
   const itemsPerPage = 8;
   const [rotated, setRotated] = useState(false);
 
@@ -73,7 +83,7 @@ export default function GiftOverlay({
   const handleSend = () => {
     if (selectedGift) {
       if (typeof onSendGift === 'function') {
-        onSendGift(selectedGift);
+        onSendGift(selectedGift, selectedTargetUserId);
       } else {
         setAnimGift(selectedGift);
       }
@@ -88,19 +98,19 @@ export default function GiftOverlay({
       {/* Main UI */}
       <div className={clsx(
         "absolute z-30 flex flex-col items-end w-full px-4",
-        className || "md:bottom-3 right-0 bottom-26 md:right-5 md:-translate-y-[34%]"
+        className || "md:bottom-6 right-0 bottom-[14vh] md:right-5 md:-translate-y-[34%]"
       )}>
         <div
           onClick={(e) => e.stopPropagation()}
-          className="border-2 border-white md:rounded-[40px] rounded-[32px] w-full max-w-[500px] md:p-8 p-6  relative overflow-hidden"
+          className="border-2 border-white md:rounded-[40px] bg-[#4E0093]/20 rounded-[32px] md:rounded-[39.3px] w-full max-w-[500px] md:px-8 md:pt-8  px-6 pt-6 pb-6  relative overflow-hidden"
         >
           {/* Background */}
           <div
-            className="absolute inset-0 z-0"
+            className="absolute inset-0 z-0 "
             style={{
               backgroundImage: "url(/assets/mb.jpg)",
               backgroundSize: "cover",
-              opacity: 0.9,
+              opacity: 0.8,
             }}
           />
 
@@ -159,119 +169,184 @@ export default function GiftOverlay({
               />
             ))}
           </div>
+
+          {/* User Selector for Group Call (visible only if there are more than 1 remote participant) */}
+          {participants && participants.length > 1 && (
+            <div className="relative z-10 mt-2 md:mt-3 flex flex-col gap-3">
+              <hr className="border-white/10 -mx-6 md:-mx-8" />
+              <div className="flex items-center justify-between gap-1">
+
+                <div className="flex items-center justify-end  overflow-x-auto scrollbar-hide gap-4 md:gap-6  py-1 flex-1">
+                  {participants.map((p) => {
+                    const isSelected = selectedTargetUserId === p.userId;
+                    return (
+                      <div
+                        key={p.userId}
+                        onClick={() => setSelectedTargetUserId(p.userId)}
+                        className="flex flex-col items-center flex-shrink-0 "
+                      >
+                        <div className={clsx(
+                          "relative w-[28px] h-[28px] md:w-[32px] md:h-[32px] rounded-full border-2 transition-all duration-300",
+                          isSelected ? "border-yellow-400 scale-105" : "border-white/20"
+                        )}>
+                          <img
+                            src={p.displayPictureUrl || "/assets/ico.png"}
+                            alt={p.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 bg-yellow-400 text-purple-950 rounded-full w-4 h-4 flex items-center justify-center ">
+                              <svg className="w-2 h-2 stroke-[4px] text-purple-950" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-white text-[10px] mt-1 text-center truncate max-w-[50px] font-outfit">
+                          {p.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+
+              </div>
+            </div>
+          )}
+
+
         </div>
       </div>
 
       {/* Bottom Bar Desktop */}
-      {selectedGift && (
-        <div className={clsx(
-          "absolute hidden md:flex z-50 justify-between items-center",
-          desktopBottomBarClassName || "bottom-6 md:left-[53%] right-10"
-        )}>
-          {!hasSufficientCoins ? (
-            <>
-              <div className="text-white text-sm">Insufficient balance</div>
+      <div className={clsx(
+        "absolute hidden md:flex z-50 justify-between items-center",
+        desktopBottomBarClassName || "bottom-6 md:left-[53%] right-10"
+      )}>
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+            opacity: 0.9,
+          }}
+        />
+
+
+
+
+        {!hasSufficientCoins ? (
+          <>
+            <div className="text-white text-sm z-50">Insufficient balance</div>
+            <button
+              onClick={onOpenCoinModal}
+              className="text-xs lg:text-[14px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-[#0A032D]/20 text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[1px] border-b-4 inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
+            >
+              Buy Coins
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-white text-sm flex items-center gap-2 z-10">
+              Spend Coin:
+              <span className="flex justify-center items-center gap-1 font-semibold">
+                <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
+                {currentPrice}
+              </span>
+            </div>
+            {!hideSendButton && (
               <button
-                onClick={onOpenCoinModal}
-                className=" border border-white/20 px-6 py-2 rounded-xl text-white hover:bg-white/10 active:scale-95 transition-all"
-              >
-                Buy Coins
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="text-white text-sm flex items-center gap-2">
-                Spend Coin:
-                <span className="flex justify-center items-center gap-1 font-semibold">
-                  <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
-                  {currentPrice}
-                </span>
-              </div>
-              {!hideSendButton && (
-                <button
-                  onClick={handleSend}
-                  className={clsx(
-                    "bg-black/40 border border-white/20 px-6 py-2 rounded-xl text-white active:scale-95 transition-all",
-                    !selectedGift ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"
-                  )}
-                  disabled={!selectedGift}
-                >
-                  Send Gift
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Bottom Bar Mobile */}
-      {selectedGift && (
-        <div className={clsx(
-          "absolute z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-5 md:hidden",
-          mobileBottomBarClassName || "bottom-0"
-        )}>
-          <div
-            className="absolute inset-0 z-0"
-            style={{
-              backgroundImage: "url(/assets/mb.jpg)",
-              backgroundSize: "cover",
-              opacity: 0.9,
-            }}
-          />
-
-          {!hasSufficientCoins ? (
-            <>
-              <div className="z-10 text-sm text-white">
-                Insufficient balance
-              </div>
-
-              <button
-                onClick={onOpenCoinModal}
-                className="z-10 px-5 py-3 text-white transition-all border border-white/50 border-b-2 rounded-xl bg-black/40 hover:bg-white/10 active:scale-95"
-              >
-                Buy Coins
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="z-10 flex items-center gap-2 text-sm text-white">
-                <span>Spend Coin:</span>
-
-                <span className="flex items-center justify-center gap-1 font-semibold">
-                  <img
-                    src="/Coins/coin10.png"
-                    className="w-4 rounded-full"
-                    alt=""
-                  />
-                  {currentPrice}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                disabled={!selectedGift}
                 onClick={handleSend}
                 className={clsx(
-                  "group relative z-10 flex items-center justify-center w-14 h-14",
+                  "group relative z-10 flex items-center justify-center w-16 h-16 active:scale-95 transition-transform flex-shrink-0",
                   !selectedGift && "opacity-50"
                 )}
+                disabled={!selectedGift}
               >
                 <img
                   src="/circle.png"
-                  className="absolute inset-0 block w-full h-full transition-none rounded-full bg-pink-800 group-active:rotate-180"
+                  className="absolute inset-0 block w-full h-full rounded-full bg-pink-800 group-active:rotate-180"
                   alt=""
                 />
 
                 <img
                   src="/giftboc.png"
-                  className="relative object-contain w-8 h-8 transition-none group-active:scale-80"
+                  className="relative object-contain w-9 h-9  transition-none group-active:scale-80"
                   alt="GIFT"
                 />
               </button>
-            </>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Bottom Bar Mobile */}
+      <div className={clsx(
+        "absolute z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-[2.5vh] md:hidden",
+        mobileBottomBarClassName || "bottom-0"
+      )}>
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+            opacity: 0.9,
+          }}
+        />
+
+        {!hasSufficientCoins ? (
+          <>
+            <div className="text-[11px] z-10 sm:text-sm text-white">
+              Insufficient balance
+            </div>
+
+            <button
+              onClick={onOpenCoinModal}
+              className="px-5 z-10 sm:px-4 py-3 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-all border border-white/40 border-b-2 rounded-lg sm:rounded-xl bg-[#0A032D]/20 hover:bg-white/10 active:scale-95"
+            >
+              Buy Coins
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="z-10 flex items-center gap-2 text-sm text-white">
+              <span>Spend Coin:</span>
+
+              <span className="flex items-center justify-center gap-1 font-semibold">
+                <img
+                  src="/Coins/coin10.png"
+                  className="w-4 rounded-full"
+                  alt=""
+                />
+                {currentPrice}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={!selectedGift}
+              onClick={handleSend}
+              className={clsx(
+                "group relative z-10 flex items-center justify-center w-16 h-16",
+                !selectedGift && "opacity-50"
+              )}
+            >
+              <img
+                src="/circle.png"
+                className="absolute inset-0 block w-full h-full transition-none rounded-full bg-pink-800 group-active:rotate-180"
+                alt=""
+              />
+
+              <img
+                src="/giftboc.png"
+                className="relative object-contain w-9 h-9 transition-none group-active:scale-80"
+                alt="GIFT"
+              />
+            </button>
+          </>
+        )}
+      </div>
     </>
 
 

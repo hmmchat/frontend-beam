@@ -172,7 +172,7 @@ export default function Home(
 
             <MeetLogo
               activeCount={activeMeetingCount}
-              className={`absolute bottom-[70%] left-1/2 -translate-x-1/2 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
+              className={`absolute bottom-[71%] left-1/2 -translate-x-1/2 transition-opacity duration-300 ${isInfoOpen ? "opacity-0" : "opacity-100"}`}
             />
 
             <div

@@ -5,45 +5,47 @@ import { useState, useEffect } from "react";
 import { API, apiRequest } from "@/lib/api";
 import { fetchUserStickers, getActiveBadgeId } from "@/lib/stickers";
 
-export default function ProfileMobileStickers({ 
-  activeTab, 
-  setActiveTab, 
+export default function ProfileMobileStickers({
+  activeTab,
+  setActiveTab,
   user,
-  setUser
+  setUser,
 }) {
   const [badges, setBadges] = useState([]);
+  const [stickerExpiryDays, setStickerExpiryDays] = useState(7);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedGiftId, setSelectedGiftId] = useState(null);
+  const [selectedBadgeId, setSelectedBadgeId] = useState(null);
 
   const userId = user?.id || user?.userId;
 
   useEffect(() => {
     const activeId = getActiveBadgeId(user);
     if (activeId !== undefined) {
-      setSelectedGiftId(activeId);
+      setSelectedBadgeId(activeId);
     }
-  }, [user?.activeBadgeId, user?.activeBadge?.giftId]);
+  }, [user?.activeBadgeId, user?.activeBadge?.id]);
 
   useEffect(() => {
     if (activeTab === "stickers" && userId) {
-      const fetchBadges = async () => {
+      const loadStickers = async () => {
         try {
           setLoading(true);
           const data = await fetchUserStickers(userId);
-          setBadges(Array.isArray(data) ? data : []);
+          setStickerExpiryDays(data?.stickerExpiryDays ?? 7);
+          setBadges(Array.isArray(data?.badges) ? data.badges : []);
         } catch (err) {
-          console.error("Failed to fetch badges:", err);
+          console.error("Failed to fetch stickers:", err);
         } finally {
           setLoading(false);
         }
       };
-      fetchBadges();
+      loadStickers();
     }
   }, [activeTab, userId]);
 
-  const handleSelectSticker = (giftId) => {
-    setSelectedGiftId((prev) => (prev === giftId ? null : giftId));
+  const handleSelectSticker = (badgeId) => {
+    setSelectedBadgeId((prev) => (prev === badgeId ? null : badgeId));
   };
 
   const handleSaveSticker = async () => {
@@ -52,15 +54,23 @@ export default function ProfileMobileStickers({
       setSaving(true);
       await apiRequest(API.USERS.SET_ACTIVE_BADGE(userId), {
         method: "POST",
-        body: JSON.stringify({ giftId: selectedGiftId }),
+        body: JSON.stringify({ badgeId: selectedBadgeId }),
       });
       if (setUser) {
-        const selected = badges.find((b) => b.giftId === selectedGiftId);
+        const selected = badges.find((b) => b.id === selectedBadgeId);
         setUser((prev) =>
           prev
             ? {
                 ...prev,
-                activeBadgeId: selectedGiftId,
+                activeBadgeId: selectedBadgeId,
+                activeBadge: selected
+                  ? {
+                      id: selected.id,
+                      giftId: selected.giftId,
+                      giftName: selected.giftName,
+                      giftEmoji: selected.giftEmoji,
+                    }
+                  : null,
                 activeBadgeImageUrl: selected?.imageUrl || null,
               }
             : prev
@@ -81,12 +91,12 @@ export default function ProfileMobileStickers({
       setSaving(true);
       await apiRequest(API.USERS.SET_ACTIVE_BADGE(userId), {
         method: "POST",
-        body: JSON.stringify({ giftId: null }),
+        body: JSON.stringify({ badgeId: null }),
       });
-      setSelectedGiftId(null);
+      setSelectedBadgeId(null);
       if (setUser) {
         setUser((prev) =>
-          prev ? { ...prev, activeBadgeId: null, activeBadgeImageUrl: null } : prev
+          prev ? { ...prev, activeBadgeId: null, activeBadge: null, activeBadgeImageUrl: null } : prev
         );
       }
       setActiveTab("main");
@@ -120,34 +130,30 @@ export default function ProfileMobileStickers({
           backgroundSize: "cover",
         }}
       >
-         
-        {/* TITLE */}
         <div className="text-left mb-4">
           <p className="text-md font-semibold">Your Stickers</p>
           <p className="text-xs text-white/70 font-outfit mt-1 leading-snug">
             Apply a sticker next to your profile photo.
             <br />
-            Stickers expire 7 days after you receive them
+            Stickers expire {stickerExpiryDays} day{stickerExpiryDays === 1 ? "" : "s"} after you receive them
           </p>
         </div>
 
-        {/* INNER CARD */}
         <div className=" ">
-          {/* GRID */}
-          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto scrollbar-hide pr-1">
+          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto pr-1">
             {loading ? (
               <p className="col-span-4 text-center text-sm text-white/60 py-8">Loading stickers...</p>
             ) : badges.length === 0 ? (
               <p className="col-span-4 text-center text-sm text-white/60 py-8">No stickers received yet</p>
             ) : (
               badges.map((badge) => {
-                const isSelected = selectedGiftId === badge.giftId;
+                const isSelected = selectedBadgeId === badge.id;
 
                 return (
                   <div
-                    key={badge.giftId}
-                    onClick={() => handleSelectSticker(badge.giftId)}
-                    title={badge.giftName || badge.giftId}
+                    key={badge.id}
+                    onClick={() => handleSelectSticker(badge.id)}
+                    title={badge.expiryLabel || badge.giftName || badge.giftId}
                     className={`relative flex h-20 w-20 items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
                       isSelected
                         ? "border-[3px] border-yellow-400 border-b-4"
@@ -173,9 +179,7 @@ export default function ProfileMobileStickers({
             )}
           </div>
 
-          {/* ACTIONS */}
           <div className="flex items-center justify-between">
-            {/* REMOVE */}
             <div
               onClick={handleRemoveSticker}
               className={`flex items-center gap-3 text-white/90 cursor-pointer ${
@@ -188,7 +192,6 @@ export default function ProfileMobileStickers({
               <p className="text-sm">Remove sticker</p>
             </div>
 
-            {/* SAVE BUTTON */}
             <button
               onClick={handleSaveSticker}
               disabled={saving || !userId}

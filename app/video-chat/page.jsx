@@ -405,7 +405,7 @@ function VideoChatContent() {
           onSendDare={handleSendDare}
           coins={coins}
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
-          recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || 'Stranger') : 'Sanya'}
+          recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || 'Stranger') : 'Stranger'}
           randomDares={randomDares}
           savedDares={savedDares}
           onSaveCustomDare={handleSaveCustomDare}

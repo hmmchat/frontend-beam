@@ -17,7 +17,7 @@ export default function DareOverlay({
   onSendDare,
   coins = 0,
   onOpenCoinModal,
-  recipientName = "Sanya",
+  recipientName = "Stranger",
   randomDares = [],
   savedDares = [],
   onSaveCustomDare,

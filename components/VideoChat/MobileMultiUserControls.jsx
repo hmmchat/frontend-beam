@@ -69,7 +69,7 @@ export default function MobileMultiUserControls({
       {/* Center Logo */}
       <img
         src="/logotransparent.png"
-        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-7 w-auto object-contain pointer-events-none z-10"
+        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-8 w-auto object-contain pointer-events-none z-10"
         alt="Beam"
       />
 

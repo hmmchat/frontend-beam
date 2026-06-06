@@ -55,7 +55,7 @@ const FaceCard = ({
   const hideFacecardAge = Boolean(user.hideFacecardAge);
   const age = user.age ?? calculateAge(user.dateOfBirth);
   const rawCity = user.city || user.preferredCity || "Unknown";
-  const city = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
+  const city = (!rawCity || rawCity === rawCity === 'Anywhere')
     ? 'Anywhere'
     : rawCity === 'Unknown'
       ? 'Unknown'
@@ -165,7 +165,7 @@ const FaceCard = ({
           [@media(max-height:750px)]:scale-[0.85]
           [@media(max-height:650px)]:scale-[0.8]
           [@media(max-height:550px)]:scale-[0.75]
-          origin-top
+     
         "
       >
         <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/40 md:border-none ">
@@ -241,7 +241,7 @@ const FaceCard = ({
           )}
 
           {/* Inner chrome */}
-          <div className="absolute bottom-[6px] left-1 right-1 top-[4.25rem] md:rounded-[34.46px] rounded-[20px] border border-white/45 ">
+          <div className="absolute bottom-[6px] left-1 right-1 md:top-[4.25rem] top-[4.32rem] md:rounded-[34.46px] rounded-[20px] border border-white/45 ">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-2 z-20 px-2">
               <div className="flex h-[90px] md:h-[100px] items-center justify-center md:rounded-[29.1px] rounded-[20px] border border-white/35 font-outfit px-4 text-center text-[10px] leading-snug text-white backdrop-blur-[2px] overflow-hidden flex-none">
@@ -279,11 +279,11 @@ const FaceCard = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[20.2px] border border-white/45 px-2 py-2 shadow-inner">
+                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[20.2px] border border-white/45 px-2 py-2">
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
-                      alt={user.zodiac.name || "Zodiac"}
+                      alt={user.zodiac.name}
                       className="h-8 w-10 object-contain"
                     />
                   ) : (
@@ -294,12 +294,12 @@ const FaceCard = ({
                     </div>
                   )}
                   <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                    {user?.zodiac?.name || "Vacant"}
+                    {user?.zodiac?.name}
                   </span>
                 </div>
 
                 {/* Music — FIXED: added "relative" so the musicline.svg stays inside the music capsule on ALL screen sizes */}
-                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[79.52px] rounded-b-[49.52px] border border-white/40 px-1 pb-1 pt-1 shadow-inner backdrop-blur-sm">
+                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[79.52px] md:rounded-b-[49.52px] rounded-b-[32px] border border-white/40 px-1 pb-1 pt-1 shadow-inner backdrop-blur-sm relative">
 
 
                   <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
@@ -336,7 +336,7 @@ const FaceCard = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex-1 h-full overflow-hidden rounded-[18px]">
+              <div className="flex-1 h-full border border-white/40 overflow-hidden rounded-[18px]">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover"

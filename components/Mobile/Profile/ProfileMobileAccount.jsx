@@ -14,7 +14,7 @@ export default function ProfileMobileAccount({
   facecardExportRef
 }) {
   return (
-    <div className="w-full flex flex-col h-full pb-6">
+    <div className="w-full  flex flex-col h-full pb-6 ">
       <div className="flex items-center gap-3 mb-6">
         <button
           type="button"
@@ -27,7 +27,7 @@ export default function ProfileMobileAccount({
         <p className="text-base">My account</p>
       </div>
       {user ? (
-        <div className="flex justify-center w-full">
+        <div className="flex justify-center  w-full">
           <div ref={facecardExportRef} className=" origin-top">
             <FacecardProfile
               user={{

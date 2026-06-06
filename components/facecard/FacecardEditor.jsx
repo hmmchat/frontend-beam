@@ -61,7 +61,7 @@ export default function FacecardEditor({
     >
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
-      <div className="min-h-[100dvh] flex items-center justify-center md:hidden px-2">
+      <div className="py-4 flex items-center justify-center md:hidden px-2">
         <div className="flex border border-white/30 rounded-[2.5rem] w-full min-h-[90dvh] flex-col gap-5 px-2 relative z-10">
           {/* TOP ROW: Close, Name Box, Progress */}
           <div className="grid grid-cols-12 gap-2 items-center px-2 mt-2 mt-4 ">
@@ -1036,7 +1036,7 @@ export default function FacecardEditor({
           </div>
         </div>
 
-        <p className="font-outfit w-[90%] mt-3 text-xs font-thin text-right">Facecard Creation tool V1</p>
+        <p className="font-outfit md:w-[90%] mt-3 text-xs font-thin text-right">Facecard Creation tool V1</p>
       </section>
 
 

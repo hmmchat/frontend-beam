@@ -266,7 +266,7 @@ export default function OfflineCardsPage() {
           <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] w-[98vw] md:w-[750px]">
 
             {/* Scrollable container for the face card content */}
-            <div className="absolute inset-0 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 md:static md:inset-auto md:overflow-visible md:h-auto md:w-full md:pt-0 md:pb-0 md:z-auto">
+            <div className="absolute inset-0  md:scale-100 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 md:static md:inset-auto md:overflow-visible md:h-auto md:w-full md:pt-0 md:pb-0 md:z-auto">
               <div className={clsx(
                 "origin-top transition-transform duration-500 mb-16 sm:mb-0 w-full flex justify-center mt-3 md:mt-0",
                 "",
@@ -280,10 +280,80 @@ export default function OfflineCardsPage() {
                   }}
                   currentIndex={currentImageIndex}
                   onIndexChange={setCurrentImageIndex}
-                  onClose={null}
-                  onDownload={null}
-                  onShare={null}
                 />
+              </div>
+
+              {/* ── MOBILE BOTTOM BAR ── */}
+              <div className="md:hidden relative mt-8 w-full flex items-center justify-between h-14 px-4 max-w-[380px] mx-auto z-30">
+                {!isGiftModalOpen && (
+                  <>
+                    {/* Left group: X · Message · Heart */}
+                    <div className="absolute left-4 flex gap-2 items-center">
+                      <button
+                        type="button"
+                        onClick={handlePass}
+                        disabled={swiping}
+                        className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
+                        aria-label="Pass"
+                      >
+                        ✕
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleMessage}
+                        className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                        aria-label="Message"
+                      >
+                        <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleConnect}
+                        disabled={connectSent}
+                        className={clsx(
+                          'w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors',
+                          connectSent
+                            ? 'border-green-400/60 bg-green-500/20 cursor-default'
+                            : 'border-white/40 hover:bg-white/10 active:scale-95'
+                        )}
+                        title={connectSent ? 'Friend request sent' : 'Send friend request'}
+                        aria-label="Connect"
+                      >
+                        <img
+                          src="/history/heart.svg"
+                          alt="heart"
+                          className={clsx('w-6 h-6', connectSent && 'opacity-60')}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Center: ← → photo nav */}
+
+                  </>
+                )}
+
+                {/* Right: Gift */}
+                <div className="absolute right-4 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
+                    className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
+                    aria-label="Send gift"
+                  >
+                    <img
+                      src="/circle.png"
+                      alt=""
+                      className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                    />
+                    <img
+                      src="/giftboc.png"
+                      alt="gift"
+                      className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -381,79 +451,6 @@ export default function OfflineCardsPage() {
                     src="/giftboc.png"
                     alt="gift"
                     className="relative w-8 h-8 object-contain group-hover:rotate-12 transition-transform"
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* ── MOBILE BOTTOM BAR ── */}
-            <div className="md:hidden absolute bottom-6 left-0 right-0 w-full px-4 z-50 flex items-center h-14">
-              {!isGiftModalOpen && (
-                <>
-                  {/* Left group: X · Message · Heart */}
-                  <div className="absolute left-4 flex gap-2 items-center">
-                    <button
-                      type="button"
-                      onClick={handlePass}
-                      disabled={swiping}
-                      className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
-                      aria-label="Pass"
-                    >
-                      ✕
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleMessage}
-                      className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-                      aria-label="Message"
-                    >
-                      <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleConnect}
-                      disabled={connectSent}
-                      className={clsx(
-                        'w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors',
-                        connectSent
-                          ? 'border-green-400/60 bg-green-500/20 cursor-default'
-                          : 'border-white/40 hover:bg-white/10 active:scale-95'
-                      )}
-                      title={connectSent ? 'Friend request sent' : 'Send friend request'}
-                      aria-label="Connect"
-                    >
-                      <img
-                        src="/history/heart.svg"
-                        alt="heart"
-                        className={clsx('w-6 h-6', connectSent && 'opacity-60')}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Center: ← → photo nav */}
-
-                </>
-              )}
-
-              {/* Right: Gift */}
-              <div className="absolute right-4 flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
-                  className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
-                  aria-label="Send gift"
-                >
-                  <img
-                    src="/circle.png"
-                    alt=""
-                    className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
-                  />
-                  <img
-                    src="/giftboc.png"
-                    alt="gift"
-                    className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
                   />
                 </button>
               </div>

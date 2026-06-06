@@ -25,7 +25,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
 
   return (
     <div
-      className="flex min-h-screen w-full flex-col bg-purple-950 text-white outfit-font"
+      className="flex md:min-h-screen  w-full flex-col bg-purple-950 text-white outfit-font  "
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -39,44 +39,44 @@ export default function FacecardDisplay({ user, age, setView, router }) {
         {/* LEFT — phone preview area */}
         <div
           className="flex flex-1 flex-col items-center justify-center md:justify-center
-                      min-h-[100dvh] md:min-h-0
-                      overflow-y-auto md:overflow-visible
+                       md:min-h-0
+                      md:overflow-visible
                       
                       md:border md:border-white/30 md:rounded-[60px] 
-                      px-3 py-3 sm:px-4 mx-auto"
+                       py-3 sm:px-4 mx-auto"
         >
           <div
-            className="flex w-full flex-col items-center text-center gap-6 
+            className="flex w-full flex-col items-center text-center 
                        flex-1 justify-center 
-                       -mt-18 md:mt-0
-                       scale-[0.85] sm:scale-90 md:scale-100 mx-auto"
+                        md:mt-0
+                        sm:scale-90 md:scale-100 mx-auto"
           >
-            <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden -mb-5">
-              This is Your FaceCard
-            </p>
+            <div className="mb-2">
+              <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden ">
+                This is Your FaceCard
+              </p>
 
-            <p className="text-[10px] sm:text-[14xpx] font-outfit md:text-[11px] font-thin  md:hidden">
-              People will see this before meeting you <br />
-              You can add more info to get better matches
-            </p>
+              <p className="text-[10px] sm:text-[14px] font-outfit md:text-[11px] font-thin  md:hidden">
+                People will see this before meeting you <br />
+                You can add more info to get better matches
+              </p>
+            </div>
 
             {/* CARD */}
-            <div className="flex justify-center w-full items-cener ">
-              <div className="w-full mx-auto">
-                <FaceCard
-                  user={{
-                    ...user,
-                    age,
-                    city: user?.preferredCity || user?.city,
-                  }}
-                  currentIndex={currentImageIndex}
-                  onIndexChange={setCurrentImageIndex}
-                />
-              </div>
+            <div className="w-full mx-auto flex justify-center">
+              <FaceCard
+                user={{
+                  ...user,
+                  age,
+                  city: user?.preferredCity || user?.city,
+                }}
+                currentIndex={currentImageIndex}
+                onIndexChange={setCurrentImageIndex}
+              />
             </div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full justify-center gap-4 mx-auto md:hidden ">
+            <div className="flex w-full px-4 justify-center gap-4 mx-auto md:hidden mt-2 ">
 
 
               <button

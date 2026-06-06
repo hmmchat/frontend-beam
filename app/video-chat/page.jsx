@@ -143,6 +143,34 @@ function VideoChatContent() {
   const [showRandomness, setShowRandomness] = useState(false);
   const [isEnablingPullStranger, setIsEnablingPullStranger] = useState(false);
   const [pullStrangerCooldownSec, setPullStrangerCooldownSec] = useState(0);
+  const [roomSummoningUserId, setRoomSummoningUserId] = useState(null);
+  const roomSummoningUserIdRef = useRef(null);
+
+  useEffect(() => {
+    roomSummoningUserIdRef.current = roomSummoningUserId;
+  }, [roomSummoningUserId]);
+
+  const prevCooldownActiveRef = useRef(false);
+
+  useEffect(() => {
+    const isActive = pullStrangerCooldownSec > 0;
+    if (isActive !== prevCooldownActiveRef.current) {
+      prevCooldownActiveRef.current = isActive;
+      if (roomInfoRef.current?.roomId) {
+        send({
+          type: 'chat-message',
+          data: {
+            roomId: roomInfoRef.current.roomId,
+            message: JSON.stringify({
+              isSummoningActive: isActive,
+              senderId: userIdRef.current
+            })
+          }
+        });
+      }
+    }
+  }, [pullStrangerCooldownSec]);
+
   /** Server roles: matched call hosts (first 2) vs pull-stranger / late join guests (PARTICIPANT). */
   const [callRoles, setCallRoles] = useState({ isLocalHost: false, byUserId: {} });
   const [roomHealthDebug, setRoomHealthDebug] = useState({
@@ -975,7 +1003,23 @@ function VideoChatContent() {
   useEffect(() => {
     if (!isPullStrangerCooldownActive) return;
     const id = setInterval(() => {
-      setPullStrangerCooldownSec((prev) => (prev > 0 ? prev - 1 : 0));
+      setPullStrangerCooldownSec((prev) => {
+        const next = prev > 0 ? prev - 1 : 0;
+        // Broadcast periodic status sync every 3 seconds while active to help late joiners
+        if (next > 0 && next % 3 === 0 && roomInfoRef.current?.roomId) {
+          send({
+            type: 'chat-message',
+            data: {
+              roomId: roomInfoRef.current.roomId,
+              message: JSON.stringify({
+                isSummoningActive: true,
+                senderId: userIdRef.current
+              })
+            }
+          });
+        }
+        return next;
+      });
     }, 1000);
     return () => clearInterval(id);
   }, [isPullStrangerCooldownActive]);
@@ -1067,6 +1111,7 @@ function VideoChatContent() {
 
     if (n >= 2) {
       setPullStrangerCooldownSec((s) => (s > 0 ? 0 : s));
+      setRoomSummoningUserId(null);
       suppressAutoResumeUntilRef.current = 0;
       setRoomHealthDebug((d) =>
         d.graceActive
@@ -1078,6 +1123,7 @@ function VideoChatContent() {
     if (n === 1 && prev >= 2) {
       suppressAutoResumeUntilRef.current = 0;
       setPullStrangerCooldownSec((s) => (s > 0 ? 0 : s));
+      setRoomSummoningUserId(null);
       setRoomHealthDebug((d) =>
         d.graceActive || d.graceRemainingSec !== 0
           ? { graceActive: false, graceRemainingSec: 0, failureCount: d.failureCount }
@@ -2114,6 +2160,9 @@ function VideoChatContent() {
       case 'participant-left': {
         console.log('[WebRTC] Participant left:', data.userId);
         removeRemoteParticipantFromUi(data.userId);
+        if (roomSummoningUserIdRef.current && String(data.userId) === String(roomSummoningUserIdRef.current)) {
+          setRoomSummoningUserId(null);
+        }
         break;
       }
 
@@ -2186,6 +2235,7 @@ function VideoChatContent() {
         console.log('[WebRTC] Pull stranger cancelled');
         setPullStrangerCooldownSec(0);
         suppressAutoResumeUntilRef.current = 0;
+        setRoomSummoningUserId(null);
         setRoomHealthDebug({
           graceActive: false,
           graceRemainingSec: 0,
@@ -2240,7 +2290,8 @@ function VideoChatContent() {
               parsed.isDareClose ||
               parsed.isDareInitiated ||
               parsed.isDiceRoll ||
-              parsed.isIcebreakerTrigger !== undefined
+              parsed.isIcebreakerTrigger !== undefined ||
+              parsed.isSummoningActive !== undefined
             )) {
               isControlMessage = true;
               controlParsed = parsed;
@@ -2287,13 +2338,13 @@ function VideoChatContent() {
             if (String(controlParsed.senderId) !== String(myId)) {
               setIsRolling(true);
             }
-          } else if (controlParsed.isIcebreakerTrigger !== undefined) {
+          } else if (controlParsed.isSummoningActive !== undefined) {
             if (String(controlParsed.senderId) !== String(myId)) {
-              const triggered = Boolean(controlParsed.isIcebreakerTrigger);
-              setIsBroken(triggered);
-              if (!triggered) {
-                setShowIcebreaker(false);
-                setIcebreaker('');
+              const active = Boolean(controlParsed.isSummoningActive);
+              if (active) {
+                setRoomSummoningUserId(String(controlParsed.senderId));
+              } else {
+                setRoomSummoningUserId(prev => prev === String(controlParsed.senderId) ? null : prev);
               }
             }
           } else if (controlParsed.isGiftDismissed) {
@@ -2968,9 +3019,10 @@ function VideoChatContent() {
   };
 
   // --- Render Helpers ---
+  const isSummoning = pullStrangerCooldownSec > 0 || roomSummoningUserId !== null;
   const isRoomFull = (remoteStreams.length + 1) >= 4;
-  const isPullStrangerDisabled = isRoomFull || isEnablingPullStranger || pullStrangerCooldownSec > 0;
-  const totalLayoutSlots = remoteStreams.length + (pullStrangerCooldownSec > 0 ? 2 : 1);
+  const isPullStrangerDisabled = isRoomFull || isEnablingPullStranger || isSummoning;
+  const totalLayoutSlots = remoteStreams.length + (isSummoning ? 2 : 1);
   const localVideoProps = {
     localVideoRef,
     localStreamRef,
@@ -3360,7 +3412,7 @@ function VideoChatContent() {
 
 
             <RemoteVideoTile
-              className="h-[57vh] md:h-auto md:flex-1"
+              className="h-[58.2%] md:h-auto md:flex-1"
               key={`remote-${remoteStreams[0].userId}`}
               userId={remoteStreams[0].userId}
               isReported={reportedUserIds.has(remoteStreams[0].userId)}
@@ -3429,15 +3481,17 @@ function VideoChatContent() {
                         style={{ animation: 'spin 3s linear infinite' }}
                       />
                       {/* X cancel button — pointer-events enabled */}
-                      <button
-                        type="button"
-                        onClick={handleCancelPullStranger}
-                        className="pointer-events-auto w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white/80"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      {pullStrangerCooldownSec > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleCancelPullStranger}
+                          className="pointer-events-auto w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white/80"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     {/* Summoning text */}
                     <span className="text-white/70 text-[9px]  animate-pulse">Summoning...</span>
@@ -3541,7 +3595,7 @@ function VideoChatContent() {
 
 
 
-            <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-[57%_1fr] md:grid-rows-2 md:gap-2">
+            <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-[58.2%] md:grid-rows-2 md:gap-2">
               <RemoteVideoTile
                 key={`remote-${remoteStreams[0].userId}`}
                 userId={remoteStreams[0].userId}
@@ -3626,15 +3680,17 @@ function VideoChatContent() {
                         className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/70 border-r-white/30"
                         style={{ animation: 'spin 3s linear infinite' }}
                       />
-                      <button
-                        type="button"
-                        onClick={handleCancelPullStranger}
-                        className="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white/80"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      {pullStrangerCooldownSec > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleCancelPullStranger}
+                          className="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white/80"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     <span className="text-white/70 text-[11px] font-semibold tracking-widest animate-pulse">Summoning.....</span>
                   </div>

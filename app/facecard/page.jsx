@@ -1032,8 +1032,8 @@ function FacecardContent() {
   const city = user?.preferredCity || user?.city || "Unknown";
   return (
     <div className={clsx(
-      'relative', 'flex', 'min-h-0', 'flex-col',
-      view === "success" ? "min-h-screen h-auto overflow-y-auto" : "h-dvh max-h-dvh overflow-hidden overscroll-none"
+      'relative', 'flex', 'scrollbar-hide', 'min-h-0', 'flex-col',
+      'h-dvh max-h-dvh overflow-y-auto scrollbar-hide md:h-auto md:min-h-screen md:max-h-none md:overflow-visible'
     )}>
       <PortraitImageCropModal
         open={cropModalOpen && !!cropImageUrl}
@@ -1042,7 +1042,7 @@ function FacecardContent() {
         onComplete={handleCroppedPhoto}
         busy={photoUploading}
       />
-      <div className={clsx('flex', 'min-h-0', 'flex-1', 'flex-col', view === "success" ? "" : "overflow-hidden")}>
+      <div className={clsx('flex', 'min-h-0', 'flex-1', 'flex-col', view === "success" ? "" : "md:overflow-hidden")}>
         {view === "success" ? (
           <FacecardDisplay
             user={user}

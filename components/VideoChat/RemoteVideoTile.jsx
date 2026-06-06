@@ -84,18 +84,17 @@ export default function RemoteVideoTile({
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setAreControlsVisible(true);
+      } else {
+        setAreControlsVisible(false);
       }
     };
     window.addEventListener('resize', handleResize);
 
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) {
+    if (window.innerWidth >= 768) {
       setAreControlsVisible(true);
-      return;
+    } else {
+      setAreControlsVisible(false);
     }
-
-    // On mobile, start as hidden
-    setAreControlsVisible(false);
 
     const handleGlobalTouch = () => {
       handleTouch();
@@ -103,6 +102,7 @@ export default function RemoteVideoTile({
 
     window.addEventListener('touchstart', handleGlobalTouch, { passive: true });
     window.addEventListener('touchmove', handleGlobalTouch, { passive: true });
+    window.addEventListener('mousedown', handleGlobalTouch, { passive: true });
 
     return () => {
       if (timeoutRef.current) {
@@ -111,6 +111,7 @@ export default function RemoteVideoTile({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('touchstart', handleGlobalTouch);
       window.removeEventListener('touchmove', handleGlobalTouch);
+      window.removeEventListener('mousedown', handleGlobalTouch);
     };
   }, []);
 
@@ -164,6 +165,7 @@ export default function RemoteVideoTile({
     <div
       onTouchStart={handleTouch}
       onTouchMove={handleTouch}
+      onMouseDown={handleTouch}
       className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden', 'border', 'border-white/5', 'shadow-2xl')}
     >
 

@@ -3442,6 +3442,8 @@ function VideoChatContent() {
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
               onReportClick={() => setShowGroupMembersModal(true)}
+              showMinusButton={callRoles.isLocalHost}
+              onMinus={() => handleKickRemote(remoteStreams[0].userId)}
             />
 
             <div className="flex min-h-0 min-w-0 flex-1 md:flex-col    md:gap-2">
@@ -3623,6 +3625,8 @@ function VideoChatContent() {
                 multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
                 hideReportOnMobile={true}
+                showMinusButton={callRoles.isLocalHost}
+                onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}

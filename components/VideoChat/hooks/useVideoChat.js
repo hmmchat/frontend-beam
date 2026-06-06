@@ -354,26 +354,6 @@ export default function useVideoChat() {
 
   useEffect(() => { fetchGiftItems(); }, [fetchGiftItems]);
 
-  // ---- Dare-specific gift list (uses dare-service ids, NOT catalog UUIDs) --
-  const [dareGiftItems, setDareGiftItems] = useState([]);
-
-  const fetchDareGiftItems = useCallback(async (roomId) => {
-    if (!roomId) return;
-    try {
-      const data = await apiRequest(API.STREAMING.GET_DARE_GIFTS(roomId));
-      if (Array.isArray(data?.gifts)) {
-        setDareGiftItems(data.gifts.map(g => ({
-          id: g.id,          // "monkey", "pikachu", etc. — matches backend GIFT_LIST
-          name: g.name,
-          img: g.emoji || '🎁',
-          imageUrl: g.imageUrl || null,
-          diamonds: g.diamonds ?? 0,
-          price: (g.diamonds ?? 0) * 100,
-        })));
-      }
-    } catch (err) { console.error('Failed to load dare gifts', err); }
-  }, []);
-
   // ---- Remote profile fetching ---------------------------------------------
   const remoteUserIdsKey = remoteStreams.map(s => String(s.userId)).sort().join('|');
 
@@ -1618,10 +1598,7 @@ export default function useVideoChat() {
     const senderId = userIdRef.current;
     if (!targetId || !roomInfoRef.current?.roomId || !selectedGiftId) return;
 
-    // Use dareGiftItems (dare-service ids: "monkey","pikachu", etc.)
-    // Fall back to giftItems only if dare gifts not loaded yet
-    const giftSource = dareGiftItems.length > 0 ? dareGiftItems : giftItems;
-    const giftObj = giftSource.find(g => g.id === selectedGiftId);
+    const giftObj = giftItems.find(g => g.id === selectedGiftId);
     if (!giftObj) return;
 
     const giftAmount = Number(giftObj.diamonds) || 0;
@@ -1665,7 +1642,7 @@ export default function useVideoChat() {
       alert(err.message || 'Failed to send dare');
     }
     setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle');
-  }, [coins, selectedGiftId, refreshWallet, giftItems, dareGiftItems]);
+  }, [coins, selectedGiftId, refreshWallet, giftItems]);
 
   const openDareOverlay = () => {
     const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
@@ -1676,8 +1653,6 @@ export default function useVideoChat() {
     if (roomId && remoteStreams[0]?.userId) {
       send({ type: 'chat-message', data: { roomId, message: JSON.stringify({ isDareInitiated: true, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current }) } });
     }
-    // Fetch dare-specific gifts (uses dare-service ids, not catalog UUIDs)
-    if (roomId) fetchDareGiftItems(roomId);
     setIsDareOpen(true);
   };
 
@@ -1739,7 +1714,7 @@ export default function useVideoChat() {
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,
     selectedGiftId, setSelectedGiftId, activeRemoteGift, activeLocalGift,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
-    giftItems, dareGiftItems, isRolling, setIsRolling, isBroken, setIsBroken,
+    giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,
     selectedWaitlistUser, setSelectedWaitlistUser,
     broadcastChatWarning, overlay, setOverlay,

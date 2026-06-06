@@ -51,7 +51,7 @@ function VideoChatContent() {
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen,
     selectedGiftId, setSelectedGiftId, activeRemoteGift, activeLocalGift,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
-    giftItems, dareGiftItems, isRolling, setIsRolling, isBroken, setIsBroken,
+    giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,
     selectedWaitlistUser, setSelectedWaitlistUser,
     broadcastChatWarning, overlay, setOverlay,
@@ -410,7 +410,7 @@ function VideoChatContent() {
           savedDares={savedDares}
           onSaveCustomDare={handleSaveCustomDare}
           onDeleteCustomDare={handleDeleteCustomDare}
-          giftItems={dareGiftItems.length > 0 ? dareGiftItems : giftItems}
+          giftItems={giftItems}
         />
 
         {/* Dare proposal overlay */}

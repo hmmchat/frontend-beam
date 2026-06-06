@@ -1573,6 +1573,61 @@ export default function useVideoChat() {
     setActiveRemoteGift(null);
   }, [activeRemoteGift]);
 
+  const handleSendGift = useCallback(async (gift, targetUserId) => {
+    const senderId = userIdRef.current;
+    const targetId = targetUserId || remoteStreamsRef.current[0]?.userId;
+    const roomId = roomInfoRef.current?.roomId;
+    if (!gift || !senderId || !targetId || !roomId) return;
+
+    try {
+      const coinCost = Number(gift.price) || 0;
+      const diamondAmount = Number(gift.diamonds) || 0;
+      if (coins < coinCost) {
+        alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+        return;
+      }
+      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+        method: 'POST',
+        body: JSON.stringify({ diamondAmount }),
+      });
+      await apiRequest(API.STREAMING.SEND_GIFT(roomId), {
+        method: 'POST',
+        body: JSON.stringify({
+          toUserId: targetId,
+          amount: diamondAmount,
+          giftId: gift.id,
+          fromUserId: senderId,
+        }),
+      });
+      await refreshWallet();
+      const msgId = `${Date.now()}${Math.random().toString(36).slice(2, 9)}`;
+      send({
+        type: 'chat-message',
+        data: {
+          roomId,
+          message: JSON.stringify({
+            isGift: true,
+            messageId: msgId,
+            gift: {
+              name: gift.name,
+              img: gift.img,
+              imageUrl: gift.imageUrl,
+              price: gift.price,
+              diamonds: gift.diamonds,
+            },
+            targetUserId: targetId,
+            senderId,
+          }),
+        },
+      });
+    } catch (err) {
+      console.error('Failed to send gift:', err);
+      alert(err.message || 'Failed to send gift');
+    }
+    setIsGiftModalOpen(false);
+    setSelectedGiftId(null);
+  }, [coins, refreshWallet]);
+
   // ---- Dare callbacks ------------------------------------------------------
   const handleDareSync = useCallback((syncData) => {
     currentDareRef.current = { id: syncData.dareId, text: syncData.dareText };
@@ -1732,7 +1787,7 @@ export default function useVideoChat() {
     handleShareBroadcastLink, copyShareUrl,
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
-    handleLocalGiftComplete, handleRemoteGiftComplete,
+    handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay, goHomeIdleFromCall, refreshWallet,
     handleSaveCustomDare, handleDeleteCustomDare,

@@ -24,7 +24,6 @@ import VideoChatMask from '@/components/VideoChat/VideoChatMask';
 
 // All logic lives here
 import useVideoChat from '@/components/VideoChat/hooks/useVideoChat';
-import { API, apiRequest } from '@/lib/api';
 
 export default function VideoChat() {
   return (
@@ -69,30 +68,14 @@ function VideoChatContent() {
     handleShareBroadcastLink, copyShareUrl,
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
-    handleLocalGiftComplete, handleRemoteGiftComplete,
+    handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
-    openDareOverlay, refreshWallet,
+    openDareOverlay,
     handleSaveCustomDare, handleDeleteCustomDare,
     // Render helpers
     localVideoProps, getRemoteFriendTileProps, getRemoteTileProfile,
     canKickRemoteUser, shouldShowReportEmojiOnRemoteTile,
   } = useVideoChat();
-
-  // ---- Gift send handler (needs coins state + API calls inline) -----------
-  const handleSendGift = async (gift, targetUserId) => {
-    const targetId = targetUserId || remoteStreams[0]?.userId;
-    if (!targetId || !roomInfo?.roomId) return;
-    try {
-      const coinCost = Number(gift.price) || 0;
-      const diamondAmount = Number(gift.diamonds) || 0;
-      if (coins < coinCost) { alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`); return; }
-      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, { method: 'POST', body: JSON.stringify({ diamondAmount }) });
-      await apiRequest(API.STREAMING.SEND_GIFT(roomInfo.roomId), { method: 'POST', body: JSON.stringify({ toUserId: targetId, amount: diamondAmount, giftId: gift.id, fromUserId: localVideoProps.localStreamRef?.current }) });
-      await refreshWallet();
-    } catch (err) { console.error('Failed to send gift:', err); alert(err.message || 'Failed to send gift'); }
-    setIsGiftModalOpen(false);
-    setSelectedGiftId(null);
-  };
 
   // ---- Derived values ------------------------------------------------------
   const isPullStrangerDisabled = (remoteStreams.length + 1) >= 4 || isEnablingPullStranger || (pullStrangerCooldownSec > 0);

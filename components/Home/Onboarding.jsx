@@ -509,24 +509,22 @@ export default function Onboarding() {
 
     if (field === "day") {
       val = val.slice(0, 2);
-      const num = parseInt(val);
-      // Validate first digit (can only be 0, 1, 2, 3)
-      if (val.length === 1 && num > 3) return;
-      // Validate full 2-digit value (must be 01 - 31)
+      const num = parseInt(val, 10);
+      // Block only clearly invalid 2-digit entries (e.g. 00, 32+)
       if (val.length === 2 && (num < 1 || num > 31)) return;
-
+      // Allow any single digit (1-9) — user may not have finished typing
       setDob((prev) => ({ ...prev, day: val }));
+      // Auto-advance only when a full 2-digit value is entered
       if (val.length === 2) monthRef.current?.focus();
     }
     else if (field === "month") {
       val = val.slice(0, 2);
-      const num = parseInt(val);
-      // Validate first digit (can only be 0, 1)
-      if (val.length === 1 && num > 1) return;
-      // Validate full 2-digit value (must be 01 - 12)
+      const num = parseInt(val, 10);
+      // Block only clearly invalid 2-digit entries (e.g. 00, 13+)
       if (val.length === 2 && (num < 1 || num > 12)) return;
-
+      // Allow any single digit (1-9) — user may type '2' and move on manually
       setDob((prev) => ({ ...prev, month: val }));
+      // Auto-advance only when a full 2-digit value is entered
       if (val.length === 2) yearRef.current?.focus();
     }
     else if (field === "year") {

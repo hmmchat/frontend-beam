@@ -1361,6 +1361,18 @@ function VideoChatContent() {
       const token = localStorage.getItem('accessToken');
       const partnerId = roomInfoRef.current?.partner?.id || partnerInfo.id;
       const sid = roomInfoRef.current?.sessionId || roomInfo?.sessionId || Date.now().toString();
+
+      // Send WebSocket control message to peer to redirect instantly
+      if (wsRef.current?.readyState === WebSocket.OPEN && roomInfoRef.current?.roomId) {
+        wsRef.current.send(JSON.stringify({
+          type: 'chat-message',
+          data: {
+            roomId: roomInfoRef.current.roomId,
+            message: JSON.stringify({ isPeerNextClicked: true, sessionId: sid })
+          }
+        }));
+      }
+
       flowLog('click_next_in_call', {
         sid,
         roomId: roomInfoRef.current?.roomId || roomInfo?.roomId || null,
@@ -1421,10 +1433,7 @@ function VideoChatContent() {
       sid,
       roomId: roomInfoRef.current?.roomId || roomInfo?.roomId || null
     });
-    try {
-      await leaveRoomAndSetStatusReliable('AVAILABLE');
-      flowLog('peer_left_auto_resume_leave_done');
-    } catch (_) { }
+    leaveRoomAndSetStatusReliable('AVAILABLE').catch(() => {});
     cleanup();
     localStorage.removeItem('currentRoom');
     resumeDiscoveryFromCall(sid);
@@ -1583,7 +1592,7 @@ function VideoChatContent() {
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
         if ((remoteStreamsRef.current?.length || 0) > 0) return;
         handlePeerLeftAutoResume();
-      }, 8000);
+      }, 0);
     } else {
       remoteMediaMissingSinceRef.current = null;
       if (peerLeftAutoResumeTimerRef.current) {
@@ -2291,7 +2300,8 @@ function VideoChatContent() {
               parsed.isDareInitiated ||
               parsed.isDiceRoll ||
               parsed.isIcebreakerTrigger !== undefined ||
-              parsed.isSummoningActive !== undefined
+              parsed.isSummoningActive !== undefined ||
+              parsed.isPeerNextClicked !== undefined
             )) {
               isControlMessage = true;
               controlParsed = parsed;
@@ -2300,6 +2310,11 @@ function VideoChatContent() {
         } catch (e) { }
 
         if (isControlMessage && controlParsed) {
+          if (controlParsed.isPeerNextClicked) {
+            flowLog('peer_next_clicked_received_ws');
+            handlePeerLeftAutoResume();
+            return;
+          }
           if (controlParsed.isDareSync) {
             // If we are the target of this dare sync, update our proposal UI
             if (String(controlParsed.targetUserId) === String(myId)) {

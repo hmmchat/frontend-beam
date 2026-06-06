@@ -339,7 +339,7 @@ export default function useVideoChat() {
     if (isDareOpen) { fetchRandomDares(); fetchSavedDares(); }
   }, [isDareOpen, fetchRandomDares, fetchSavedDares]);
 
-  // ---- Gift catalog --------------------------------------------------------
+  // ---- Gift catalog (for GiftOverlay in video chat) -----------------------
   const fetchGiftItems = useCallback(async () => {
     try {
       const data = await apiRequest(API.FRIENDS.GET_GIFT_CATALOG);
@@ -353,6 +353,26 @@ export default function useVideoChat() {
   }, []);
 
   useEffect(() => { fetchGiftItems(); }, [fetchGiftItems]);
+
+  // ---- Dare-specific gift list (uses dare-service ids, NOT catalog UUIDs) --
+  const [dareGiftItems, setDareGiftItems] = useState([]);
+
+  const fetchDareGiftItems = useCallback(async (roomId) => {
+    if (!roomId) return;
+    try {
+      const data = await apiRequest(API.STREAMING.GET_DARE_GIFTS(roomId));
+      if (Array.isArray(data?.gifts)) {
+        setDareGiftItems(data.gifts.map(g => ({
+          id: g.id,          // "monkey", "pikachu", etc. — matches backend GIFT_LIST
+          name: g.name,
+          img: g.emoji || '🎁',
+          imageUrl: g.imageUrl || null,
+          diamonds: g.diamonds ?? 0,
+          price: (g.diamonds ?? 0) * 100,
+        })));
+      }
+    } catch (err) { console.error('Failed to load dare gifts', err); }
+  }, []);
 
   // ---- Remote profile fetching ---------------------------------------------
   const remoteUserIdsKey = remoteStreams.map(s => String(s.userId)).sort().join('|');
@@ -514,7 +534,7 @@ export default function useVideoChat() {
   useEffect(() => {
     let cancelled = false;
     let cycleInterval = null;
-    const normalizeMeme = (meme) => meme ? { imageUrl: meme.imageUrl || '', text: meme.text || 'Finding someone who matches your energy...' } : null;
+    const normalizeMeme = (meme) => meme ? { imageUrl: meme.imageUrl || '', text: meme.text  } : null;
     (async () => {
       try {
         const response = await apiRequest(API.STREAMING.GET_LOADING_MEMES);
@@ -541,7 +561,7 @@ export default function useVideoChat() {
         const response = await apiRequest(API.STREAMING.GET_RANDOM_LOADING_MEME);
         if (cancelled) return;
         setLoadingMeme(normalizeMeme(response?.meme || response));
-      } catch { if (!cancelled) setLoadingMeme({ imageUrl: '', text: 'Finding someone who matches your energy...' }); }
+      } catch { if (!cancelled) setLoadingMeme({ imageUrl: '', text: '' }); }
     })();
     return () => { cancelled = true; if (cycleInterval) clearInterval(cycleInterval); };
   }, []);
@@ -1170,6 +1190,8 @@ export default function useVideoChat() {
             if (String(controlParsed.targetUserId) === String(myId)) setActiveDareProposal(null);
           } else if (controlParsed.isDareInitiated) {
             if (String(controlParsed.targetUserId) === String(myId)) { setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle'); setActiveDareProposal(null); }
+          } else if (controlParsed.isIcebreakerTrigger !== undefined) {
+            if (String(controlParsed.senderId) !== String(myId)) setIsBroken(Boolean(controlParsed.isIcebreakerTrigger));
           } else if (controlParsed.isDiceRoll) {
             if (String(controlParsed.senderId) !== String(myId)) setIsRolling(true);
           } else if (controlParsed.isSummoningActive !== undefined) {
@@ -1593,23 +1615,57 @@ export default function useVideoChat() {
 
   const handleSendDare = useCallback(async () => {
     const targetId = remoteStreamsRef.current[0]?.userId;
+    const senderId = userIdRef.current;
     if (!targetId || !roomInfoRef.current?.roomId || !selectedGiftId) return;
-    const giftObj = giftItems.find(g => g.id === selectedGiftId);
+
+    // Use dareGiftItems (dare-service ids: "monkey","pikachu", etc.)
+    // Fall back to giftItems only if dare gifts not loaded yet
+    const giftSource = dareGiftItems.length > 0 ? dareGiftItems : giftItems;
+    const giftObj = giftSource.find(g => g.id === selectedGiftId);
     if (!giftObj) return;
+
     const giftAmount = Number(giftObj.diamonds) || 0;
     const activeDareId = currentDareRef.current?.id || 'dare-1';
-    const backendDareId = (activeDareId && !activeDareId.startsWith('custom-') && activeDareId.startsWith('dare-')) ? activeDareId : 'dare-1';
+    // Custom dares use a random dare id on backend (dare-1 fallback)
+    const backendDareId = (activeDareId && !activeDareId.startsWith('custom-') && activeDareId.startsWith('dare-'))
+      ? activeDareId
+      : 'dare-1';
     try {
       const neededCoins = giftAmount * 100;
-      if (coins < neededCoins) { alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`); return; }
-      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, { method: 'POST', body: JSON.stringify({ diamondAmount: giftAmount }) });
-      await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), { method: 'POST', body: JSON.stringify({ dareId: backendDareId, giftId: giftObj.id, userId: targetId }) });
+      if (coins < neededCoins) {
+        alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
+        return;
+      }
+      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+        method: 'POST',
+        body: JSON.stringify({ diamondAmount: giftAmount })
+      });
+      // userId = sender (the person sending the dare), NOT the target
+      await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), {
+        method: 'POST',
+        body: JSON.stringify({ dareId: backendDareId, giftId: giftObj.id, userId: senderId })
+      });
       await refreshWallet();
       const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGift: true, isDare: true, messageId: msgId, gift: { name: giftObj.name, img: giftObj.img, imageUrl: giftObj.imageUrl, price: giftObj.price, diamonds: giftObj.diamonds }, dareText: currentDareRef.current?.text || 'Do a dare', targetUserId: targetId, senderId: userIdRef.current }) } });
-    } catch (err) { console.error('Failed to send dare:', err); alert(err.message || 'Failed to send dare'); }
+      send({
+        type: 'chat-message',
+        data: {
+          roomId: roomInfoRef.current.roomId,
+          message: JSON.stringify({
+            isGift: true, isDare: true, messageId: msgId,
+            gift: { name: giftObj.name, img: giftObj.img, imageUrl: giftObj.imageUrl, price: giftObj.price, diamonds: giftObj.diamonds },
+            dareText: currentDareRef.current?.text || 'Do a dare',
+            targetUserId: targetId,
+            senderId,
+          })
+        }
+      });
+    } catch (err) {
+      console.error('Failed to send dare:', err);
+      alert(err.message || 'Failed to send dare');
+    }
     setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle');
-  }, [coins, selectedGiftId, refreshWallet, giftItems]);
+  }, [coins, selectedGiftId, refreshWallet, giftItems, dareGiftItems]);
 
   const openDareOverlay = () => {
     const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
@@ -1620,6 +1676,8 @@ export default function useVideoChat() {
     if (roomId && remoteStreams[0]?.userId) {
       send({ type: 'chat-message', data: { roomId, message: JSON.stringify({ isDareInitiated: true, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current }) } });
     }
+    // Fetch dare-specific gifts (uses dare-service ids, not catalog UUIDs)
+    if (roomId) fetchDareGiftItems(roomId);
     setIsDareOpen(true);
   };
 
@@ -1681,7 +1739,7 @@ export default function useVideoChat() {
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,
     selectedGiftId, setSelectedGiftId, activeRemoteGift, activeLocalGift,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
-    giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
+    giftItems, dareGiftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,
     selectedWaitlistUser, setSelectedWaitlistUser,
     broadcastChatWarning, overlay, setOverlay,

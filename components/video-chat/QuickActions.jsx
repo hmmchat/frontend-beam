@@ -59,23 +59,23 @@ export default function QuickActions({
       isOverlayOpen && "hidden md:block"
     )}>
 
-      {/* LEFT (Dice) - Positioned far left */}
-      <button
-        onClick={handleDiceClick}
-        disabled={!callRoles.isLocalHost}
-        className={clsx(
-          "absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 transition pointer-events-auto shadow-2xl",
-          callRoles.isLocalHost ? "hover:bg-[#0A032D]/40 cursor-pointer" : "opacity-85 cursor-not-allowed pointer-events-none"
-        )}
-      >
-        <img
-          src={isRolling ? diceImages[diceIndex] : '/dice.png'}
+      {/* LEFT (Dice) - Only visible to host */}
+      {callRoles.isLocalHost && (
+        <button
+          onClick={handleDiceClick}
           className={clsx(
-            "w-7 h-7 transition-transform",
-            isRolling && "rotate-180 scale-110"
+            "absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 cursor-pointer transition pointer-events-auto shadow-2xl"
           )}
-        />
-      </button>
+        >
+          <img
+            src={isRolling ? diceImages[diceIndex] : '/dice.png'}
+            className={clsx(
+              "w-7 h-7 transition-transform",
+              isRolling && "rotate-180 scale-110"
+            )}
+          />
+        </button>
+      )}
 
       {/* CENTER-RIGHT (Icecream) - Positioned at the right side of the left video (near 50% mark) */}
       <button

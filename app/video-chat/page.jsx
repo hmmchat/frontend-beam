@@ -51,7 +51,7 @@ function VideoChatContent() {
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen,
     selectedGiftId, setSelectedGiftId, activeRemoteGift, activeLocalGift,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
-    giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
+    giftItems, dareGiftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,
     selectedWaitlistUser, setSelectedWaitlistUser,
     broadcastChatWarning, overlay, setOverlay,
@@ -194,7 +194,7 @@ function VideoChatContent() {
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
               onReportClick={() => setShowGroupMembersModal(true)}
-              showMinusButton={callRoles.isLocalHost}
+              showMinusButton={false}
               onMinus={() => handleKickRemote(remoteStreams[0].userId)}
             />
             <div className="flex min-h-0 min-w-0 flex-1 md:flex-col md:gap-2">
@@ -267,7 +267,7 @@ function VideoChatContent() {
                 multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
                 hideReportOnMobile={true}
-                showMinusButton={callRoles.isLocalHost}
+                showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               />
               <RemoteVideoTile
@@ -291,7 +291,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
-                showMinusButton={callRoles.isLocalHost}
+                showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
               />
               <div className="relative">
@@ -410,7 +410,7 @@ function VideoChatContent() {
           savedDares={savedDares}
           onSaveCustomDare={handleSaveCustomDare}
           onDeleteCustomDare={handleDeleteCustomDare}
-          giftItems={giftItems}
+          giftItems={dareGiftItems.length > 0 ? dareGiftItems : giftItems}
         />
 
         {/* Dare proposal overlay */}

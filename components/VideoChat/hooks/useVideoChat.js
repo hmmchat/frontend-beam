@@ -1186,10 +1186,10 @@ export default function useVideoChat() {
             }
           } else if (controlParsed.isGiftDismissed) {
             const { messageId } = controlParsed;
-            setActiveRemoteGift(prev => prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev);
-            setActiveLocalGift(prev => prev && prev.messageId === messageId ? { ...prev, isDismissed: true } : prev);
+            setActiveRemoteGift(prev => prev && (String(prev.gift?.messageId) === String(messageId) || String(prev.messageId) === String(messageId)) ? { ...prev, isDismissed: true } : prev);
+            setActiveLocalGift(prev => prev && (String(prev.messageId) === String(messageId) || String(prev.gift?.messageId) === String(messageId)) ? { ...prev, isDismissed: true } : prev);
           } else if (controlParsed.isGift) {
-            const messageId = data.id || data.messageId || controlParsed.messageId || Date.now().toString();
+            const messageId = controlParsed.messageId || data.id || data.messageId || Date.now().toString();
             let isProcessed = false;
             if (messageId) { if (processedGiftIdsRef.current.has(messageId)) isProcessed = true; else processedGiftIdsRef.current.add(messageId); }
             if (!isProcessed) {

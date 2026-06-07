@@ -30,6 +30,7 @@ export default function LocalVideoSection({
   selectedGiftId,
   gift,
   onGiftAnimationComplete,
+  onGiftDismissStart,
   forceDismiss,
   isGroupCall = false,
 }) {
@@ -97,6 +98,7 @@ export default function LocalVideoSection({
       <GiftAnimation
         gift={gift}
         onComplete={onGiftAnimationComplete}
+        onDismissStart={onGiftDismissStart}
         persistUntilDismissed={true}
         forceDismiss={forceDismiss}
         canDismiss={true}

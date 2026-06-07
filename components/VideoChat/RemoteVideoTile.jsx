@@ -42,6 +42,7 @@ export default function RemoteVideoTile({
   onReportClick,
   gift,
   onGiftAnimationComplete,
+  onGiftDismissStart,
   forceDismiss,
   showMinusButton = false,
   onMinus,
@@ -548,6 +549,7 @@ export default function RemoteVideoTile({
       <GiftAnimation
         gift={gift}
         onComplete={onGiftAnimationComplete}
+        onDismissStart={onGiftDismissStart}
         persistUntilDismissed={true}
         forceDismiss={forceDismiss}
         canDismiss={false}

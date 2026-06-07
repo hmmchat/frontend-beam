@@ -1570,23 +1570,35 @@ export default function useVideoChat() {
   };
 
   // ---- Gift callbacks ------------------------------------------------------
-  const handleLocalGiftComplete = useCallback(() => {
-    // Broadcast dismissal to all other participants so their screens clear too
+  // Fire immediately when receiver clicks the gift — broadcasts before the fade animation
+  // so ALL screens start dismissing at the same time.
+  const handleLocalGiftDismissStart = useCallback(() => {
     if (activeLocalGift?.messageId && roomInfoRef.current?.roomId) {
       send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeLocalGift.messageId, targetUserId: activeLocalGift.targetUserId }) } });
     }
-    // Delay clearing state to allow the 500ms fade-out animation to complete
-    setTimeout(() => setActiveLocalGift(null), 550);
   }, [activeLocalGift]);
 
-  const handleRemoteGiftComplete = useCallback(() => {
-    // Only the receiver broadcasts the dismiss — sender/others just clear locally
-    if (activeRemoteGift?.gift?.messageId && activeRemoteGift?.gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
+  const handleLocalGiftComplete = useCallback(() => {
+    // Clear local state after the 500ms fade-out animation finishes.
+    // The broadcast was already sent by handleLocalGiftDismissStart.
+    setTimeout(() => setActiveLocalGift(null), 50);
+  }, []);
+
+  // Called by the sender's remote tile when the forced fade completes.
+  const handleRemoteGiftDismissStart = useCallback(() => {
+    // The receiver already broadcast the dismiss via handleLocalGiftDismissStart.
+    // The sender only needs to propagate if — for some reason — the remote tile
+    // is shown to a user who IS the gift target (e.g. they reconnected late).
+    // In normal flow this is a no-op for the sender.
+    if (activeRemoteGift?.gift?.messageId && String(activeRemoteGift?.gift?.targetUserId) === String(userIdRef.current) && roomInfoRef.current?.roomId) {
       send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeRemoteGift.gift.messageId, targetUserId: activeRemoteGift.gift.targetUserId }) } });
     }
-    // Delay clearing state to allow the 500ms fade-out animation to complete
-    setTimeout(() => setActiveRemoteGift(null), 550);
   }, [activeRemoteGift]);
+
+  const handleRemoteGiftComplete = useCallback(() => {
+    // Clear local state after the forced fade-out animation finishes.
+    setTimeout(() => setActiveRemoteGift(null), 50);
+  }, []);
 
   const handleSendGift = useCallback(async (gift, targetUserId) => {
     const senderId = userIdRef.current;
@@ -1763,6 +1775,7 @@ export default function useVideoChat() {
     onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
     isDareOpen, setIsDareOpen: openDareOverlay, setIsCoinModalOpen, coins, selectedGiftId,
     gift: activeLocalGift, onGiftAnimationComplete: handleLocalGiftComplete,
+    onGiftDismissStart: handleLocalGiftDismissStart,
     forceDismiss: activeLocalGift?.isDismissed, hideAllControls: !!activeDareProposal,
     isGroupCall: remoteStreams.length > 1,
   };
@@ -1803,6 +1816,7 @@ export default function useVideoChat() {
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
     handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
+    handleLocalGiftDismissStart, handleRemoteGiftDismissStart,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay, goHomeIdleFromCall, refreshWallet,
     handleSaveCustomDare, handleDeleteCustomDare,

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isMobileRuntime } from "@/lib/webrtc-media-utils";
 
-export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss, canDismiss = false }) {
+export default function GiftAnimation({ gift, onComplete, onDismissStart, persistUntilDismissed, forceDismiss, canDismiss = false }) {
   const containerRef = useRef(null);
   const giftRef = useRef(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -15,12 +15,23 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  // Keep a mutable ref for onDismissStart to insulate from identity changes
+  const onDismissStartRef = useRef(onDismissStart);
+  useEffect(() => {
+    onDismissStartRef.current = onDismissStart;
+  }, [onDismissStart]);
+
   const handleDismiss = (forced = false) => {
     // Only the designated receiver (canDismiss=true) can tap to stop the animation.
     // However a forced dismissal (triggered by the server broadcast) always goes through.
     if (!forced && !canDismiss) return;
     if (isDismissingRef.current) return;
     isDismissingRef.current = true;
+    // Fire the dismiss-start callback immediately (before the fade), so the
+    // parent can broadcast dismissal to all screens simultaneously.
+    if (onDismissStartRef.current) {
+      onDismissStartRef.current({ forced });
+    }
     setIsFadingOut(true);
     setTimeout(() => {
       if (onCompleteRef.current) {

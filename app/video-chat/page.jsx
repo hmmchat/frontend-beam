@@ -69,6 +69,7 @@ function VideoChatContent() {
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
     handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
+    handleLocalGiftDismissStart, handleRemoteGiftDismissStart,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay,
     handleSaveCustomDare, handleDeleteCustomDare,
@@ -136,6 +137,7 @@ function VideoChatContent() {
               isRainchecking={isRainchecking}
               gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
               forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift.isDismissed}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
@@ -173,6 +175,7 @@ function VideoChatContent() {
               hideNameOnMobile={true}
               gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
               forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift.isDismissed}
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
@@ -201,6 +204,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[1]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+                  onGiftDismissStart={handleRemoteGiftDismissStart}
                   forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId && activeRemoteGift?.isDismissed}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
@@ -248,6 +252,7 @@ function VideoChatContent() {
                 hideNameOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
+                onGiftDismissStart={handleRemoteGiftDismissStart}
                 forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift?.isDismissed}
                 multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
@@ -276,6 +281,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
+                onGiftDismissStart={handleRemoteGiftDismissStart}
                 forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId && activeRemoteGift?.isDismissed}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
@@ -299,6 +305,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[2]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+                  onGiftDismissStart={handleRemoteGiftDismissStart}
                   forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId && activeRemoteGift?.isDismissed}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}

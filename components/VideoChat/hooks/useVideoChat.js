@@ -1195,7 +1195,10 @@ export default function useVideoChat() {
             if (!isProcessed) {
               const { gift, targetUserId, senderId } = controlParsed;
               const giftObj = { ...gift, messageId, targetUserId, senderId };
-              if (String(targetUserId) === String(myId)) setActiveLocalGift({ ...giftObj, isDismissed: false });
+              if (String(targetUserId) === String(myId)) {
+                setActiveLocalGift({ ...giftObj, isDismissed: false });
+                setActiveDareProposal(null);
+              }
               else setActiveRemoteGift({ gift: giftObj, targetUserId: String(targetUserId), isDismissed: false });
             }
           }
@@ -1665,7 +1668,9 @@ export default function useVideoChat() {
   const handleDareResponse = useCallback((accepted) => {
     if (!activeDareProposal || !roomInfo?.roomId) return;
     send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareResponse: true, accepted, targetUserId: activeDareProposal.senderId, senderId: userIdRef.current }) } });
-    setActiveDareProposal(null);
+    if (!accepted) {
+      setActiveDareProposal(null);
+    }
   }, [activeDareProposal, roomInfo]);
 
   const handleCancelDare = useCallback(() => {

@@ -9,6 +9,12 @@ export default function DareProposalOverlay({
   onReject,
   isOpen
 }) {
+  const [hasAccepted, setHasAccepted] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasAccepted(false);
+  }, [proposal]);
+
   if (!isOpen || !proposal) return null;
 
   return (
@@ -83,33 +89,44 @@ export default function DareProposalOverlay({
 
         </div>
 
-        <div className="flex justify-between items-center gap-3 relative w-[350px] mt-3 z-10 pointer-events-auto">
-          <button
-            onClick={onReject}
-            style={{
-              backgroundImage: "url(/assets/mb.jpg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: 0.8,
-            }}
-            className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
-          >
-            Nvm! 🥱
-          </button>
+        {hasAccepted ? (
+          <div className="flex justify-center items-center w-[350px] mt-3 z-10 pointer-events-auto">
+            <div className="w-full text-center py-3.5 px-6 bg-black/60 border border-white/20 rounded-full text-white font-bold text-sm backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200">
+              Waiting for {proposal.senderName || "Someone"}.
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-between items-center gap-3 relative w-[350px] mt-3 z-10 pointer-events-auto">
+            <button
+              onClick={onReject}
+              style={{
+                backgroundImage: "url(/assets/mb.jpg)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.8,
+              }}
+              className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+            >
+              Nvm! 🥱
+            </button>
 
-          <button
-            onClick={onAccept}
-            style={{
-              backgroundImage: "url(/assets/mb.jpg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: 0.8,
-            }}
-            className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md"
-          >
-            I'm in 💪
-          </button>
-        </div>
+            <button
+              onClick={() => {
+                onAccept();
+                setHasAccepted(true);
+              }}
+              style={{
+                backgroundImage: "url(/assets/mb.jpg)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.8,
+              }}
+              className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md"
+            >
+              I'm in 💪
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

@@ -54,6 +54,7 @@ export default function DareOverlay({
     setGiftPageIndex((prev) => prev - 1);
   };
 
+
   const currentList = dareTab === "Random" ? randomDares : savedDares;
   const activeDare = currentList[dareIndex];
 
@@ -466,7 +467,7 @@ export default function DareOverlay({
             className={clsx(
               "group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto transition-all",
               (dareAcceptanceStatus !== "accepted" || !hasSufficientCoins || !selectedGift)
-                ? "opacity-40 grayscale"
+                ? "opacity-60 grayscale-900"
                 : "hover:scale-105 active:scale-95"
             )}
           >

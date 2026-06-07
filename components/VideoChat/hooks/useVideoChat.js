@@ -1571,17 +1571,21 @@ export default function useVideoChat() {
 
   // ---- Gift callbacks ------------------------------------------------------
   const handleLocalGiftComplete = useCallback(() => {
+    // Broadcast dismissal to all other participants so their screens clear too
     if (activeLocalGift?.messageId && roomInfoRef.current?.roomId) {
       send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeLocalGift.messageId, targetUserId: activeLocalGift.targetUserId }) } });
     }
-    setActiveLocalGift(null);
+    // Delay clearing state to allow the 500ms fade-out animation to complete
+    setTimeout(() => setActiveLocalGift(null), 550);
   }, [activeLocalGift]);
 
   const handleRemoteGiftComplete = useCallback(() => {
+    // Only the receiver broadcasts the dismiss — sender/others just clear locally
     if (activeRemoteGift?.gift?.messageId && activeRemoteGift?.gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
       send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeRemoteGift.gift.messageId, targetUserId: activeRemoteGift.gift.targetUserId }) } });
     }
-    setActiveRemoteGift(null);
+    // Delay clearing state to allow the 500ms fade-out animation to complete
+    setTimeout(() => setActiveRemoteGift(null), 550);
   }, [activeRemoteGift]);
 
   const handleSendGift = useCallback(async (gift, targetUserId) => {

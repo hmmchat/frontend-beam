@@ -550,6 +550,7 @@ export default function RemoteVideoTile({
         onComplete={onGiftAnimationComplete}
         persistUntilDismissed={true}
         forceDismiss={forceDismiss}
+        canDismiss={false}
       />
     </div>
   );

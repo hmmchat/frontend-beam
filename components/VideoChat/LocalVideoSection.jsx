@@ -94,12 +94,13 @@ export default function LocalVideoSection({
           )}
         />
 
-        <GiftAnimation
-          gift={gift}
-          onComplete={onGiftAnimationComplete}
-          persistUntilDismissed={true}
-          forceDismiss={forceDismiss}
-        />
+      <GiftAnimation
+        gift={gift}
+        onComplete={onGiftAnimationComplete}
+        persistUntilDismissed={true}
+        forceDismiss={forceDismiss}
+        canDismiss={true}
+      />
 
         {isCamOff && (
           <div

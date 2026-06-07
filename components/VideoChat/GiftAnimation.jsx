@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isMobileRuntime } from "@/lib/webrtc-media-utils";
 
-export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss }) {
+export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss, canDismiss = false }) {
   const containerRef = useRef(null);
   const giftRef = useRef(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -15,7 +15,10 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  const handleDismiss = () => {
+  const handleDismiss = (forced = false) => {
+    // Only the designated receiver (canDismiss=true) can tap to stop the animation.
+    // However a forced dismissal (triggered by the server broadcast) always goes through.
+    if (!forced && !canDismiss) return;
     if (isDismissingRef.current) return;
     isDismissingRef.current = true;
     setIsFadingOut(true);
@@ -26,10 +29,10 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     }, 500); // Wait for the transition to finish
   };
 
-  // Monitor forceDismiss to handle remote dismissal
+  // Monitor forceDismiss to handle remote dismissal (broadcast from the receiver to all screens)
   useEffect(() => {
     if (forceDismiss) {
-      handleDismiss();
+      handleDismiss(true); // forced — bypass canDismiss guard
     }
   }, [forceDismiss]);
 
@@ -154,8 +157,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     >
       <div
         ref={giftRef}
-        onClick={handleDismiss}
-        className="absolute left-0 top-0 select-none transition-opacity duration-300 ease-out pointer-events-auto cursor-pointer"
+        onClick={() => handleDismiss(false)}
+        className={`absolute left-0 top-0 select-none transition-opacity duration-300 ease-out ${canDismiss ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none cursor-default'}`}
         style={{
           transform: "translate3d(0px, 0px, 0px)",
           opacity: 0,

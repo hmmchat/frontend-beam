@@ -201,6 +201,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[1]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+                  forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId && activeRemoteGift?.isDismissed}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
@@ -247,6 +248,7 @@ function VideoChatContent() {
                 hideNameOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
+                forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId && activeRemoteGift?.isDismissed}
                 multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
                 hideReportOnMobile={true}
@@ -274,6 +276,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
+                forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId && activeRemoteGift?.isDismissed}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
               />
@@ -296,6 +299,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[2]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+                  forceDismiss={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId && activeRemoteGift?.isDismissed}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}

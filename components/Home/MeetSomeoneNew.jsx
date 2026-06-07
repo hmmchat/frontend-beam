@@ -808,6 +808,10 @@ export default function MeetSomeoneNew({
         onCoinsUpdated={(cost) => {
           setCoins(prev => Math.max(0, prev - cost));
         }}
+        onStartBeaming={() => {
+          setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+          if (onMeetNow) onMeetNow();
+        }}
       />
       <LocationModal
         isOpen={isLocationModalOpen}

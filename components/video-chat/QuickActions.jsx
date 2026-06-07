@@ -12,7 +12,6 @@ export default function QuickActions({
   isRolling,
   setIsRolling,
   isBroken,
-  setIsBroken
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
 
@@ -35,7 +34,6 @@ export default function QuickActions({
         setDiceIndex((prev) => (prev + 1) % diceImages.length);
       }, 100);
 
-      // Stop rolling after 1.5 seconds
       const timeout = setTimeout(() => {
         setIsRolling(false);
       }, 1500);
@@ -49,10 +47,6 @@ export default function QuickActions({
 
   const isOverlayOpen = isGiftModalOpen || isDareOpen;
 
-  const handleDiceClick = () => {
-    toggleRandomness?.();
-  };
-
   return (
     <div className={clsx(
       "absolute top-[58%] -translate-y-1/2 md:top-auto md:bottom-0 left-0 w-full h-14 z-40 pointer-events-none px-10",
@@ -62,10 +56,8 @@ export default function QuickActions({
       {/* LEFT (Dice) - Only visible to host */}
       {callRoles.isLocalHost && (
         <button
-          onClick={handleDiceClick}
-          className={clsx(
-            "absolute top-0 left-4 md:left-8 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 cursor-pointer transition pointer-events-auto shadow-2xl"
-          )}
+          onClick={() => toggleRandomness?.()}
+          className={clsx('absolute', 'top-0', 'left-4', 'md:left-8', 'bg-[#0A032D]/20', 'w-14', 'h-14', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border', 'border-white/80', 'hover:bg-[#0A032D]/40', 'cursor-pointer', 'transition', 'pointer-events-auto', 'shadow-2xl')}
         >
           <img
             src={isRolling ? diceImages[diceIndex] : '/dice.png'}
@@ -77,23 +69,20 @@ export default function QuickActions({
         </button>
       )}
 
-      {/* CENTER-RIGHT (Icecream) - Positioned at the right side of the left video (near 50% mark) */}
+      {/* Ice Cream - any user can toggle, syncs to all */}
       <button
-        onClick={() => {
-          handleIcebreaker?.();
-        }}
+        onClick={() => handleIcebreaker?.()}
         className={clsx(
-          "absolute top-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto ",
-          "right-4 md:left-[44%]" // Positioned to be at the right edge of the left tile
+          "absolute top-0 bg-[#0A032D]/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/80 hover:bg-[#0A032D]/40 transition pointer-events-auto",
+          "right-4 md:left-[44%]"
         )}
       >
-        <img src={isBroken ? "/icecreambreak.svg" : "/icecream.svg"} className={clsx(isBroken ? "w-5 h-6  transition-transform" : "w-5 h-6 transition-transform")} />
+        <img
+          src={isBroken ? "/icecreambreak.svg" : "/icecream.svg"}
+          className={clsx('w-5', 'h-6', 'transition-transform')}
+        />
       </button>
 
     </div>
   );
 }
-
-
-
-

@@ -3037,6 +3037,12 @@ export default function MeetSomeoneDynamic() {
           onCoinsUpdated={(cost) => {
             setCoins(prev => Math.max(0, prev - cost));
           }}
+          onStartBeaming={() => {
+            setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+            if (!isSearching) {
+              beginDiscoverySearch();
+            }
+          }}
         />
         <LocationModal
           isOpen={isLocationModalOpen}

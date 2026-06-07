@@ -1171,7 +1171,11 @@ export default function useVideoChat() {
           } else if (controlParsed.isDareInitiated) {
             if (String(controlParsed.targetUserId) === String(myId)) { setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle'); setActiveDareProposal(null); }
           } else if (controlParsed.isIcebreakerTrigger !== undefined) {
-            if (String(controlParsed.senderId) !== String(myId)) setIsBroken(Boolean(controlParsed.isIcebreakerTrigger));
+            if (String(controlParsed.senderId) !== String(myId)) {
+              const nextBroken = Boolean(controlParsed.isIcebreakerTrigger);
+              setIsBroken(nextBroken);
+              if (!nextBroken) { setShowIcebreaker(false); setIcebreaker(''); }
+            }
           } else if (controlParsed.isDiceRoll) {
             if (String(controlParsed.senderId) !== String(myId)) setIsRolling(true);
           } else if (controlParsed.isSummoningActive !== undefined) {
@@ -1420,8 +1424,15 @@ export default function useVideoChat() {
     if (!roomInfo?.roomId) return;
     const nextBroken = !isBroken;
     setIsBroken(nextBroken);
-    if (nextBroken) send({ type: 'get-icebreaker', data: { roomId: roomInfo.roomId } });
-    else { setShowIcebreaker(false); setIcebreaker(''); }
+    if (nextBroken) {
+      // Opening: request a question from the server
+      send({ type: 'get-icebreaker', data: { roomId: roomInfo.roomId } });
+    } else {
+      // Closing: clear popup locally
+      setShowIcebreaker(false);
+      setIcebreaker('');
+    }
+    // Broadcast state to all other users in the room
     send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isIcebreakerTrigger: nextBroken, senderId: userIdRef.current }) } });
   };
 

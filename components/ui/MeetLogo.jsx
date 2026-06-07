@@ -19,7 +19,7 @@ export default function MeetLogo({
 
       <p
         className={clsx(
-          "text-white text-[12px] font-medium font-otomanopee -mt-1 tracking-wide",
+          "text-white text-12  font-medium font-otomanopee -mt-1 tracking-wide",
           textClassName
         )}
       >
@@ -28,7 +28,7 @@ export default function MeetLogo({
 
       <div
         className={clsx(
-          "flex font-outfit items-center gap-1 mt-2 text-white/95 text-[12px]",
+          "flex font-outfit items-center gap-1 mt-2 text-white/95 text-12",
           countClassName
         )}
       >

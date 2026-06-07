@@ -41,6 +41,15 @@ module.exports = {
                 xs: '2px',
             },
 
+
+            fontSize: {
+                10: '10px',
+                12: '12px',
+                14: '14px',
+                16: '16px',
+                20: '20px',
+            },
+
             animation: {
                 twinkle: 'twinkle linear infinite',
                 float: 'float 6s ease-in-out infinite',

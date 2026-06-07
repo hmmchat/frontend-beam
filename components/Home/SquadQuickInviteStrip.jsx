@@ -29,7 +29,7 @@ export default function SquadQuickInviteStrip({
 
     >
       <div className="flex shrink-0 flex-row items-center gap-4">
-        <span className="text-xs font-outfit  text-white/95 md:text-sm">Invite</span>
+        <span className="text-sm font-outfit  text-white/95 md:text-16">Invite</span>
         <span className="h-14 w-[1.5px] shrink-0 bg-white/50" aria-hidden />
       </div>
 
@@ -82,7 +82,7 @@ export default function SquadQuickInviteStrip({
                   )}
                 </button>
               </div>
-              <span className="max-w-[5.5rem] font-outfit truncate text-center text-[10px] text-white md:text-xs">
+              <span className="max-w-[5.5rem] font-outfit truncate text-center text-[10px] text-white md:text-[14px]">
                 {f.username}
               </span>
             </div>
@@ -93,7 +93,7 @@ export default function SquadQuickInviteStrip({
       <button
         type="button"
         onClick={() => onSeeAll?.()}
-        className="shrink-0  text-xs font-outfit  text-white underline decoration-white/50 underline-offset-[3px] hover:text-white md:text-sm"
+        className="  text-sm font-outfit  text-white underline  underline-offset-[3px] hover:text-white md:text-16"
       >
         See all
       </button>

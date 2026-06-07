@@ -2724,13 +2724,13 @@ export default function MeetSomeoneDynamic() {
                         <div className={clsx('flex flex-wrap items-center justify-center gap-2 font-sans md:gap-6')}>
                           {/* Me */}
                           <div className={clsx('flex', 'items-center', 'gap-2', 'md:gap-4')}>
-                            <div className={clsx('flex', 'flex-col', 'items-center', 'gap-2')}>
+                            <div className={clsx('flex', 'flex-col', 'items-center', 'gap-1')}>
                               <div className={clsx('relative', 'w-16', 'h-16', 'md:w-22', 'md:h-22', 'overflow-visible')}>
                                 <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
                                   <img src={myProfile?.displayPictureUrl || ''} alt="me" className={clsx('w-full', 'h-full', 'object-cover')} />
                                 </div>
                               </div>
-                              <span className="text-xs">Me</span>
+                              <span className="text-sm md:text-20">Me</span>
                             </div>
                           </div>
                           {squadGuestIds.slice(0, 2).map((guestId, i) => (
@@ -2738,7 +2738,7 @@ export default function MeetSomeoneDynamic() {
                               <div className={clsx('flex shrink-0 items-center self-center')}>
                                 <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'mb-3 ', 'opacity-90')} />
                               </div>
-                              <div className={clsx('flex', 'flex-col', 'items-center')}>
+                              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-1')}>
                                 <div className={clsx('relative', 'w-16', 'h-16', 'md:w-22', 'md:h-22', 'overflow-visible')}>
                                   <div className={clsx('w-full', 'h-full', 'rounded-full', 'border-[3.5px]', 'border-white/90', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'bg-black/10')}>
                                     {guestId && guestProfiles[guestId]?.displayPictureUrl ? (
@@ -2780,7 +2780,7 @@ export default function MeetSomeoneDynamic() {
                                     </button>
                                   ) : null}
                                 </div>
-                                <span className="text-xs">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
+                                <span className="text-sm md:text-16 ">{guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}</span>
                               </div>
                             </div>
                           ))}
@@ -2860,7 +2860,7 @@ export default function MeetSomeoneDynamic() {
                             'md:py-2.5',
                           )}
                         >
-                          <span className={clsx('text-white', 'text-xs', 'font-medium', 'mr-1', 'font-outfit')}>Share to</span>
+                          <span className={clsx('text-white', 'text-sm', 'mr-1', 'font-outfit', 'text-16')}>Share to</span>
                           <button
                             type="button"
                             disabled={squadShareBusy}

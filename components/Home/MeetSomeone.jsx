@@ -271,6 +271,10 @@ export default function MeetSomeone() {
                 }} 
                 userCoins={coins}
                 onCoinsUpdated={(cost) => setCoins(prev => Math.max(0, prev - cost))}
+                onStartBeaming={() => {
+                    setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
+                    setIsSignUpOpen(true); // unauthenticated — prompt sign up
+                }}
             />
             <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
         </div>

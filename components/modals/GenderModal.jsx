@@ -17,7 +17,7 @@ const defaultFilters = [
   { gender: "NON_BINARY", label: "Non-binary", cost: NON_BINARY_COST }
 ];
 
-export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated }) {
+export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated, onStartBeaming }) {
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [initialGender, setInitialGender] = useState("ALL");
   const [coinsPerScreen, setCoinsPerScreen] = useState(200);
@@ -122,15 +122,13 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
   const handleApply = async () => {
     setLoading(true);
     try {
-      // POST /gender-filters/apply — authenticated via JWT
       await apiRequest(API.DISCOVERY.APPLY_GENDER_FILTER, {
         method: "POST",
         body: JSON.stringify({
-          genders: selectedGender === "ALL" ? null : [selectedGender],
+          genders: selectedGender === "ALL" ? ["ALL"] : [selectedGender],
         }),
       });
 
-      // Deduct coins if preference changed
       if (selectedGender !== initialGender) {
         const targetFilter = filters.find(f => f.gender === selectedGender);
         const cost = targetFilter ? targetFilter.cost : 0;
@@ -141,10 +139,11 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
 
       localStorage.setItem("genderPreference", selectedGender);
       onClose();
+      // Trigger discovery flow after applying filter
+      if (onStartBeaming) onStartBeaming();
     } catch (error) {
       console.error("Error applying filter, falling back locally:", error);
 
-      // Fallback local application if API fails (e.g. no API integrated)
       if (selectedGender !== initialGender) {
         const targetFilter = filters.find(f => f.gender === selectedGender);
         const cost = targetFilter ? targetFilter.cost : 0;
@@ -155,6 +154,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
 
       localStorage.setItem("genderPreference", selectedGender);
       onClose();
+      if (onStartBeaming) onStartBeaming();
     } finally {
       setLoading(false);
     }

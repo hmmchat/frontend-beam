@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import clsx from "clsx";
-import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
 import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
@@ -53,6 +53,7 @@ export default function DareOverlay({
     if (giftPageIndex <= 0) return;
     setGiftPageIndex((prev) => prev - 1);
   };
+
 
   const currentList = dareTab === "Random" ? randomDares : savedDares;
   const activeDare = currentList[dareIndex];
@@ -124,7 +125,7 @@ export default function DareOverlay({
             className="flex flex-col items-center md:items-end w-full max-w-[480px] relative"
           >
             {/* Tabs */}
-            <div className="flex gap-2 md:mr-10 ml-40 -mb-[2px] relative z-20">
+            <div className="flex gap-2 md:mr-10 ml-[30%] -mb-[2px] relative z-20">
               <button
                 onClick={(e) => { e.stopPropagation(); handleTabChange("Saved"); }}
                 className={clsx(
@@ -216,8 +217,9 @@ export default function DareOverlay({
 
 
 
-                  <FaAngleLeft
+                  <FaChevronLeft
                     onClick={handlePrevDare}
+                    style={{ stroke: "white", strokeWidth: 30 }}
                     className="text-white text-xl border-2 border-white rounded-full  w-9 h-8 p-1.5  flex items-center justify-center cursor-pointer transition-all active:scale-90"
                   />
 
@@ -233,8 +235,9 @@ export default function DareOverlay({
                     />
                   </div>
 
-                  <FaAngleRight
+                  <FaChevronRight
                     onClick={handleNextDare}
+                    style={{ stroke: "white", strokeWidth: 30 }}
                     className="text-white text-xl border-2 border-white rounded-full w-9 h-8 p-1.5 flex items-center justify-center cursor-pointer transition-all active:scale-90"
                   />
                 </div>
@@ -260,7 +263,7 @@ export default function DareOverlay({
 
 
                     <div className="flex gap-2">
-                      <FaAngleLeft
+                      <FaChevronLeft
                         onClick={handlePrevGiftPage}
                         className={clsx(
                           "text-white text-xl border-2 border-white rounded-full w-5 h-5 md:w-7 md:h-7 p-[3px] flex items-center justify-center transition-all active:scale-90",
@@ -269,7 +272,7 @@ export default function DareOverlay({
                       />
 
 
-                      <FaAngleRight
+                      <FaChevronRight
                         onClick={handleNextGiftPage}
                         className={clsx(
                           "text-white text-xl border-2 border-white rounded-full w-5 h-5 md:w-7 md:h-7 p-[3px] flex items-center justify-center transition-all active:scale-90",
@@ -330,24 +333,36 @@ export default function DareOverlay({
         {stage === 2 && (
 
 
+
+
+
+
+
+
+
+
+
           <div className="absolute z-[65] md:bottom-[14vh] bottom-[13vh] left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
             <div
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[32px] p-6 relative overflow-hidden"
-              style={{
-                backgroundImage: "url(/assets/mb.jpg)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                opacity: 0.8,
-              }}
+              className="w-full max-w-[400px] border-2 bg-[#4E0093]/80 border-white md:rounded-[40px] rounded-[32px] p-6 relative overflow-hidden"
             >
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: "url(/popupbg.png)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.3, // decrease image opacity here
+                }}
+              />
               {/* Header Icons */}
               <div className="flex justify-between items-center relative z-10">
                 <button
                   className="text-white/85 z-10 cursor-pointer hover:text-white active:scale-95 transition"
                   onClick={() => setStage(1)}
                 >
-                  <FaAngleLeft className="text-2xl" />
+                  <FaRegBookmark className="text-xl" />
                 </button>
                 <button className="text-white/80 z-10">
                   <FaRegQuestionCircle className="text-white text-2xl cursor-pointer hover:text-white/80 transition" />
@@ -450,35 +465,44 @@ export default function DareOverlay({
             }
             onClick={() => onSendDare && onSendDare()}
             className={clsx(
-              "group relative flex items-center justify-center transition-all",
-              "w-[58px] h-[58px] sm:w-[68px] sm:h-[68px]",
-              dareAcceptanceStatus !== "accepted" ||
-                !hasSufficientCoins ||
-                !selectedGift
-                ? "opacity-40 grayscale"
+              "group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto transition-all",
+              (dareAcceptanceStatus !== "accepted" || !hasSufficientCoins || !selectedGift)
+                ? "opacity-60 grayscale-900"
                 : "hover:scale-105 active:scale-95"
             )}
           >
             <div
-              className={clsx(
-                "absolute inset-0 rounded-full flex items-center justify-center  border-2 sm:border-4 border-black/20",
-                dareAcceptanceStatus === "accepted"
-                  ? "bg-red-600"
-                  : "bg-gray-600"
-              )}
+              className=
+              "absolute inset-0 rounded-full flex items-center justify-center "
+
             >
-              <span className="text-white font-black text-[10px] sm:text-xs leading-[10px] sm:leading-[12px] rotate-[-12deg] uppercase tracking-tight text-center">
-                Send
-                <br />
-                Dare
-              </span>
+              <div
+                className="relative aspect-square  w-18 h-18 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
+              >
+                <img
+                  src="/circle.png"
+                  className="absolute inset-0 w-full h-full bg-red-900 rounded-full group-active:rotate-180"
+                  alt=""
+                />
+                <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80"> SEND <br />DARE</p>
+              </div>
             </div>
           </button>
         </div>
       </div>
 
+
+
+
+
+
+
+
+
+
+
       {/* Bottom Bar Mobile */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-6 md:hidden bg-[#4E0093]/20">
+      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center  justify-between w-full right-1 left-1 px-5 py-6 md:hidden bg-[#4E0093]/20 px-8">
         <div
           className="absolute inset-0 z-0 pointer-events-auto "
           style={{
@@ -542,14 +566,14 @@ export default function DareOverlay({
 
               >
                 <div
-                  className="relative md:w-14 md:h-14 w-12 h-12 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                  className="relative aspect-square md:w-14 md:h-14 w-18 h-18 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
                 >
                   <img
                     src="/circle.png"
-                    className="absolute inset-0 w-full h-full bg-red-900 rounded-full"
+                    className="absolute inset-0 w-full h-full bg-red-900 rounded-full group-active:rotate-180"
                     alt=""
                   />
-                  <p className="relative text-white rotate-[-12deg] text-[10px] leading-[9px] tracking-tighter font-otomanopee"> SEND <br />DARE</p>
+                  <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80"> SEND <br />DARE</p>
                 </div>
               </div>
             </button>

@@ -148,9 +148,13 @@ export default function CoinModal({ isOpen, onClose }) {
                 <div
                   key={pkg.id}
                   onClick={() => setSelectedPackage(pkg)}
-                  className={`relative group cursor-pointer rounded-[20px] border-2 transition-all p-4 md:py-6 flex flex-col items-center justify-center gap-1 ${selectedPackage === pkg
-                    ? 'border-[#7D40FF] '
-                    : 'border-white/40'
+                  className={`relative group cursor-pointer rounded-[20px] border-2 transition-all duration-300 hover:scale-[1.03] p-4 md:py-6 flex flex-col items-center justify-center gap-1
+  ${selectedPackage === pkg
+                      ? 'border-[#7D40FF]'
+                      : 'border-white/40'
+                    }
+  hover:bg-white/10
+  hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]
                     }`}
                 >
                   {/* Popular Tag */}
@@ -240,9 +244,26 @@ export default function CoinModal({ isOpen, onClose }) {
             </div>
             <button
               onClick={() => alert(`Proceeding to checkout for ₹${selectedPackage.price}...`)}
-              className="px-8 py-3 rounded-2xl border border-white/30 border-b-3 text-white font-bold text-base active:scale-95 transition-transform z-10"
+              className="
+    group
+    px-8 py-3
+    rounded-2xl
+    border border-white/30
+    border-b-3
+    text-white
+    font-bold
+    text-base
+    active:scale-95
+    hover:bg-white/20
+    hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]
+    transition-all
+    duration-300
+    z-10
+  "
             >
-              Checkout
+              <span className="transition-transform duration-300 group-hover:scale-105 inline-block">
+                Checkout
+              </span>
             </button>
           </div>
         )}

@@ -1,37 +1,95 @@
 import { useState, useEffect } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
+import { API, apiRequest } from '@/lib/api';
 
-const coinPackages = [
-  { coins: 100, price: 50, img: '/Coins/coin1.png' },
-  { coins: 200, price: 100, img: '/Coins/coin2.png' },
-  {
-    coins: 700,
-    price: 300,
-    originalPrice: 700,
-    discount: '10% off | Save ₹ 100',
-    popular: true,
-    img: '/Coins/coin3.png'
-  },
-  { coins: 450, price: 500, img: '/Coins/coin4.png' },
-  { coins: 2500, price: 1000, img: '/Coins/coin5.png' },
-  { coins: 12600, price: 5000, img: '/Coins/coin6.png' },
-  { coins: 25500, price: 10000, img: '/Coins/coin7.png' },
-  { coins: 33000, price: 12500, img: '/Coins/coin9.png' },
-  { coins: 53000, price: 20000, img: '/Coins/coin9.png' },
-];
+const coinPackageImages = {
+  coin_pack_100: '/Coins/coin1.png',
+  coin_pack_200: '/Coins/coin2.png',
+  coin_pack_700: '/Coins/coin3.png',
+  coin_pack_450: '/Coins/coin4.png',
+  coin_pack_2500: '/Coins/coin5.png',
+  coin_pack_12600: '/Coins/coin6.png',
+  coin_pack_25500: '/Coins/coin7.png',
+  coin_pack_33000: '/Coins/coin9.png',
+  coin_pack_53000: '/Coins/coin9.png',
+};
+
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const normalizeCoinPackage = (pkg, index) => {
+  const id = pkg.id || `coin_pack_${pkg.coins || index}`;
+  return {
+    id,
+    coins: toNumber(pkg.coins),
+    price: toNumber(pkg.price),
+    currency: pkg.currency || 'INR',
+    displayPrice: pkg.displayPrice,
+    originalPrice: pkg.originalPrice == null ? undefined : toNumber(pkg.originalPrice),
+    discount: pkg.discount,
+    popular: Boolean(pkg.popular),
+    sortOrder: toNumber(pkg.sortOrder || index + 1),
+    img: coinPackageImages[id],
+  };
+};
 
 export default function CoinModal({ isOpen, onClose }) {
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [coinPackages, setCoinPackages] = useState([]);
+  const [packageError, setPackageError] = useState(null);
 
   useEffect(() => {
+    let resetTimer;
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      setSelectedPackage(null);
+      resetTimer = window.setTimeout(() => setSelectedPackage(null), 0);
     } else {
       document.body.style.overflow = 'unset';
     }
+
     return () => {
+      if (resetTimer) window.clearTimeout(resetTimer);
       document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    apiRequest(API.PAYMENTS.GET_COIN_PACKAGES)
+      .then((data) => {
+        const backendPackages = Array.isArray(data?.packages) ? data.packages : [];
+        if (!backendPackages.length || cancelled) {
+          throw new Error('No coin packages returned from backend');
+        }
+
+        const normalizedPackages = backendPackages
+          .map(normalizeCoinPackage)
+          .filter((pkg) => pkg.id && pkg.coins > 0 && pkg.price > 0)
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+
+        if (!normalizedPackages.length) {
+          throw new Error('No valid coin packages returned from backend');
+        }
+
+        setPackageError(null);
+        setCoinPackages(normalizedPackages);
+      })
+      .catch((error) => {
+        console.error('Failed to load coin packages from backend:', error);
+        if (!cancelled) {
+          setPackageError('Could not load coin packages. Please try again.');
+          setCoinPackages([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
   }, [isOpen]);
 
@@ -80,9 +138,15 @@ export default function CoinModal({ isOpen, onClose }) {
           <div className=' border md:border-0  md:mb-0 rounded-[30px] border-white/30 overflow-y-auto md:overflow-visible scrollbar-hide'>
             {/* Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-3 py-4 md:px-0 md:py-0">
-              {coinPackages.map((pkg, index) => (
+              {coinPackages.length === 0 && (
+                <div className="col-span-2 md:col-span-3 min-h-[280px] flex items-center justify-center text-center text-white/80 font-outfit text-sm px-6">
+                  {packageError || 'Loading coin packages...'}
+                </div>
+              )}
+
+              {coinPackages.map((pkg) => (
                 <div
-                  key={index}
+                  key={pkg.id}
                   onClick={() => setSelectedPackage(pkg)}
                   className={`relative group cursor-pointer rounded-[20px] border-2 transition-all p-4 md:py-6 flex flex-col items-center justify-center gap-1 ${selectedPackage === pkg
                     ? 'border-[#7D40FF] '
@@ -98,11 +162,13 @@ export default function CoinModal({ isOpen, onClose }) {
 
                   {/* Coin Image */}
                   <div className="relative w-12 h-12 mb-1">
-                    <img
-                      src={pkg.img}
-                      alt={`${pkg.coins} coins`}
-                      className="w-full h-full object-contain drop-shadow-lg"
-                    />
+                    {pkg.img && (
+                      <img
+                        src={pkg.img}
+                        alt={`${pkg.coins} coins`}
+                        className="w-full h-full object-contain drop-shadow-lg"
+                      />
+                    )}
                   </div>
 
                   {/* Grouped Info for tighter spacing */}

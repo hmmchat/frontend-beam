@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect, useRef } from "react";
 import clsx from "clsx";
-import GiftAnimation from "./GiftAnimation";
+import { GiftAnimationGroup } from "./GiftAnimation";
 
 export default function LocalVideoSection({
   localVideoRef,
@@ -29,6 +29,7 @@ export default function LocalVideoSection({
   hideAllControls = false,
   selectedGiftId,
   gift,
+  gifts,
   onGiftAnimationComplete,
   forceDismiss,
   isGroupCall = false,
@@ -94,8 +95,8 @@ export default function LocalVideoSection({
           )}
         />
 
-        <GiftAnimation
-          gift={gift}
+        <GiftAnimationGroup
+          gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
           onComplete={onGiftAnimationComplete}
           persistUntilDismissed={true}
           forceDismiss={forceDismiss}

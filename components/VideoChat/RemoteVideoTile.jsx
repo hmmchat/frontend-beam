@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import GiftAnimation from './GiftAnimation';
+import { GiftAnimationGroup } from './GiftAnimation';
 
 export default function RemoteVideoTile({
   userId,
@@ -41,6 +41,7 @@ export default function RemoteVideoTile({
   onClickMultiUserAvatars,
   onReportClick,
   gift,
+  gifts,
   onGiftAnimationComplete,
   forceDismiss,
   showMinusButton = false,
@@ -545,8 +546,8 @@ export default function RemoteVideoTile({
         borderBottomClass
       )} />
 
-      <GiftAnimation
-        gift={gift}
+      <GiftAnimationGroup
+        gifts={(Array.isArray(gifts) ? gifts : gift ? [gift] : []).map((giftItem) => giftItem.gift || giftItem)}
         onComplete={onGiftAnimationComplete}
         persistUntilDismissed={true}
         forceDismiss={forceDismiss}

@@ -120,8 +120,8 @@ export default function useVideoChat() {
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isDareOpen, setIsDareOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
-  const [activeRemoteGift, setActiveRemoteGift] = useState(null);
-  const [activeLocalGift, setActiveLocalGift] = useState(null);
+  const [activeRemoteGifts, setActiveRemoteGifts] = useState([]);
+  const [activeLocalGifts, setActiveLocalGifts] = useState([]);
   const [activeDareProposal, setActiveDareProposal] = useState(null);
   const [dareAcceptanceStatus, setDareAcceptanceStatus] = useState('idle');
   const [randomDares, setRandomDares] = useState([]);
@@ -1182,8 +1182,8 @@ export default function useVideoChat() {
             }
           } else if (controlParsed.isGiftDismissed) {
             const { messageId } = controlParsed;
-            setActiveRemoteGift(prev => prev && prev.gift?.messageId === messageId ? { ...prev, isDismissed: true } : prev);
-            setActiveLocalGift(prev => prev && prev.messageId === messageId ? { ...prev, isDismissed: true } : prev);
+            setActiveRemoteGifts(prev => prev.map(item => item.gift?.messageId === messageId ? { ...item, isDismissed: true } : item));
+            setActiveLocalGifts(prev => prev.map(item => item.messageId === messageId ? { ...item, isDismissed: true } : item));
           } else if (controlParsed.isGift) {
             const messageId = data.id || data.messageId || controlParsed.messageId || Date.now().toString();
             let isProcessed = false;
@@ -1191,8 +1191,11 @@ export default function useVideoChat() {
             if (!isProcessed) {
               const { gift, targetUserId, senderId } = controlParsed;
               const giftObj = { ...gift, messageId, targetUserId, senderId };
-              if (String(targetUserId) === String(myId)) setActiveLocalGift({ ...giftObj, isDismissed: false });
-              else setActiveRemoteGift({ gift: giftObj, targetUserId: String(targetUserId), isDismissed: false });
+              if (String(targetUserId) === String(myId)) {
+                setActiveLocalGifts(prev => [...prev, { ...giftObj, isDismissed: false }]);
+              } else {
+                setActiveRemoteGifts(prev => [...prev, { gift: giftObj, targetUserId: String(targetUserId), isDismissed: false }]);
+              }
             }
           }
           break;
@@ -1559,19 +1562,23 @@ export default function useVideoChat() {
   };
 
   // ---- Gift callbacks ------------------------------------------------------
-  const handleLocalGiftComplete = useCallback(() => {
-    if (activeLocalGift?.messageId && roomInfoRef.current?.roomId) {
-      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeLocalGift.messageId, targetUserId: activeLocalGift.targetUserId }) } });
+  const handleLocalGiftComplete = useCallback((gift) => {
+    const messageId = typeof gift === 'string' ? gift : gift?.messageId;
+    const targetUserId = gift?.targetUserId;
+    if (messageId && roomInfoRef.current?.roomId) {
+      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId, targetUserId }) } });
     }
-    setActiveLocalGift(null);
-  }, [activeLocalGift]);
+    setActiveLocalGifts(prev => prev.filter(item => item.messageId !== messageId));
+  }, []);
 
-  const handleRemoteGiftComplete = useCallback(() => {
-    if (activeRemoteGift?.gift?.messageId && activeRemoteGift?.gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
-      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId: activeRemoteGift.gift.messageId, targetUserId: activeRemoteGift.gift.targetUserId }) } });
+  const handleRemoteGiftComplete = useCallback((giftEntry) => {
+    const gift = giftEntry?.gift || giftEntry;
+    const messageId = typeof giftEntry === 'string' ? giftEntry : gift?.messageId;
+    if (messageId && gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
+      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId, targetUserId: gift.targetUserId }) } });
     }
-    setActiveRemoteGift(null);
-  }, [activeRemoteGift]);
+    setActiveRemoteGifts(prev => prev.filter(item => item.gift?.messageId !== messageId));
+  }, []);
 
   const handleSendGift = useCallback(async (gift, targetUserId) => {
     const senderId = userIdRef.current;
@@ -1747,8 +1754,8 @@ export default function useVideoChat() {
     chatMessages, chatInput, setChatInput, sendChatMessage, showChatInput, setShowChatInput,
     onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
     isDareOpen, setIsDareOpen: openDareOverlay, setIsCoinModalOpen, coins, selectedGiftId,
-    gift: activeLocalGift, onGiftAnimationComplete: handleLocalGiftComplete,
-    forceDismiss: activeLocalGift?.isDismissed, hideAllControls: !!activeDareProposal,
+    gift: activeLocalGifts[0] || null, gifts: activeLocalGifts, onGiftAnimationComplete: handleLocalGiftComplete,
+    forceDismiss: activeLocalGifts[0]?.isDismissed, hideAllControls: !!activeDareProposal,
     isGroupCall: remoteStreams.length > 1,
   };
 
@@ -1767,7 +1774,9 @@ export default function useVideoChat() {
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,
-    selectedGiftId, setSelectedGiftId, activeRemoteGift, activeLocalGift,
+    selectedGiftId, setSelectedGiftId,
+    activeRemoteGift: activeRemoteGifts[0] || null, activeLocalGift: activeLocalGifts[0] || null,
+    activeRemoteGifts, activeLocalGifts,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
     giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,

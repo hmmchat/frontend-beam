@@ -135,6 +135,7 @@ function VideoChatContent() {
               leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
+              showParticipantNextButton={!callRoles.isLocalHost}
               gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
               onGiftAnimationComplete={handleRemoteGiftComplete}
               onGiftDismissStart={handleRemoteGiftDismissStart}
@@ -173,6 +174,7 @@ function VideoChatContent() {
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
               hideNameOnMobile={true}
+              showParticipantNextButton={!callRoles.isLocalHost}
               gift={activeRemoteGift?.targetUserId === remoteStreams[0]?.userId ? activeRemoteGift?.gift : null}
               onGiftAnimationComplete={handleRemoteGiftComplete}
               onGiftDismissStart={handleRemoteGiftDismissStart}
@@ -202,6 +204,7 @@ function VideoChatContent() {
                   hideAddFriendOnMobile={true}
                   hideReportOnMobile={true}
                   hideReport={!remoteStreams[1]}
+                  showParticipantNextButton={!callRoles.isLocalHost && !!remoteStreams[1]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   onGiftDismissStart={handleRemoteGiftDismissStart}
@@ -258,6 +261,7 @@ function VideoChatContent() {
                 onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
                 hideReportOnMobile={true}
                 showMinusButton={false}
+                showParticipantNextButton={!callRoles.isLocalHost}
                 onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               />
               <RemoteVideoTile
@@ -279,6 +283,7 @@ function VideoChatContent() {
                 borderBottomClass="md:bottom-4"
                 hideNameOnMobile={true}
                 hideAddFriendOnMobile={true}
+                showParticipantNextButton={!callRoles.isLocalHost}
                 gift={activeRemoteGift?.targetUserId === remoteStreams[1]?.userId ? activeRemoteGift?.gift : null}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
                 onGiftDismissStart={handleRemoteGiftDismissStart}
@@ -303,6 +308,7 @@ function VideoChatContent() {
                   hideAddFriendOnMobile={true}
                   hideReportOnMobile={true}
                   hideReport={!remoteStreams[2]}
+                  showParticipantNextButton={!callRoles.isLocalHost && !!remoteStreams[2]}
                   gift={activeRemoteGift?.targetUserId === remoteStreams[2]?.userId ? activeRemoteGift?.gift : null}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   onGiftDismissStart={handleRemoteGiftDismissStart}

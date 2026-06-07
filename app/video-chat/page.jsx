@@ -48,7 +48,7 @@ function VideoChatContent() {
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen,
-    selectedGiftId, setSelectedGiftId, activeRemoteGifts,
+    selectedGiftId, setSelectedGiftId, activeRemoteGifts, activeLocalGifts,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
     giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
     waitlist, waitlistLoading, waitlistError,
@@ -83,12 +83,26 @@ function VideoChatContent() {
   const getRemoteGifts = (userId) =>
     (activeRemoteGifts || []).filter((item) => String(item.targetUserId) === String(userId));
 
+  const getRemoteActiveDareText = (userId) => {
+    if (!userId) return undefined;
+    const dareGift = (activeRemoteGifts || []).find(g => String(g.targetUserId) === String(userId) && g.gift?.isDare && !g.isDismissed);
+    return dareGift?.gift?.dareText || dareGift?.dareText;
+  };
+
+  const activeLocalDare = (activeLocalGifts || []).find(g => g.isDare && !g.isDismissed);
+  const activeLocalDareText = activeLocalDare?.dareText;
+
+  const hasActiveDare = (activeRemoteGifts || []).some(g => g.gift?.isDare && !g.isDismissed) || !!activeLocalDareText;
+
   return (
-    <div className={clsx('h-dvh', 'w-screen', 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans')}>
+    <div className={clsx('h-dvh', 'w-screen', hasActiveDare ? 'bg-[#8A1515]' : 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans', 'transition-colors', 'duration-500')}>
 
       {/* Background */}
       <div
-        className="absolute inset-0 z-0"
+        className={clsx(
+          "absolute inset-0 z-0 transition-opacity duration-500",
+          hasActiveDare ? "opacity-0" : "opacity-100"
+        )}
         style={{ backgroundImage: 'url(/assets/mb.jpg)', backgroundRepeat: 'repeat', backgroundSize: 'cover' }}
       />
 
@@ -138,9 +152,11 @@ function VideoChatContent() {
               isRainchecking={isRainchecking}
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+              activeLocalDareText={activeLocalDareText}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
-              <LocalVideoSection {...localVideoProps} />
+              <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} />
             </div>
           </>
 
@@ -179,6 +195,8 @@ function VideoChatContent() {
               onReportClick={() => setShowGroupMembersModal(true)}
               showMinusButton={false}
               onMinus={() => handleKickRemote(remoteStreams[0].userId)}
+              activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+              activeLocalDareText={activeLocalDareText}
             />
             <div className="flex min-h-0 min-w-0 flex-1 md:flex-col md:gap-2">
               <div className="flex-1 min-h-0 min-w-0 relative">
@@ -204,6 +222,7 @@ function VideoChatContent() {
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
+                  activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1]?.userId)}
                 />
                 {!remoteStreams[1] && (
                   <SummoningOverlay
@@ -214,7 +233,7 @@ function VideoChatContent() {
                 )}
               </div>
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} />
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} />
               </div>
             </div>
           </>
@@ -224,8 +243,7 @@ function VideoChatContent() {
           /* ---- Grid Layout (4 participants): 2×2 ---- */
           <>
             <VideoChatMask slots={4} />
-            <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-[58.2%] md:grid-rows-2 md:gap-2">
-              <RemoteVideoTile
+            <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-[58.2%] md:grid-rows-2 md:gap-2">              <RemoteVideoTile
                 key={`remote-${remoteStreams[0].userId}`}
                 userId={remoteStreams[0].userId}
                 isReported={reportedUserIds.has(remoteStreams[0].userId)}
@@ -252,6 +270,8 @@ function VideoChatContent() {
                 hideReportOnMobile={true}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[0].userId)}
+                activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+                activeLocalDareText={activeLocalDareText}
               />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}
@@ -276,6 +296,7 @@ function VideoChatContent() {
                 onGiftAnimationComplete={handleRemoteGiftComplete}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
+                activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1].userId)}
               />
               <div className="relative">
                 <RemoteVideoTile
@@ -299,6 +320,7 @@ function VideoChatContent() {
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}
+                  activeRemoteDareText={getRemoteActiveDareText(remoteStreams[2]?.userId)}
                 />
                 {!remoteStreams[2] && (
                   <SummoningOverlay
@@ -309,7 +331,7 @@ function VideoChatContent() {
                 )}
               </div>
               <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} />
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} />
               </div>
             </div>
           </>

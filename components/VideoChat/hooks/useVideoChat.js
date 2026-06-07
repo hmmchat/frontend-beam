@@ -1189,8 +1189,8 @@ export default function useVideoChat() {
             let isProcessed = false;
             if (messageId) { if (processedGiftIdsRef.current.has(messageId)) isProcessed = true; else processedGiftIdsRef.current.add(messageId); }
             if (!isProcessed) {
-              const { gift, targetUserId, senderId } = controlParsed;
-              const giftObj = { ...gift, messageId, targetUserId, senderId };
+              const { gift, targetUserId, senderId, isDare, dareText } = controlParsed;
+              const giftObj = { ...gift, messageId, targetUserId, senderId, isDare, dareText };
               if (String(targetUserId) === String(myId)) {
                 setActiveLocalGifts(prev => [...prev, { ...giftObj, isDismissed: false }]);
               } else {

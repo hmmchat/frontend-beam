@@ -170,7 +170,7 @@ function VideoChatContent() {
 
           /* ---- 1:1 Matched Layout ---- */
           <>
-            <VideoChatMask slots={2} giftAnimationActive={hasActiveGift} />
+            <VideoChatMask slots={2} giftAnimationActive={hasActiveGift || hasActiveDare} />
             <RemoteVideoTile
               className={clsx('h-[58%]', 'md:h-auto', 'md:flex-1')}
               key={`remote-${remoteStreams[0].userId}`}
@@ -194,7 +194,7 @@ function VideoChatContent() {
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
               activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
               activeLocalGiftLabel={activeLocalGiftLabel}
-              giftAnimationActive={hasActiveGift}
+              giftAnimationActive={hasActiveGift || hasActiveDare}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
               <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
@@ -205,7 +205,7 @@ function VideoChatContent() {
 
           /* ---- 3-User Layout ---- */
           <>
-            <VideoChatMask slots={3} giftAnimationActive={hasActiveGift} />
+            <VideoChatMask slots={3} giftAnimationActive={hasActiveGift || hasActiveDare} />
             <RemoteVideoTile
               className={clsx('h-[58.2%]', 'md:h-auto', 'md:flex-1')}
               key={`remote-${remoteStreams[0].userId}`}
@@ -240,6 +240,7 @@ function VideoChatContent() {
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
               activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
               activeLocalGiftLabel={activeLocalGiftLabel}
+              giftAnimationActive={hasActiveGift || hasActiveDare}
             />
             <div className={clsx('flex', 'min-h-0', 'min-w-0', 'flex-1', 'md:flex-col', 'md:gap-2')}>
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative')}>
@@ -286,7 +287,7 @@ function VideoChatContent() {
 
           /* ---- Grid Layout (4 participants): 2×2 ---- */
           <>
-            <VideoChatMask slots={4} giftAnimationActive={hasActiveGift} />
+            <VideoChatMask slots={4} giftAnimationActive={hasActiveGift || hasActiveDare} />
             <div className={clsx('grid', 'min-h-0', 'min-w-0', 'flex-1', 'grid-cols-2', 'grid-rows-[58.2%]', 'md:grid-rows-2', 'md:gap-2')}>              <RemoteVideoTile
               key={`remote-${remoteStreams[0].userId}`}
               userId={remoteStreams[0].userId}
@@ -318,6 +319,7 @@ function VideoChatContent() {
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
               activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
               activeLocalGiftLabel={activeLocalGiftLabel}
+              giftAnimationActive={hasActiveGift || hasActiveDare}
             />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}
@@ -432,7 +434,7 @@ function VideoChatContent() {
             setIsRolling={setIsRolling}
             isBroken={isBroken}
             setIsBroken={setIsBroken}
-            giftAnimationActive={hasActiveGift}
+            giftAnimationActive={hasActiveGift || hasActiveDare}
           />
         )}
 

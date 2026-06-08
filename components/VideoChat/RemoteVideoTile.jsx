@@ -607,18 +607,20 @@ export default function RemoteVideoTile({
         borderBottomClass
       )} />
 
-      <GiftAnimationGroup
-        gifts={(Array.isArray(gifts) ? gifts : gift ? [gift] : []).map((giftItem) => {
-          const inner = giftItem.gift || giftItem;
-          // Merge wrapper-level isDismissed into the inner gift so GiftAnimationGroup can see it
-          return giftItem.gift ? { ...inner, isDismissed: giftItem.isDismissed ?? inner.isDismissed } : inner;
-        })}
-        onComplete={onGiftAnimationComplete}
-        onDismissStart={onGiftDismissStart}
-        persistUntilDismissed={true}
-        forceDismiss={forceDismiss}
-        interactive={false}
-      />
+      <div className="absolute top-2 left-2 right-2 bottom-2 md:top-4 md:left-4 md:right-4 md:bottom-4 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]">
+        <GiftAnimationGroup
+          gifts={(Array.isArray(gifts) ? gifts : gift ? [gift] : []).map((giftItem) => {
+            const inner = giftItem.gift || giftItem;
+            // Merge wrapper-level isDismissed into the inner gift so GiftAnimationGroup can see it
+            return giftItem.gift ? { ...inner, isDismissed: giftItem.isDismissed ?? inner.isDismissed } : inner;
+          })}
+          onComplete={onGiftAnimationComplete}
+          onDismissStart={onGiftDismissStart}
+          persistUntilDismissed={true}
+          forceDismiss={forceDismiss}
+          interactive={false}
+        />
+      </div>
     </div>
   );
 }

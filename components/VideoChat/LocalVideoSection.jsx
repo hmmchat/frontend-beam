@@ -99,13 +99,15 @@ export default function LocalVideoSection({
           )}
         />
 
-        <GiftAnimationGroup
-          gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
-          onComplete={onGiftAnimationComplete}
-          onDismissStart={onGiftDismissStart}
-          persistUntilDismissed={true}
-          forceDismiss={forceDismiss}
-        />
+        <div className="absolute top-2 left-2 right-2 bottom-2 md:top-4 md:left-4 md:right-4 md:bottom-4 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]">
+          <GiftAnimationGroup
+            gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
+            onComplete={onGiftAnimationComplete}
+            onDismissStart={onGiftDismissStart}
+            persistUntilDismissed={true}
+            forceDismiss={forceDismiss}
+          />
+        </div>
 
         {activeLocalDareText && (
           <div className={clsx('hidden', 'md:block', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>

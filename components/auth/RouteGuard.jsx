@@ -42,7 +42,14 @@ export default function RouteGuard({ children }) {
   useEffect(() => {
     if (isPublicPath(pathname)) return;
     if (!hasValidToken()) {
-      router.replace("/");
+      // Token missing or expired — only redirect if there's truly no token at all.
+      // An expired token might still be refreshable; don't immediately log out.
+      const token = localStorage.getItem("accessToken");
+      if (!token || token === "null" || token === "undefined") {
+        router.replace("/");
+      }
+      // If token exists but is expired, let the API call fail with 401
+      // and ProfileGuard / the API layer will handle the redirect cleanly.
     }
   }, [pathname, router]);
 

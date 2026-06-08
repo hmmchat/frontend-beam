@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 
 export default function ProfileGuard({ children }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
@@ -40,14 +39,16 @@ export default function ProfileGuard({ children }) {
           clearPendingReferralCode();
           router.replace('/');
         } else {
-          // Network error or unknown — redirect home to be safe
-          router.replace('/');
+          // Network error or unknown — don't redirect, user is still authed
+          // Just show the page; the token is present and not explicitly rejected
+          setAuthorized(true);
         }
       }
     };
 
     checkProfile();
-  }, [pathname, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount only — not on every pathname change
 
   // Don't render children until we've confirmed the user is authed + profile complete.
   // This prevents any flash of the protected page content before redirect fires.

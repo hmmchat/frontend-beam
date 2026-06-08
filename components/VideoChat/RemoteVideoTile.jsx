@@ -233,7 +233,7 @@ export default function RemoteVideoTile({
             onClick={onNext}
             disabled={isRainchecking}
             className={clsx(
-              "absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
+              "pointer-events-auto absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
               "transition-all duration-300",
               areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
@@ -253,7 +253,7 @@ export default function RemoteVideoTile({
             onClick={() => router.push('/video-chat?searching=1')}
             disabled={isRainchecking}
             className={clsx(
-              "absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
+              "pointer-events-auto absolute md:top-13 top-6 md:right-10 right-6 z-20 md:w-12 w-10 h-10 md:h-12 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
               "transition-all duration-300",
               areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
@@ -272,7 +272,7 @@ export default function RemoteVideoTile({
         {/* Leave Button — top right (shifted left if Next is shown) */}
         {showLeaveNextButton && onLeaveOrNext && (
           <div className={clsx(
-            "absolute md:top-13 top-6 z-20",
+            "pointer-events-auto absolute md:top-13 top-6 z-20",
             (showNextButton && onNext) ? "md:right-25 right-18" : "md:right-10 right-6",
             "transition-all duration-300",
             areControlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -320,7 +320,7 @@ export default function RemoteVideoTile({
             onClick={onMinus}
             disabled={isRainchecking}
             className={clsx(
-              "absolute z-20 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
+              "pointer-events-auto absolute z-20 rounded-full outline outline-[1.5px] outline-white/40 bg-slate-900/20 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-40",
               "md:top-13 md:w-12 md:h-12 md:left-auto md:translate-x-0 md:translate-y-0",
               (showLeaveNextButton && onLeaveOrNext) ? "md:right-40" : "md:right-25",
               "w-10 h-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -355,7 +355,7 @@ export default function RemoteVideoTile({
             disabled={isReported}
             onClick={() => onReportClick ? onReportClick() : setShowReportModal(true)}
             className={clsx(
-              "absolute md:top-13 top-6 z-20 md:w-12 md:h-12 w-10 h-10 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-[1.5px] outline-white/40 flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-50",
+              "pointer-events-auto absolute md:top-13 top-6 z-20 md:w-12 md:h-12 w-10 h-10 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-[1.5px] outline-white/40 flex items-center justify-center transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 disabled:opacity-50",
               ((showNextButton && onNext) && (showLeaveNextButton && onLeaveOrNext)) ? "md:right-40 right-30" :
                 ((showNextButton && onNext) || (showLeaveNextButton && onLeaveOrNext) || showParticipantNextButton) ? "md:right-25 right-18" :
                   "md:right-10 right-6",
@@ -381,7 +381,7 @@ export default function RemoteVideoTile({
 
         {/* Report Modal */}
         {showReportModal && (
-          <div className={clsx('absolute', 'inset-0', 'top-14', 'md:top-0', 'z-50', 'flex', 'items-center', 'justify-center', 'p-6', 'font-otomanopee')} onClick={() => !isReporting && setShowReportModal(false)}>
+          <div className={clsx('pointer-events-auto', 'absolute', 'inset-0', 'top-14', 'md:top-0', 'z-50', 'flex', 'items-center', 'justify-center', 'p-6', 'font-otomanopee')} onClick={() => !isReporting && setShowReportModal(false)}>
             <div className={clsx('w-full', 'max-w-[320px]', 'space-y-1', 'animate-in', 'fade-in', 'zoom-in', 'duration-300')} onClick={e => e.stopPropagation()}>
 
               {/* Pill Header */}
@@ -444,7 +444,7 @@ export default function RemoteVideoTile({
         )}
 
         <div className={clsx(
-          'absolute', 'md:top-12', 'top-6', 'md:left-12', 'left-6', 'flex', 'items-center', 'justify-between', 'z-10',
+          'pointer-events-auto', 'absolute', 'md:top-12', 'top-6', 'md:left-12', 'left-6', 'flex', 'items-center', 'justify-between', 'z-10',
           'transition-opacity', 'duration-300',
           giftAnimationActive ? 'md:opacity-100 opacity-0 pointer-events-none' : 'opacity-100'
         )}>

@@ -170,11 +170,11 @@ const FacecardProfile = ({
 
       <div
         data-facecard-boundary="true"
-        className="w-[85vw] aspect-[366/690] max-w-[360px] 
+        className="w-[340px] h-[663px] md:h-[688px]  max-w-[360px] 
                 sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[346/660] shrink-0 rounded-[30px] 
-                border border-white/40 p-[2px]
-                md:border-0 md:p-0"
+           shrink-0 rounded-[30px] 
+            
+               "
       >
         <div className="relative h-full w-full overflow-hidden rounded-[28px]">
           {/* HEADER */}
@@ -287,8 +287,8 @@ const FacecardProfile = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
-                  <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                <div className="flex w-[100%] shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                  <div className=" w-[100%] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}

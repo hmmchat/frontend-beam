@@ -27,8 +27,9 @@ export default function ProfileMobileAccount({
         <p className="text-base">My account</p>
       </div>
       {user ? (
-        <div className="flex justify-center  w-full">
-          <div ref={facecardExportRef} className=" origin-top">
+        <div className="flex justify-center  w-full  ">
+          <div ref={facecardExportRef} className="scale-90 origin-top  
+      ">
             <FacecardProfile
               user={{
                 ...user,

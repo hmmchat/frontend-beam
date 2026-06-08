@@ -125,7 +125,7 @@ export default function ProfileMobile() {
     const fileName = `${firstName}_facecard.jpeg`;
     const transparentPixel =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ2Z2sQAAAAASUVORK5CYII=";
-    
+
     const triggerDownload = (dataUrl) => {
       if (!dataUrl) return false;
       const link = document.createElement("a");
@@ -246,20 +246,20 @@ export default function ProfileMobile() {
 
       {/* Main Content Areas */}
       {activeTab === "prompts" && (
-        <ProfileMobilePrompts 
-          onBack={() => setActiveTab("main")} 
+        <ProfileMobilePrompts
+          onBack={() => setActiveTab("main")}
           user={user}
           setUser={setUser}
         />
       )}
 
       {activeTab === "rewards" && (
-        <ProfileMobileRewards onBack={() => setActiveTab("main")}  />
+        <ProfileMobileRewards onBack={() => setActiveTab("main")} />
       )}
 
       {activeTab === "getmoney" && (
-        <ProfileMobileGetMoney 
-          onBack={() => setActiveTab("main")} 
+        <ProfileMobileGetMoney
+          onBack={() => setActiveTab("main")}
           walletSnapshot={walletSnapshot}
           moneyModel={moneyModel}
           handleAdRewardGranted={handleAdRewardGranted}
@@ -267,7 +267,7 @@ export default function ProfileMobile() {
       )}
 
       {activeTab === "facePreview" && (
-        <ProfileMobileAccount 
+        <ProfileMobileAccount
           onBack={() => setActiveTab("main")}
           user={user}
           age={age}
@@ -280,7 +280,7 @@ export default function ProfileMobile() {
       )}
 
       {(activeTab === "main" || activeTab === "stickers") && (
-        <ProfileMobileMain 
+        <ProfileMobileMain
           router={router}
           user={user}
           displayName={displayName}
@@ -292,7 +292,7 @@ export default function ProfileMobile() {
       )}
 
 
-      <ProfileMobileStickers 
+      <ProfileMobileStickers
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         selectedSticker={selectedSticker}

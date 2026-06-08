@@ -33,6 +33,7 @@ export default function LocalVideoSection({
   onGiftAnimationComplete,
   forceDismiss,
   isGroupCall = false,
+  activeLocalDareText,
 }) {
   const chatContainerRef = useRef(null);
 
@@ -101,6 +102,13 @@ export default function LocalVideoSection({
           persistUntilDismissed={true}
           forceDismiss={forceDismiss}
         />
+
+        {activeLocalDareText && (
+          <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
+            <span className="opacity-90">Your Dare: </span>
+            <span className="font-bold">{activeLocalDareText}</span>
+          </div>
+        )}
 
         {isCamOff && (
           <div

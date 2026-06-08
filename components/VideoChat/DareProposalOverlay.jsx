@@ -2,6 +2,7 @@
 
 import React from "react";
 import clsx from "clsx";
+import { FaRegBookmark, FaRegQuestionCircle } from "react-icons/fa";
 
 export default function DareProposalOverlay({
   proposal,
@@ -21,11 +22,11 @@ export default function DareProposalOverlay({
     <>
       <div className="fixed inset-0 z-[60]" />
 
-      <div className="absolute z-[65] md:bottom-8 bottom-6 left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
+      <div className="absolute z-[65] md:bottom-8 bottom-[6vh] left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
 
         {/* Modal Container */}
         <div
-          className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[32px] p-6  relative overflow-hidden  pointer-events-auto"
+          className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[26px] px-5 py-4  relative overflow-hidden  pointer-events-auto"
           style={{
             backgroundImage: "url(/assets/mb.jpg)",
             backgroundSize: "cover",
@@ -34,21 +35,21 @@ export default function DareProposalOverlay({
           }}
         >
           {/* Header Icons */}
-          <div className="flex justify-between items-center  relative z-10">
-            <div className="w-6 h-6" />
-            <button className="text-white/80">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-              </svg>
+          <div className="flex justify-between items-center relative z-10 px-2">
+            <button className="text-white/85 z-10">
+              <FaRegBookmark className="text-[20px] md:text-[26.8]" />
+            </button>
+            <button className="text-white/80 z-10">
+              <FaRegQuestionCircle className="text-white text-[22px] md:text-[28] cursor-pointer hover:text-white/80 transition" />
             </button>
           </div>
 
           {/* Dare Info */}
-          <div className="text-center relative z-10 px-4 mb-2">
-            <p className="text-[11px] text-white/90 font-medium mb-2">
+          <div className="text-center relative z-10 px-4 mb-2 ">
+            <p className="md:text-[11px] text-[10px] text-white/90 font-medium mb-2">
               {proposal.senderName || "Someone"} is Daring you to
             </p>
-            <div className="inline-block px-8 w-[80%] py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm  whitespace-nowrap">
+            <div className="inline-block px-8 w-[80%] py-1.5 border border-white/60 rounded-full text-white md:text-md text-xs  whitespace-nowrap font-otomanopee">
               {proposal.dareText || "Do a dare"}
             </div>
           </div>
@@ -90,13 +91,13 @@ export default function DareProposalOverlay({
         </div>
 
         {hasAccepted ? (
-          <div className="flex justify-center items-center w-[350px] mt-3 z-10 pointer-events-auto">
+          <div className="flex justify-center items-center w-[350px] mt-2 z-10 pointer-events-auto">
             <div className="w-full text-center py-3.5 px-6 bg-black/60 border border-white/20 rounded-full text-white font-bold text-sm backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200">
               Waiting for {proposal.senderName || "Someone"}.
             </div>
           </div>
         ) : (
-          <div className="flex justify-between items-center gap-3 relative w-[350px] mt-3 z-10 pointer-events-auto">
+          <div className="flex justify-between items-center gap-3 relative w-[350px] mt-2 z-10 pointer-events-auto">
             <button
               onClick={onReject}
               style={{

@@ -67,6 +67,12 @@ export default function DareOverlay({
     }
   }, [activeDare]);
 
+  useEffect(() => {
+    if (isOpen && !selectedGiftId && giftItems.length > 0 && onSelectGift) {
+      onSelectGift(giftItems[0].id);
+    }
+  }, [isOpen, selectedGiftId, giftItems, onSelectGift]);
+
   const selectedGift = giftItems.find((g) => g.id === selectedGiftId);
 
   useEffect(() => {
@@ -464,27 +470,41 @@ export default function DareOverlay({
               !selectedGift
             }
             onClick={() => onSendDare && onSendDare()}
-            className={clsx(
-              "group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto transition-all",
-              (dareAcceptanceStatus !== "accepted" || !hasSufficientCoins || !selectedGift)
-                ? "opacity-60 grayscale-900"
-                : "hover:scale-105 active:scale-95"
-            )}
+            className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
           >
-            <div
-              className=
-              "absolute inset-0 rounded-full flex items-center justify-center "
-
-            >
+            <div className="absolute inset-0 rounded-full flex items-center justify-center">
               <div
-                className="relative aspect-square  w-18 h-18 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                className={clsx(
+                  "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
+                  dareAcceptanceStatus !== "accepted" ||
+                    !hasSufficientCoins ||
+                    !selectedGift
+                    ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
+                    : "border-[#13133b] bg-red-900 "
+                )}
               >
-                <img
-                  src="/circle.png"
-                  className="absolute inset-0 w-full h-full bg-red-900 rounded-full group-active:rotate-180"
-                  alt=""
-                />
-                <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80"> SEND <br />DARE</p>
+                {dareAcceptanceStatus === "accepted" &&
+                  hasSufficientCoins &&
+                  selectedGift && (
+                    <img
+                      src="/circle.png"
+                      className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
+                      alt=""
+                    />
+                  )}
+
+                <p
+                  className={clsx(
+                    "relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80 ",
+                    dareAcceptanceStatus === "accepted" &&
+                    hasSufficientCoins &&
+                    selectedGift &&
+                    "group-active:scale-80"
+                  )}
+                >
+                  SEND <br />
+                  DARE
+                </p>
               </div>
             </div>
           </button>

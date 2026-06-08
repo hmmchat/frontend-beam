@@ -52,7 +52,6 @@ export default function RemoteVideoTile({
   activeBadge,
   showParticipantNextButton = false,
   activeRemoteDareText,
-  activeLocalDareText,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -170,7 +169,7 @@ export default function RemoteVideoTile({
     <div
       onTouchStart={handleTouch}
       onTouchMove={handleTouch}
-      className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden', 'border', 'border-white/5', 'shadow-2xl')}
+      className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden',)}
     >
       {activeRemoteDareText && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
@@ -179,12 +178,6 @@ export default function RemoteVideoTile({
         </div>
       )}
 
-      {activeLocalDareText && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
-          <span className="opacity-90">Your Dare: </span>
-          <span className="font-bold">{activeLocalDareText}</span>
-        </div>
-      )}
 
 
       {screenShareStream ? (

@@ -153,9 +153,8 @@ function VideoChatContent() {
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
-              activeLocalDareText={activeLocalDareText}
             />
-            <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'overflow-hidden', 'bg-gray-950')}>
+            <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
               <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} />
             </div>
           </>
@@ -196,7 +195,6 @@ function VideoChatContent() {
               showMinusButton={false}
               onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
-              activeLocalDareText={activeLocalDareText}
             />
             <div className="flex min-h-0 min-w-0 flex-1 md:flex-col md:gap-2">
               <div className="flex-1 min-h-0 min-w-0 relative">
@@ -244,35 +242,34 @@ function VideoChatContent() {
           <>
             <VideoChatMask slots={4} />
             <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-[58.2%] md:grid-rows-2 md:gap-2">              <RemoteVideoTile
-                key={`remote-${remoteStreams[0].userId}`}
-                userId={remoteStreams[0].userId}
-                isReported={reportedUserIds.has(remoteStreams[0].userId)}
-                onReportUser={handleReportUser}
-                {...getRemoteFriendTileProps(remoteStreams[0])}
-                onSendFriendRequest={() => {
-                  remoteStreams.forEach(s => {
-                    if (s.userId && !friendshipWithRemote[s.userId] && !friendRequestSentTo[s.userId]) handleSendFriendRequest(s.userId);
-                  });
-                }}
-                stream={remoteStreams[0].stream}
-                screenShareStream={remoteStreams[0].screenStream || null}
-                {...getRemoteTileProfile(remoteStreams[0])}
-                showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
-                showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
-                onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
-                isRainchecking={isRainchecking}
-                borderBottomClass="md:bottom-4"
-                hideNameOnMobile={true}
-                gifts={getRemoteGifts(remoteStreams[0]?.userId)}
-                onGiftAnimationComplete={handleRemoteGiftComplete}
-                multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
-                onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
-                hideReportOnMobile={true}
-                showMinusButton={false}
-                onMinus={() => handleKickRemote(remoteStreams[0].userId)}
-                activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
-                activeLocalDareText={activeLocalDareText}
-              />
+              key={`remote-${remoteStreams[0].userId}`}
+              userId={remoteStreams[0].userId}
+              isReported={reportedUserIds.has(remoteStreams[0].userId)}
+              onReportUser={handleReportUser}
+              {...getRemoteFriendTileProps(remoteStreams[0])}
+              onSendFriendRequest={() => {
+                remoteStreams.forEach(s => {
+                  if (s.userId && !friendshipWithRemote[s.userId] && !friendRequestSentTo[s.userId]) handleSendFriendRequest(s.userId);
+                });
+              }}
+              stream={remoteStreams[0].stream}
+              screenShareStream={remoteStreams[0].screenStream || null}
+              {...getRemoteTileProfile(remoteStreams[0])}
+              showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
+              showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
+              onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
+              isRainchecking={isRainchecking}
+              borderBottomClass="md:bottom-4"
+              hideNameOnMobile={true}
+              gifts={getRemoteGifts(remoteStreams[0]?.userId)}
+              onGiftAnimationComplete={handleRemoteGiftComplete}
+              multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
+              onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
+              hideReportOnMobile={true}
+              showMinusButton={false}
+              onMinus={() => handleKickRemote(remoteStreams[0].userId)}
+              activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+            />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}
                 userId={remoteStreams[1].userId}

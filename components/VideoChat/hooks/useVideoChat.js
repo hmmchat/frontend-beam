@@ -1211,6 +1211,9 @@ export default function useVideoChat() {
               } else {
                 setActiveRemoteGifts(prev => [...prev, { gift: giftObj, targetUserId: String(targetUserId), isDismissed: false }]);
               }
+              if (isDare) {
+                setActiveDareProposal(null);
+              }
             }
           }
           break;
@@ -1654,13 +1657,15 @@ export default function useVideoChat() {
   const handleDareSync = useCallback((syncData) => {
     currentDareRef.current = { id: syncData.dareId, text: syncData.dareText };
     if (!roomInfo?.roomId || !remoteStreams[0]?.userId) return;
-    send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareSync: true, dareText: syncData.dareText, giftId: syncData.gift?.id, giftImg: syncData.gift?.img, giftPrice: syncData.gift?.diamonds, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current, senderName: localUserInfo?.name || 'Someone' }) } });
+    send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareSync: true, dareText: syncData.dareText, giftId: syncData.gift?.id, giftImg: syncData.gift?.imageUrl || syncData.gift?.img, giftPrice: syncData.gift?.diamonds, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current, senderName: localUserInfo?.name || 'Someone' }) } });
   }, [roomInfo, remoteStreams, localUserInfo]);
 
   const handleDareResponse = useCallback((accepted) => {
     if (!activeDareProposal || !roomInfo?.roomId) return;
     send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareResponse: true, accepted, targetUserId: activeDareProposal.senderId, senderId: userIdRef.current }) } });
-    setActiveDareProposal(null);
+    if (!accepted) {
+      setActiveDareProposal(null);
+    }
   }, [activeDareProposal, roomInfo]);
 
   const handleCancelDare = useCallback(() => {
@@ -1695,10 +1700,24 @@ export default function useVideoChat() {
         body: JSON.stringify({ diamondAmount: giftAmount })
       });
       // userId = sender (the person sending the dare), NOT the target
-      await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), {
-        method: 'POST',
-        body: JSON.stringify({ dareId: backendDareId, giftId: giftObj.id, userId: senderId })
-      });
+      try {
+        await apiRequest(API.STREAMING.SEND_DARE(roomInfoRef.current.roomId), {
+          method: 'POST',
+          body: JSON.stringify({ dareId: backendDareId, giftId: giftObj.id, userId: senderId })
+        });
+      } catch (dareErr) {
+        console.warn('SEND_DARE failed, falling back to SEND_GIFT:', dareErr);
+        // Fallback to SEND_GIFT to transfer diamonds so the dare can still be delivered
+        await apiRequest(API.STREAMING.SEND_GIFT(roomInfoRef.current.roomId), {
+          method: 'POST',
+          body: JSON.stringify({
+            toUserId: targetId,
+            amount: giftAmount,
+            giftId: giftObj.id,
+            fromUserId: senderId,
+          })
+        });
+      }
       await refreshWallet();
       const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
       send({

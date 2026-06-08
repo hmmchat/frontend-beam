@@ -2970,15 +2970,39 @@ export default function MeetSomeoneDynamic() {
                     <button
                       type="button"
                       onClick={() => setSquadInviteOpen(true)}
-                      className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11', 'hover:bg-white/10', 'transition')}
+                      className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11',)}
                       title="Invite friends"
                     >
-                      <img src="/assets/search-icon.svg" alt="" className="w-6 h-6 mx-auto" />
+                      <img src="/assets/search-icon.svg" alt="" className={clsx('w-6', 'h-6', 'mx-auto', 'hover:border-white', 'hover:scale-120', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'transition-all', 'duration-300')} />
                     </button>
-                    <img src="/assets/Vector.svg" alt="" className={clsx('border', 'rounded-full', 'p-[10px]', 'border-white/70', 'w-11', 'h-11')} />
+
+
+
+                    <button
+                      type="button"
+                      onClick={() => setSquadInviteOpen(true)}
+                      className={clsx('border', 'rounded-full', 'p-2', 'border-white/70', 'w-11', 'h-11',)}
+                      title="Invite friends"
+                    >
+                      <img src="/assets/Vector.svg" alt="" className={clsx('w-6', 'h-6', 'mx-auto', 'hover:border-white', 'hover:scale-120', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'transition-all', 'duration-300')} />
+                    </button>
+
+
                   </div>
                 )}
               </div>
+
+
+
+
+
+
+
+
+
+
+
+
 
               <div className={clsx('relative', 'w-fit', 'flex', 'gap-2', 'border-white/60', 'border', 'rounded-full', 'p-1', 'bg-black/10')}>
                 {/* Sliding Pill */}

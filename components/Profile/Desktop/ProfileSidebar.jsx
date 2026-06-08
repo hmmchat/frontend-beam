@@ -18,7 +18,7 @@ export default function ProfileSidebar({
     <div className="col-span-1 flex flex-col items-center justify-center rounded-[3rem] border border-white/40 p-6 text-center">
       <div className="relative">
         <div className="h-full w-full overflow-hidden rounded-full border-2 border-white">
-          <Image
+          <img
             src={user?.displayPictureUrl}
             alt="profile"
             width={120}

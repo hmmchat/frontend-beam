@@ -94,14 +94,52 @@ function VideoChatContent() {
 
   const hasActiveDare = (activeRemoteGifts || []).some(g => g.gift?.isDare && !g.isDismissed) || !!activeLocalDareText;
 
+  // Gift border + banner effect — any non-dare gift currently animating
+  const hasActiveGift = (
+    (activeRemoteGifts || []).some(g => !g.gift?.isDare && !g.isDismissed) ||
+    (activeLocalGifts || []).some(g => !g.isDare && !g.isDismissed)
+  );
+
+  // Get gift banner text for a given remote userId (e.g. "You gifted: 💎 Iron Man")
+  const getRemoteActiveGiftLabel = (userId) => {
+    if (!userId) return undefined;
+    const g = (activeRemoteGifts || []).find(
+      item => String(item.targetUserId) === String(userId) && !item.gift?.isDare && !item.isDismissed
+    );
+    if (!g) return undefined;
+    const gift = g.gift || g;
+    const diamonds = gift.diamonds || gift.giftPrice || '';
+    const giftName = gift.name || '';
+    return `You gifted${giftName ? `: ${giftName}` : ''}${diamonds ? ` 💎 ${diamonds}` : ''}`;
+  };
+
+  // Get gift banner text for local tile (e.g. "Austin gifted you: 💎 25000")
+  const activeLocalGiftItem = (activeLocalGifts || []).find(g => !g.isDare && !g.isDismissed);
+  const activeLocalGiftLabel = activeLocalGiftItem
+    ? (() => {
+        const senderStream = remoteStreams.find(s => String(s.userId) === String(activeLocalGiftItem.senderId));
+        const senderName = senderStream?.name || 'Someone';
+        const diamonds = activeLocalGiftItem.diamonds || '';
+        const giftName = activeLocalGiftItem.name || '';
+        return `${senderName} gifted you${giftName ? `: ${giftName}` : ''}${diamonds ? ` 💎 ${diamonds}` : ''}`;
+      })()
+    : undefined;
+
+  // Pick root background: dare → red, gift → vivid purple, idle → default purple
+  const rootBg = hasActiveDare
+    ? 'bg-[#8A1515]'
+    : hasActiveGift
+    ? 'bg-[#6B00CC]'
+    : 'bg-purple-900';
+
   return (
-    <div className={clsx('h-dvh', 'w-screen', hasActiveDare ? 'bg-[#8A1515]' : 'bg-purple-900', 'flex', 'overflow-hidden', 'font-sans', 'transition-colors', 'duration-500')}>
+    <div className={clsx('h-dvh', 'w-screen', rootBg, 'flex', 'overflow-hidden', 'font-sans', 'transition-colors', 'duration-500')}>
 
       {/* Background */}
       <div
         className={clsx(
           "absolute inset-0 z-0 transition-opacity duration-500",
-          hasActiveDare ? "opacity-0" : "opacity-100"
+          (hasActiveDare || hasActiveGift) ? "opacity-0" : "opacity-100"
         )}
         style={{ backgroundImage: 'url(/assets/mb.jpg)', backgroundRepeat: 'repeat', backgroundSize: 'cover' }}
       />
@@ -153,9 +191,10 @@ function VideoChatContent() {
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+              activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-              <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} />
+              <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} />
             </div>
           </>
 
@@ -231,7 +270,7 @@ function VideoChatContent() {
                 )}
               </div>
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} />
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} />
               </div>
             </div>
           </>
@@ -328,7 +367,7 @@ function VideoChatContent() {
                 )}
               </div>
               <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} />
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} />
               </div>
             </div>
           </>

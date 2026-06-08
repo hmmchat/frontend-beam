@@ -276,7 +276,11 @@ export default function MeetSomeone() {
                     setIsSignUpOpen(true); // unauthenticated — prompt sign up
                 }}
             />
-            <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
+            <LocationModal
+              isOpen={isLocationModalOpen}
+              onClose={() => setIsLocationModalOpen(false)}
+              onStartBeaming={() => setIsSignUpOpen(true)}
+            />
         </div>
     );
 }

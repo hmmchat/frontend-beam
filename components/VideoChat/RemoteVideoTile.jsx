@@ -52,6 +52,7 @@ export default function RemoteVideoTile({
   activeBadge,
   showParticipantNextButton = false,
   activeRemoteDareText,
+  activeGiftLabel,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -175,6 +176,11 @@ export default function RemoteVideoTile({
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
           <span className="opacity-90">{name || "Stranger"}&apos;s Dare: </span>
           <span className="font-bold">{activeRemoteDareText}</span>
+        </div>
+      )}
+      {!activeRemoteDareText && activeGiftLabel && (
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#6B00CC] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
+          <span>{activeGiftLabel}</span>
         </div>
       )}
 

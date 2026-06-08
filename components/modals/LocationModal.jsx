@@ -5,7 +5,7 @@ import { IoSearchOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
 import { API, apiRequest } from '@/lib/api';
 
-export default function LocationModal({ isOpen, onClose }) {
+export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [masterCities, setMasterCities] = useState([]);
@@ -109,8 +109,11 @@ export default function LocationModal({ isOpen, onClose }) {
         }).catch(() => null)
       ]);
       onClose();
+      if (onStartBeaming) onStartBeaming();
     } catch (error) {
       console.error('Error saving preference:', error);
+      onClose();
+      if (onStartBeaming) onStartBeaming();
     } finally {
       setLoading(false);
     }

@@ -819,6 +819,11 @@ export default function MeetSomeoneNew({
           setIsLocationModalOpen(false);
           fetchMyProfile();
         }}
+        onStartBeaming={() => {
+          setIsLocationModalOpen(false);
+          fetchMyProfile();
+          if (onMeetNow) onMeetNow();
+        }}
       />
       <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
       <SquadInviteFriendsModal

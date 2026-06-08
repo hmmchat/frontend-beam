@@ -17,9 +17,9 @@ export default function ProfileHeader({
     <div className="z-10 mb-8 flex w-full max-w-5xl items-center justify-between px-4">
       <button
         type="button"
-        onClick={() => router.push("/")}
+        onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push("/"); } }}
         className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white "
-        aria-label="Back to home"
+        aria-label="Go back"
       >
         <span className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10 transition-colors">
           <ArrowLeft size={18} />

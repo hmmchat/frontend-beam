@@ -155,7 +155,7 @@ function HistoryContent() {
         <div className="flex items-center gap-4 mb-6 px-5 justify-between">
           <div className="flex items-center gap-2">
             <div
-              onClick={() => router.push('/')}
+              onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push('/'); } }}
               className="border-[2px] border-white/40   rounded-full md:p-3.5 p-2   meeting now hover:bg-white/10 transition-colors"
             >
               <FaArrowLeftLong />

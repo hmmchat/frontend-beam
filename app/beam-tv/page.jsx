@@ -1,5 +1,6 @@
 'use client';
 
+import ProfileGuard from '@/components/auth/ProfileGuard';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
@@ -1658,8 +1659,10 @@ function BeamTVInner() {
 
 export default function BeamTV() {
   return (
-    <Suspense fallback={<div className="w-full h-[100dvh] bg-black" />}>
-      <BeamTVInner />
-    </Suspense>
+    <ProfileGuard>
+      <Suspense fallback={<div className="w-full h-[100dvh] bg-black" />}>
+        <BeamTVInner />
+      </Suspense>
+    </ProfileGuard>
   );
 }

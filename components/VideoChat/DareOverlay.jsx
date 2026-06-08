@@ -1,11 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import clsx from "clsx";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
 import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
+
+// Animated typing dots shown while the user is typing/changing the dare
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-[3px] align-middle ml-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[5px] h-[5px] rounded-full bg-white/80 inline-block"
+          style={{
+            animation: "typingBounce 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
+    </span>
+  );
+}
 
 export default function DareOverlay({
   isOpen,
@@ -28,6 +52,8 @@ export default function DareOverlay({
   const [dareIndex, setDareIndex] = useState(0);
   const [stage, setStage] = useState(1);
   const [dareText, setDareText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimerRef = useRef(null);
 
   const matchedSavedDare = savedDares.find(
     (d) => d.text?.trim().toLowerCase() === dareText?.trim().toLowerCase()
@@ -62,10 +88,25 @@ export default function DareOverlay({
   useEffect(() => {
     if (activeDare) {
       setDareText(activeDare.text || "");
+      // Show typing animation when navigating to a new dare
+      setIsTyping(true);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => setIsTyping(false), 900);
     } else {
       setDareText("");
     }
   }, [activeDare]);
+
+  const handleDareTextChange = useCallback((e) => {
+    setDareText(e.target.value);
+    setIsTyping(true);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => setIsTyping(false), 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (typingTimerRef.current) clearTimeout(typingTimerRef.current); };
+  }, []);
 
   useEffect(() => {
     if (isOpen && !selectedGiftId && giftItems.length > 0 && onSelectGift) {
@@ -235,9 +276,9 @@ export default function DareOverlay({
                     <input
                       type="text"
                       value={dareText}
-                      onChange={(e) => setDareText(e.target.value)}
+                      onChange={handleDareTextChange}
                       placeholder="Type a custom dare..."
-                      className="md:px-4 px-2 py-2 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm font-medium text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
+                      className=" font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm  text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
                     />
                   </div>
 
@@ -251,10 +292,11 @@ export default function DareOverlay({
                 {/* Visibility note */}
                 <div className="flex items-center justify-center gap-1 text-[10px] opacity-80 md:mb-6 mb-3">
                   <IoEyeOutline className="text-yellow-400 " size={16} /> {recipientName} can see this Dare too
+                  {isTyping && <TypingDots />}
                 </div>
 
                 {/* Gift Section */}
-                <div className="border border-white/40 rounded-2xl p-4">
+                <div className="border border-white/40 rounded-2xl px-4 py-3">
 
                   <div className="flex justify-between">
                     <div className="flex items-center gap-2 mb-3">
@@ -299,15 +341,15 @@ export default function DareOverlay({
                           onSelectGift(gift.id);
                         }}
                         className={clsx(
-                          "md:min-w-[85px] min-w-[23.1%] md:rounded-2xl rounded-[11px] md:p-3 py-2 p flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
+                          "md:min-w-[85px] min-w-[23.3%]  md:rounded-2xl rounded-[11px] md:p-3 py-2 p flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
                           selectedGiftId === gift.id
-                            ? "border-white bg-white/20"
+                            ? "border-yellow-500 border-2 bg-white/10"
                             : "border-white/60",
                         )}
                       >
                         <div className="md:text-3xl text-2xl flex items-center justify-center">
                           {gift.imageUrl ? (
-                            <img src={gift.imageUrl} className="w-10 h-10 object-contain" alt={gift.name} />
+                            <img src={gift.imageUrl} className="w-8 h-9 md:w-10 md:h-10 object-contain" alt={gift.name} />
                           ) : (
                             gift.img
                           )}
@@ -318,7 +360,7 @@ export default function DareOverlay({
                   </div>
 
                   {/* Pagination dots */}
-                  <div className="flex justify-center mt-3 gap-1">
+                  <div className="flex justify-center mt-[5px] gap-1">
                     {Array.from({ length: totalPages }).map((_, idx) => (
                       <div
                         key={idx}
@@ -565,7 +607,72 @@ export default function DareOverlay({
               </span>
             </div>
 
+
+
+
+
+
+
+
             <button
+              type="button"
+              disabled={
+                dareAcceptanceStatus !== "accepted" ||
+                !hasSufficientCoins ||
+                !selectedGift
+              }
+              onClick={() => onSendDare && onSendDare()}
+              className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
+            >
+              <div className="absolute inset-0 rounded-full flex items-center justify-center">
+                <div
+                  className={clsx(
+                    "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
+                    dareAcceptanceStatus !== "accepted" ||
+                      !hasSufficientCoins ||
+                      !selectedGift
+                      ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
+                      : "border-[#13133b] bg-red-900 "
+                  )}
+                >
+                  {dareAcceptanceStatus === "accepted" &&
+                    hasSufficientCoins &&
+                    selectedGift && (
+                      <img
+                        src="/circle.png"
+                        className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
+                        alt=""
+                      />
+                    )}
+
+
+                  <p
+                    className={clsx(
+                      "relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80 ",
+                      dareAcceptanceStatus === "accepted" &&
+                      hasSufficientCoins &&
+                      selectedGift &&
+                      "group-active:scale-80"
+                    )}
+                  >
+                    SEND <br />
+                    DARE
+                  </p>
+                </div>
+              </div>
+            </button>
+
+
+
+
+
+
+
+
+
+
+
+            {/* <button
               type="button"
               disabled={
                 dareAcceptanceStatus !== "accepted" ||
@@ -596,7 +703,7 @@ export default function DareOverlay({
                   <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80"> SEND <br />DARE</p>
                 </div>
               </div>
-            </button>
+            </button> */}
           </>
         )}
       </div>

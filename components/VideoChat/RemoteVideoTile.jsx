@@ -173,7 +173,7 @@ export default function RemoteVideoTile({
     >
       {activeRemoteDareText && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
-          <span className="opacity-90">{name || "Stranger"}'s Dare: </span>
+          <span className="opacity-90">{name || "Stranger"}&apos;s Dare: </span>
           <span className="font-bold">{activeRemoteDareText}</span>
         </div>
       )}
@@ -577,12 +577,16 @@ export default function RemoteVideoTile({
       )} />
 
       <GiftAnimationGroup
-        gifts={(Array.isArray(gifts) ? gifts : gift ? [gift] : []).map((giftItem) => giftItem.gift || giftItem)}
+        gifts={(Array.isArray(gifts) ? gifts : gift ? [gift] : []).map((giftItem) => {
+          const inner = giftItem.gift || giftItem;
+          // Merge wrapper-level isDismissed into the inner gift so GiftAnimationGroup can see it
+          return giftItem.gift ? { ...inner, isDismissed: giftItem.isDismissed ?? inner.isDismissed } : inner;
+        })}
         onComplete={onGiftAnimationComplete}
         onDismissStart={onGiftDismissStart}
         persistUntilDismissed={true}
         forceDismiss={forceDismiss}
-        canDismiss={false}
+        interactive={false}
       />
     </div>
   );

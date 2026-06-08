@@ -8,23 +8,14 @@ import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 export default function ProfileGuard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
       const token = localStorage.getItem('accessToken');
-      
-      // If no token, we can't be here in protected routes
-      // (Pages should ideally handle their own guest vs user state, 
-      // but if we are in a protected route, we redirect to home)
-      if (!token) {
-        if (pathname === '/') {
-          setIsAuthorized(false);
-          setLoading(false);
-          return;
-        }
-        router.push('/');
+
+      if (!token || token === 'null' || token === 'undefined') {
+        router.replace('/');
         return;
       }
 
@@ -32,36 +23,35 @@ export default function ProfileGuard({ children }) {
         const data = await apiRequest(API.USERS.GET_ME);
         const user = data?.user || data;
 
-        // Check if profile is complete (e.g., has a username)
         if (!user || !user.username) {
-          throw new Error('Incomplete profile');
+          router.replace('/onboarding');
+          return;
         }
 
-        setIsAuthorized(true);
+        setAuthorized(true);
       } catch (err) {
         console.error('[ProfileGuard] Profile check failed:', err);
-        
-        // If 404 or specific error, redirect to onboarding
+
         if (err.status === 404 || err.message === 'Incomplete profile') {
-          if (pathname !== '/onboarding') {
-            router.push('/onboarding');
-            return;
-          }
+          router.replace('/onboarding');
         } else if (err.status === 401) {
-          // Token expired possibly
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           clearPendingReferralCode();
-          router.push('/');
-          return;
+          router.replace('/');
+        } else {
+          // Network error or unknown — redirect home to be safe
+          router.replace('/');
         }
-      } finally {
-        setLoading(false);
       }
     };
 
     checkProfile();
   }, [pathname, router]);
+
+  // Don't render children until we've confirmed the user is authed + profile complete.
+  // This prevents any flash of the protected page content before redirect fires.
+  if (!authorized) return null;
 
   return children;
 }

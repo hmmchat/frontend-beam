@@ -1,5 +1,6 @@
 'use client';
 
+import ProfileGuard from '@/components/auth/ProfileGuard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
@@ -16,6 +17,14 @@ function makeSessionId() {
 }
 
 export default function OfflineCardsPage() {
+  return (
+    <ProfileGuard>
+      <OfflineCardsContent />
+    </ProfileGuard>
+  );
+}
+
+function OfflineCardsContent() {
   const router = useRouter();
 
   const [sessionId] = useState(() => makeSessionId());

@@ -11,7 +11,7 @@ export default function ProfileMobileGetMoney({
   handleAdRewardGranted
 }) {
   return (
-    <div className="w-full flex flex-col h-full pb-6">
+    <div className="w-full flex flex-col h-full ">
       <div className="flex items-center gap-3 mb-4">
         <div
           onClick={onBack}
@@ -21,6 +21,8 @@ export default function ProfileMobileGetMoney({
         </div>
         <p>Get money</p>
       </div>
+
+
       <div className="border border-white/30 rounded-[2.5rem] p-6 flex flex-col items-center text-center">
         <p className="text-sm text-white/80 font-outfit">
           Hmm. You being nice is paying back!!
@@ -37,11 +39,11 @@ export default function ProfileMobileGetMoney({
           💎 {moneyModel.diamonds}
         </p>
 
-        <h2 className="text-3xl font-bold mt-4 mb-10">
+        <h2 className="text-3xl font-bold mt-4 mb-6">
           ₹{formatInrValue(moneyModel.currentInrValue)}
         </h2>
 
-        <div className="w-full max-w-lg mb-12">
+        <div className="w-full max-w-lg  mb-6">
           <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
             <div
               className="h-full bg-white rounded-full transition-all duration-300"
@@ -62,7 +64,7 @@ export default function ProfileMobileGetMoney({
         </div>
       </div>
 
-      <div className="mt-12 text-sm text-white/70 space-y-6 pt-6 px-2">
+      <div className="md:mt-12 mt-2 text-sm text-white/70 space-y-6 pt-6 px-2 pb-8" >
         <div className="flex items-center gap-2">
           <span className="w-7 h-7 flex items-center justify-center border border-white rounded-full">
             ?
@@ -79,7 +81,7 @@ export default function ProfileMobileGetMoney({
 
         <div className="flex items-center gap-3">
           <img
-            src="/call.png"
+            src="/call.svg"
             alt=""
             className="w-7 h-7 object-contain"
           />

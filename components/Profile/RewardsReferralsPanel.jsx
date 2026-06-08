@@ -269,7 +269,7 @@ export default function RewardsReferralsPanel() {
 
       {/* === INVITE BOX === */}
       <div className="w-full h-full md:h-fit  mx-auto">
-        <div className={`${box} px-8 py-20 md:px-8 md:py-6`}>
+        <div className={`${box} px-8 py-12 md:px-8 md:py-12`}>
           <p className="mb-2 text-center font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
             Invite your gang and win
           </p>
@@ -311,7 +311,7 @@ export default function RewardsReferralsPanel() {
 
       {/* === SHARE BOX === */}
       <div className="w-full  h-full md:h-fit mx-auto">
-        <div className={`${box} px-8 py-16 md:px-8 md:py-6`}>
+        <div className={`${box} px-8 py-12 md:px-8 md:py-10`}>
           <p className=" text-center font-[family-name:var(--font-outfit),sans-serif] text-[14px] font-semibold text-white md:text-[17px]">
             Share to
           </p>

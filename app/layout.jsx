@@ -2,6 +2,7 @@ import "./globals.css";
 import localFont from "next/font/local";
 import { Outfit, Sigmar } from "next/font/google";
 import CaptureReferralFromUrl from "@/components/CaptureReferralFromUrl";
+import RouteGuard from "@/components/auth/RouteGuard";
 
 const otomanopeeOne = localFont({
   src: "../public/OtomanopeeOne-Regular.ttf",
@@ -39,7 +40,9 @@ export default function RootLayout({ children }) {
         className={`${otomanopeeOne.variable} ${outfit.variable} ${sigmar.variable}`}
       >
         <CaptureReferralFromUrl />
-        {children}
+        <RouteGuard>
+          {children}
+        </RouteGuard>
       </body>
     </html>
   );

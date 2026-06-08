@@ -1582,9 +1582,16 @@ export default function useVideoChat() {
   // ---- Gift callbacks ------------------------------------------------------
   const handleLocalGiftComplete = useCallback((gift) => {
     const messageId = typeof gift === 'string' ? gift : gift?.messageId;
-    const targetUserId = gift?.targetUserId;
-    if (messageId && roomInfoRef.current?.roomId) {
-      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId, targetUserId }) } });
+    // Broadcast dismissal to all peers so the gift clears on their screens too
+    const roomId = roomInfoRef.current?.roomId;
+    if (messageId && roomId) {
+      send({
+        type: 'chat-message',
+        data: {
+          roomId,
+          message: JSON.stringify({ isGiftDismissed: true, messageId, senderId: userIdRef.current }),
+        },
+      });
     }
     setActiveLocalGifts(prev => prev.filter(item => item.messageId !== messageId));
   }, []);
@@ -1592,9 +1599,6 @@ export default function useVideoChat() {
   const handleRemoteGiftComplete = useCallback((giftEntry) => {
     const gift = giftEntry?.gift || giftEntry;
     const messageId = typeof giftEntry === 'string' ? giftEntry : gift?.messageId;
-    if (messageId && gift?.targetUserId === userIdRef.current && roomInfoRef.current?.roomId) {
-      send({ type: 'chat-message', data: { roomId: roomInfoRef.current.roomId, message: JSON.stringify({ isGiftDismissed: true, messageId, targetUserId: gift.targetUserId }) } });
-    }
     setActiveRemoteGifts(prev => prev.filter(item => item.gift?.messageId !== messageId));
   }, []);
 

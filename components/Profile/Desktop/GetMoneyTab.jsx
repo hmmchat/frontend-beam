@@ -28,10 +28,10 @@ export default function GetMoneyTab({ moneyModel, loading = false, onRewardGrant
       </div>
 
       {/* Amount */}
-      <h2 className="text-3xl font-bold mt-5 mb-6 [@media(max-height:768px)]:mt-2 [@media(max-height:768px)]:mb-3 shrink-0">₹{formatInrValue(currentInr)}</h2>
+      <h2 className="text-3xl ml-2.5 font-bold mt-1 mb-4 [@media(max-height:768px)]:mt-2 [@media(max-height:768px)]:mb-3 shrink-0">₹{formatInrValue(currentInr)}</h2>
 
       {/* Progress bar */}
-      <div className="w-full max-w-lg mb-8 [@media(max-height:768px)]:mb-4 shrink-0">
+      <div className="w-full max-w-lg mb-4 [@media(max-height:768px)]:mb-4 shrink-0">
         <div className="h-5 border border-white rounded-full p-[3px] border-b-4">
           <div
             className="h-full bg-white rounded-full transition-all duration-300"
@@ -45,8 +45,8 @@ export default function GetMoneyTab({ moneyModel, loading = false, onRewardGrant
         <FreeCoinsSection onRewardGranted={onRewardGranted} />
 
         <button className="flex w-full items-center justify-center gap-3 border border-white px-6 py-3 rounded-[10.986px] text-lg border-b-4 hover:bg-white hover:text-black transition">
-          <span className="w-4 h-4 flex items-center justify-center border border-white/40 rounded-full">
-            +
+          <span className="w-4 h-4 md:w-8 md:h-8 flex items-center justify-center border border-white/40 rounded-full">
+            <img src="/assets/plus.png" alt="" className="w-3 md:w-4" />
           </span>
           Add withdrawal method
         </button>
@@ -65,7 +65,7 @@ export default function GetMoneyTab({ moneyModel, loading = false, onRewardGrant
         </div>
 
         <div className="flex items-center gap-3">
-          <img src="/call.png" alt="" className="w-6 h-6" />
+          <img src="/call.svg" alt="" className="w-6 h-6" />
           <p className="text-sm">Reach Support</p>
         </div>
       </div>

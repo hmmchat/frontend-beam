@@ -58,7 +58,7 @@ export default function MemeLoader({ loadingMeme }) {
         {loadingMeme?.imageUrl ? (
           <img
             src={loadingMeme.imageUrl}
-            alt={loadingMeme.text || 'Loading meme'}
+            alt={loadingMeme.text}
             className={clsx(
               'w-32 sm:w-40 md:w-48',
               'max-w-[75%] md:max-w-xl',
@@ -91,7 +91,7 @@ export default function MemeLoader({ loadingMeme }) {
                 'px-4'
               )}
             >
-              {loadingMeme?.text || 'Finding someone who matches your energy...'}
+              {loadingMeme?.text}
             </p>
           </div>
         )}

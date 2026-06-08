@@ -259,20 +259,20 @@ export default function FreeCoinsSection({ onRewardGranted }) {
           <p className="mt-1.5 text-sm text-white/70">
             Complete the full ad to earn {coinsPerAd || "..."} coins.
           </p>
-{adUnavailable && (
-  <p className="mt-1 text-xs text-amber-200">
-    Rewarded ad unit is not configured yet.
-  </p>
-)}
+          {adUnavailable && (
+            <p className="mt-1 text-xs text-amber-200">
+              Rewarded ad unit is not configured yet.
+            </p>
+          )}
 
-{maxAdsPerDay && (
-  <p className="mt-1 text-xs text-white/50">
-    Limit: {maxAdsPerDay} ads per day.
-  </p>
-)}
+          {maxAdsPerDay && (
+            <p className="mt-1 text-xs text-white/50">
+              Limit: {maxAdsPerDay} ads per day.
+            </p>
+          )}
         </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-2xl">
-          +
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/40  text-xl ">
+          <img src="/assets/plus.png" alt="video" className="w-4" />
         </div>
       </div>
 

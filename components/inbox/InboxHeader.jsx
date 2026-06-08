@@ -17,7 +17,7 @@ export default function InboxHeader({
       <div className="flex items-center gap-3">
         <div
           className="border border-white rounded-full p-3 md:p-2 active:scale-95"
-          onClick={() => router.push("/")}
+          onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push("/"); } }}
         >
           <FaArrowLeftLong className="text-xl md:text-xl 0  meeting now" />
         </div>

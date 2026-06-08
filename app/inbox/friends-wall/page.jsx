@@ -1,5 +1,6 @@
 "use client";
 
+import ProfileGuard from "@/components/auth/ProfileGuard";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaArrowLeftLong } from "react-icons/fa6";
@@ -12,6 +13,14 @@ import FaceCard from '@/components/Home/FaceCard';
 import { calculateAge } from '@/lib/facecard-utils';
 
 export default function FriendWall() {
+  return (
+    <ProfileGuard>
+      <FriendWallContent />
+    </ProfileGuard>
+  );
+}
+
+function FriendWallContent() {
   const router = useRouter();
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);

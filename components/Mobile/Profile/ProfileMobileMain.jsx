@@ -18,9 +18,9 @@ export default function ProfileMobileMain({
       <div className="w-full flex justify-between mb-4">
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push("/"); } }}
           className="flex gap-3 items-center rounded-xl py-1 pr-2 text-left text-white hover:bg-white/10 transition-colors"
-          aria-label="Back to home"
+          aria-label="Go back"
         >
           <span className="w-10 h-10 border rounded-full flex items-center justify-center shrink-0">
             <ArrowLeft size={18} />

@@ -21,7 +21,7 @@ function GiftVisual({ gift }) {
   );
 }
 
-export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, forceDismiss }) {
+export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, forceDismiss, interactive = true }) {
   const containerRef = useRef(null);
   const itemRefs = useRef(new Map());
   const physicsRef = useRef(new Map());
@@ -214,8 +214,8 @@ export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, f
               if (el) itemRefs.current.set(key, el);
               else itemRefs.current.delete(key);
             }}
-            onClick={() => dismissGift(gift, key)}
-            className="absolute left-0 top-0 select-none transition-opacity duration-300 ease-out pointer-events-auto cursor-pointer"
+            onClick={interactive ? () => dismissGift(gift, key) : undefined}
+            className={`absolute left-0 top-0 select-none transition-opacity duration-300 ease-out ${interactive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
             style={{
               transform: "translate3d(0px, 0px, 0px)",
               opacity: 0,
@@ -226,9 +226,8 @@ export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, f
             }}
           >
             <div
-              className={`transition-all duration-500 ease-in-out ${
-                isFadingOut ? "scale-0 opacity-0" : "scale-100 opacity-100"
-              }`}
+              className={`transition-all duration-500 ease-in-out ${isFadingOut ? "scale-0 opacity-0" : "scale-100 opacity-100"
+                }`}
             >
               <GiftVisual gift={gift} />
             </div>
@@ -239,7 +238,7 @@ export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, f
   );
 }
 
-export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss }) {
+export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss, interactive = true }) {
   const containerRef = useRef(null);
   const giftRef = useRef(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -298,7 +297,7 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
 
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
-      
+
       // Default to 64px if elements are not loaded yet
       const giftWidth = giftRef.current.clientWidth || 64;
       const giftHeight = giftRef.current.clientHeight || 64;
@@ -308,7 +307,7 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
         x = (containerWidth - giftWidth) / 2;
         y = (containerHeight - giftHeight) / 2;
         initialized = true;
-        
+
         // Fade in the outer container
         giftRef.current.style.opacity = "1";
       }
@@ -390,8 +389,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
     >
       <div
         ref={giftRef}
-        onClick={handleDismiss}
-        className="absolute left-0 top-0 select-none transition-opacity duration-300 ease-out pointer-events-auto cursor-pointer"
+        onClick={interactive ? handleDismiss : undefined}
+        className={`absolute left-0 top-0 select-none transition-opacity duration-300 ease-out ${interactive ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`}
         style={{
           transform: "translate3d(0px, 0px, 0px)",
           opacity: 0,
@@ -402,9 +401,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
         }}
       >
         <div
-          className={`transition-all duration-500 ease-in-out ${
-            isFadingOut ? "scale-0 opacity-0" : "scale-100 opacity-100"
-          }`}
+          className={`transition-all duration-500 ease-in-out ${isFadingOut ? "scale-0 opacity-0" : "scale-100 opacity-100"
+            }`}
         >
           {gift.imageUrl ? (
             <img

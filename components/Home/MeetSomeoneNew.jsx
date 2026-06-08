@@ -334,7 +334,7 @@ export default function MeetSomeoneNew({
             {mode !== 'squad' && (
               <div className="absolute right-3 w-12 h-12 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
                 <Link href="/cards">
-                  <button className={clsx('h-15', 'w-15', 'rounded-full', 'p-3', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
+                  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3', 'transition-all', 'duration-300', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]')}>
                     <img src="/hugeiconscards.svg" alt="cards" />
                   </button>
                 </Link>

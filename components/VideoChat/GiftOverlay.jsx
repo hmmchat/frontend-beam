@@ -98,7 +98,7 @@ export default function GiftOverlay({
       {/* Main UI */}
       <div className={clsx(
         "absolute z-30 flex flex-col items-end w-full px-4",
-        className || "md:bottom-6 right-0 bottom-[14vh] md:right-5 md:-translate-y-[34%]"
+        className || "md:bottom-[15vh] right-0 bottom-[14vh] md:right-5 "
       )}>
         <div
           onClick={(e) => e.stopPropagation()}

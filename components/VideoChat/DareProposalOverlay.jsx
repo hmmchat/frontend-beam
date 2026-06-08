@@ -3,83 +3,61 @@
 import { useState, useEffect, useRef } from "react";
 import { FaRegBookmark, FaRegQuestionCircle } from "react-icons/fa";
 
-/* ── Typing dots ─────────────────────────────────────────────────────────── */
+const KEYFRAMES = `
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
+    30%           { transform: translateY(-5px); opacity: 1;   }
+  }
+`;
+
 function TypingDots() {
   return (
-    <span className="inline-flex items-center gap-[3px] align-middle">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="w-[5px] h-[5px] rounded-full bg-white/80 inline-block"
-          style={{
-            animation: "typingBounce 1.2s ease-in-out infinite",
-            animationDelay: `${i * 0.2}s`,
-          }}
-        />
-      ))}
-      <style>{`
-        @keyframes typingBounce {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-          30%            { transform: translateY(-4px); opacity: 1; }
-        }
-      `}</style>
-    </span>
+    <>
+      <style>{KEYFRAMES}</style>
+      <span className="inline-flex items-center gap-[4px] align-middle px-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-[6px] h-[6px] rounded-full bg-white inline-block"
+            style={{
+              animation: "typingBounce 1s ease-in-out infinite",
+              animationDelay: `${i * 0.18}s`,
+            }}
+          />
+        ))}
+      </span>
+    </>
   );
 }
 
-
-
-/* ── Main component ──────────────────────────────────────────────────────── */
 export default function DareProposalOverlay({ proposal, onAccept, onReject, isOpen }) {
   const [hasAccepted, setHasAccepted] = useState(false);
-
-  /* live text tracking */
   const [liveText, setLiveText] = useState("");
-  const prevTextRef = useRef("");
-
-  /* initial "typing dots" shown for the very first arrival */
-  const [showInitialDots, setShowInitialDots] = useState(false);
-  const initialDotsTimerRef = useRef(null);
-  const seenFirstText = useRef(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
 
-  /* reset when proposal changes entirely */
+  // Reset when sender changes
   useEffect(() => {
     setHasAccepted(false);
-    prevTextRef.current = "";
-    seenFirstText.current = false;
     setLiveText("");
+    setIsTyping(false);
   }, [proposal?.senderId]);
 
-  /* react to live dare-text updates coming in via WebSocket */
+  // Show dots for 1s, then reveal text
   useEffect(() => {
-    if (!isOpen || !proposal?.dareText) return;
+    if (!isOpen || proposal?.dareText === undefined) return;
 
-    const incoming = proposal.dareText;
+    setLiveText("");      // hide text initially
+    setIsTyping(true);    // show dots
 
-    /* first-ever text for this proposal → show dots briefly */
-    if (!seenFirstText.current) {
-      seenFirstText.current = true;
-      setShowInitialDots(true);
-      if (initialDotsTimerRef.current) clearTimeout(initialDotsTimerRef.current);
-      initialDotsTimerRef.current = setTimeout(() => {
-        setShowInitialDots(false);
-        setLiveText(incoming);
-        prevTextRef.current = incoming;
-      }, 900);
-      return;
-    }
+    const timer = setTimeout(() => {
+      setIsTyping(false);           // hide dots
+      setLiveText(proposal.dareText); // show text
+    }, 1000);
 
-    /* subsequent updates */
-    prevTextRef.current = incoming;
-    setLiveText(incoming);
-
-    return () => {
-      if (initialDotsTimerRef.current) clearTimeout(initialDotsTimerRef.current);
-    };
+    return () => clearTimeout(timer);
   }, [proposal?.dareText, isOpen]);
 
-  /* auto-scroll dare bubble to the end as text grows */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
@@ -88,13 +66,16 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
 
   if (!isOpen || !proposal) return null;
 
+  const displayText = liveText;
+
   return (
     <>
+      <style>{KEYFRAMES}</style>
       <div className="fixed inset-0 z-[60]" />
 
       <div className="absolute z-[65] md:bottom-8 bottom-[6vh] left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
 
-        {/* ── Modal card ── */}
+        {/* Modal card */}
         <div
           className="w-full max-w-[400px] border-2 border-white md:rounded-[40px] rounded-[30px] px-5 py-4 relative overflow-visible pointer-events-auto"
           style={{
@@ -116,27 +97,22 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
 
           {/* Dare info */}
           <div className="text-center relative z-10 px-4 mb-2 -mt-2">
-            <p className="md:text-[11px] text-[10px] text-white/90 font-medium mb-1 md:mb-2">
+            <p className="md:text-[11px] text-[10px] text-white/90 font-medium mb-1 md:mb-2 flex items-center justify-center gap-1">
               {proposal.senderName || "Someone"} is Daring you to
             </p>
 
-            {/* Dare bubble — horizontally scrollable, max 2 lines, no layout break */}
+            {/* Dare bubble — scrollable */}
             <div
               ref={scrollRef}
-              className="dare-scroll w-[80%] mx-auto overflow-x-auto overflow-y-hidden px-4 py-1.5 border border-white/60 rounded-full text-white md:text-md text-xs font-otomanopee text-center"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+              className="dare-scroll w-[80%] mx-auto overflow-x-auto overflow-y-hidden px-4 py-1.5 border border-white/60 rounded-full text-white text-xs font-otomanopee text-center"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <style>{`.dare-scroll::-webkit-scrollbar { display: none; }`}</style>
-              <span className="whitespace-nowrap">
-                {showInitialDots ? (
+              <style>{`.dare-scroll::-webkit-scrollbar{display:none}`}</style>
+              <span className="whitespace-nowrap inline-flex items-center justify-center gap-1">
+                {isTyping ? (
                   <TypingDots />
                 ) : (
-                  <>
-                    {liveText || proposal.dareText}
-                    {liveText && liveText !== proposal.dareText && (
-                      <span className="inline-block w-[2px] h-[12px] bg-white/80 ml-[1px] align-middle animate-pulse" />
-                    )}
-                  </>
+                  displayText || <span className="opacity-40">...</span>
                 )}
               </span>
             </div>
@@ -172,7 +148,7 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
           </div>
         </div>
 
-        {/* ── Action area ── */}
+        {/* Action area */}
         {hasAccepted ? (
           <div className="flex justify-center items-center w-[60%] md:w-[20%] mt-2 z-10 pointer-events-auto">
             <div className="w-full bg-[#0A032D]/40 text-center md:py-3.5 md:px-6 py-3 font-otomanopee rounded-full text-white text-sm flex items-center justify-center gap-2">
@@ -194,7 +170,7 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
               style={{ backgroundImage: "url(/assets/mb.jpg)", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.8 }}
               className="flex-1 py-3.5 border border-white/60 rounded-full text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md"
             >
-              I'm in 💪
+              I&apos;m in 💪
             </button>
           </div>
         )}

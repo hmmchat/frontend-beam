@@ -116,7 +116,7 @@ export default function LocalVideoSection({
           </div>
         )}
         {!activeLocalDareText && activeLocalGiftLabel && (
-          <div className={clsx('hidden', 'md:block', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#6B00CC]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
+          <div className={clsx('hidden', 'md:block', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#4E0093]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
             <span>{activeLocalGiftLabel}</span>
           </div>
         )}

@@ -117,20 +117,20 @@ function VideoChatContent() {
   const activeLocalGiftItem = (activeLocalGifts || []).find(g => !g.isDare && !g.isDismissed);
   const activeLocalGiftLabel = activeLocalGiftItem
     ? (() => {
-        const senderStream = remoteStreams.find(s => String(s.userId) === String(activeLocalGiftItem.senderId));
-        const senderName = senderStream?.name || 'Someone';
-        const diamonds = activeLocalGiftItem.diamonds || '';
-        const giftName = activeLocalGiftItem.name || '';
-        return `${senderName} gifted you${giftName ? `: ${giftName}` : ''}${diamonds ? ` 💎 ${diamonds}` : ''}`;
-      })()
+      const senderStream = remoteStreams.find(s => String(s.userId) === String(activeLocalGiftItem.senderId));
+      const senderName = senderStream?.name || 'Someone';
+      const diamonds = activeLocalGiftItem.diamonds || '';
+      const giftName = activeLocalGiftItem.name || '';
+      return `${senderName} gifted you${giftName ? `: ${giftName}` : ''}${diamonds ? ` 💎 ${diamonds}` : ''}`;
+    })()
     : undefined;
 
   // Pick root background: dare → red, gift → vivid purple, idle → default purple
   const rootBg = hasActiveDare
     ? 'bg-[#8A1515]'
     : hasActiveGift
-    ? 'bg-[#6B00CC]'
-    : 'bg-purple-900';
+      ? 'bg-[#4E0093]'
+      : 'bg-[#4E0093]';
 
   return (
     <div className={clsx('h-dvh', 'w-screen', rootBg, 'flex', 'overflow-hidden', 'font-sans', 'transition-colors', 'duration-500')}>
@@ -263,7 +263,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[1]}
                   gifts={getRemoteGifts(remoteStreams[1]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
-              onGiftDismissStart={handleRemoteGiftDismissStart}
+                  onGiftDismissStart={handleRemoteGiftDismissStart}
                   className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
@@ -342,7 +342,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gifts={getRemoteGifts(remoteStreams[1]?.userId)}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
-              onGiftDismissStart={handleRemoteGiftDismissStart}
+                onGiftDismissStart={handleRemoteGiftDismissStart}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
                 activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1].userId)}
@@ -366,7 +366,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[2]}
                   gifts={getRemoteGifts(remoteStreams[2]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
-              onGiftDismissStart={handleRemoteGiftDismissStart}
+                  onGiftDismissStart={handleRemoteGiftDismissStart}
                   className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}

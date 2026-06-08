@@ -389,7 +389,25 @@ export default function MeetSomeoneDynamic() {
         if (leftCallToHome) sessionStorage.removeItem('hmm:leftCallToHome');
       } catch (_) { }
 
-      if (shouldResumeDiscovery) {
+      if (leftCallToHome) {
+        flowLog('home_idle_online');
+        setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
+        void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
+        setIsSearching(false);
+        setCurrentCard(null);
+        localStorage.removeItem('forceDiscoveryResume');
+        localStorage.removeItem('pendingRaincheckResume');
+        localStorage.removeItem('pendingRaincheckNextCard');
+        localStorage.removeItem('resumeDiscoveryOnHome');
+        localStorage.removeItem('stickyDiscoveryResume');
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('searching');
+          url.searchParams.delete('resumeDiscovery');
+          url.searchParams.delete('sessionId');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } else if (shouldResumeDiscovery) {
         flowLog('resume_discovery_from_call', { resumeSessionId });
         localStorage.removeItem('forceDiscoveryResume');
         localStorage.removeItem('pendingRaincheckResume');
@@ -408,9 +426,7 @@ export default function MeetSomeoneDynamic() {
       } else {
         flowLog('home_idle_online');
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
-        if (leftCallToHome) {
-          void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
-        } else if (!isDiscoveryActiveElsewhere() && (isDiscoveryLeader() || !localStorage.getItem('discoveryTabLeader'))) {
+        if (!isDiscoveryActiveElsewhere() && (isDiscoveryLeader() || !localStorage.getItem('discoveryTabLeader'))) {
           void exitDiscovery().catch(() => setPresenceStatusKeepalive('ONLINE'));
         }
         setIsSearching(false);

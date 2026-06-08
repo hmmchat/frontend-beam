@@ -394,7 +394,8 @@ export default function ProfileDesktop({
 
        [@media(max-height:1000px)]:scale-[1] 
           
-    [@media(max-height:800px)]:scale-[0.80] 
+    [@media(max-height:850px)]:scale-[0.78] 
+       [@media(max-height:750px)]:scale-[0.70] 
 ]"
                   >
                     <PromptsTab user={user} setUser={setUser} />

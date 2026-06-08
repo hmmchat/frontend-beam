@@ -265,10 +265,10 @@ export default function RewardsReferralsPanel() {
       : 0;
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-hide px-3 py-2 md:py-4">
+    <div className="flex w-full min-h-0 flex-col items-center gap-6 overflow-y-auto scrollbar-hide px-3 py-2 md:py-4">
 
       {/* === INVITE BOX === */}
-      <div className="w-full h-full md:h-fit  mx-auto">
+      <div className="w-full mx-auto">
         <div className={`${box} px-8 py-12 md:px-8 md:py-12`}>
           <p className="mb-2 text-center font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
             Invite your gang and win
@@ -310,7 +310,7 @@ export default function RewardsReferralsPanel() {
       </div>
 
       {/* === SHARE BOX === */}
-      <div className="w-full  h-full md:h-fit mx-auto">
+      <div className="w-full mx-auto">
         <div className={`${box} px-8 py-12 md:px-8 md:py-10`}>
           <p className=" text-center font-[family-name:var(--font-outfit),sans-serif] text-[14px] font-semibold text-white md:text-[17px]">
             Share to

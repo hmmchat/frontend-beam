@@ -5,13 +5,8 @@ import RewardsReferralsPanel from "../RewardsReferralsPanel";
 
 export default function RewardsTab({ onBack }) {
   return (
-    <div className="flex h-full w-full min-w-0 flex-col gap-2 overflow-hidden">
-
-
-
-      {/* header */}
+    <div className="h-full w-full min-h-0 overflow-y-auto scrollbar-hide">
       <RewardsReferralsPanel />
-
     </div>
   );
 }

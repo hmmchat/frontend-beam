@@ -77,60 +77,60 @@ export default function ProfileMobilePrompts({ onBack, user, setUser }) {
 
 
         <div className="mb-4 border-[2px] border-white/30 rounded-2xl p-2 pb-10">
-          
-     
 
-        {/* SUGGESTIONS HEADER */}
-        <div className="flex items-center justify-between mb-4 ">
-          <p className="text-sm text-white/70 font-outfit">Suggestions</p>
-          <button
-            type="button"
-            onClick={fetchSuggestions}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/40 transition hover:bg-white/10"
-            aria-label="Refresh suggestions"
-          >
-            <img
-              src="/refresh.png"
-              alt=""
-              className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-            />
-          </button>
-        </div>
 
-        {/* SUGGESTION CHIPS */}
-        <div className={`flex flex-wrap gap-2 transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : ""}`}>
-          {suggestions.length === 0 && loading ? (
-            <div className="w-full py-8 flex justify-center">
-              <div className="w-6 h-6 border-2 border-white/30 rounded-full animate-spin" />
-            </div>
-          ) : (
-            suggestions.map((text, i) => (
-              <div
-                key={i}
-                onClick={() => handleUpdateIntent(text)}
-                className={`px-4 py-3 border-[1px] border-white/30 rounded-xl text-[13px] leading-tight transition cursor-pointer font-outfit shrink-0
-                  ${user?.intent === text
-                    ? "border-yellow-400 border-[1px] border-b-[3px] bg-white/10"
-                    : "border-b-[2.7px] hover:bg-white/5"}`}
-              >
-                {text}
+
+          {/* SUGGESTIONS HEADER */}
+          <div className="flex items-center justify-between mb-4 ">
+            <p className="text-sm text-white/70 font-outfit">Suggestions</p>
+            <button
+              type="button"
+              onClick={fetchSuggestions}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/40 transition hover:bg-white/10"
+              aria-label="Refresh suggestions"
+            >
+              <img
+                src="/refresh.png"
+                alt=""
+                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
+
+          {/* SUGGESTION CHIPS */}
+          <div className={`flex flex-wrap gap-2 transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : ""}`}>
+            {suggestions.length === 0 && loading ? (
+              <div className="w-full py-8 flex justify-center">
+                <div className="w-6 h-6 border-2 border-white/30 rounded-full animate-spin" />
               </div>
-            ))
-          )}
+            ) : (
+              suggestions.map((text, i) => (
+                <div
+                  key={i}
+                  onClick={() => handleUpdateIntent(text)}
+                  className={`px-4 py-3 border-[1px] border-white/30 rounded-xl text-[13px] leading-tight transition cursor-pointer font-outfit shrink-0
+                  ${user?.intent === text
+                      ? "border-yellow-400 border-[1px] border-b-[3px] bg-white/10"
+                      : "border-b-[2.7px] hover:bg-white/5"}`}
+                >
+                  {text}
+                </div>
+              ))
+            )}
+          </div>
+
         </div>
 
-   </div>
-
-  <div 
-        onClick={onBack}
-        className="border border-white/30 rounded-2xl py-4 text-center mt-8 font-semibold cursor-pointer active:scale-95 transition-all w-[95%] mx-auto"
-      >
-        Save & Back
-      </div>
+        <div
+          onClick={onBack}
+          className="border border-white/30 rounded-2xl py-4 text-center mt-8 font-semibold cursor-pointer active:scale-95 transition-all w-[95%] mx-auto"
+        >
+          Save & Back
+        </div>
       </div>
 
       {/* CTA (Optional, can be used to navigate back or similar) */}
-    
+
     </div>
   );
 }

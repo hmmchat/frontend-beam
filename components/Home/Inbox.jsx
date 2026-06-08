@@ -360,7 +360,7 @@ export default function Inbox() {
         id: userId,
         username: u.username || "User",
         displayPictureUrl: u.displayPictureUrl || null,
-        preferredCity: u.preferredCity || "",
+        preferredCity: u.preferredCity || u.city || "",
         dateOfBirth: u.dateOfBirth,
       };
       userCacheRef.current[userId] = result;
@@ -1042,8 +1042,8 @@ export default function Inbox() {
   }, [activeChat, loadingThreadOlder, threadNextCursor, threadHasMore]);
 
   useEffect(() => {
-    if (activeChat) loadThreadMessages(activeChat);
-  }, [activeChat, loadThreadMessages]);
+    if (activeChat?.rowKey) loadThreadMessages(activeChat);
+  }, [activeChat?.rowKey, loadThreadMessages]);
 
   activeChatRef.current = activeChat;
   currentUserIdRef.current = currentUserId;
@@ -1383,7 +1383,7 @@ export default function Inbox() {
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
-      if (activeChat) void loadThreadMessages(activeChat).catch(() => {});
+      if (activeChat) void loadThreadMessages(activeChat, { quiet: true }).catch(() => {});
       void loadLists({ quiet: true, skipNotificationBadge: true }).catch(
         () => {},
       );
@@ -1584,18 +1584,29 @@ export default function Inbox() {
         });
         if (res?.promotedToInbox) setActiveTab("inbox");
         await refreshWallet();
-      } else if (activeChat.outgoingFriendRequestId) {
+      } else {
+        let reqId = activeChat.outgoingFriendRequestId;
+        if (!reqId) {
+          const frRes = await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
+            method: "POST",
+            body: JSON.stringify({ toUserId: activeChat.otherUserId }),
+          });
+          reqId = frRes?.id || frRes?.requestId || frRes?.friendRequestId || frRes?.data?.id;
+          if (!reqId) {
+            throw new Error("Could not initiate message: failed to create friend request.");
+          }
+          // Dynamically update the local state properties so subsequent actions use the correct ID
+          activeChat.outgoingFriendRequestId = reqId;
+          activeChat.conversationId = `outgoing_fr_${reqId}`;
+          activeChat.rowKey = `outgoing_fr_${reqId}`;
+          activeChat.isOutgoingFriendRequest = true;
+          setActiveChat({ ...activeChat });
+        }
         await apiRequest(
-          API.FRIENDS.SEND_REQUEST_MESSAGE(activeChat.outgoingFriendRequestId),
+          API.FRIENDS.SEND_REQUEST_MESSAGE(reqId),
           { method: "POST", body: JSON.stringify(body) },
         );
         await refreshWallet();
-      } else {
-        setThreadProductMessage({
-          variant: "warning",
-          text: "You can't send a message here yet. Accept the friend request, or open a conversation thread.",
-        });
-        return;
       }
       setNewMessage("");
       setIsGiftModalOpen(false);
@@ -1605,7 +1616,7 @@ export default function Inbox() {
         setSuccessRecipientName(activeChat?.name || "them");
         setShowSuccessPopup(true);
       }
-      await loadThreadMessages(activeChat);
+      await loadThreadMessages(activeChat, { quiet: true });
       await loadLists({ quiet: true });
     } catch (e) {
       setThreadProductMessage({
@@ -1719,36 +1730,50 @@ export default function Inbox() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const cid = params.get("chat");
-    if (!cid || activeChat?.rowKey === cid) return;
+    const otherUserId = params.get("userId");
+
+    if (!cid && !otherUserId) return;
 
     const row = [...inboxList, ...requestsList, ...sentList].find(
-      (c) => String(c.conversationId || c.id) === String(cid),
+      (c) =>
+        (cid && String(c.conversationId || c.id) === String(cid)) ||
+        (otherUserId && String(c.otherUser?.id || c.otherUserId) === String(otherUserId)),
     );
     if (row) {
+      const rowCid = String(row.conversationId || row.id);
+      if (activeChat?.rowKey === rowCid) return;
       openRow(row);
       return;
     }
 
-    const otherUserId = params.get("userId");
-    if (!otherUserId) return;
-    setActiveTab("inbox");
-    setActiveChat({
-      rowKey: cid,
-      conversationId: cid,
-      otherUser: {
-        id: otherUserId,
-        username: params.get("username") || "User",
-        displayPictureUrl: params.get("photo") || null,
-      },
-      otherUserId,
-      isFriend: params.get("friend") === "1",
-      isFollowRequest: false,
-      isOutgoingFriendRequest: false,
-      followRequestId: null,
-      outgoingFriendRequestId: null,
-      unreadCount: 0,
-    });
-  }, [activeChat?.rowKey, inboxList, requestsList, sentList]);
+    if (
+      activeChat &&
+      ((cid && activeChat.rowKey === cid) ||
+        (!cid && otherUserId && activeChat.otherUserId === otherUserId))
+    ) {
+      return;
+    }
+
+    if (otherUserId) {
+      setActiveTab("inbox");
+      setActiveChat({
+        rowKey: cid || `synthetic_${otherUserId}`,
+        conversationId: cid || "",
+        otherUser: {
+          id: otherUserId,
+          username: params.get("username") || "User",
+          displayPictureUrl: params.get("photo") || null,
+        },
+        otherUserId,
+        isFriend: params.get("friend") === "1",
+        isFollowRequest: false,
+        isOutgoingFriendRequest: false,
+        followRequestId: null,
+        outgoingFriendRequestId: null,
+        unreadCount: 0,
+      });
+    }
+  }, [activeChat?.rowKey, activeChat?.otherUserId, inboxList, requestsList, sentList]);
 
   const showRecipientFollowActions =
     activeTab === "requests" &&

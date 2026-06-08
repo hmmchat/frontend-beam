@@ -68,18 +68,18 @@ export default function StickersTab({ user, setUser }) {
         setUser((prev) =>
           prev
             ? {
-                ...prev,
-                activeBadgeId: selectedBadgeId,
-                activeBadge: selected
-                  ? {
-                      id: selected.id,
-                      giftId: selected.giftId,
-                      giftName: selected.giftName,
-                      giftEmoji: selected.giftEmoji,
-                    }
-                  : null,
-                activeBadgeImageUrl: selected?.imageUrl || null,
-              }
+              ...prev,
+              activeBadgeId: selectedBadgeId,
+              activeBadge: selected
+                ? {
+                  id: selected.id,
+                  giftId: selected.giftId,
+                  giftName: selected.giftName,
+                  giftEmoji: selected.giftEmoji,
+                }
+                : null,
+              activeBadgeImageUrl: selected?.imageUrl || null,
+            }
             : prev
         );
       }
@@ -142,11 +142,10 @@ export default function StickersTab({ user, setUser }) {
                   className="cursor-pointer transition-all active:scale-95 hover:scale-105"
                 >
                   <div
-                    className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${
-                      isSelected
+                    className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${isSelected
                         ? "border-[#FACC15] scale-110"
                         : "border-white/50 hover:border-white border-[1px]"
-                    }`}
+                      }`}
                   >
                     {src ? (
                       <Image
@@ -175,9 +174,8 @@ export default function StickersTab({ user, setUser }) {
             <button
               key={i}
               onClick={() => setCurrentPage(i)}
-              className={`h-2.5 w-2.5 rounded-full transition-all ${
-                i === currentPage ? "bg-white w-6" : "bg-white/40"
-              }`}
+              className={`h-2.5 w-2.5 rounded-full transition-all ${i === currentPage ? "bg-white w-6" : "bg-white/40"
+                }`}
             />
           ))}
         </div>

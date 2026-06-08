@@ -43,6 +43,13 @@ export default function ThreadHeader({
     return y >= 0 ? String(y) : "";
   };
 
+  const rawCity = otherProfile?.preferredCity || otherProfile?.city || "";
+  const cityDisplay = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
+    ? 'Anywhere in India'
+    : rawCity === 'Unknown'
+      ? ''
+      : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
   return (
     <div className={clsx('flex', 'items-center', 'justify-between', 'md:px-6', 'md:p-2', 'md:mt-3',  )}>
 <div className="flex items-center justify-between w-full">
@@ -114,7 +121,7 @@ export default function ThreadHeader({
     <div className="flex items-center gap-1 text-white/80 text-xs">
       <IoLocationOutline className="text-white" />
       <span className="truncate">
-        {otherProfile?.preferredCity || "—"}
+        {cityDisplay || "—"}
         {ageFromDob(otherProfile?.dateOfBirth)
           ? ` · ${ageFromDob(otherProfile?.dateOfBirth)}`
           : ""}

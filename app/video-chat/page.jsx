@@ -68,7 +68,7 @@ function VideoChatContent() {
     handleShareBroadcastLink, copyShareUrl,
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
-    handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
+    handleLocalGiftComplete, handleRemoteGiftComplete, handleRemoteGiftDismissStart, handleSendGift,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay,
     handleSaveCustomDare, handleDeleteCustomDare,
@@ -190,8 +190,10 @@ function VideoChatContent() {
               isRainchecking={isRainchecking}
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
               activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
+              activeLocalGiftLabel={activeLocalGiftLabel}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
               <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} />
@@ -228,12 +230,15 @@ function VideoChatContent() {
               hideNameOnMobile={true}
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
               onReportClick={() => setShowGroupMembersModal(true)}
               showMinusButton={false}
               onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+              activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
+              activeLocalGiftLabel={activeLocalGiftLabel}
             />
             <div className="flex min-h-0 min-w-0 flex-1 md:flex-col md:gap-2">
               <div className="flex-1 min-h-0 min-w-0 relative">
@@ -256,6 +261,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[1]}
                   gifts={getRemoteGifts(remoteStreams[1]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
@@ -302,12 +308,15 @@ function VideoChatContent() {
               hideNameOnMobile={true}
               gifts={getRemoteGifts(remoteStreams[0]?.userId)}
               onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
               multiUserAvatars={remoteStreams.map(s => getRemoteTileProfile(s).displayPictureUrl)}
               onClickMultiUserAvatars={() => setShowGroupMembersModal(true)}
               hideReportOnMobile={true}
               showMinusButton={false}
               onMinus={() => handleKickRemote(remoteStreams[0].userId)}
               activeRemoteDareText={getRemoteActiveDareText(remoteStreams[0].userId)}
+              activeGiftLabel={getRemoteActiveGiftLabel(remoteStreams[0].userId)}
+              activeLocalGiftLabel={activeLocalGiftLabel}
             />
               <RemoteVideoTile
                 key={`remote-${remoteStreams[1].userId}`}
@@ -330,6 +339,7 @@ function VideoChatContent() {
                 hideAddFriendOnMobile={true}
                 gifts={getRemoteGifts(remoteStreams[1]?.userId)}
                 onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
                 showMinusButton={false}
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
                 activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1].userId)}
@@ -353,6 +363,7 @@ function VideoChatContent() {
                   hideReport={!remoteStreams[2]}
                   gifts={getRemoteGifts(remoteStreams[2]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
+              onGiftDismissStart={handleRemoteGiftDismissStart}
                   className="absolute inset-0 w-full h-full"
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}

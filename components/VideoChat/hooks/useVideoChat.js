@@ -1197,10 +1197,15 @@ export default function useVideoChat() {
             }
           } else if (controlParsed.isGiftDismissed) {
             const { messageId } = controlParsed;
-            setActiveRemoteGifts(prev => prev.map(item => item.gift?.messageId === messageId ? { ...item, isDismissed: true } : item));
-            setActiveLocalGifts(prev => prev.map(item => item.messageId === messageId ? { ...item, isDismissed: true } : item));
+            const mid = String(messageId);
+            setActiveRemoteGifts(prev => prev.map(item =>
+              String(item.gift?.messageId) === mid ? { ...item, isDismissed: true } : item
+            ));
+            setActiveLocalGifts(prev => prev.map(item =>
+              String(item.messageId) === mid ? { ...item, isDismissed: true } : item
+            ));
           } else if (controlParsed.isGift) {
-            const messageId = data.id || data.messageId || controlParsed.messageId || Date.now().toString();
+            const messageId = controlParsed.messageId || data.id || data.messageId || Date.now().toString();
             let isProcessed = false;
             if (messageId) { if (processedGiftIdsRef.current.has(messageId)) isProcessed = true; else processedGiftIdsRef.current.add(messageId); }
             if (!isProcessed) {
@@ -1580,9 +1585,9 @@ export default function useVideoChat() {
   };
 
   // ---- Gift callbacks ------------------------------------------------------
-  const handleLocalGiftComplete = useCallback((gift) => {
+  const handleLocalGiftDismissStart = useCallback((gift) => {
     const messageId = typeof gift === 'string' ? gift : gift?.messageId;
-    // Broadcast dismissal to all peers so the gift clears on their screens too
+    // Broadcast dismissal to all peers immediately on click (before fade animation)
     const roomId = roomInfoRef.current?.roomId;
     if (messageId && roomId) {
       send({
@@ -1593,7 +1598,16 @@ export default function useVideoChat() {
         },
       });
     }
+  }, []);
+
+  const handleLocalGiftComplete = useCallback((gift) => {
+    const messageId = typeof gift === 'string' ? gift : gift?.messageId;
+    // Only clear local state after fade; broadcast was already sent by onDismissStart
     setActiveLocalGifts(prev => prev.filter(item => item.messageId !== messageId));
+  }, []);
+
+  const handleRemoteGiftDismissStart = useCallback((_giftEntry) => {
+    // No-op safety fallback — sender doesn't need to re-broadcast
   }, []);
 
   const handleRemoteGiftComplete = useCallback((giftEntry) => {
@@ -1793,6 +1807,7 @@ export default function useVideoChat() {
     onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
     isDareOpen, setIsDareOpen: openDareOverlay, setIsCoinModalOpen, coins, selectedGiftId,
     gift: activeLocalGifts[0] || null, gifts: activeLocalGifts, onGiftAnimationComplete: handleLocalGiftComplete,
+    onGiftDismissStart: handleLocalGiftDismissStart,
     forceDismiss: activeLocalGifts[0]?.isDismissed, hideAllControls: !!activeDareProposal,
     isGroupCall: remoteStreams.length > 1,
   };
@@ -1834,7 +1849,7 @@ export default function useVideoChat() {
     handleShareBroadcastLink, copyShareUrl,
     refreshWaitlist, acceptFromWaitlist,
     sendChatMessage, handleChatButtonClick,
-    handleLocalGiftComplete, handleRemoteGiftComplete, handleSendGift,
+    handleLocalGiftComplete, handleLocalGiftDismissStart, handleRemoteGiftComplete, handleRemoteGiftDismissStart, handleSendGift,
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay, goHomeIdleFromCall, refreshWallet,
     handleSaveCustomDare, handleDeleteCustomDare,

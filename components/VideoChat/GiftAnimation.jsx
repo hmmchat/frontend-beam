@@ -21,12 +21,13 @@ function GiftVisual({ gift }) {
   );
 }
 
-export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, forceDismiss, interactive = true }) {
+export function GiftAnimationGroup({ gifts, onComplete, onDismissStart, persistUntilDismissed, forceDismiss, interactive = true }) {
   const containerRef = useRef(null);
   const itemRefs = useRef(new Map());
   const physicsRef = useRef(new Map());
   const dismissingRef = useRef(new Set());
   const onCompleteRef = useRef(onComplete);
+  const onDismissStartRef = useRef(onDismissStart);
   const [fadingGiftKeys, setFadingGiftKeys] = useState(() => new Set());
 
   const giftItems = useMemo(() => Array.isArray(gifts) ? gifts.filter(Boolean) : [], [gifts]);
@@ -35,9 +36,15 @@ export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, f
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  useEffect(() => {
+    onDismissStartRef.current = onDismissStart;
+  }, [onDismissStart]);
+
   const dismissGift = useCallback((gift, key) => {
     if (dismissingRef.current.has(key)) return;
     dismissingRef.current.add(key);
+    // Fire onDismissStart immediately so the parent can broadcast dismissal
+    onDismissStartRef.current?.(gift);
     setFadingGiftKeys((prev) => {
       const next = new Set(prev);
       next.add(key);
@@ -238,7 +245,7 @@ export function GiftAnimationGroup({ gifts, onComplete, persistUntilDismissed, f
   );
 }
 
-export default function GiftAnimation({ gift, onComplete, persistUntilDismissed, forceDismiss, interactive = true }) {
+export default function GiftAnimation({ gift, onComplete, onDismissStart, persistUntilDismissed, forceDismiss, interactive = true }) {
   const containerRef = useRef(null);
   const giftRef = useRef(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -253,6 +260,8 @@ export default function GiftAnimation({ gift, onComplete, persistUntilDismissed,
   const handleDismiss = () => {
     if (isDismissingRef.current) return;
     isDismissingRef.current = true;
+    // Fire onDismissStart immediately so the parent can broadcast dismissal
+    if (onDismissStart) onDismissStart(gift);
     setIsFadingOut(true);
     setTimeout(() => {
       if (onCompleteRef.current) {

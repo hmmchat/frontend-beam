@@ -53,6 +53,7 @@ export default function RemoteVideoTile({
   showParticipantNextButton = false,
   activeRemoteDareText,
   activeGiftLabel,
+  activeLocalGiftLabel,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -183,6 +184,11 @@ export default function RemoteVideoTile({
           <span>{activeGiftLabel}</span>
         </div>
       )}
+      {!activeRemoteDareText && !activeGiftLabel && activeLocalGiftLabel && (
+        <div className="absolute md:hidden top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 bg-[#6B00CC] rounded-b-[16px] text-white text-[10px] font-medium shadow-md whitespace-nowrap">
+          <span>{activeLocalGiftLabel}</span>
+        </div>
+      )}
 
 
 
@@ -252,6 +258,8 @@ export default function RemoteVideoTile({
           />
         </button>
       )}
+
+
 
       {/* Leave Button — top right (shifted left if Next is shown) */}
       {showLeaveNextButton && onLeaveOrNext && (

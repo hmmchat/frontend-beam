@@ -1,9 +1,9 @@
 'use client';
 
-export default function VideoChatMask({ slots }) {
+export default function VideoChatMask({ slots, giftAnimationActive = false }) {
   if (slots === 2) {
     return (
-      <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
+      <div className={`absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
         <svg
           viewBox="0 0 370 673"
           preserveAspectRatio="none"
@@ -34,7 +34,7 @@ export default function VideoChatMask({ slots }) {
 
   if (slots === 3) {
     return (
-      <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
+      <div className={`absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
 
 
         <svg
@@ -54,7 +54,7 @@ export default function VideoChatMask({ slots }) {
 
   if (slots === 4) {
     return (
-      <div className="absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none">
+      <div className={`absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
         <svg
           viewBox="0 0 370 673"
           preserveAspectRatio="none"

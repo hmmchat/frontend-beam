@@ -12,6 +12,7 @@ export default function QuickActions({
   isRolling,
   setIsRolling,
   isBroken,
+  giftAnimationActive = false,
 }) {
   const [diceIndex, setDiceIndex] = useState(0);
 
@@ -50,7 +51,8 @@ export default function QuickActions({
   return (
     <div className={clsx(
       "absolute top-[58%] -translate-y-1/2 md:top-auto md:bottom-0 left-0 w-full h-14 z-40 pointer-events-none px-10",
-      isOverlayOpen && "hidden md:block"
+      isOverlayOpen && "hidden md:block",
+      giftAnimationActive && "md:block hidden"
     )}>
 
       {/* LEFT (Dice) - Only visible to host */}

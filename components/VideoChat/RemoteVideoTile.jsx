@@ -54,6 +54,7 @@ export default function RemoteVideoTile({
   activeRemoteDareText,
   activeGiftLabel,
   activeLocalGiftLabel,
+  giftAnimationActive = false,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -174,18 +175,18 @@ export default function RemoteVideoTile({
       className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden',)}
     >
       {activeRemoteDareText && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
+        <div className={clsx('absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
           <span className="opacity-90">{name || "Stranger"}&apos;s Dare: </span>
           <span className="font-bold">{activeRemoteDareText}</span>
         </div>
       )}
       {!activeRemoteDareText && activeGiftLabel && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 md:py-2.5 bg-[#6B00CC] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap">
+        <div className={clsx('absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#6B00CC]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
           <span>{activeGiftLabel}</span>
         </div>
       )}
       {!activeRemoteDareText && !activeGiftLabel && activeLocalGiftLabel && (
-        <div className="absolute md:hidden top-0 left-1/2 -translate-x-1/2 z-30 px-6 py-1.5 bg-[#6B00CC] rounded-b-[16px] text-white text-[10px] font-medium shadow-md whitespace-nowrap">
+        <div className={clsx('absolute', 'md:hidden', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'bg-[#6B00CC]', 'rounded-b-[16px]', 'text-white', 'text-[10px]', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
           <span>{activeLocalGiftLabel}</span>
         </div>
       )}
@@ -217,6 +218,13 @@ export default function RemoteVideoTile({
           style={{ transform: 'translateZ(0)' }}
         />
       )}
+
+      {/* Top icons wrapper — hidden on mobile during gift animation */}
+      <div className={clsx(
+        "absolute inset-0 z-20 pointer-events-none",
+        giftAnimationActive ? "md:opacity-100 opacity-0" : "opacity-100",
+        "transition-opacity duration-300"
+      )}>
 
       {/* Next (Arrow) Button — far right */}
       {showNextButton && onNext && (
@@ -435,7 +443,11 @@ export default function RemoteVideoTile({
         </div>
       )}
 
-      <div className={clsx('absolute', 'md:top-12', 'top-6', 'md:left-12', 'left-6', 'flex', 'items-center', 'justify-between', 'z-10')}>
+      <div className={clsx(
+        'absolute', 'md:top-12', 'top-6', 'md:left-12', 'left-6', 'flex', 'items-center', 'justify-between', 'z-10',
+        'transition-opacity', 'duration-300',
+        giftAnimationActive ? 'md:opacity-100 opacity-0 pointer-events-none' : 'opacity-100'
+      )}>
         <div className={clsx('flex', 'items-center', 'md:gap-2', 'gap-2')}>
           <div className={clsx(
             "relative items-center gap-2.5 pl-1.5 pr-5 py-1.5 md:py-2.5 rounded-full bg-slate-900/20 backdrop-blur-md outline outline-2 outline-white/40",
@@ -585,8 +597,13 @@ export default function RemoteVideoTile({
         </div>
       </div>
 
+      </div>{/* end top icons wrapper */}
+
+
+ {/* border */}
       <div className={clsx(
-        "absolute hidden md:block md:top-4 top-2 md:left-4 left-2 md:right-4 right-2 border md:border-white/30 border-white/50 md:rounded-[60px] rounded-3xl pointer-events-none z-20",
+        "absolute hidden md:block md:top-4 top-2 md:left-4 left-2 md:right-4 right-2 bottom-2 border md:border-white/30 border-white/50 md:rounded-[60px] rounded-3xl pointer-events-none z-20",
+        giftAnimationActive ? "!block" : "",
         borderBottomClass
       )} />
 

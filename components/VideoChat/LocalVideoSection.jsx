@@ -99,7 +99,7 @@ export default function LocalVideoSection({
           )}
         />
 
-        <div className="absolute top-2 left-2 right-2 bottom-2 md:top-4 md:left-4 md:right-4 md:bottom-4 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]">
+        <div className="absolute top-2 left-2 right-2 bottom-14 md:top-4 md:left-4 md:right-4 md:bottom-22 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]">
           <GiftAnimationGroup
             gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
             onComplete={onGiftAnimationComplete}
@@ -351,7 +351,7 @@ export default function LocalVideoSection({
             giftAnimationActive ? "!block" : "",
             isGiftModalOpen || isDareOpen
               ? "border-white/50  md:bottom-28 bottom-18"
-              : "border-white/30 md:bottom-24 bottom-16",
+              : "border-white/30 md:bottom-24 bottom-18",
           )}
         />
       </div>

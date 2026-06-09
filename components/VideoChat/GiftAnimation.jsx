@@ -11,11 +11,11 @@ function GiftVisual({ gift }) {
   return gift.imageUrl ? (
     <img
       src={gift.imageUrl}
-      className="w-16 h-16 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
+      className="w-16 h-16 object-contain "
       alt={gift.name || "gift"}
     />
   ) : (
-    <span className="text-[64px] drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] leading-none select-none">
+    <span className="text-[64px] leading-none select-none">
       {gift.img || "🎁"}
     </span>
   );
@@ -416,12 +416,12 @@ export default function GiftAnimation({ gift, onComplete, onDismissStart, persis
           {gift.imageUrl ? (
             <img
               src={gift.imageUrl}
-              className="w-16 h-16 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
+              className="w-16 h-16 object-contain "
               alt={gift.name || "gift"}
             />
           ) : (
-            <span className="text-[64px] drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] leading-none select-none">
-              {gift.img || "🎁"}
+            <span className="text-[64px]  leading-none select-none">
+              {gift.img}
             </span>
           )}
         </div>

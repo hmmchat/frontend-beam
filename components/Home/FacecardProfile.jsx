@@ -113,51 +113,23 @@ const FacecardProfile = ({
 
   return (
     <>
+
+
+
       {!hideHeader && (
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
           <div>
-            <h1 className="text-[18px] font-semibold text-[#FFB800]">
+            <h1 className="text-[18px] font-black text-[#FFB800] leading-none">
               {user.username || "User"}{" "}
-              <span
-                className="font-sm text-transparent  px-2 py-0.5 rounded-full"
-                style={{ WebkitTextStroke: "0.7px white" }}
-              >
+              <span className="age-badge ">
                 {age || "—"}
               </span>
             </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              <IoLocationOutline className="shrink-0" />
-              <span className="truncate">{city}</span>
-            </div>
+
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            {inSquad && (
-              <button
-                type="button"
-                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-              >
-                Squad
-              </button>
-            )}
-            {isBroadcasting && (
-              <span
-                className="flex h-6 w-6 items-center justify-center text-white"
-                title="Broadcasting"
-              >
-                <IoRadio className="h-5 w-5" />
-              </span>
-            )}
-            <span
-              className="flex h-6 w-6 items-center justify-center text-white"
-              title={isVideoOn ? "Video on" : "Video off"}
-            >
-              {isVideoOn ? (
-                <IoVideocam className="h-5 w-5" />
-              ) : (
-                <IoVideocamOff className="h-5 w-5" />
-              )}
-            </span>
+
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center text-white"
@@ -168,64 +140,23 @@ const FacecardProfile = ({
         </div>
       )}
 
+
+
+
+
+
+
       <div
         data-facecard-boundary="true"
-        className="w-[340px] h-[663px] md:h-[688px]  max-w-[360px] 
-                sm:w-[340px] md:w-[320px] lg:w-[360px] 
+        className="w-[340px] h-[651px] md:h-[680px]  max-w-[360px] 
+                 md:w-[320px] lg:w-[360px] 
            shrink-0 rounded-[30px] 
             
                "
       >
         <div className="relative h-full w-full overflow-hidden rounded-[28px]">
           {/* HEADER */}
-          {!hideHeader && (
-            <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
-              <div>
-                <h1 className="text-[18px] font-black text-[#FFB800] leading-none">
-                  {user.username || "User"}{" "}
-                  <span className="age-badge ">
-                    {age || "—"}
-                  </span>
-                </h1>
 
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1.5">
-                {/* {inSquad && (
-                  <button
-                    type="button"
-                    className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-                  >
-                    Squad
-                  </button>
-                )}
-                {isBroadcasting && (
-                  <span
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                    title="Broadcasting"
-                  >
-                    <IoRadio className="h-5 w-5" />
-                  </span>
-                )}
-                <span
-                  className="flex h-6 w-6 items-center justify-center text-white"
-                  title={isVideoOn ? "Video on" : "Video off"}
-                >
-                  {isVideoOn ? (
-                    <IoVideocam className="h-5 w-5" />
-                  ) : (
-                    <IoVideocamOff className="h-5 w-5" />
-                  )}
-                </span> */}
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center text-white"
-                >
-                  <IoEllipsisVerticalSharp />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Inner chrome */}
           <div className="absolute md:bottom-12  bottom-1 left-1 right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
@@ -239,7 +170,7 @@ const FacecardProfile = ({
             </div>
 
             {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute md:bottom-2 bottom-1.5 left-1 right-2 top-[6.9rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
+            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[6.5rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
               {/* LEFT SIDEBAR */}
               <div className="w-[26%] flex flex-col items-center gap-2 z-20">
                 {/* Brands capsule */}
@@ -287,8 +218,8 @@ const FacecardProfile = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex w-[100%] shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
-                  <div className=" w-[100%] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                <div className="flex w-[75px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                  <div className="w-full aspect-square shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
@@ -296,7 +227,7 @@ const FacecardProfile = ({
                         alt=""
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center" />
+                      <div className="h-full w-full flex items-center justify-center" />
                     )}
                   </div>
                   <div className="mt-2 h-px w-[90%] bg-white/30" />
@@ -317,7 +248,7 @@ const FacecardProfile = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex w-[74%] border  border-white/40 rounded-[20px] h-full flex flex-col items-center ">
+              <div className="flex w-[239px] md:w-[268px] border border-white/40 rounded-[20px] h-full flex flex-col items-center ">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover rounded-[20px] "
@@ -331,7 +262,7 @@ const FacecardProfile = ({
             {/* Pagination */}
             <div
               data-facecard-pagination="true"
-              className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2"
+              className="absolute -bottom-[-12px] left-0 right-0 z-20 flex justify-center gap-2"
             >
               {allPhotos.map((_, idx) => (
                 <div

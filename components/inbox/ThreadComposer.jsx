@@ -29,10 +29,11 @@ export default function ThreadComposer({
 
   const wasSending = useRef(sending);
   const prevConversationId = useRef(conversationId);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const justFinishedSending = wasSending.current && !sending;
-    const conversationChanged = prevConversationId.current !== conversationId;
+    const conversationChanged = prevConversationId.current !== conversationId || isFirstRender.current;
 
     if ((justFinishedSending || conversationChanged) && !textInputLocked && !sending) {
       inputRef.current?.focus();
@@ -40,6 +41,7 @@ export default function ThreadComposer({
 
     wasSending.current = sending;
     prevConversationId.current = conversationId;
+    isFirstRender.current = false;
   }, [sending, textInputLocked, conversationId]);
 
   useEffect(() => {

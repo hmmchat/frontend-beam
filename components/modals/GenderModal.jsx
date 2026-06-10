@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Button from "../ui/Button";
 import { API, apiRequest } from "@/lib/api";
-import { IoMdArrowBack } from "react-icons/io";
 
 const MALE_COST = Number(process.env.NEXT_PUBLIC_MALE_FILTER_COST);
 const FEMALE_COST = Number(process.env.NEXT_PUBLIC_FEMALE_FILTER_COST);
@@ -19,16 +18,18 @@ const defaultFilters = [
 export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated, onStartBeaming }) {
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [initialGender, setInitialGender] = useState("ALL");
-  const [coinsPerScreen, setCoinsPerScreen] = useState(20);
   const [screensPerPurchase, setScreensPerPurchase] = useState(10);
   const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(false);
   const [internalUserCoins, setInternalUserCoins] = useState(25500);
+  const [activePack, setActivePack] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const userCoins = externalUserCoins !== undefined ? externalUserCoins : internalUserCoins;
 
   useEffect(() => {
     if (isOpen) {
+      setErrorMessage("");
       fetchFilters();
       if (externalUserCoins === undefined) {
         fetchUserCoins();
@@ -54,9 +55,9 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
       // GET /gender-filters — authenticated via JWT, no userId param
       const data = await apiRequest(API.DISCOVERY.GENDER_FILTERS);
 
-      const coinsPer = data && data.coinsPerScreen !== undefined ? data.coinsPerScreen : (data && data.coinsperScreen !== undefined ? data.coinsperScreen : 200);
-      const screensPer = data && data.screensPerPurchase !== undefined ? data.screensPerPurchase : 10;
-      setCoinsPerScreen(coinsPer);
+      const config = data?.config || {};
+      const coinsPer = data?.coinsPerScreen ?? data?.coinsperScreen ?? config.coinsPerScreen ?? 200;
+      const screensPer = data?.screensPerPurchase ?? config.screensPerPurchase ?? 10;
       setScreensPerPurchase(screensPer);
 
       if (data && data.availableFilters && data.availableFilters.length > 0) {
@@ -93,10 +94,20 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         setFilters(fallbackFilters);
       }
 
-      if (data && data.currentPreference && data.currentPreference.genders && data.currentPreference.genders.length > 0) {
-        setSelectedGender(data.currentPreference.genders[0]);
-        setInitialGender(data.currentPreference.genders[0]);
+      const currentPreference = data?.currentPreference;
+      if (currentPreference?.genders?.length > 0 && currentPreference.screensRemaining > 0) {
+        const packGender = currentPreference.genders[0];
+        const pack = {
+          gender: packGender,
+          screensRemaining: Number(currentPreference.screensRemaining) || 0,
+          isActive: currentPreference.isActive !== false,
+        };
+        setActivePack(pack);
+        const nextGender = pack.isActive ? packGender : "ALL";
+        setSelectedGender(nextGender);
+        setInitialGender(nextGender);
       } else {
+        setActivePack(null);
         const savedPreference = localStorage.getItem("genderPreference") || "ALL";
         setSelectedGender(savedPreference);
         setInitialGender(savedPreference);
@@ -112,14 +123,31 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         { gender: "NON_BINARY", label: "Non-binary", cost: coinsPer }
       ];
       setFilters(fallbackFilters);
+      setActivePack(null);
       const savedPreference = localStorage.getItem("genderPreference") || "ALL";
       setSelectedGender(savedPreference);
       setInitialGender(savedPreference);
     }
   };
 
+  const isPackLocked = Boolean(activePack?.gender && activePack.screensRemaining > 0);
+
+  const isGenderDisabled = (filter) => {
+    if (filter.gender === "ALL") return false;
+    if (isPackLocked && filter.gender !== activePack.gender) return true;
+    if (isPackLocked && filter.gender === activePack.gender) return false;
+    return userCoins < filter.cost;
+  };
+
+  const getGenderCostLabel = (filter) => {
+    if (filter.gender === "ALL") return "Free";
+    if (isPackLocked && filter.gender === activePack.gender) return `${activePack.screensRemaining} left`;
+    return filter.cost;
+  };
+
   const handleApply = async () => {
     setLoading(true);
+    setErrorMessage("");
     try {
       await apiRequest(API.DISCOVERY.APPLY_GENDER_FILTER, {
         method: "POST",
@@ -128,7 +156,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         }),
       });
 
-      if (selectedGender !== initialGender) {
+      if (selectedGender !== initialGender && !(isPackLocked && selectedGender === activePack.gender)) {
         const targetFilter = filters.find(f => f.gender === selectedGender);
         const cost = targetFilter ? targetFilter.cost : 0;
         if (cost > 0 && onCoinsUpdated) {
@@ -141,19 +169,8 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
       // Trigger discovery flow after applying filter
       if (onStartBeaming) onStartBeaming();
     } catch (error) {
-      console.error("Error applying filter, falling back locally:", error);
-
-      if (selectedGender !== initialGender) {
-        const targetFilter = filters.find(f => f.gender === selectedGender);
-        const cost = targetFilter ? targetFilter.cost : 0;
-        if (cost > 0 && onCoinsUpdated) {
-          onCoinsUpdated(cost);
-        }
-      }
-
-      localStorage.setItem("genderPreference", selectedGender);
-      onClose();
-      if (onStartBeaming) onStartBeaming();
+      console.error("Error applying filter:", error);
+      setErrorMessage(error?.message || "Could not apply gender filter. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -195,6 +212,12 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
               </div>
 
               {/* Cards Grid */}
+              {errorMessage && (
+                <div className="mb-3 rounded-xl border border-red-300/40 bg-red-500/15 px-3 py-2 text-xs text-red-100 font-outfit">
+                  {errorMessage}
+                </div>
+              )}
+
               <div
                 className={`grid ${filters.filter((f) => f.gender !== "ALL").length === 3
                   ? "grid-cols-3"
@@ -204,8 +227,9 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                 {filters
                   .filter((f) => f.gender !== "ALL")
                   .map((filter) => {
-                    const isDisabled = userCoins < filter.cost;
+                    const isDisabled = isGenderDisabled(filter);
                     const isSelected = selectedGender === filter.gender;
+                    const isPackGender = isPackLocked && filter.gender === activePack.gender;
 
                     return (
                       <button
@@ -238,16 +262,23 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                           {filter.label}
                         </div>
                         <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
-                          {screensPerPurchase}+ Matches
+                          {isPackGender ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
                         </div>
                         <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
-                          <img
-                            src="/assets/Coin-token.svg"
-                            alt=""
-                            className="md:w-4 md:h-4 w-5 h-5"
-                          />
-                          <span className="font-bold">{filter.cost}</span>
+                          {!isPackGender && (
+                            <img
+                              src="/assets/Coin-token.svg"
+                              alt=""
+                              className="md:w-4 md:h-4 w-5 h-5"
+                            />
+                          )}
+                          <span className="font-bold">{getGenderCostLabel(filter)}</span>
                         </div>
+                        {isDisabled && isPackLocked && (
+                          <div className="absolute inset-x-1 bottom-1 text-[9px] text-white/70 font-outfit">
+                            Finish current pack
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -277,7 +308,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-white font-semibold text-sm font-outfit">
-                            Free
+                            {isPackLocked && !activePack.isActive ? "Free · pack paused" : "Free"}
                           </span>
                         </div>
                       </div>

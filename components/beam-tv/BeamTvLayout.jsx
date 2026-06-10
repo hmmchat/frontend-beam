@@ -6,7 +6,7 @@ export default function BeamTvLayout({ remoteStreams, renderTile }) {
   if (tiles.length === 1) {
     // Single tile — full screen, no padding needed
     return (
-      <div className="w-full h-full">
+      <div className="w-full h-full flex">
         {renderTile(tiles[0], 0)}
       </div>
     );

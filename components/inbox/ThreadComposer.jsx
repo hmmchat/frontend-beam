@@ -20,11 +20,27 @@ export default function ThreadComposer({
   sendMessage,
   emitTyping,
   typingTimerRef,
+  conversationId,
 }) {
   const inputRef = useRef(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
+
+  const wasSending = useRef(sending);
+  const prevConversationId = useRef(conversationId);
+
+  useEffect(() => {
+    const justFinishedSending = wasSending.current && !sending;
+    const conversationChanged = prevConversationId.current !== conversationId;
+
+    if ((justFinishedSending || conversationChanged) && !textInputLocked && !sending) {
+      inputRef.current?.focus();
+    }
+
+    wasSending.current = sending;
+    prevConversationId.current = conversationId;
+  }, [sending, textInputLocked, conversationId]);
 
   useEffect(() => {
     const onDoc = (e) => {

@@ -61,7 +61,7 @@ export default function WaitlistModal({
                     <img src={u.displayPictureUrl} alt={u.username} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white text-[2rem] leading-none font-black truncate">{u.username || 'User'}</div>
+                    <div className="text-white text-[2rem] leading-none font-black truncate">{u.username}</div>
                   </div>
                   <button
                     type="button"

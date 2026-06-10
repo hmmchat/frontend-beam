@@ -2762,7 +2762,7 @@ export default function MeetSomeoneDynamic() {
                                     ) : guestId ? (
                                       <span className="text-xl md:text-3xl text-white/60">…</span>
                                     ) : (
-                                      <span className={clsx('text-2xl', 'md:text-3xl', 'text-white')}>?</span>
+                                      <span className={clsx('text-2xl', 'md:text-4xl', 'font-outfit', 'font-bold', 'break-words', 'text-white')}>?</span>
                                     )}
                                   </div>
                                   {guestId ? (

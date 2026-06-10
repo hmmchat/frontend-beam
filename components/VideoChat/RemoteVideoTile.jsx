@@ -413,7 +413,7 @@ export default function RemoteVideoTile({
                 <div className={clsx('absolute', 'inset-0', 'z-[1]')} />
 
                 <div className={clsx('relative', 'z-10', 'space-y-2')}>
-                  <h3 className={clsx('text-white', 'md:text-2xl', 'text-lg', 'font-black')}>Report {name || "this user"}</h3>
+                  <h3 className={clsx('text-white', 'md:text-2xl', 'text-lg', 'font-black')}>Report {name}</h3>
                   <p className={clsx('text-white/70', 'md:text-sm', 'text-xs', 'font-outfit', 'px-2', 'leading-relaxed')}>
                     Are you sure you want to <br /> report this user?
                   </p>

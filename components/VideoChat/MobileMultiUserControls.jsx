@@ -86,7 +86,7 @@ export default function MobileMultiUserControls({
             alt=""
           />
           <img
-            src="/dare.png"
+            src="/dare1.png"
             className="relative w-7 h-auto"
             alt="DARE"
           />

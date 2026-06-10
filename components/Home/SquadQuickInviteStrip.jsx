@@ -22,7 +22,7 @@ export default function SquadQuickInviteStrip({
   return (
     <div
       className={clsx(
-        'flex md:w-[50%]  mt-5    ',
+        'flex md:w-[50%]  mt-5 mb-4 md:mb-0     ',
 
 
       )}
@@ -30,7 +30,7 @@ export default function SquadQuickInviteStrip({
     >
       <div className="flex shrink-0 flex-row items-center gap-4">
         <span className="text-sm font-outfit  text-white/95 md:text-16">Invite</span>
-        <span className="h-14 w-[1.5px] shrink-0 bg-white/50" aria-hidden />
+        <span className="h-[4.5vh] w-[1.5px] shrink-0 bg-white/50" aria-hidden />
       </div>
 
       <div className="flex px-5 pt-2 flex-1 flex-row items-center gap-7 overflow-x-auto">

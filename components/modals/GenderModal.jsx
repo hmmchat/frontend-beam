@@ -5,10 +5,9 @@ import Button from "../ui/Button";
 import { API, apiRequest } from "@/lib/api";
 import { IoMdArrowBack } from "react-icons/io";
 
-// Load filter costs from environment variables with standard fallbacks
-const MALE_COST = Number(process.env.NEXT_PUBLIC_MALE_FILTER_COST) || 200;
-const FEMALE_COST = Number(process.env.NEXT_PUBLIC_FEMALE_FILTER_COST) || 200;
-const NON_BINARY_COST = Number(process.env.NEXT_PUBLIC_NON_BINARY_FILTER_COST) || 200;
+const MALE_COST = Number(process.env.NEXT_PUBLIC_MALE_FILTER_COST);
+const FEMALE_COST = Number(process.env.NEXT_PUBLIC_FEMALE_FILTER_COST);
+const NON_BINARY_COST = Number(process.env.NEXT_PUBLIC_NON_BINARY_FILTER_COST);
 
 const defaultFilters = [
   { gender: "ALL", label: "All Genders", cost: 0 },
@@ -20,7 +19,7 @@ const defaultFilters = [
 export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated, onStartBeaming }) {
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [initialGender, setInitialGender] = useState("ALL");
-  const [coinsPerScreen, setCoinsPerScreen] = useState(200);
+  const [coinsPerScreen, setCoinsPerScreen] = useState(20);
   const [screensPerPurchase, setScreensPerPurchase] = useState(10);
   const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(false);

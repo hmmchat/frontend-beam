@@ -10,30 +10,30 @@ export default function BeamTVActions({
   handleJoinBroadcast
 }) {
   return (
-    <div className="absolute bottom-6 w-[46%] right-0 z-40 flex items-center gap-3">
+    <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
       {/* Comment Box */}
       <form 
         onSubmit={(e) => {
           e.preventDefault();
           sendViewerChat();
         }} 
-        className="relative flex items-center"
+        className="flex-1 min-w-0 md:flex-initial md:w-80"
       >
         <input
           value={viewerChatInput}
           onChange={(e) => setViewerChatInput(e.target.value)}
           placeholder="Add comment"
-          className="w-48 sm:w-120 bg-blue/20 border border-white/60 rounded-[16px] px-4 py-3.5 text-white text-sm outline-none placeholder:text-white/50 focus:border-white/40 transition-all"
+          className="w-full bg-white/10 border border-white/60 rounded-[16px] px-4 py-3 text-white text-sm outline-none placeholder:text-white/50 focus:border-white/90 transition-all"
         />
       </form>
 
       {/* Join / Waitlist */}
-      <div className="relative flex flex-col items-center">
+      <div className="relative flex flex-col items-center shrink-0">
         <button
           onClick={handleJoinBroadcast}
           disabled={joinState.state === 'requesting' || joinState.state === 'requested'}
           className={clsx(
-            'px-8 py-2.5 rounded-full font-bold tracking-wide border shadow-2xl backdrop-blur-[2px] transition-all active:scale-95',
+            'px-6 md:px-8 py-2.5 rounded-full font-bold tracking-wide border shadow-2xl backdrop-blur-[2px] transition-all active:scale-95 text-xs md:text-sm',
             joinState.state === 'requested'
               ? 'bg-green-500/20 text-green-100 border-green-400/30'
               : 'bg-white/5 text-white border-white/20 hover:bg-white/20',
@@ -56,7 +56,7 @@ export default function BeamTVActions({
       {/* Gift Button */}
       <button
         type="button"
-        className={clsx('w-14 h-14 flex items-center justify-center active:scale-95 transition-transform relative group rounded-full')}
+        className={clsx('w-12 h-12 md:w-14 md:h-14 flex items-center justify-center active:scale-95 transition-transform relative group rounded-full shrink-0')}
         aria-label="Send gift"
       >
         <img

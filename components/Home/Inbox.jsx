@@ -18,6 +18,9 @@ import ThreadMessages from "../inbox/ThreadMessages";
 import ThreadComposer from "../inbox/ThreadComposer";
 import GiftSuccessPopup from "@/components/VideoChat/GiftSuccessPopup";
 import clsx from "clsx";
+import { FaUserPlus } from "react-icons/fa6";
+import { subscribePresenceRealtime } from "@/lib/presence-realtime";
+
 
 /** Backend ConversationQuerySchema.filter */
 const MsgFilter = {
@@ -338,6 +341,93 @@ export default function Inbox() {
     setThreadProductMessage(null);
   }, [activeChat?.rowKey]);
 
+  const fetchAndEnrichUserStatuses = useCallback(async (conversations, setter) => {
+    if (!conversations || conversations.length === 0) return;
+    conversations.forEach(async (c) => {
+      const uid = c.otherUser?.id || c.otherUserId;
+      if (!uid) return;
+      try {
+        const data = await apiRequest(`${API.USERS.GET_USER(uid)}?fields=status`);
+        const u = data?.user || data || {};
+        const rawStatus = String(u.status || u.userStatus || "").toLowerCase();
+        let mappedStatus = "offline";
+        let isBroadcasting = false;
+        if (rawStatus === "broadcasting" || rawStatus.includes("in_broadcast")) {
+          mappedStatus = "broadcasting";
+          isBroadcasting = true;
+        } else if (
+          rawStatus === "online" ||
+          rawStatus === "available" ||
+          rawStatus === "in_squad" ||
+          rawStatus === "in_squad_available" ||
+          rawStatus === "in_broadcast_available" ||
+          rawStatus === "viewer"
+        ) {
+          mappedStatus = "online";
+        }
+        
+        setter((prevList) =>
+          prevList.map((item) => {
+            const itemUid = item.otherUser?.id || item.otherUserId;
+            if (String(itemUid) === String(uid)) {
+              return {
+                ...item,
+                userStatus: mappedStatus,
+                isBroadcasting,
+              };
+            }
+            return item;
+          })
+        );
+      } catch (err) {
+        console.warn("[Inbox] failed to fetch status for user", uid, err);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribePresenceRealtime((payload) => {
+      if (payload && payload.userId) {
+        const targetUserId = String(payload.userId);
+        const rawStatus = String(payload.status || "").toLowerCase();
+        
+        let mappedStatus = "offline";
+        let isBroadcasting = false;
+        
+        if (rawStatus === "broadcasting" || rawStatus.includes("in_broadcast")) {
+          mappedStatus = "broadcasting";
+          isBroadcasting = true;
+        } else if (
+          rawStatus === "online" ||
+          rawStatus === "available" ||
+          rawStatus === "in_squad" ||
+          rawStatus === "in_squad_available" ||
+          rawStatus === "in_broadcast_available" ||
+          rawStatus === "viewer"
+        ) {
+          mappedStatus = "online";
+        }
+        
+        const updateStatusInList = (list) =>
+          list.map((c) => {
+            if (String(c.otherUser?.id || c.otherUserId) === targetUserId) {
+              return {
+                ...c,
+                userStatus: mappedStatus,
+                isBroadcasting: isBroadcasting,
+              };
+            }
+            return c;
+          });
+          
+        setInboxList((prev) => updateStatusInList(prev));
+        setRequestsList((prev) => updateStatusInList(prev));
+        setSentList((prev) => updateStatusInList(prev));
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const resolveUserIdFromToken = useCallback(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) return null;
@@ -516,6 +606,7 @@ export default function Inbox() {
             shouldShowInboxConversation,
           );
           setInboxList(sortByLatest(inboxRows));
+          fetchAndEnrichUserStatuses(inboxRows, setInboxList);
           setInboxCursor(data?.nextCursor);
           setInboxHasMore(Boolean(data?.hasMore));
         } else if (activeTab === "requests") {
@@ -569,6 +660,7 @@ export default function Inbox() {
             conversations = [...conversations, ...pendingRows];
           }
           setRequestsList(sortByLatest(conversations));
+          fetchAndEnrichUserStatuses(conversations, setRequestsList);
         } else if (activeTab === "sent") {
           const sentConvData = await fetchJson(
             API.FRIENDS.getSentRequestsUrl({
@@ -620,6 +712,7 @@ export default function Inbox() {
             conversations = [...conversations, ...extraRows];
           }
           setSentList(sortByLatest(conversations));
+          fetchAndEnrichUserStatuses(conversations, setSentList);
         }
         if (!skipNotificationBadge) scheduleNotificationBadge();
       } catch (e) {
@@ -727,6 +820,7 @@ export default function Inbox() {
           shouldShowInboxConversation,
         );
         setInboxList((prev) => sortByLatest(dedupeAppend(prev, next)));
+        fetchAndEnrichUserStatuses(next, setInboxList);
         setInboxCursor(data?.nextCursor);
         setInboxHasMore(Boolean(data?.hasMore));
       } catch (e) {
@@ -750,6 +844,7 @@ export default function Inbox() {
           shouldShowSentReceivedApiRow,
         );
         setRequestsList((prev) => sortByLatest(dedupeAppend(prev, next)));
+        fetchAndEnrichUserStatuses(next, setRequestsList);
         setRequestsCursor(recvData?.nextCursor);
         setRequestsHasMore(Boolean(recvData?.hasMore));
       } catch (e) {
@@ -773,6 +868,7 @@ export default function Inbox() {
           shouldShowSentReceivedApiRow,
         );
         setSentList((prev) => sortByLatest(dedupeAppend(prev, next)));
+        fetchAndEnrichUserStatuses(next, setSentList);
         setSentCursor(sentConvData?.nextCursor);
         setSentHasMore(Boolean(sentConvData?.hasMore));
       } catch (e) {
@@ -1072,7 +1168,7 @@ export default function Inbox() {
       try {
         if (ws.readyState === 1)
           ws.send(JSON.stringify({ type: "ping", data: { at: Date.now() } }));
-      } catch {}
+      } catch { }
     }, 20000);
 
     ws.onmessage = (e) => {
@@ -1285,7 +1381,7 @@ export default function Inbox() {
         delay,
       );
     };
-    ws.onerror = () => {};
+    ws.onerror = () => { };
   }, []);
 
   useEffect(() => {
@@ -1317,7 +1413,7 @@ export default function Inbox() {
       }
       try {
         wsRef.current?.close();
-      } catch {}
+      } catch { }
       wsRef.current = null;
       if (typingTimerRef.current) {
         clearTimeout(typingTimerRef.current);
@@ -1353,7 +1449,7 @@ export default function Inbox() {
             },
           }),
         );
-      } catch {}
+      } catch { }
     },
     [activeChat?.conversationId, activeChat?.otherUserId],
   );
@@ -1368,7 +1464,7 @@ export default function Inbox() {
       try {
         await loadThreadMessages(activeChat, { quiet: true });
         await loadLists({ quiet: true, skipNotificationBadge: true });
-      } catch {}
+      } catch { }
     };
     tick();
     threadPollRef.current = setInterval(tick, 15000);
@@ -1383,9 +1479,9 @@ export default function Inbox() {
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
-      if (activeChat) void loadThreadMessages(activeChat, { quiet: true }).catch(() => {});
+      if (activeChat) void loadThreadMessages(activeChat, { quiet: true }).catch(() => { });
       void loadLists({ quiet: true, skipNotificationBadge: true }).catch(
-        () => {},
+        () => { },
       );
       scheduleNotificationBadge();
     };
@@ -1971,24 +2067,45 @@ export default function Inbox() {
                     handleUnfriendPeer={handleUnfriendPeer}
                     handleBlockPeer={handleBlockPeer}
                   />
-
-                  {showRecipientFollowActions && (
-                    <div
-                      className={clsx(
-                        "px-6",
-                        "py-4",
-                        "flex",
-                        "gap-3",
-                        "justify-center",
-                        "border-b",
-                        "border-white/10",
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleAcceptRequest(
-                            activeChat.followRequestId ||
+                  {/* Wrapper box with border on mobile to hold warnings and messages inside the message box */}
+                  <div className="flex-1 flex flex-col min-h-0 border border-white/50 rounded-[28px] md:border-none md:rounded-none mt-3 overflow-hidden">
+                    {/* Accept Friend Request Block inside the border box on top */}
+                    {showRecipientFollowActions && (
+                      <div
+                        className={clsx(
+                          "mx-4",
+                          "my-3",
+                          "p-4",
+                          "rounded-[24px]",
+                          "bg-[#25123e]/90",
+                          "border",
+                          "border-white/15",
+                          "backdrop-blur-md",
+                          "flex",
+                          "items-center",
+                          "justify-between",
+                          "gap-4",
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 shrink-0">
+                            <FaUserPlus className="text-white text-xl" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-white text-sm md:text-base tracking-wide">
+                              Friend Request
+                            </span>
+                            <span className="text-xs md:text-sm text-white/70 font-outfit font-light">
+                              {otherProfile?.username || "Someone"} wants to be your friend
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleAcceptRequest(
+                              activeChat.followRequestId ||
                               (String(activeChat.conversationId).startsWith(
                                 "follow_",
                               )
@@ -2000,153 +2117,136 @@ export default function Inbox() {
                                     "pending_fr_",
                                     "",
                                   )),
-                          )
-                        }
-                        className={clsx(
-                          "bg-[#d91e82]",
-                          "text-white",
-                          "text-sm",
-                          "font-bold",
-                          "px-6",
-                          "py-2",
-                          "rounded-full",
-                        )}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleRejectRequest(
-                            activeChat.followRequestId ||
-                              (String(activeChat.conversationId).startsWith(
-                                "follow_",
-                              )
-                                ? String(activeChat.conversationId).replace(
-                                    "follow_",
-                                    "",
-                                  )
-                                : String(activeChat.conversationId).replace(
-                                    "pending_fr_",
-                                    "",
-                                  )),
-                          )
-                        }
-                        className={clsx(
-                          "bg-white/10",
-                          "text-white",
-                          "text-sm",
-                          "font-bold",
-                          "px-6",
-                          "py-2",
-                          "rounded-full",
-                        )}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
+                            )
+                          }
+                          className={clsx(
+                            "text-[#ffcc00] hover:text-[#ffd633]",
+                            "text-base md:text-lg",
+                            "font-bold",
+                            "underline",
+                            "underline-offset-4",
+                            "decoration-2",
+                            "transition-all",
+                            "active:scale-95",
+                            "px-4",
+                            "py-2",
+                            "shrink-0",
+                          )}
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    )}
 
-                  {textInputLocked && showComposer && (
-                    <p
-                      className={clsx(
-                        "px-6",
-                        "pt-2",
-                        "text-[11px]",
-                        "text-amber-200/90",
-                        "font-medium",
+                    {/* Low Balance Warning inside the border box on top */}
+                    {!activeChat.isFriend &&
+                      showComposer &&
+                      canSendTextOnlyNonFriend(messages, currentUserId) &&
+                      walletCoins != null &&
+                      walletCoins < firstMessageCost && (
+                        <p
+                          className={clsx(
+                            "px-6",
+                            "pt-2.5",
+                            "pb-1",
+                            "text-[11px]",
+                            "text-red-300/95",
+                            "font-medium",
+                          )}
+                        >
+                          Low balance: first text costs ~{firstMessageCost} coins.
+                        </p>
                       )}
-                    >
-                      You&apos;ve sent a message here already — next sends need a
-                      gift (tap gift icon).
-                    </p>
-                  )}
-                  {!activeChat.isFriend &&
-                    showComposer &&
-                    canSendTextOnlyNonFriend(messages, currentUserId) &&
-                    walletCoins != null &&
-                    walletCoins < firstMessageCost && (
+
+                    {/* Text Input Locked Warning inside the border box on top */}
+                    {textInputLocked && showComposer && (
                       <p
                         className={clsx(
                           "px-6",
-                          "pt-1",
+                          "pt-2.5",
+                          "pb-1",
                           "text-[11px]",
-                          "text-red-300/90",
+                          "text-amber-200/95",
+                          "font-medium",
                         )}
                       >
-                        Low balance: first text costs ~{firstMessageCost} coins.
+                        You&apos;ve sent a message here already — next sends need a
+                        gift (tap gift icon).
                       </p>
                     )}
 
-                  {threadProductMessage && (
-                    <div
-                      role="alert"
-                      className={clsx(
-                        "mx-4",
-                        "mb-2",
-                        "mt-1",
-                        "flex",
-                        "items-start",
-                        "gap-3",
-                        "rounded-2xl",
-                        "border",
-                        "px-4",
-                        "py-3",
-                        "text-[13px]",
-                        "leading-snug",
-                        threadProductMessage.variant === "warning"
-                          ? clsx(
+                    {/* General warnings inside the border box on top */}
+                    {threadProductMessage && (
+                      <div
+                        role="alert"
+                        className={clsx(
+                          "mx-4",
+                          "mb-2",
+                          "mt-1.5",
+                          "flex",
+                          "items-start",
+                          "gap-3",
+                          "rounded-2xl",
+                          "border",
+                          "px-4",
+                          "py-3",
+                          "text-[13px]",
+                          "leading-snug",
+                          threadProductMessage.variant === "warning"
+                            ? clsx(
                               "border-amber-400/45",
                               "bg-amber-950/35",
                               "text-amber-50",
                             )
-                          : clsx(
+                            : clsx(
                               "border-red-400/45",
                               "bg-red-950/40",
                               "text-red-50",
                             ),
-                      )}
-                    >
-                      <p className="min-w-0 flex-1 font-medium">
-                        {threadProductMessage.text}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setThreadProductMessage(null)}
-                        className={clsx(
-                          "shrink-0",
-                          "rounded-full",
-                          "border",
-                          "border-white/25",
-                          "px-3",
-                          "py-1",
-                          "text-[11px]",
-                          "font-bold",
-                          "uppercase",
-                          "tracking-wide",
-                          "hover:bg-white/10",
                         )}
                       >
-                        Dismiss
-                      </button>
-                    </div>
-                  )}
+                        <p className="min-w-0 flex-1 font-medium">
+                          {threadProductMessage.text}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setThreadProductMessage(null)}
+                          className={clsx(
+                            "shrink-0",
+                            "rounded-full",
+                            "border",
+                            "border-white/25",
+                            "px-3",
+                            "py-1",
+                            "text-[11px]",
+                            "font-bold",
+                            "uppercase",
+                            "tracking-wide",
+                            "hover:bg-white/10",
+                          )}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
 
-                  <ThreadMessages
-                    messages={messages}
-                    currentUserId={currentUserId}
-                    myAvatarUrl={myAvatarUrl}
-                    messagesScrollRef={messagesScrollRef}
-                    threadHasMore={threadHasMore}
-                    activeChat={activeChat}
-                    loadingThreadOlder={loadingThreadOlder}
-                    loading={loadingThread}
-                    loadOlderThreadMessages={loadOlderThreadMessages}
-                    onSquadInviteResponse={handleSquadInviteResponse}
-                    activePendingSquadInvitationIds={activePendingSquadInvitationIds}
-                  />
+                    <ThreadMessages
+                      messages={messages}
+                      currentUserId={currentUserId}
+                      myAvatarUrl={myAvatarUrl}
+                      messagesScrollRef={messagesScrollRef}
+                      threadHasMore={threadHasMore}
+                      activeChat={activeChat}
+                      loadingThreadOlder={loadingThreadOlder}
+                      loading={loadingThread}
+                      loadOlderThreadMessages={loadOlderThreadMessages}
+                      onSquadInviteResponse={handleSquadInviteResponse}
+                      activePendingSquadInvitationIds={activePendingSquadInvitationIds}
+                    />
+                  </div>
                 </div>
 
+                {/* input box bar */}
                 {showComposer && (
                   <ThreadComposer
                     newMessage={newMessage}
@@ -2160,15 +2260,11 @@ export default function Inbox() {
                     sendMessage={sendMessage}
                     emitTyping={emitTyping}
                     typingTimerRef={typingTimerRef}
+                    conversationId={activeChat?.conversationId}
                   />
                 )}
 
-                <GiftSuccessPopup
-                  isOpen={showSuccessPopup}
-                  onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
-                  gift={successGift}
-                  recipientName={successRecipientName}
-                />
+
               </>
             ) : (
               <div

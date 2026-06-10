@@ -315,7 +315,7 @@ export default function LocalVideoSection({
                   alt=""
                 />
                 <img
-                  src="/dare.png"
+                  src="/dare1.png"
                   className={clsx('relative', 'w-7', 'h-auto', 'md:w-8')}
                   alt="DARE"
                 />

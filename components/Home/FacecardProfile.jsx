@@ -117,18 +117,18 @@ const FacecardProfile = ({
 
 
       {!hideHeader && (
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
+        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between pl-5 px-3 md:hidden">
           <div>
-            <h1 className="text-[18px] font-black text-[#FFB800] leading-none">
+            <h1 className="text-[22px]  leading-none font-sigmar text-xl font-extrabold text-[#F2AD00]">
               {user.username || "User"}{" "}
-              <span className="age-badge ">
+              <span className=" text-stroke-yellow ">
                 {age || "—"}
               </span>
             </h1>
 
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center ">
 
             <button
               type="button"
@@ -148,7 +148,7 @@ const FacecardProfile = ({
 
       <div
         data-facecard-boundary="true"
-        className="w-[340px] h-[651px] md:h-[680px]  max-w-[360px] 
+        className="w-[396px] h-[652px] md:h-[673px]  max-w-[360px] 
                  md:w-[320px] lg:w-[360px] 
            shrink-0 rounded-[30px] 
             
@@ -159,10 +159,10 @@ const FacecardProfile = ({
 
 
           {/* Inner chrome */}
-          <div className="absolute md:bottom-12  bottom-1 left-1 right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
+          <div className="absolute md:bottom-12  bottom-1 left-[5px] right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
             {/* Intent */}
             <div className="absolute left-0 right-0 top-[8px] z-20 px-2 ">
-              <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[90px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
+              <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[100px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
                 <span className="line-clamp-3">
                   {user.intent || "Here to meet strangers and overthink later."}
                 </span>
@@ -170,11 +170,11 @@ const FacecardProfile = ({
             </div>
 
             {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[6.5rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
+            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[7.1rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
               {/* LEFT SIDEBAR */}
               <div className="w-[26%] flex flex-col items-center gap-2 z-20">
                 {/* Brands capsule */}
-                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
+                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 md:px-2  px-[9px] py-2.5  shadow-inner">
                   <div className="flex flex-col items-center gap-1">
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const src = brandLogos[idx];
@@ -198,7 +198,7 @@ const FacecardProfile = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
+                <div className="flex w-[75px] md:w-[72px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
@@ -218,7 +218,7 @@ const FacecardProfile = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex w-[75px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[400px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                <div className="flex w-[75px] md:w-[72px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[500px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-1 shadow-inner backdrop-blur-sm">
                   <div className="w-full aspect-square shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
@@ -230,7 +230,7 @@ const FacecardProfile = ({
                       <div className="h-full w-full flex items-center justify-center" />
                     )}
                   </div>
-                  <div className="mt-2 h-px w-[90%] bg-white/30" />
+                  <div className="md:mt-2 mt-1 h-px w-[90%] bg-white/30" />
                   <div className="mt-1.5 w-full px-0.5 text-center text-white overflow-hidden">
                     <div className="marquee">
                       <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
@@ -238,7 +238,7 @@ const FacecardProfile = ({
                       </p>
                     </div>
 
-                    <div className="marquee  mt-[1px]">
+                    <div className="marquee  md:mt-[1px]">
                       <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
                         {user.musicPreference ? artist : '\u00a0'}
                       </p>
@@ -248,34 +248,33 @@ const FacecardProfile = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex w-[239px] md:w-[268px] border border-white/40 rounded-[20px] h-full flex flex-col items-center ">
+              <div className="relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover rounded-[20px] "
                   alt=""
                 />
+
+                {/* Pagination */}
+                <div
+                  data-facecard-pagination="true"
+                  className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2"
+                >
+                  {allPhotos.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
+                    />
+                  ))}
+                  {allPhotos.length === 1 && (
+                    <>
+                      <div className="h-1 w-2 rounded-full bg-white/35" />
+                      <div className="h-1 w-2 rounded-full bg-white/35" />
+                    </>
+                  )}
+                </div>
               </div>
 
-
-            </div>
-
-            {/* Pagination */}
-            <div
-              data-facecard-pagination="true"
-              className="absolute -bottom-[-12px] left-0 right-0 z-20 flex justify-center gap-2"
-            >
-              {allPhotos.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
-                />
-              ))}
-              {allPhotos.length === 1 && (
-                <>
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                </>
-              )}
             </div>
           </div>
         </div>

@@ -51,8 +51,8 @@ export default function ThreadHeader({
       : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
   return (
-    <div className={clsx('flex', 'items-center', 'justify-between', 'md:px-6', 'md:p-2', 'md:mt-3',  )}>
-<div className="flex items-center justify-between w-full">
+    <div className={clsx('flex', 'items-center', 'justify-between', 'md:px-6', 'md:p-2', 'md:mt-3',)}>
+      <div className="flex items-center justify-between w-full">
         {/* <button
           type="button"
           onClick={() => setActiveChat(null)}
@@ -62,80 +62,113 @@ export default function ThreadHeader({
         </button> */}
 
 
-<div
-  className={clsx(
-    'flex items-center gap-3',
-    'px-3 py-2',
-    'rounded-full',
-    'border border-white/30',
-    '',
-    'w-fit max-w-full'
-  )}
->
-  {/* Avatar */}
-  <div className={clsx('relative h-12 w-12 shrink-0 overflow-visible')}>
-    <div className="relative h-full w-full overflow-hidden rounded-full">
-      <Image
-        src={otherProfile?.displayPictureUrl || "/assets/ico.png"}
-        alt="User"
-        fill
-        sizes="48px"
-        className="object-cover rounded-full"
-      />
-    </div>
+        <div
+          className={clsx(
+            'flex items-center gap-1',
+            'px-3 py-1',
+            'rounded-full',
+            'border border-white/30',
+            '',
+            'w-fit max-w-full'
+          )}
+        >
+          {/* Avatar */}
+          <div className={clsx('relative h-12 w-12 shrink-0 overflow-visible')}>
+            <div className="relative h-full w-full overflow-hidden rounded-full">
+              <Image
+                src={otherProfile?.displayPictureUrl}
+                alt="User"
+                fill
+                sizes="40px"
+                className="object-cover rounded-full"
+              />
+            </div>
 
-    {headerUserStatus === "online" && (
-      <span className="absolute bottom-0 right-0 z-10 h-3 w-3 translate-x-[1px] translate-y-[1px] rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm" />
-    )}
+            {headerUserStatus === "online" && (
+              <span className="absolute bottom-0 right-0 z-10 h-3 w-3 translate-x-[1px] translate-y-[1px] rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm" />
+            )}
 
-    {headerLive && (
-      <button
-        type="button"
-        onClick={(e) => openBroadcast(e, activeChat.broadcastUrl)}
-        className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
-      >
-        LIVE
-      </button>
-    )}
-  </div>
+            {headerLive && (
+              <button
+                type="button"
+                onClick={(e) => openBroadcast(e, activeChat.broadcastUrl)}
+                className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
+              >
+                LIVE
+              </button>
+            )}
+          </div>
 
-  {/* Text Section */}
-  <div className="flex flex-col min-w-0 flex-1">
-    <span className="font-bold text-lg text-white truncate flex items-center gap-2">
-      {otherProfile?.username || "User"}
+          {/* Text Section */}
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="md:font-bold md:text-md text-sm text-white truncate flex items-center gap-2">
+              {otherProfile?.username || "User"}
+              {ageFromDob(otherProfile?.dateOfBirth)
+                ? `, ${ageFromDob(otherProfile?.dateOfBirth)}`
+                : ""}
 
-      {(activeTab === "inbox" || activeTab === "requests") &&
-        !activeChat.isFriend &&
-        otherProfile?.id && (
-          <button
-            type="button"
-            disabled={sendFriendBusy}
-            onClick={() => sendOfflineFriendRequest(otherProfile.id)}
-            className="p-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20"
-          >
-            <TiUserAdd className="text-lg" />
-          </button>
-        )}
-    </span>
 
-    <div className="flex items-center gap-1 text-white/80 text-xs">
-      <IoLocationOutline className="text-white" />
-      <span className="truncate">
-        {cityDisplay || "—"}
-        {ageFromDob(otherProfile?.dateOfBirth)
-          ? ` · ${ageFromDob(otherProfile?.dateOfBirth)}`
-          : ""}
-      </span>
-    </div>
-  </div>
-</div>
+            </span>
+
+            <div className="flex items-center gap-[1px] text-xs">
+              <IoLocationOutline className="text-white" />
+              <span className=" font-outfit  font-thin truncate">
+                {cityDisplay || "—"}
+
+              </span>
+            </div>
+          </div>
+
+
+
+
+        </div >
+
+        <div className="w-[36%] md:hidden flex justify-start">
+
+          {(activeTab === "inbox" || activeTab === "requests") &&
+            !activeChat.isFriend &&
+            otherProfile?.id && (
+              <button
+                type="button"
+                disabled={sendFriendBusy}
+                onClick={() => sendOfflineFriendRequest(otherProfile.id)}
+                className="p-2  pt-2 rounded-full border border-white/40 hover:bg-white/10 active:scale-95 transition-all shrink-0"
+              >
+                <img src="/addfriend2.svg" alt="Add Friend" className="h-8 w-8" />
+              </button>
+            )}
+
+        </div>
+
+
+
+
+
+
+
 
         {peerId && (
-          <div className={clsx('relative', 'flex-shrink-0', 'self-center', 'pr-1')} ref={threadMenuRef}>
+          <div className={clsx('relative', 'flex-shrink-0', 'self-center', 'pr-1', 'flex', 'items-center', 'gap-3')} ref={threadMenuRef}>
             {threadActionBusy ? (
               <span className={clsx('inline-flex', 'px-2', 'text-xs', 'text-white/45')}>…</span>
             ) : (
               <>
+                {(activeTab === "inbox" || activeTab === "requests") &&
+                  !activeChat.isFriend &&
+                  otherProfile?.id && (
+                    <button
+                      type="button"
+                      disabled={sendFriendBusy}
+                      onClick={() => sendOfflineFriendRequest(otherProfile.id)}
+                      className="p-2 hidden md:flex pt-2 rounded-full border border-white/40 hover:bg-white/10 active:scale-95 transition-all shrink-0"
+                    >
+                      <img src="/addfriend2.svg" alt="Add Friend" className="h-8 w-8" />
+                    </button>
+                  )}
+
+                <img src="/logo.png" alt="Logo" className="w-20 md:hidden  " />
+
                 <button
                   type="button"
                   aria-expanded={threadMenuOpen}

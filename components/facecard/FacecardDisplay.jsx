@@ -36,6 +36,8 @@ export default function FacecardDisplay({ user, age, setView, router }) {
         className="mx-auto flex w-full flex-1 flex-col gap-3 px-3 py-3 
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
       >
+
+
         {/* LEFT — phone preview area */}
         <div
           className="flex flex-1 flex-col items-center justify-center md:justify-center
@@ -49,9 +51,9 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             className="flex w-full flex-col items-center text-center 
                        flex-1 justify-center 
                         md:mt-0
-                        sm:scale-90 md:scale-100 mx-auto"
+                         md:scale-100 mx-auto"
           >
-            <div className="mb-2">
+            <div >
               <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden ">
                 This is Your FaceCard
               </p>
@@ -63,7 +65,14 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </div>
 
             {/* CARD */}
-            <div className="w-full mx-auto flex justify-center">
+            <div className="w-full mx-auto flex justify-center -mt-[3vh]   origin-top
+
+   origin-top
+
+    max-[370px]:scale-84
+    max-[390px]:scale-86
+    max-[410px]:scale-88
+    max-[416px]:scale-88">
               <FaceCard
                 user={{
                   ...user,
@@ -76,25 +85,28 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full px-4 justify-center gap-4 mx-auto md:hidden mt-2 ">
+            <div className="flex w-full px-6 justify-center gap-4 mx-auto md:hidden -mt-[10vh] ">
 
 
               <button
                 onClick={() => router.push("/")}
-                className="rounded-full w-full px-6 py-4 text-xs sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+                className="rounded-full w-full px-6 py-4 text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
               >
                 Later 🥱
               </button>
 
               <button
                 onClick={() => setView("editor")}
-                className="rounded-full px-6 py-4 w-full text-xs sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+                className="rounded-full px-6 py-4 w-full text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
               >
                 Add Info More 😤
               </button>
 
 
             </div>
+
+
+
           </div>
         </div>
 

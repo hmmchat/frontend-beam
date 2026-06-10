@@ -155,10 +155,10 @@ const FaceCard = ({
 
 
       <div
-        className="
-          w-[100vw] max-w-[360px] 
-          aspect-[364/680]
-          mx-auto
+
+        className="w-[400px] h-[660px] md:h-[673px]  max-w-[360px] 
+                 md:w-[320px] lg:w-[360px] 
+           rounded-[30px] 
       
           [@media(max-height:950px)]:scale-[0.95]
           [@media(max-height:850px)]:scale-[0.9]
@@ -168,7 +168,7 @@ const FaceCard = ({
      
         "
       >
-        <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/40 md:border-none ">
+        <div className="relative h-full w-full overflow-hidden rounded-[28px]  ">
           {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
           {!hideHeader && (
             <>
@@ -192,7 +192,7 @@ const FaceCard = ({
                       <>
                         {" "}
                         <span
-                          className="text-stroke-yellow "
+                          className="text-stroke-yellow  text-2xl"
 
                         >
                           {age || "—"}
@@ -241,33 +241,34 @@ const FaceCard = ({
           )}
 
           {/* Inner chrome */}
-          <div className="absolute bottom-[6px] left-1 right-1 md:top-[4.25rem] top-[4.32rem] md:rounded-[34.46px] rounded-[20px] border border-white/45 ">
+          <div className="absolute md:bottom-12  bottom-1 left-[5px] right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
             {/* Intent */}
-            <div className="absolute left-0 right-0 top-2 z-20 px-2">
-              <div className="flex h-[90px] md:h-[100px] items-center justify-center md:rounded-[29.1px] rounded-[20px] border border-white/35 font-outfit px-4 text-center text-[10px] leading-snug text-white backdrop-blur-[2px] overflow-hidden flex-none">
+            <div className="absolute left-0 right-0 top-[8px] z-20 px-2 ">
+              <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[100px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">
                 <span className="line-clamp-3">
                   {user.intent || "Here to meet strangers and overthink later."}
                 </span>
               </div>
             </div>
 
-            <div className="absolute bottom-2 left-2 right-2 top-[6.5rem] md:top-[7rem] flex gap-2">
+
+            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[7.1rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
               {/* LEFT SIDEBAR */}
-              <div className="w-[23%] flex flex-col items-center gap-[9px] md:gap-[6px] z-20">
+              <div className="w-[26%] flex flex-col items-center gap-2 z-20">
                 {/* Brands capsule */}
-                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-2 py-2.5 shadow-inner">
+                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 md:px-2  px-[9px] py-2.5  shadow-inner">
                   <div className="flex flex-col items-center gap-1">
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const src = brandLogos[idx];
                       return (
                         <div
                           key={`brand-slot-${idx}`}
-                          className="flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
+                          className="flex h-[3.1rem] w-[3.1rem] md:h-[3rem] md:w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
                         >
                           {src && (
                             <img
                               src={src}
-                              className="h-full w-full object-cover object-center"
+                              className="h-full w-full object-cover object-center "
                               style={{ transform: "scale(1.1)" }}
                               alt=""
                             />
@@ -279,11 +280,11 @@ const FaceCard = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[20.2px] border border-white/45 px-2 py-2">
+                <div className="flex w-[75px] md:w-[72px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
-                      alt={user.zodiac.name}
+                      alt={user.zodiac.name || "Zodiac"}
                       className="h-8 w-10 object-contain"
                     />
                   ) : (
@@ -294,16 +295,13 @@ const FaceCard = ({
                     </div>
                   )}
                   <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                    {user?.zodiac?.name}
+                    {user?.zodiac?.name || "Vacant"}
                   </span>
                 </div>
 
                 {/* Music — FIXED: added "relative" so the musicline.svg stays inside the music capsule on ALL screen sizes */}
-                <div className="flex w-[80px] shrink-0 flex-col items-center rounded-t-[79.52px] md:rounded-b-[49.52px] rounded-b-[32px] border border-white/40 px-1 pb-1 pt-1 shadow-inner backdrop-blur-sm relative">
-
-
-                  <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
-                  <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 ">
+                <div className="flex w-[75px] md:w-[72px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[500px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-1 shadow-inner backdrop-blur-sm">
+                  <div className="w-full aspect-square shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
@@ -311,20 +309,19 @@ const FaceCard = ({
                         alt=""
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center" />
+                      <div className="h-full w-full flex items-center justify-center" />
                     )}
                   </div>
-
-
-                  <div className="mt-2 h-px w-[90%] bg-white/30" />
-                  <div className="mt-1.5 w-full px-0.5 text-center text-white">
+                  <div className="md:mt-2 mt-1 h-px w-[90%] bg-white/30" />
+                  <div className="mt-1.5 w-full px-0.5 text-center text-white overflow-hidden">
                     <div className="marquee">
                       <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
                         {user.musicPreference ? songTitle : '\u00a0'}
                       </p>
                     </div>
-                    <div className="marquee mt-[1px]">
-                      <p className="text-[9px] marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
+
+                    <div className="marquee  md:mt-[1px]">
+                      <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
                         {user.musicPreference ? artist : '\u00a0'}
                       </p>
                     </div>
@@ -336,33 +333,38 @@ const FaceCard = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex-1 h-full border border-white/40 overflow-hidden rounded-[18px]">
+              <div className="relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
                 <img
                   src={allPhotos[activeIndex]}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover rounded-[20px] "
                   alt=""
                 />
+
+                {/* Pagination */}
+                <div
+                  data-facecard-pagination="true"
+                  className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2"
+                >
+                  {allPhotos.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
+                    />
+                  ))}
+                  {allPhotos.length === 1 && (
+                    <>
+                      <div className="h-1 w-2 rounded-full bg-white/35" />
+                      <div className="h-1 w-2 rounded-full bg-white/35" />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
 
 
 
-            {/* Pagination */}
-            <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
-              {allPhotos.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
-                />
-              ))}
-              {allPhotos.length === 1 && (
-                <>
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                </>
-              )}
-            </div>
+
           </div>
         </div>
       </div>

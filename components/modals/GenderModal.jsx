@@ -130,18 +130,17 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
     }
   };
 
-  const isPackLocked = Boolean(activePack?.gender && activePack.screensRemaining > 0);
+  const hasRemainingPackViews = Boolean(activePack?.screensRemaining > 0);
 
   const isGenderDisabled = (filter) => {
     if (filter.gender === "ALL") return false;
-    if (isPackLocked && filter.gender !== activePack.gender) return true;
-    if (isPackLocked && filter.gender === activePack.gender) return false;
+    if (hasRemainingPackViews) return false;
     return userCoins < filter.cost;
   };
 
   const getGenderCostLabel = (filter) => {
     if (filter.gender === "ALL") return "Free";
-    if (isPackLocked && filter.gender === activePack.gender) return `${activePack.screensRemaining} left`;
+    if (hasRemainingPackViews) return `${activePack.screensRemaining} left`;
     return filter.cost;
   };
 
@@ -156,7 +155,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         }),
       });
 
-      if (selectedGender !== initialGender && !(isPackLocked && selectedGender === activePack.gender)) {
+      if (selectedGender !== initialGender && !(hasRemainingPackViews && selectedGender !== "ALL")) {
         const targetFilter = filters.find(f => f.gender === selectedGender);
         const cost = targetFilter ? targetFilter.cost : 0;
         if (cost > 0 && onCoinsUpdated) {
@@ -229,7 +228,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                   .map((filter) => {
                     const isDisabled = isGenderDisabled(filter);
                     const isSelected = selectedGender === filter.gender;
-                    const isPackGender = isPackLocked && filter.gender === activePack.gender;
+                    const hasPackViews = hasRemainingPackViews;
 
                     return (
                       <button
@@ -262,10 +261,10 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                           {filter.label}
                         </div>
                         <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
-                          {isPackGender ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
+                          {hasPackViews ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
                         </div>
                         <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
-                          {!isPackGender && (
+                          {!hasPackViews && (
                             <img
                               src="/assets/Coin-token.svg"
                               alt=""
@@ -274,11 +273,6 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                           )}
                           <span className="font-bold">{getGenderCostLabel(filter)}</span>
                         </div>
-                        {isDisabled && isPackLocked && (
-                          <div className="absolute inset-x-1 bottom-1 text-[9px] text-white/70 font-outfit">
-                            Finish current pack
-                          </div>
-                        )}
                       </button>
                     );
                   })}
@@ -308,7 +302,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-white font-semibold text-sm font-outfit">
-                            {isPackLocked && !activePack.isActive ? "Free · pack paused" : "Free"}
+                            {hasRemainingPackViews && !activePack.isActive ? "Free · pack paused" : "Free"}
                           </span>
                         </div>
                       </div>

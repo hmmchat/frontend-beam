@@ -2,6 +2,7 @@ import "./globals.css";
 import localFont from "next/font/local";
 import { Outfit, Sigmar } from "next/font/google";
 import CaptureReferralFromUrl from "@/components/CaptureReferralFromUrl";
+import AppPresence from "@/components/auth/AppPresence";
 import RouteGuard from "@/components/auth/RouteGuard";
 
 const otomanopeeOne = localFont({
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
       >
         <CaptureReferralFromUrl />
         <RouteGuard>
+          <AppPresence />
           {children}
         </RouteGuard>
       </body>

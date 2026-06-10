@@ -341,50 +341,6 @@ export default function Inbox() {
     setThreadProductMessage(null);
   }, [activeChat?.rowKey]);
 
-  const fetchAndEnrichUserStatuses = useCallback(async (conversations, setter) => {
-    if (!conversations || conversations.length === 0) return;
-    conversations.forEach(async (c) => {
-      const uid = c.otherUser?.id || c.otherUserId;
-      if (!uid) return;
-      try {
-        const data = await apiRequest(`${API.USERS.GET_USER(uid)}?fields=status`);
-        const u = data?.user || data || {};
-        const rawStatus = String(u.status || u.userStatus || "").toLowerCase();
-        let mappedStatus = "offline";
-        let isBroadcasting = false;
-        if (rawStatus === "broadcasting" || rawStatus.includes("in_broadcast")) {
-          mappedStatus = "broadcasting";
-          isBroadcasting = true;
-        } else if (
-          rawStatus === "online" ||
-          rawStatus === "available" ||
-          rawStatus === "in_squad" ||
-          rawStatus === "in_squad_available" ||
-          rawStatus === "in_broadcast_available" ||
-          rawStatus === "viewer"
-        ) {
-          mappedStatus = "online";
-        }
-        
-        setter((prevList) =>
-          prevList.map((item) => {
-            const itemUid = item.otherUser?.id || item.otherUserId;
-            if (String(itemUid) === String(uid)) {
-              return {
-                ...item,
-                userStatus: mappedStatus,
-                isBroadcasting,
-              };
-            }
-            return item;
-          })
-        );
-      } catch (err) {
-        console.warn("[Inbox] failed to fetch status for user", uid, err);
-      }
-    });
-  }, []);
-
   useEffect(() => {
     const unsub = subscribePresenceRealtime((payload) => {
       if (payload && payload.userId) {
@@ -606,7 +562,6 @@ export default function Inbox() {
             shouldShowInboxConversation,
           );
           setInboxList(sortByLatest(inboxRows));
-          fetchAndEnrichUserStatuses(inboxRows, setInboxList);
           setInboxCursor(data?.nextCursor);
           setInboxHasMore(Boolean(data?.hasMore));
         } else if (activeTab === "requests") {
@@ -660,7 +615,6 @@ export default function Inbox() {
             conversations = [...conversations, ...pendingRows];
           }
           setRequestsList(sortByLatest(conversations));
-          fetchAndEnrichUserStatuses(conversations, setRequestsList);
         } else if (activeTab === "sent") {
           const sentConvData = await fetchJson(
             API.FRIENDS.getSentRequestsUrl({
@@ -712,7 +666,6 @@ export default function Inbox() {
             conversations = [...conversations, ...extraRows];
           }
           setSentList(sortByLatest(conversations));
-          fetchAndEnrichUserStatuses(conversations, setSentList);
         }
         if (!skipNotificationBadge) scheduleNotificationBadge();
       } catch (e) {
@@ -820,7 +773,6 @@ export default function Inbox() {
           shouldShowInboxConversation,
         );
         setInboxList((prev) => sortByLatest(dedupeAppend(prev, next)));
-        fetchAndEnrichUserStatuses(next, setInboxList);
         setInboxCursor(data?.nextCursor);
         setInboxHasMore(Boolean(data?.hasMore));
       } catch (e) {
@@ -844,7 +796,6 @@ export default function Inbox() {
           shouldShowSentReceivedApiRow,
         );
         setRequestsList((prev) => sortByLatest(dedupeAppend(prev, next)));
-        fetchAndEnrichUserStatuses(next, setRequestsList);
         setRequestsCursor(recvData?.nextCursor);
         setRequestsHasMore(Boolean(recvData?.hasMore));
       } catch (e) {
@@ -868,7 +819,6 @@ export default function Inbox() {
           shouldShowSentReceivedApiRow,
         );
         setSentList((prev) => sortByLatest(dedupeAppend(prev, next)));
-        fetchAndEnrichUserStatuses(next, setSentList);
         setSentCursor(sentConvData?.nextCursor);
         setSentHasMore(Boolean(sentConvData?.hasMore));
       } catch (e) {

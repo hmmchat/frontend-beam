@@ -93,6 +93,7 @@ function FacecardContent() {
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [cropImageUrl, setCropImageUrl] = useState(null);
   const [cropTargetSlot, setCropTargetSlot] = useState(null);
+  const [scale, setScale] = useState(1);
 
   const progress = calculateProgress(user);
 
@@ -920,6 +921,22 @@ function FacecardContent() {
     }
   };
 
+  useEffect(() => {
+    const updateScale = () => {
+      const newScale = Math.max(
+        0.9,
+        Math.min(window.innerHeight / 830, 1)
+      );
+      setScale(newScale);
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+
+
   if (loading) {
     return (
       <div
@@ -1153,10 +1170,20 @@ function FacecardContent() {
         </div>  */}
 
 
-              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'max-h-[96vh]')}>
+              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'md:max-h-[96vh]')}>
                 <div
                   ref={facecardPreviewExportRef}
-                  className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full', 'mx-auto', '      md:[@media(max-height:1000px)]:scale-[0.90]')}
+
+                  className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full', 'mx-auto', '      md:[@media(max-height:1000px)]:scale-[0.96]')}
+
+                  style={
+                    typeof window !== "undefined" && window.innerWidth < 768
+                      ? {
+                        transform: `translateY(15px)  scale(${scale})`,
+                        transformOrigin: "top center",
+                      }
+                      : undefined
+                  }
                 >
                   <FaceCard
                     user={{

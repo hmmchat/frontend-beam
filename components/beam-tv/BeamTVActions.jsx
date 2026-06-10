@@ -7,7 +7,8 @@ export default function BeamTVActions({
   setViewerChatInput,
   sendViewerChat,
   joinState,
-  handleJoinBroadcast
+  handleJoinBroadcast,
+  onGiftClick
 }) {
   return (
     <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
@@ -56,6 +57,7 @@ export default function BeamTVActions({
       {/* Gift Button */}
       <button
         type="button"
+        onClick={onGiftClick}
         className={clsx('w-12 h-12 md:w-14 md:h-14 flex items-center justify-center active:scale-95 transition-transform relative group rounded-full shrink-0')}
         aria-label="Send gift"
       >

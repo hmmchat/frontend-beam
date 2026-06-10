@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   "/onboarding/location",
   "/squad",
   "/warning",
+  "/beam-tv",
 ];
 
 function isPublicPath(pathname) {

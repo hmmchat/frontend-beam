@@ -15,7 +15,7 @@ export default function ProfileMobileAccount({
 }) {
   return (
     <div className="w-full  flex flex-col h-full pb-6  overflow-hidden ">
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3 ">
         <button
           type="button"
           onClick={onBack}
@@ -32,7 +32,7 @@ export default function ProfileMobileAccount({
             ref={facecardExportRef}
             className="
     origin-top
-
+    min-[320px]:scale-75
     min-[370px]:scale-84
     min-[390px]:scale-86
   min-[402px]:scale-90

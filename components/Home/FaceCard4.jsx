@@ -398,3 +398,165 @@ const FaceCard4 = ({
 };
 
 export default FaceCard4;
+
+
+// "use client";
+
+// import { useState } from "react";
+// import FaceCard from "@/components/Home/FaceCard";
+// import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+// import { getFacecardPhotos } from "@/lib/facecard-utils";
+
+// export default function FacecardDisplay({ user, age, setView, router }) {
+//   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+//   const allPhotos = getFacecardPhotos(user);
+
+//   const handlePrev = (e) => {
+//     e?.stopPropagation();
+//     setCurrentImageIndex((prev) =>
+//       prev > 0 ? prev - 1 : allPhotos.length - 1,
+//     );
+//   };
+
+//   const handleNext = (e) => {
+//     e?.stopPropagation();
+//     setCurrentImageIndex((prev) =>
+//       prev < allPhotos.length - 1 ? prev + 1 : 0,
+//     );
+//   };
+
+//   return (
+//     <div
+//       className="flex min-h-screen  w-full flex-col  text-white outfit-font overflow-hidden  "
+//       style={{
+//         backgroundImage: "url('/assets/mb.jpg')",
+//         backgroundSize: "cover",
+//         backgroundPosition: "center",
+//         repeat: "repeat"
+//       }}
+//     >
+//       <div
+//         className=" flex w-full flex-1 flex-col gap-3 px-3 py-3 
+//                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
+//       >
+
+
+//         {/* LEFT — phone preview area */}
+//         <div
+//           className="flex md:flex-1 flex-col items-center justify-center md:justify-center
+//                        md:min-h-0
+//                       md:overflow-visible
+                      
+//                       md:border md:border-white/30 md:rounded-[60px] 
+//                         sm:px-4 "
+//         >
+//           <div
+//             className="flex w-full flex-col items-center text-center 
+//                        md:flex-1 justify-center 
+//                         md:mt-0
+//                          md:scale-100 justify-between "
+//           >
+//             <div >
+//               <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden ">
+//                 This is Your FaceCard
+//               </p>
+
+//               <p className="text-[10px] sm:text-[14px] font-outfit md:text-[11px] font-thin  md:hidden">
+//                 People will see this before meeting you <br />
+//                 You can add more info to get better matches
+//               </p>
+//             </div>
+
+//             {/* CARD */}
+//             <div
+//               className="w-full mx-auto flex justify-center 
+//    max-[321px]:scale-65 max-[321px]:-translate-y-30
+//       max-[340px]:scale-70 max-[340px]:-translate-y-28
+//    max-[370px]:scale-75 max-[370px]:-translate-y-20
+//   max-[390px]:scale-78 max-[390px]:-translate-y-18
+//   max-[403px]:scale-83 max-[403px]:-translate-y-[7vh]
+//  max-[405px]:scale-85 max-[405px]:-translate-y-[10vh]
+
+
+
+
+//    max-[416px]:scale-88 max-[416px]:-translate-y-8
+
+
+//       max-[440px]:scale-98 max-[440px]:-translate-y-2"
+
+//             >
+//               <FaceCard
+//                 user={{
+//                   ...user,
+//                   age,
+//                   city: user?.preferredCity || user?.city,
+//                 }}
+//                 currentIndex={currentImageIndex}
+//                 onIndexChange={setCurrentImageIndex}
+//               />
+//             </div>
+
+//             {/* MOBILE BUTTONS */}
+
+//             <div className="flex absolute w-full px-6 justify-center gap-4 mx-auto md:hidden bottom-[1vh]  ">
+
+
+//               <button
+//                 onClick={() => router.push("/")}
+//                 className="rounded-full w-full px-6 py-4 text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+//               >
+//                 Later 🥱
+//               </button>
+
+//               <button
+//                 onClick={() => setView("editor")}
+//                 className="rounded-full px-6 py-4 w-full text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+//               >
+//                 Add Info More 😤
+//               </button>
+
+
+//             </div>
+
+
+
+//           </div>
+//         </div>
+
+//         {/* RIGHT — desktop info panel */}
+//         <div
+//           className="hidden md:flex flex-1 flex-col items-center justify-center text-center 
+//                         rounded-[60px] border border-white/30 
+//                         px-4 py-5 
+//                         lg:px-6 lg:py-6 xl:px-10"
+//         >
+//           <h1 className="text-center justify-center text-white text-[36px] font-normal font-Otomanopee_One">
+//             Meet your Facecard
+//           </h1>
+
+//           <p className="mt-3 max-w-md font-thin text-xs md:text-[20px] lg:text-xl text-white/90 font-outfit">
+//             This is what people see before meeting you. Adding more details
+//             makes it cooler and gets you better matches &amp; conversations.
+//           </p>
+
+//           <div className="w-full max-w-[400px] mt-20 space-y-3 md:space-y-7">
+//             <button
+//               onClick={() => setView("editor")}
+//               className="w-full rounded-[18px] border-[2px] border-white/50 border-b-[4px] md:py-5 py-3 md:px-2 px-6 text-sm md:text-[18px] lg:text-[20px] font-semibold transition hover:bg-yellow-400 hover:text-black"
+//             >
+//               Make my Facecard cooler 😤
+//             </button>
+
+//             <button
+//               onClick={() => router.push("/")}
+//               className="text-xs md:text-[18px] text-white/90 hover:text-white"
+//             >
+//               I’ll do it later 🥱
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div >
+//   );
+// }

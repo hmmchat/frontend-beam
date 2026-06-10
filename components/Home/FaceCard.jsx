@@ -100,7 +100,7 @@ const FaceCard = ({
   return (
     <>
 
-      <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+      <div className="absolute left-0 top-4 z-20  flex w-full items-center justify-between px-5 hidden md:flex">
         <div>
           <h1 className="font-sigmar text-xl font-extrabold text-[#F2AD00]">
             {user.username || "User"}
@@ -155,20 +155,14 @@ const FaceCard = ({
 
 
       <div
-
-        className="w-[400px] h-[660px] md:h-[673px]  max-w-[360px] 
+        data-facecard-boundary="true"
+        className="w-[380px] h-[660px] md:h-[673px]   
                  md:w-[320px] lg:w-[360px] 
-           rounded-[30px] 
-      
-          [@media(max-height:950px)]:scale-[0.95]
-          [@media(max-height:850px)]:scale-[0.9]
-          [@media(max-height:750px)]:scale-[0.85]
-          [@media(max-height:650px)]:scale-[0.8]
-          [@media(max-height:550px)]:scale-[0.75]
-     
-        "
+           shrink-0 rounded-[30px] 
+            
+               "
       >
-        <div className="relative h-full w-full overflow-hidden rounded-[28px]  ">
+        <div className="relative h-full w-full overflow-hidden rounded-[28px]">
           {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
           {!hideHeader && (
             <>
@@ -252,7 +246,7 @@ const FaceCard = ({
             </div>
 
 
-            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[7.1rem]  md:top-[7.22rem] flex gap-1 md:gap-0">
+            <div className="absolute md:bottom-2 bottom-1.5  right-2 top-[7.1rem]  md:top-[7.22rem] flex  md:gap-0">
               {/* LEFT SIDEBAR */}
               <div className="w-[26%] flex flex-col items-center gap-2 z-20">
                 {/* Brands capsule */}
@@ -295,7 +289,7 @@ const FaceCard = ({
                     </div>
                   )}
                   <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
-                    {user?.zodiac?.name || "Vacant"}
+                    {user?.zodiac?.name}
                   </span>
                 </div>
 
@@ -333,7 +327,7 @@ const FaceCard = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
+              <div className="relative flex w-[286px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
                 <img
                   src={allPhotos[activeIndex]}
                   className="h-full w-full object-cover rounded-[20px] "

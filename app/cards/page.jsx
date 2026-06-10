@@ -41,6 +41,16 @@ function OfflineCardsContent() {
   const [successGift, setSuccessGift] = useState(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
+
+  const [scale, setScale] = useState(1);
+
+
+
+
+  const [translateY, setTranslateY] = useState(0);
+
+
+
   // ── fetch next card ──────────────────────────────────────────────────────
   const fetchCard = useCallback(async () => {
     setLoading(true);
@@ -213,12 +223,56 @@ function OfflineCardsContent() {
     }
   };
 
+
+
+
   // ── new session (refresh after exhausted) ───────────────────────────────
   const handleRefresh = () => {
     router.replace('/cards');
   };
 
   const age = card ? calculateAge(card.dateOfBirth) ?? card.age : null;
+
+
+
+  useEffect(() => {
+    const updateScale = () => {
+      const h = window.innerHeight;
+
+      if (h <= 670) {
+        setScale(0.78); // iPhone SE
+        setTranslateY(-45);
+      } else if (h <= 740) {
+        setScale(0.85); // XR, 11, 12 mini
+        setTranslateY(-15);
+      }
+
+
+      else {
+        setScale(1);
+        setTranslateY(0);
+      }
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const newScale = Math.max(
+        0.7,
+        Math.min(window.innerHeight / 820, 1)
+      );
+      setScale(newScale);
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
 
   // ── render ───────────────────────────────────────────────────────────────
   return (
@@ -272,15 +326,32 @@ function OfflineCardsContent() {
           className="relative w-full h-full flex flex-col items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] w-[98vw] md:w-[750px]">
+          <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] md:w-[98vw] w-full md:w-[750px]">
 
             {/* Scrollable container for the face card content */}
-            <div className="absolute inset-0  md:scale-100 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 md:static md:inset-auto md:overflow-visible md:h-auto md:w-full md:pt-0 md:pb-0 md:z-auto">
-              <div className={clsx(
-                "origin-top transition-transform duration-500 mb-16 sm:mb-0 w-full flex justify-center mt-3 md:mt-0",
-                "",
-                ""
-              )}>
+
+
+
+
+
+
+
+
+            <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
+
+              <div
+                className={clsx(
+                  "origin-top transition-transform duration-500 w-full flex justify-center mt-3 md:mt-0"
+                )}
+                style={
+                  typeof window !== "undefined" && window.innerWidth < 768
+                    ? {
+                      transform: `   translateY(${translateY}px) scale(${scale})`,
+                      transformOrigin: "top center",
+                    }
+                    : undefined
+                }
+              >
                 <FaceCard
                   user={{
                     ...card,
@@ -292,18 +363,16 @@ function OfflineCardsContent() {
                 />
               </div>
 
-              {/* ── MOBILE BOTTOM BAR ── */}
-              <div className="md:hidden relative mt-8 w-full flex items-center justify-between h-14 px-4 max-w-[380px] mx-auto z-30">
+              {/* MOBILE BOTTOM BAR */}
+              <div className="md:hidden absolute bottom-[2vh] md:bottom-0 w-full flex items-center justify-between h-14 px-4 max-w-[380px] mx-auto z-30 mt-2">
                 {!isGiftModalOpen && (
                   <>
-                    {/* Left group: X · Message · Heart */}
                     <div className="absolute left-4 flex gap-2 items-center">
                       <button
                         type="button"
                         onClick={handlePass}
                         disabled={swiping}
                         className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
-                        aria-label="Pass"
                       >
                         ✕
                       </button>
@@ -312,7 +381,6 @@ function OfflineCardsContent() {
                         type="button"
                         onClick={handleMessage}
                         className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
-                        aria-label="Message"
                       >
                         <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
                       </button>
@@ -322,49 +390,64 @@ function OfflineCardsContent() {
                         onClick={handleConnect}
                         disabled={connectSent}
                         className={clsx(
-                          'w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors',
+                          "w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors",
                           connectSent
-                            ? 'border-green-400/60 bg-green-500/20 cursor-default'
-                            : 'border-white/40 hover:bg-white/10 active:scale-95'
+                            ? "border-green-400/60 bg-green-500/20 cursor-default"
+                            : "border-white/40 hover:bg-white/10 active:scale-95"
                         )}
-                        title={connectSent ? 'Friend request sent' : 'Send friend request'}
-                        aria-label="Connect"
                       >
                         <img
                           src="/history/heart.svg"
                           alt="heart"
-                          className={clsx('w-6 h-6', connectSent && 'opacity-60')}
+                          className={clsx("w-6 h-6", connectSent && "opacity-60")}
                         />
                       </button>
                     </div>
-
-                    {/* Center: ← → photo nav */}
-
+                    <div className="absolute right-4 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isGiftModalOpen && selectedGift) {
+                            const hasSufficientCoins = walletCoins >= (selectedGift.price || 0);
+                            if (hasSufficientCoins) {
+                              handleSendGift(selectedGift);
+                            }
+                          } else {
+                            setIsGiftModalOpen(!isGiftModalOpen);
+                          }
+                        }}
+                        className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
+                        aria-label="Send gift"
+                      >
+                        <img
+                          src="/circle.png"
+                          alt=""
+                          className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                        />
+                        <img
+                          src="/giftboc.png"
+                          alt="gift"
+                          className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
+                        />
+                      </button>
+                    </div>
                   </>
                 )}
-
-                {/* Right: Gift */}
-                <div className="absolute right-4 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setIsGiftModalOpen(!isGiftModalOpen)}
-                    className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
-                    aria-label="Send gift"
-                  >
-                    <img
-                      src="/circle.png"
-                      alt=""
-                      className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
-                    />
-                    <img
-                      src="/giftboc.png"
-                      alt="gift"
-                      className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
-                    />
-                  </button>
-                </div>
               </div>
             </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             {/* ── DESKTOP BOTTOM BAR ── */}
             <div className="absolute bottom-8 left-0 right-0 w-full px-12 z-50 hidden md:flex items-center h-16">
@@ -474,9 +557,9 @@ function OfflineCardsContent() {
               selectedGiftId={selectedGift?.id || null}
               coins={walletCoins}
               onSendGift={handleSendGift}
-              className="bottom-24 right-4 left-4 md:right-20 md:left-auto md:bottom-28 md:translate-y-0"
+              className="bottom-[16vh] md:bottom-24 md:right-4 md:left-4 md:right-20 md:left-auto md:bottom-28 md:translate-y-0"
               desktopBottomBarClassName="bottom-8 left-40 flex gap-4 px-6 py-3 rounded-2xl  items-center z-50"
-              mobileBottomBarClassName="bottom-4"
+              mobileBottomBarClassName=""
               hideSendButton={true}
             />
 

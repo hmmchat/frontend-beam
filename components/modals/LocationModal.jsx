@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IoSearchOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
 import { API, apiRequest } from '@/lib/api';
+
+const normalizeCityKey = (value) => String(value || '').trim().toLowerCase();
 
 export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,22 +15,37 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCities();
-      fetchPreference();
-    }
-  }, [isOpen]);
-
-  const fetchCities = async () => {
+  const fetchCities = useCallback(async () => {
     try {
       setSearchLoading(true);
-      const data = await apiRequest(API.DISCOVERY.GET_ACTIVE_CITY_OPTIONS);
+      const [data, cityCounts, anywhereData] = await Promise.all([
+        apiRequest(API.DISCOVERY.GET_ACTIVE_CITY_OPTIONS),
+        apiRequest(`${API.DISCOVERY.GET_CITIES}?limit=100`).catch(() => []),
+        apiRequest(API.USERS.GET_ANYWHERE_COUNT).catch(() => ({ count: 0 }))
+      ]);
+
       if (data && data.options && data.options.length > 0) {
+        const countByCity = new Map();
+        let totalCityUsers = 0;
+
+        (Array.isArray(cityCounts) ? cityCounts : []).forEach((city) => {
+          const count = Number(city.availableCount ?? city.count ?? 0);
+          if (!Number.isFinite(count)) return;
+          totalCityUsers += count;
+          [city.city, city.value, city.label, city.name].forEach((key) => {
+            if (key) countByCity.set(normalizeCityKey(key), count);
+          });
+        });
+
+        const anywhereCount = Number(anywhereData?.count || 0) + totalCityUsers;
         const options = data.options.map(c => ({
           name: c.label || c.name,
           value: c.value || c.label || c.name,
-          availableCount: c.count || 0
+          availableCount: normalizeCityKey(c.value) === 'anywhere_in_india'
+            ? anywhereCount
+            : countByCity.get(normalizeCityKey(c.value)) ??
+              countByCity.get(normalizeCityKey(c.label || c.name)) ??
+              Number(c.count || 0)
         }));
         setMasterCities(options);
         setCities(options);
@@ -43,9 +60,9 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
 
-  const fetchPreference = async () => {
+  const fetchPreference = useCallback(async () => {
     try {
       const userData = await apiRequest(API.USERS.GET_ME).catch(() => null);
       if (userData?.user?.preferredCity) {
@@ -57,7 +74,14 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
     } catch (error) {
       console.error('Error fetching preference:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCities();
+      fetchPreference();
+    }
+  }, [fetchCities, fetchPreference, isOpen]);
 
   // Local fuzzy search logic (similar to interests and brands)
   const fuzzySearch = (query, items) => {
@@ -101,7 +125,7 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
       await Promise.all([
         apiRequest(API.USERS.UPDATE_PREFERRED_CITY, {
           method: 'PATCH',
-          body: JSON.stringify({ preferredCity: selectedCity || null })
+          body: JSON.stringify({ city: selectedCity || null })
         }).catch(() => null),
         apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
           method: 'PATCH',
@@ -213,9 +237,7 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
                       </div>
 
                       <div className="text-white text-xs font-sans ">
-                        {city.availableCount
-                          ? `${city.availableCount.toLocaleString()} online`
-                          : 'Active city'}
+                        {`${Number(city.availableCount || 0).toLocaleString()} online`}
                       </div>
                     </button>
                   );

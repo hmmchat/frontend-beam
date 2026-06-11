@@ -50,7 +50,7 @@ export default function ConversationItem({ conversation, selected, unreadCountDi
       <div className="relative h-12 w-12 shrink-0">
         <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10">
           <Image
-            src={conversation.otherUser?.displayPictureUrl}
+            src={conversation.otherUser?.displayPictureUrl || "/default-avatar.png"}
             alt={conversation.otherUser?.username || "User"}
             fill
             sizes="48px"

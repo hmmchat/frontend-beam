@@ -33,38 +33,7 @@ const MsgFilter = {
 const LIST_LIMIT = 35;
 const THREAD_MSG_LIMIT = 50;
 const DEFAULT_FIRST_MSG_COST = 10;
-const PRESET_GIFT_IMAGES = [
-  "/gift/gift1.png",
-  "/gift/gift2.png",
-  "/gift/gift3.png",
-  "/gift/gift4.png",
-  "/gift/gift5.png",
-  "/gift/gift6.png",
-  "/gift/gift7.png",
-  "/gift/gift8.png",
-];
-
-function fallbackPresetGiftImagePath(giftId) {
-  if (!giftId || typeof giftId !== "string") return PRESET_GIFT_IMAGES[0];
-  let h = 0;
-  for (let i = 0; i < giftId.length; i++) {
-    h = (Math.imul(31, h) + giftId.charCodeAt(i)) | 0;
-  }
-  const idx = (Math.abs(h) % PRESET_GIFT_IMAGES.length) + 1;
-  return `/gift/gift${idx}.png`;
-}
-
-function mapCatalogToModalGifts(rows) {
-  if (!rows?.length) return [];
-  return rows.map((g) => ({
-    id: g.giftId,
-    name: `${g.emoji || ""} ${g.name}`.trim(),
-    price: g.diamonds ?? g.coins ?? 0,
-    image:
-      (g.imageUrl && String(g.imageUrl).trim()) ||
-      fallbackPresetGiftImagePath(g.giftId),
-  }));
-}
+// Preset gifts and fallbacks removed as we now use emoji fallback
 
 function conversationMatchesSearch(conv, rawQuery) {
   const q = (rawQuery || "").trim().toLowerCase();
@@ -456,6 +425,7 @@ export default function Inbox() {
         const url = u.displayPictureUrl || null;
         setMyAvatarUrl(url);
         if (url) localStorage.setItem("displayPictureUrl", url);
+        if (u.username) localStorage.setItem("myUsername", u.username);
       })
       .catch(() => {
         const url = localStorage.getItem("displayPictureUrl");
@@ -1491,6 +1461,15 @@ export default function Inbox() {
     root.scrollTo({ top: root.scrollHeight, behavior: "auto" });
   }, [messages]);
 
+  useEffect(() => {
+    if (peerTyping) {
+      const root = messagesScrollRef.current;
+      if (root) {
+        root.scrollTo({ top: root.scrollHeight, behavior: "smooth" });
+      }
+    }
+  }, [peerTyping]);
+
   const cleanRequestId = (id) => {
     if (typeof id !== "string") return id;
     if (id.startsWith("follow_")) return id.replace("follow_", "");
@@ -2192,6 +2171,7 @@ export default function Inbox() {
                       loadOlderThreadMessages={loadOlderThreadMessages}
                       onSquadInviteResponse={handleSquadInviteResponse}
                       activePendingSquadInvitationIds={activePendingSquadInvitationIds}
+                      peerTyping={peerTyping}
                     />
                   </div>
                 </div>

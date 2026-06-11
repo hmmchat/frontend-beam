@@ -1,6 +1,6 @@
 'use client';
 
-import ProfileGuard from '@/components/auth/ProfileGuard';
+import SignUpModal from '@/components/auth/SignUpModal';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
@@ -106,6 +106,9 @@ function BeamTVInner() {
   const [chatProfilesByUserId, setChatProfilesByUserId] = useState({});
   const [friendRequestSentTo, setFriendRequestSentTo] = useState({});
   const [reportedUserIds, setReportedUserIds] = useState(new Set());
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  // Computed once on client mount — safe for SSR (localStorage not available server-side)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [broadcastHud, setBroadcastHud] = useState({
     viewerCount: 0,
@@ -242,6 +245,9 @@ function BeamTVInner() {
 
   // Hydrate session id on mount
   useEffect(() => {
+    // Set login state from localStorage — safe here (client only)
+    setIsLoggedIn(Boolean(getAuthedUserId()));
+
     let sid = localStorage.getItem('beamtv_session_id');
     if (!sid) {
       sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -542,6 +548,16 @@ function BeamTVInner() {
 
         if (msg.type === 'error') {
           console.error('[BeamTV] WS Error:', msg.data);
+          const errMsg = typeof msg.data === 'string' ? msg.data : String(msg.data?.error || '');
+          if (errMsg.includes('not found') || errMsg.includes('Transport')) {
+            console.log('[BeamTV] Reconnecting stale transport...');
+            cleanup({ preserveStreams: true });
+            const activeDid = did || (typeof window !== 'undefined' ? localStorage.getItem('deviceId') : '') || '';
+            if (roomId && activeDid) {
+              connectToBroadcast(roomId, activeDid);
+            }
+            return;
+          }
           setStatus('error');
           setError(msg.data?.error || 'A streaming error occurred.');
           return;
@@ -645,6 +661,7 @@ function BeamTVInner() {
   }, [joinState.state, requestedJoin.userId, currentBroadcast]);
 
   const getAuthedUserId = () => {
+    if (typeof window === 'undefined') return null;
     const accessToken = localStorage.getItem('accessToken') || '';
     if (!accessToken) return null;
     try {
@@ -655,9 +672,11 @@ function BeamTVInner() {
     }
   };
 
-  const isLoggedIn = () => Boolean(getAuthedUserId());
+  // isLoggedIn is a state variable (initialized above) — set on mount via useEffect below.
+  // Do NOT call getAuthedUserId() at render time (localStorage is not available during SSR).
 
   const getMyDisplayName = () => {
+    if (typeof window === 'undefined') return 'You';
     const accessToken = localStorage.getItem('accessToken') || '';
     if (!accessToken) return 'You';
     try {
@@ -779,8 +798,8 @@ function BeamTVInner() {
   const toggleFavouriteBroadcaster = async (targetUserId) => {
     const uid = String(targetUserId || '');
     if (!uid || uid === 'broadcaster' || uid.startsWith('producer:')) return;
-    if (!isLoggedIn()) {
-      setEngagementMsg('Please sign in to follow broadcasters.');
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
       return;
     }
     const isFav = Boolean(favouriteByUserId[uid]);
@@ -807,8 +826,8 @@ function BeamTVInner() {
     const roomId = currentBroadcast?.roomId;
     const msg = String(viewerChatInput || '').trim();
     if (!roomId || !msg) return;
-    if (!isLoggedIn()) {
-      setEngagementMsg('Please sign in to chat.');
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
       return;
     }
     if (wsRef.current?.readyState !== WebSocket.OPEN) {
@@ -845,7 +864,7 @@ function BeamTVInner() {
   };
 
   const refreshFavouriteProfiles = useCallback(async () => {
-    if (!isLoggedIn()) {
+    if (!isLoggedIn) {
       setFavouriteProfiles([]);
       return;
     }
@@ -950,7 +969,7 @@ function BeamTVInner() {
     if (!currentBroadcast?.roomId) return;
     const userId = getAuthedUserId();
     if (!userId) {
-      setJoinState({ state: 'error', message: 'Please sign in to join.' });
+      setShowAuthModal(true);
       return;
     }
     setJoinState({ state: 'requesting', message: '' });
@@ -964,6 +983,14 @@ function BeamTVInner() {
     } catch (e) {
       setJoinState({ state: 'error', message: e?.message || 'Failed to request join.' });
     }
+  };
+
+  const handleGiftClick = () => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    setEngagementMsg('Gifting is currently only available during 1-on-1 and Group calls.');
   };
 
   // If user closes tab / navigates away while waitlisted, cancel request so waitlist count stays accurate.
@@ -1319,7 +1346,7 @@ function BeamTVInner() {
 
   // Seed favourite state from backend favourite-broadcasters list.
   useEffect(() => {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn) return;
     if (status !== 'connected') return;
     let cancelled = false;
     (async () => {
@@ -1346,7 +1373,7 @@ function BeamTVInner() {
 
   // Fetch complete favourites strip (both live + offline) and keep live badges fresh.
   useEffect(() => {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn) return;
     refreshFavouriteProfiles();
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
@@ -1369,7 +1396,7 @@ function BeamTVInner() {
   const handleSendFriendRequest = async (toUserId) => {
     const tid = String(toUserId || '');
     if (!tid || tid === 'broadcaster' || tid.startsWith('producer:')) return;
-    if (!isLoggedIn()) {
+    if (!isLoggedIn) {
       setEngagementMsg('Please sign in to add friend.');
       return;
     }
@@ -1392,7 +1419,7 @@ function BeamTVInner() {
       setEngagementMsg('Cannot report this user.');
       return;
     }
-    if (!isLoggedIn()) {
+    if (!isLoggedIn) {
       setEngagementMsg('Please sign in to report user.');
       return;
     }
@@ -1424,8 +1451,8 @@ function BeamTVInner() {
 
   const renderTile = (tile, idx) => {
     const uid = String(tile?.userId || '');
-    const showAddFriend = isLoggedIn() && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
-    const showFollow = isLoggedIn() && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
+    const showAddFriend = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
+    const showFollow = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
     const { screenStream: tileScreen, ...tileRest } = tile || {};
     return (
       <RemoteVideoTile
@@ -1509,7 +1536,7 @@ function BeamTVInner() {
   return (
     <div className="h-screen w-screen bg-black flex flex-col font-sans overflow-hidden">
 
-      {isLoggedIn() && favouritesPanelOpen && (
+      {isLoggedIn && favouritesPanelOpen && (
         <FavouritesPanel
           favouriteProfiles={sortedFavouriteProfiles}
           onAvatarClick={handleFavouriteAvatarClick}
@@ -1592,6 +1619,7 @@ function BeamTVInner() {
                 sendViewerChat={sendViewerChat}
                 joinState={joinState}
                 handleJoinBroadcast={handleJoinBroadcast}
+                onGiftClick={handleGiftClick}
               />
 
               {engagementMsg && (
@@ -1615,7 +1643,7 @@ function BeamTVInner() {
               {chatProfileSheet.open && chatProfileSheet.user && (
                 <ChatProfileCard
                   user={chatProfileSheet.user}
-                  isLoggedIn={isLoggedIn()}
+                  isLoggedIn={isLoggedIn}
                   friendRequestSent={Boolean(friendRequestSentTo[String(chatProfileSheet.user.id || '')])}
                   onSendFriendRequest={handleSendFriendRequest}
                   onClose={() => setChatProfileSheet({ open: false, user: null })}
@@ -1646,6 +1674,11 @@ function BeamTVInner() {
                 />
               )}
 
+              <SignUpModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+              />
+
 
 
 
@@ -1659,10 +1692,8 @@ function BeamTVInner() {
 
 export default function BeamTV() {
   return (
-    <ProfileGuard>
-      <Suspense fallback={<div className="w-full h-[100dvh] bg-black" />}>
-        <BeamTVInner />
-      </Suspense>
-    </ProfileGuard>
+    <Suspense fallback={<div className="w-full h-[100dvh] bg-black" />}>
+      <BeamTVInner />
+    </Suspense>
   );
 }

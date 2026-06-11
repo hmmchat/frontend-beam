@@ -1,57 +1,101 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FaceCard from "@/components/Home/FaceCard";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { getFacecardPhotos } from "@/lib/facecard-utils";
 
 export default function FacecardDisplay({ user, age, setView, router }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [scale, setScale] = useState(1);
   const allPhotos = getFacecardPhotos(user);
 
-  const handlePrev = (e) => {
-    e?.stopPropagation();
-    setCurrentImageIndex((prev) =>
-      prev > 0 ? prev - 1 : allPhotos.length - 1,
-    );
-  };
 
-  const handleNext = (e) => {
-    e?.stopPropagation();
-    setCurrentImageIndex((prev) =>
-      prev < allPhotos.length - 1 ? prev + 1 : 0,
-    );
-  };
+
+  const [translateY, setTranslateY] = useState(0);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const height = window.innerHeight;
+
+      const newScale = Math.max(
+        0.75,
+        Math.min(height / 820, 1)
+      );
+
+      const newTranslateY = Math.max(
+        -120,
+        (height - 820) * 0.3
+      ) + 40;
+
+      setScale(newScale);
+      setTranslateY(newTranslateY);
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const newScale = Math.max(
+        0.7,
+        Math.min(window.innerHeight / 850, 1)
+      );
+      setScale(newScale);
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+  // const handlePrev = (e) => {
+  //   e?.stopPropagation();
+  //   setCurrentImageIndex((prev) =>
+  //     prev > 0 ? prev - 1 : allPhotos.length - 1,
+  //   );
+  // };
+
+  // const handleNext = (e) => {
+  //   e?.stopPropagation();
+  //   setCurrentImageIndex((prev) =>
+  //     prev < allPhotos.length - 1 ? prev + 1 : 0,
+  //   );
+  // };
 
   return (
     <div
-      className="flex md:min-h-screen  w-full flex-col bg-purple-950 text-white outfit-font  "
+      className="flex min-h-screen  w-full flex-col  text-white outfit-font overflow-hidden  "
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
+        repeat: "repeat"
       }}
     >
       <div
-        className="mx-auto flex w-full flex-1 flex-col gap-3 px-3 py-3 
+        className=" flex w-full flex-1 flex-col gap-3 px-3 py-3 
                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
       >
 
 
         {/* LEFT — phone preview area */}
         <div
-          className="flex flex-1 flex-col items-center justify-center md:justify-center
+          className="flex md:flex-1 flex-col items-center justify-center md:justify-center
                        md:min-h-0
                       md:overflow-visible
                       
                       md:border md:border-white/30 md:rounded-[60px] 
-                       py-3 sm:px-4 mx-auto"
+                        sm:px-4 "
         >
           <div
             className="flex w-full flex-col items-center text-center 
-                       flex-1 justify-center 
+                       md:flex-1 justify-center 
                         md:mt-0
-                         md:scale-100 mx-auto"
+                         md:scale-100 justify-between "
           >
             <div >
               <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden ">
@@ -65,14 +109,17 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </div>
 
             {/* CARD */}
-            <div className="w-full mx-auto flex justify-center -mt-[3vh]   origin-top
-
-   origin-top
-
-    max-[370px]:scale-84
-    max-[390px]:scale-86
-    max-[410px]:scale-88
-    max-[416px]:scale-88">
+            <div
+              className="w-full mx-auto flex justify-center"
+              style={
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? {
+                    transform: ` translateY(${translateY}px) scale(${scale})`,
+                    transformOrigin: "top center",
+                  }
+                  : undefined
+              }
+            >
               <FaceCard
                 user={{
                   ...user,
@@ -85,7 +132,8 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </div>
 
             {/* MOBILE BUTTONS */}
-            <div className="flex w-full px-6 justify-center gap-4 mx-auto md:hidden -mt-[10vh] ">
+
+            <div className="flex absolute w-full px-6 justify-center gap-4 mx-auto md:hidden bottom-[1vh]  ">
 
 
               <button
@@ -143,6 +191,6 @@ export default function FacecardDisplay({ user, age, setView, router }) {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

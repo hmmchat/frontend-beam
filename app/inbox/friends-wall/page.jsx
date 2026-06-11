@@ -7,7 +7,7 @@ import { FaArrowLeftLong } from "react-icons/fa6";
 import { FaShare } from "react-icons/fa";
 
 import { useState, useEffect, useRef } from "react";
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 import { API, apiRequest } from "../../../lib/api";
 import FaceCard from '@/components/Home/FaceCard';
 import { calculateAge } from '@/lib/facecard-utils';
@@ -18,6 +18,134 @@ export default function FriendWall() {
       <FriendWallContent />
     </ProfileGuard>
   );
+}
+
+const TRANSPARENT_PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ2Z2sQAAAAASUVORK5CYII=";
+
+/**
+ * Renders the friend wall box (plus the beam logo header) to a JPEG data URL.
+ * Same approach as the facecard export: clone off-screen, inline cross-origin
+ * images through the backend proxy so the canvas is not CORS-tainted, then
+ * rasterize with html-to-image (html2canvas produced a black image here).
+ */
+async function renderWallImage(node) {
+  const toProxyDataUrl = async (rawUrl) => {
+    const proxyUrl = `${API.FILES.IMAGE_PROXY}?url=${encodeURIComponent(rawUrl)}`;
+    const res = await fetch(proxyUrl, { mode: "cors", credentials: "omit" });
+    if (!res.ok) throw new Error(`Proxy fetch failed: ${res.status}`);
+    const payload = await res.json();
+    if (typeof payload?.dataUrl !== "string" || !payload.dataUrl.startsWith("data:")) {
+      throw new Error("Proxy did not return dataUrl");
+    }
+    return payload.dataUrl;
+  };
+
+  const waitForImageSettled = (img, timeoutMs = 5000) =>
+    new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        img.removeEventListener("load", onLoad);
+        img.removeEventListener("error", onError);
+        resolve();
+      };
+      const onLoad = () => finish();
+      const onError = () => {
+        img.setAttribute("src", TRANSPARENT_PIXEL);
+        finish();
+      };
+      if (img.complete) {
+        if (!img.naturalWidth) img.setAttribute("src", TRANSPARENT_PIXEL);
+        resolve();
+        return;
+      }
+      img.addEventListener("load", onLoad, { once: true });
+      img.addEventListener("error", onError, { once: true });
+      setTimeout(finish, timeoutMs);
+    });
+
+  let exportMount = null;
+  try {
+    const clone = node.cloneNode(true);
+    // Un-clamp the scroll container so the full grid is captured.
+    clone.style.height = "auto";
+    clone.style.overflow = "visible";
+    const scroller = clone.firstElementChild;
+    if (scroller) {
+      scroller.style.height = "auto";
+      scroller.style.overflow = "visible";
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.style.width = `${node.offsetWidth + 64}px`;
+    wrapper.style.padding = "32px";
+    wrapper.style.boxSizing = "border-box";
+    wrapper.style.backgroundColor = "#2e0668";
+    wrapper.style.backgroundImage = "url('/assets/mb.jpg')";
+    wrapper.style.backgroundRepeat = "repeat";
+
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "center";
+    header.style.marginBottom = "24px";
+    const logo = document.createElement("img");
+    logo.src = "/logo.png";
+    logo.alt = "Beam";
+    logo.style.width = "155px";
+    logo.style.height = "55px";
+    logo.style.objectFit = "contain";
+    header.appendChild(logo);
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(clone);
+
+    exportMount = document.createElement("div");
+    exportMount.style.position = "fixed";
+    exportMount.style.left = "-100000px";
+    exportMount.style.top = "0";
+    exportMount.style.pointerEvents = "none";
+    exportMount.style.opacity = "0";
+    exportMount.appendChild(wrapper);
+    document.body.appendChild(exportMount);
+
+    const imgs = Array.from(wrapper.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map(async (img) => {
+        const src = img.currentSrc || img.src;
+        img.removeAttribute("srcset");
+        img.setAttribute("loading", "eager");
+        img.setAttribute("decoding", "sync");
+        if (!src) return;
+        let crossOrigin = false;
+        try {
+          crossOrigin = new URL(src, window.location.href).origin !== window.location.origin;
+        } catch {
+          return;
+        }
+        if (!crossOrigin) return;
+        try {
+          img.setAttribute("src", await toProxyDataUrl(src));
+        } catch {
+          img.setAttribute("src", TRANSPARENT_PIXEL);
+        }
+      })
+    );
+    await Promise.all(imgs.map((img) => waitForImageSettled(img)));
+
+    return await toJpeg(wrapper, {
+      cacheBust: true,
+      pixelRatio: 2,
+      quality: 0.95,
+      backgroundColor: "#2e0668",
+      skipAutoScale: true,
+      imagePlaceholder: TRANSPARENT_PIXEL,
+      fetchRequestInit: { mode: "cors", credentials: "omit" },
+    });
+  } finally {
+    if (exportMount?.parentNode) exportMount.parentNode.removeChild(exportMount);
+  }
 }
 
 function FriendWallContent() {
@@ -61,64 +189,24 @@ function FriendWallContent() {
         return;
       }
 
-      // Try backend share endpoint first
-      try {
-        const data = await apiRequest(API.FRIENDS.GET_FRIENDS_WALL + '/share', {
-          method: 'POST'
-        });
-
-        if (data.imageUrl || data.deepLink) {
-          if (navigator.share) {
-            await navigator.share({
-              title: 'My HMM Friend Wall',
-              text: 'Check out my friends on HMM!',
-              url: data.deepLink || data.imageUrl
-            });
-          } else {
-            await navigator.clipboard.writeText(data.deepLink || data.imageUrl);
-            alert('Share link copied to clipboard!');
-          }
-          return; // Success — done
-        }
-      } catch (backendErr) {
-        console.warn('Backend share failed, using client-side fallback:', backendErr.code || backendErr.message);
-      }
-
-      // Fallback: capture wall grid client-side with html2canvas
+      // Render the wall grid client-side (html-to-image, same approach as facecard export)
       const node = wallRef.current;
       if (!node) {
         alert('Nothing to share yet.');
         return;
       }
 
-      const canvas = await html2canvas(node, {
-        backgroundColor: '#1a0533',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: true,
-      });
+      const dataUrl = await renderWallImage(node);
+      const blob = await (await fetch(dataUrl)).blob();
 
-      const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
-      const file = new File([blob], 'friend-wall.jpg', { type: 'image/jpeg' });
-
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: 'My HMM Friend Wall',
-          text: 'Check out my friends on HMM!',
-          files: [file],
-        });
-      } else {
-        // Desktop fallback: download the image
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'friend-wall.jpg';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'friend-wall.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error sharing wall:', error);
       alert(error.message || 'Failed to share friend wall');

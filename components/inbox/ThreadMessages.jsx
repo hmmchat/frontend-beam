@@ -2,26 +2,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 
-const PRESET_GIFT_IMAGES = [
-  "/gift/gift1.png",
-  "/gift/gift2.png",
-  "/gift/gift3.png",
-  "/gift/gift4.png",
-  "/gift/gift5.png",
-  "/gift/gift6.png",
-  "/gift/gift7.png",
-  "/gift/gift8.png",
-];
 
-function fallbackPresetGiftImagePath(giftId) {
-  if (!giftId || typeof giftId !== "string") return PRESET_GIFT_IMAGES[0];
-  let h = 0;
-  for (let i = 0; i < giftId.length; i++) {
-    h = Math.imul(31, h) + giftId.charCodeAt(i) | 0;
-  }
-  const idx = (Math.abs(h) % PRESET_GIFT_IMAGES.length) + 1;
-  return `/gift/gift${idx}.png`;
-}
 
 function isSyntheticConversationId(cid) {
   if (cid == null || cid === "") return true;
@@ -41,6 +22,29 @@ function parseSquadMeta(raw) {
 
 import MessageSkeleton from "./MessageSkeleton";
 
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-[3px] align-middle px-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[5px] h-[5px] rounded-full bg-white/70 inline-block"
+          style={{
+            animation: "typingBounce 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
+    </span>
+  );
+}
+
 export default function ThreadMessages({
   messages,
   currentUserId,
@@ -53,6 +57,7 @@ export default function ThreadMessages({
   loadOlderThreadMessages,
   onSquadInviteResponse,
   activePendingSquadInvitationIds,
+  peerTyping,
 }) {
   const [squadBusyId, setSquadBusyId] = useState(null);
 
@@ -125,14 +130,20 @@ export default function ThreadMessages({
                 className={`flex items-start gap-2 ${isMe ? "justify-end" : ""}`}
               >
                 {!isMe && (
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
-                    <Image
-                      src={activeChat?.otherUser?.displayPictureUrl}
-                      alt="avatar"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+                  activeChat?.otherUser?.displayPictureUrl ? (
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                      <Image
+                        src={activeChat.otherUser.displayPictureUrl}
+                        alt="avatar"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 border border-white/90 bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
+                      {(activeChat?.otherUser?.username || "User").charAt(0).toUpperCase()}
+                    </div>
+                  )
                 )}
                 <div
                   className={`p-1 rounded-lg max-w-[75%] shadow-md overflow-hidden ${isMe ? "bg-black/20 text-white  " : "bg-black/20 text-white  "
@@ -168,22 +179,21 @@ export default function ThreadMessages({
                     message.messageType === "GIFT_WITH_MESSAGE") && (
                       <div
                         className={`bg-black/20 rounded-xl p-3 mb-1 flex flex-col items-center gap-2 border ${giftUnreadOnly
-                            ? "border-yellow-400/80 ring-2 ring-yellow-400/40"
-                            : "border-white/10"
+                          ? "border-yellow-400/80 ring-2 ring-yellow-400/40"
+                          : "border-white/10"
                           }`}
                       >
-                        <div className="relative w-16 h-16">
-                          <Image
-                            src={
-                              message.giftImageUrl ||
-                              (message.giftId
-                                ? fallbackPresetGiftImagePath(message.giftId)
-                                : PRESET_GIFT_IMAGES[0])
-                            }
-                            alt="Gift"
-                            fill
-                            className="object-contain"
-                          />
+                        <div className="relative w-16 h-16 flex items-center justify-center">
+                          {message.giftImageUrl ? (
+                            <Image
+                              src={message.giftImageUrl}
+                              alt="Gift"
+                              fill
+                              className="object-contain"
+                            />
+                          ) : (
+                            <span className="text-4xl">🎁</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
                           <div className="relative w-3 h-3">
@@ -279,18 +289,47 @@ export default function ThreadMessages({
                     )}
                 </div>
                 {isMe && (
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
-                    <Image
-                      src={myAvatarUrl}
-                      alt="me"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+                  myAvatarUrl ? (
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                      <Image
+                        src={myAvatarUrl}
+                        alt="me"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 border border-white/90 bg-gradient-to-tr from-pink-600 to-rose-600 flex items-center justify-center text-white text-xs font-bold select-none">
+                      {typeof window !== "undefined" && localStorage.getItem("myUsername")
+                        ? localStorage.getItem("myUsername").charAt(0).toUpperCase()
+                        : "Y"}
+                    </div>
+                  )
                 )}
               </div>
             );
           })
+        )}
+        {peerTyping && (
+          <div className="flex items-start gap-2 self-start">
+            {activeChat?.otherUser?.displayPictureUrl ? (
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                <Image
+                  src={activeChat.otherUser.displayPictureUrl}
+                  alt="avatar"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full flex-shrink-0 border border-white/90 bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold select-none">
+                {(activeChat?.otherUser?.username || "User").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="p-3 rounded-xl bg-black/20 text-white border border-white/10 shadow-md flex items-center justify-center min-h-[36px]">
+              <TypingDots />
+            </div>
+          </div>
         )}
       </div>
     </div>

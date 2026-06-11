@@ -117,13 +117,13 @@ const FaceCard4 = ({
       {!hideHeader && (
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
           <div>
-            <h1 className="text-[18px] font-semibold text-[#FFB800] text-start">
+            <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
               {user.username || "User"}
               {!hideFacecardAge && (
                 <>
                   {" "}
                   <span
-                    className="font-sm text-transparent  px-2 py-0.5 rounded-full"
+                    className="text-stroke-yellow  text-2xl"
                     style={{ WebkitTextStroke: "0.7px white" }}
                   >
                     {age || "—"}
@@ -186,7 +186,7 @@ const FaceCard4 = ({
           {!hideHeader && (
             <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
               <div>
-                <h1 className="text-[18px] font-semibold text-[#FFB800]">
+                <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
                   {user.username || "User"}
                   {!hideFacecardAge && (
                     <>

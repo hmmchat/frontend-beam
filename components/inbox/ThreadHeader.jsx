@@ -5,6 +5,29 @@ import { FaBan, FaUserMinus } from "react-icons/fa6";
 import { TiUserAdd } from "react-icons/ti";
 import clsx from 'clsx';
 
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-[3px] align-middle ml-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[4px] h-[4px] rounded-full bg-emerald-400 inline-block"
+          style={{
+            animation: "typingBounce 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-3px); opacity: 1; }
+        }
+      `}</style>
+    </span>
+  );
+}
+
 export default function ThreadHeader({
   activeChat,
   activeTab,
@@ -65,23 +88,25 @@ export default function ThreadHeader({
         <div
           className={clsx(
             'flex items-center gap-1',
-            'px-3 py-1',
+            'px-1 py-1',
             'rounded-full',
             'border border-white/30',
-            '',
+            'pr-2',
             'w-fit max-w-full'
           )}
         >
           {/* Avatar */}
           <div className={clsx('relative h-12 w-12 shrink-0 overflow-visible')}>
-            <div className="relative h-full w-full overflow-hidden rounded-full">
+            <div className="relative h-full w-full overflow-hidden rounded-full border  border-[1px] border-white/40">
+
               <Image
-                src={otherProfile?.displayPictureUrl}
+                src={otherProfile.displayPictureUrl}
                 alt="User"
                 fill
                 sizes="40px"
-                className="object-cover rounded-full"
+                className="object-cover rounded-full "
               />
+
             </div>
 
             {headerUserStatus === "online" && (
@@ -110,13 +135,19 @@ export default function ThreadHeader({
 
             </span>
 
-            <div className="flex items-center gap-[1px] text-xs">
-              <IoLocationOutline className="text-white" />
-              <span className=" font-outfit  font-thin truncate">
-                {cityDisplay || "—"}
-
-              </span>
-            </div>
+            {peerTyping ? (
+              <div className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                <span>typing</span>
+                <TypingDots />
+              </div>
+            ) : (
+              <div className="flex items-center gap-[1px] text-xs">
+                <IoLocationOutline className="text-white" />
+                <span className=" font-outfit  font-thin truncate">
+                  {cityDisplay || "—"}
+                </span>
+              </div>
+            )}
           </div>
 
 

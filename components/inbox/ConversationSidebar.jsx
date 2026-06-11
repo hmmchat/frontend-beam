@@ -36,7 +36,7 @@ export default function ConversationSidebar({
     <button
       type="button"
       onClick={() => setMsgFilter((f) => (f === key ? MsgFilter.ALL : key))}
-      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${msgFilter === key ? "bg-white/25 border-white" : "border-white/30 "
+      className={`flex shrink-0 items-center justify-center w-11 h-11 min-w-[2.75rem] min-h-[2.75rem] rounded-full border transition-all text-white ${msgFilter === key ? "bg-white/5 border-white" : "border-white/30 "
         }`}
       title={
         key === MsgFilter.WITH_GIFT
@@ -67,62 +67,65 @@ export default function ConversationSidebar({
     >
       <div className="w-full py-2 text-white space-y-4">
 
-        
-<div className="w-full flex justify-center">
-  <div className="flex items-center border border-white/30 rounded-full px-1 py-1 w-full max-w-xl">
 
-    {/* Search Icon */}
+        <div className="w-full flex justify-center">
+          <div className="flex items-center border border-white/30 rounded-full px-1 py-1 w-full max-w-xl">
 
-
-  {/* Search Icon */}
-  <div className="flex items-center justify-center w-10 h-10 min-w-[40px] rounded-full border border-white/30 mr-1">
-    <FaMagnifyingGlass className="text-white/80 text-sm" />
-  </div>
-
-  {/* Tabs */}
-  <div className="flex flex-1">
-
-    {/* Inbox */}
-    <button
-      onClick={() => {
-        setActiveTab("inbox");
-        setActiveChat(null);
-      }}
-      className={`flex-1 py-2 text-sm rounded-full transition ${
-        activeTab === "inbox"
-          ? "border border-white/90 bg-transparent text-white"
-          : "text-white/70"
-      }`}
-    >
-      Inbox
-    </button>
-
-    {/* Requests */}
-    <button
-      onClick={() => {
-        setActiveTab("requests");
-        setActiveChat(null);
-      }}
-      className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm rounded-full transition ${
-        activeTab === "requests"
-          ? "border border-white/40 bg-transparent text-white"
-          : "text-white/70"
-      }`}
-    >
-      {requestsTabCount > 0 && (
-        <span className="w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_8px_#FACC15] animate-pulse shrink-0"></span>
-      )}
-      Requests
-      <span className="text-xs font-light font-outfit">
-       {requestsTabCount > 0 ? `(${requestsTabCount})` : ""}
-      </span>
-    </button>
+            {/* Search Icon */}
 
 
-</div>
-    
-  </div>
-</div>
+            {/* Search Icon */}
+            <div className="flex items-center justify-center w-10 h-10 min-w-[40px] rounded-full border border-white/30 mr-1">
+              <FaMagnifyingGlass className="text-white/80 text-sm" />
+            </div>
+
+            {/* Tabs */}
+            <div className="flex flex-1 relative  rounded-full p-[2px]">
+              <div
+                className="absolute top-[2px] bottom-[2px] left-[2px] w-[calc(50%-2px)] rounded-full transition-all duration-300 ease-out z-0 pointer-events-none"
+                style={{
+                  transform: activeTab === "inbox" ? "translateX(0)" : "translateX(100%)",
+                  border: activeTab === "inbox" ? "1px solid rgba(255, 255, 255, 0.9)" : "1px solid rgba(255, 255, 255, 0.4)",
+                }}
+              />
+
+              {/* Inbox */}
+              <button
+                onClick={() => {
+                  setActiveTab("inbox");
+                  setActiveChat(null);
+                }}
+                className={`flex-1 py-2 text-sm rounded-full transition-all relative z-10 text-center ${activeTab === "inbox"
+                  ? "text-white font-medium"
+                  : "text-white/70 hover:text-white/90"
+                  }`}
+              >
+                Inbox
+              </button>
+
+              {/* Requests */}
+              <button
+                onClick={() => {
+                  setActiveTab("requests");
+                  setActiveChat(null);
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm rounded-full transition-all relative z-10 text-center ${activeTab === "requests" || activeTab === "sent"
+                  ? "text-white font-medium"
+                  : "text-white/70 hover:text-white/90"
+                  }`}
+              >
+                {requestsTabCount > 0 && (
+                  <span className="w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_8px_#FACC15] animate-pulse shrink-0"></span>
+                )}
+                Requests
+                <span className="text-xs font-light font-outfit">
+                  {requestsTabCount > 0 ? `(${requestsTabCount})` : ""}
+                </span>
+              </button>
+            </div>
+
+          </div>
+        </div>
 
         {activeTab !== "inbox" && (
           <div className="flex items-center justify-between">
@@ -133,7 +136,7 @@ export default function ConversationSidebar({
                 setActiveTab(nextTab);
                 setActiveChat(null);
               }}
-              className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/20 border-white" : "border-white/50"
+              className={`flex items-center border rounded-full p-3 gap-2 transition-all active:scale-95 ${activeTab === "sent" ? "bg-white/5 border-white" : "border-white/50"
                 }`}
             >
               <img src="/inbox/eye.svg" alt="" className="text-lg" />
@@ -141,7 +144,7 @@ export default function ConversationSidebar({
                 {activeTab === "sent" ? "Received Requests" : "Sent Requests"}
               </p>
             </button>
-            
+
             <div className="flex gap-2 items-center shrink-0">
               {filterToggle(MsgFilter.WITH_GIFT)}
               {filterToggle(MsgFilter.TEXT_ONLY)}
@@ -167,7 +170,11 @@ export default function ConversationSidebar({
             </button>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto scrollbar-hide md:px-0">
+          <div
+            key={activeTab}
+            className={`flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto scrollbar-hide md:px-0 ${activeTab === "inbox" ? "animate-slide-from-left" : "animate-slide-from-right"
+              }`}
+          >
             {currentList.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-white/60">No conversations yet</p>
@@ -205,6 +212,22 @@ export default function ConversationSidebar({
             )}
           </div>
         )}
+        <style>{`
+        @keyframes slideFromLeft {
+          from { transform: translateX(-16px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideFromRight {
+          from { transform: translateX(16px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-from-left {
+          animation: slideFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-slide-from-right {
+          animation: slideFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
       </div>
     </div>
   );

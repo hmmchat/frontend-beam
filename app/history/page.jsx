@@ -96,6 +96,17 @@ function HistoryContent() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatCityDisplay = (rawCity) => {
+    if (!rawCity || rawCity === "ANYWHERE_IN_INDIA" || rawCity === "Anywhere") {
+      return "Anywhere in India";
+    }
+    if (rawCity === "Unknown") return "";
+    return rawCity
+      .split(/[_-]/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
@@ -328,7 +339,7 @@ function HistoryContent() {
 
                                 <div className="md:text-[14px] text-[11px] font-outfit text-white/80 flex items-center gap-1 mt-1">
                                   <img src="/history/locationline.svg" alt="location" className="md:w-5 md:h-5 w-3 h-3" />
-                                  {participant.location}
+                                  {formatCityDisplay(participant.preferredCity || participant.city || participant.location) || "—"}
                                 </div>
 
                                 <div className="flex items-center gap-2 font-semibold md:text-sm text-[11px] font-outfit md:mt-2 mt-1">

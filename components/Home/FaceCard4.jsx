@@ -12,6 +12,8 @@ import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 
 import { IoIosArrowForward } from "react-icons/io";
+import Report from "../facecard/Report";
+import { usePathname, useSearchParams } from "next/navigation";
 function brandLogoUrl(entry) {
   if (!entry) return null;
   if (typeof entry === "string") return entry;
@@ -47,8 +49,23 @@ const FaceCard4 = ({
   hideHeader,
 }) => {
   const [internalIndex, setInternalIndex] = useState(0);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (!user) return null;
+
+  // Compute report layer dynamically if not directly available
+  let reportLayer = user.reportLayer;
+  if (reportLayer === undefined && typeof user.reportCount === "number") {
+    const thresholds = user.reportLayerThresholds || { layer1: 1, layer2: 3, layer3: 5, ban: 7 };
+    if (user.reportCount >= thresholds.layer3) reportLayer = 3;
+    else if (user.reportCount >= thresholds.layer2) reportLayer = 2;
+    else if (user.reportCount >= thresholds.layer1) reportLayer = 1;
+    else reportLayer = 0;
+  }
+  const hasReportLayer = typeof reportLayer === "number" && reportLayer >= 2;
+  const isSearchingParam = searchParams ? searchParams.get("searching") === "1" : false;
+  const showReportUi = (pathname === "/cards" || (pathname === "/" && isSearchingParam)) && hasReportLayer;
 
   const hideFacecardAge = Boolean(user.hideFacecardAge);
   const age = user.age ?? calculateAge(user.dateOfBirth);
@@ -164,6 +181,7 @@ const FaceCard4 = ({
                 <IoVideocamOff className="h-5 w-5" />
               )}
             </span>
+            {showReportUi && <Report layer={reportLayer} className="left-10" />}
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center text-white"
@@ -233,6 +251,7 @@ const FaceCard4 = ({
                     <IoVideocamOff className="h-5 w-5" />
                   )}
                 </span>
+                {showReportUi && <Report layer={reportLayer} />}
                 <button
                   type="button"
                   className="flex h-6 w-6 items-center justify-center text-white"
@@ -266,7 +285,7 @@ const FaceCard4 = ({
                       return (
                         <div
                           key={`brand-slot-${idx}`}
-                          className="flex h-[2.8rem] w-[2.8rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
+                          className={`flex h-[2.8rem] w-[2.8rem] shrink-0 items-center justify-center overflow-hidden rounded-full border ${src ? "border-black" : "border-white/30"} shadow-inner`}
                         >
                           {src && (
                             <img
@@ -344,8 +363,9 @@ const FaceCard4 = ({
               <div className="flex-1 h-full overflow-hidden ">
                 <img
                   src={allPhotos[activeIndex]}
-                  className="h-full w-full object-cover rounded-[20px]"
+                  className={`h-full w-full object-cover rounded-[20px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
                   alt=""
+                  onClick={allPhotos.length > 1 ? handleNext : undefined}
                 />
               </div>
 
@@ -353,20 +373,16 @@ const FaceCard4 = ({
             </div>
 
             {/* Pagination */}
-            <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
-              {allPhotos.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
-                />
-              ))}
-              {allPhotos.length === 1 && (
-                <>
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                  <div className="h-1 w-2 rounded-full bg-white/35" />
-                </>
-              )}
-            </div>
+            {allPhotos.length > 1 && (
+              <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
+                {allPhotos.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
+                  />
+                ))}
+              </div>
+            )}
 
 
 

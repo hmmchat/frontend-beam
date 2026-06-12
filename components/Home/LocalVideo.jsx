@@ -60,7 +60,7 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
           <p className="text-sm opacity-70">{error}</p>
         </div>
       ) : (
-        <div className="w-full h-full rounded-3xl overflow-hidden bg-purple-900">
+        <div className="w-full h-full overflow-hidden bg-purple-900">
           <video
             ref={videoRef}
             autoPlay

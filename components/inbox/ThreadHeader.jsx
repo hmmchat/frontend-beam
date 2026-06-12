@@ -43,6 +43,7 @@ export default function ThreadHeader({
   sendOfflineFriendRequest,
   handleUnfriendPeer,
   handleBlockPeer,
+  onProfileClick,
 }) {
   const headerUserStatus = activeChat?.userStatus;
   const headerLive =
@@ -86,13 +87,14 @@ export default function ThreadHeader({
 
 
         <div
+          onClick={onProfileClick}
           className={clsx(
             'flex items-center gap-1',
             'px-1 py-1',
             'rounded-full',
             'border border-white/30',
             'pr-2',
-            'w-fit max-w-full'
+            'w-fit max-w-full cursor-pointer hover:bg-white/5 transition-all active:scale-[0.98]'
           )}
         >
           {/* Avatar */}

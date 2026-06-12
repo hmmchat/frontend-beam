@@ -10,6 +10,7 @@ import { API, apiRequest } from "@/lib/api";
 import ProfileGuard from "@/components/auth/ProfileGuard";
 import HistorySkeleton from "@/components/history/HistorySkeleton";
 import { MdOutlineLocationOn } from "react-icons/md";
+import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
 
 export default function History() {
   return (
@@ -27,6 +28,8 @@ function HistoryContent() {
   const [productMessage, setProductMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewerId, setViewerId] = useState(typeof window !== "undefined" ? localStorage.getItem("userId") : null);
+  const [previewUserId, setPreviewUserId] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!viewerId) {
@@ -312,13 +315,10 @@ function HistoryContent() {
                             <div className="flex items-center gap-4">
                               <button
                                 type="button"
-                                onClick={() =>
-                                  router.push(
-                                    `/facecard?userId=${encodeURIComponent(
-                                      participant.userId
-                                    )}`
-                                  )
-                                }
+                                onClick={() => {
+                                  setPreviewUserId(participant.userId);
+                                  setIsPreviewOpen(true);
+                                }}
                                 className="w-14 md:w-20 h-14 md:h-20  rounded-full overflow-hidden border border-white border-2 hover:bg-white/5 transition-colors"
                               >
                                 <Image
@@ -333,7 +333,13 @@ function HistoryContent() {
                               </button>
 
                               <div className="">
-                                <div className="md:text-[14px] text-[12px]  ">
+                                <div
+                                  onClick={() => {
+                                    setPreviewUserId(participant.userId);
+                                    setIsPreviewOpen(true);
+                                  }}
+                                  className="md:text-[14px] text-[12px] cursor-pointer hover:underline"
+                                >
                                   <span className="md:mr-[5px]">👦</span>  {participant.username}
                                 </div>
 
@@ -404,6 +410,11 @@ function HistoryContent() {
 
 
       </div>
+      <FacecardPreviewModal
+        userId={previewUserId}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </div>
   );
 }

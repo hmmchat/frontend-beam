@@ -137,7 +137,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
 
 
               <button
-                onClick={() => router.push("/")}
+                onClick={() => router.replace("/")}
                 className="rounded-full w-full px-6 py-4 text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
               >
                 Later 🥱
@@ -183,7 +183,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
             </button>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.replace("/")}
               className="text-xs md:text-[18px] text-white/90 hover:text-white"
             >
               I’ll do it later 🥱

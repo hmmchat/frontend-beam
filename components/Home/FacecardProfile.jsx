@@ -181,7 +181,7 @@ const FacecardProfile = ({
                       return (
                         <div
                           key={`brand-slot-${idx}`}
-                          className="flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-inner"
+                          className={`flex h-[3rem] w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border ${src ? "border-black" : "border-white/30"} shadow-inner`}
                         >
                           {src && (
                             <img
@@ -251,28 +251,25 @@ const FacecardProfile = ({
               <div className="relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
                 <img
                   src={allPhotos[activeIndex]}
-                  className="h-full w-full object-cover rounded-[20px] "
+                  className={`h-full w-full object-cover rounded-[20px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
                   alt=""
+                  onClick={allPhotos.length > 1 ? handleNext : undefined}
                 />
 
                 {/* Pagination */}
-                <div
-                  data-facecard-pagination="true"
-                  className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2"
-                >
-                  {allPhotos.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
-                    />
-                  ))}
-                  {allPhotos.length === 1 && (
-                    <>
-                      <div className="h-1 w-2 rounded-full bg-white/35" />
-                      <div className="h-1 w-2 rounded-full bg-white/35" />
-                    </>
-                  )}
-                </div>
+                {allPhotos.length > 1 && (
+                  <div
+                    data-facecard-pagination="true"
+                    className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2"
+                  >
+                    {allPhotos.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>

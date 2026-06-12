@@ -118,7 +118,7 @@ function FacecardContent() {
     const fetchProfile = async () => {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        router.push("/");
+        router.replace("/");
         return;
       }
 
@@ -1170,7 +1170,7 @@ function FacecardContent() {
         </div>  */}
 
 
-              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'md:max-h-[96vh]')}>
+              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'md:max-h-[96vh] ')}>
                 <div
                   ref={facecardPreviewExportRef}
 
@@ -1194,6 +1194,7 @@ function FacecardContent() {
                     onClose={() => setFacecardPreviewOpen(false)}
                     onDownload={handleDownloadFacecard}
                     onShare={handleShareFacecard}
+
                   />
                 </div>
               </div>

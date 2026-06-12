@@ -392,18 +392,18 @@ export default function MeetSomeoneDesktopRight({
                   genderFilter === 'MALE'
                     ? 'Male'
                     : genderFilter === 'FEMALE'
-                    ? 'Female'
-                    : genderFilter === 'NON_BINARY'
-                    ? 'Non-binary'
-                    : 'Both'
+                      ? 'Female'
+                      : genderFilter === 'NON_BINARY'
+                        ? 'Non-binary'
+                        : 'Both'
                 }
                 locationLabel={
                   !myProfile?.preferredCity || myProfile.preferredCity === 'ANYWHERE_IN_INDIA'
                     ? 'Anywhere'
                     : myProfile.preferredCity
-                        .split(/[_-]/)
-                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                        .join(' ')
+                      .split(/[_-]/)
+                      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                      .join(' ')
                 }
                 className={clsx('text-white')}
               />
@@ -628,33 +628,16 @@ export default function MeetSomeoneDesktopRight({
                             </div>
                             {guestId ? (
                               <button
-                                type="button"
-                                disabled={squadMemberActionBusyId === guestId}
-                                onClick={() => handleRemoveSquadMember(guestId)}
-                                className={clsx(
-                                  'absolute',
-                                  '-top-1',
-                                  '-right-1',
-                                  'z-20',
-                                  'w-6',
-                                  'h-6',
-                                  'rounded-full',
-                                  'bg-red-600',
-                                  'border',
-                                  'border-white/90',
-                                  'text-white',
-                                  'text-[10px]',
-                                  'font-bold',
-                                  'flex',
-                                  'items-center',
-                                  'justify-center',
-                                  'shadow-md',
-                                  'disabled:opacity-40',
-                                )}
-                                title="Remove from squad"
+                                className="absolute -top-[0] -right-1 z-20 w-6 h-6 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden"
                               >
-                                x
+                                <span
+                                  className="font-bold text-sm mix-blend-difference"
+                                  style={{ color: "white" }}
+                                >
+                                  ✕
+                                </span>
                               </button>
+
                             ) : null}
                           </div>
                           <span className="text-sm md:text-16 ">

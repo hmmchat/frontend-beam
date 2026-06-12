@@ -17,6 +17,7 @@ import ThreadHeader from "../inbox/ThreadHeader";
 import ThreadMessages from "../inbox/ThreadMessages";
 import ThreadComposer from "../inbox/ThreadComposer";
 import GiftSuccessPopup from "@/components/VideoChat/GiftSuccessPopup";
+import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
 import clsx from "clsx";
 import { FaUserPlus } from "react-icons/fa6";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
@@ -260,6 +261,8 @@ export default function Inbox() {
   const [successRecipientName, setSuccessRecipientName] = useState("");
   const [notif, setNotif] = useState(null);
   const [sendFriendBusy, setSendFriendBusy] = useState(false);
+  const [previewUserId, setPreviewUserId] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const [walletCoins, setWalletCoins] = useState(null);
   const [walletDiamonds, setWalletDiamonds] = useState(0);
@@ -315,10 +318,10 @@ export default function Inbox() {
       if (payload && payload.userId) {
         const targetUserId = String(payload.userId);
         const rawStatus = String(payload.status || "").toLowerCase();
-        
+
         let mappedStatus = "offline";
         let isBroadcasting = false;
-        
+
         if (rawStatus === "broadcasting" || rawStatus.includes("in_broadcast")) {
           mappedStatus = "broadcasting";
           isBroadcasting = true;
@@ -332,7 +335,7 @@ export default function Inbox() {
         ) {
           mappedStatus = "online";
         }
-        
+
         const updateStatusInList = (list) =>
           list.map((c) => {
             if (String(c.otherUser?.id || c.otherUserId) === targetUserId) {
@@ -344,7 +347,7 @@ export default function Inbox() {
             }
             return c;
           });
-          
+
         setInboxList((prev) => updateStatusInList(prev));
         setRequestsList((prev) => updateStatusInList(prev));
         setSentList((prev) => updateStatusInList(prev));
@@ -1995,6 +1998,12 @@ export default function Inbox() {
                     sendOfflineFriendRequest={sendOfflineFriendRequest}
                     handleUnfriendPeer={handleUnfriendPeer}
                     handleBlockPeer={handleBlockPeer}
+                    onProfileClick={() => {
+                      if (peerId) {
+                        setPreviewUserId(peerId);
+                        setIsPreviewOpen(true);
+                      }
+                    }}
                   />
                   {/* Wrapper box with border on mobile to hold warnings and messages inside the message box */}
                   <div className="flex-1 flex flex-col min-h-0 border border-white/50 rounded-[28px] md:border-none md:rounded-none mt-3 overflow-hidden">
@@ -2029,7 +2038,7 @@ export default function Inbox() {
                             </span>
                           </div>
                         </div>
-                        
+
                         <button
                           type="button"
                           onClick={() =>
@@ -2039,13 +2048,13 @@ export default function Inbox() {
                                 "follow_",
                               )
                                 ? String(activeChat.conversationId).replace(
-                                    "follow_",
-                                    "",
-                                  )
+                                  "follow_",
+                                  "",
+                                )
                                 : String(activeChat.conversationId).replace(
-                                    "pending_fr_",
-                                    "",
-                                  )),
+                                  "pending_fr_",
+                                  "",
+                                )),
                             )
                           }
                           className={clsx(
@@ -2229,6 +2238,11 @@ export default function Inbox() {
           </div>
         </div>
       </div>
+      <FacecardPreviewModal
+        userId={previewUserId}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </div>
   );
 }

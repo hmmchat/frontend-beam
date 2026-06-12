@@ -207,7 +207,7 @@ export default function LocalVideoSection({
                 "flex",
                 "flex-col",
                 "gap-4",
-                "w-full md:w-[80%]",
+                "w-full md:w-[75%]",
                 "max-w-[280px] md:max-w-none",
                 "md:px-4",
                 "pointer-events-auto"
@@ -216,14 +216,14 @@ export default function LocalVideoSection({
               {showChatInput && (
                 <form
                   onSubmit={sendChatMessage}
-                  className={clsx("animate-in mb-4 ml-1", hideMobileControlsRow && "hidden md:block")}
+                  className={clsx("animate-in mb-[7%] ml-[2.5%]", hideMobileControlsRow && "hidden md:block")}
                 >
                   <input
                     autoFocus
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..."
-                    className={clsx('w-full', 'bg-white/10', 'backdrop-blur-[1px]', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'mb-2', 'outline-none')}
+                    className={clsx('w-full', 'bg-white/5', 'backdrop-blur-[1px]', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'mb-2', 'outline-none')}
                   />
                 </form>
               )}

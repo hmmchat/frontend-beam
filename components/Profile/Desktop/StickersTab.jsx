@@ -123,13 +123,17 @@ export default function StickersTab({ user, setUser }) {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center overflow-y-auto pb-8">
+      <div className="flex-1 min-h-0 flex flex-col items-start justify-start overflow-y-auto pb-8 w-full">
         {loading ? (
-          <p className="text-white/60 text-sm">Loading stickers...</p>
+          <div className="flex-1 flex items-center justify-center w-full">
+            <p className="text-white/60 text-sm">Loading stickers...</p>
+          </div>
         ) : badges.length === 0 ? (
-          <p className="text-white/60 text-sm">No stickers received yet</p>
+          <div className="flex-1 flex items-center justify-center w-full">
+            <p className="text-white/60 text-sm">No stickers received yet</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-5 gap-3 place-items-center">
+          <div className="grid grid-cols-5 gap-3 place-items-center w-full">
             {currentBadges.map((badge) => {
               const isSelected = selectedBadgeId === badge.id;
               const src = badge.imageUrl;

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { FaShare } from "react-icons/fa";
-
+import clsx from 'clsx';
 import { useState, useEffect, useRef } from "react";
 import { toJpeg } from "html-to-image";
 import { API, apiRequest } from "../../../lib/api";
@@ -157,6 +157,12 @@ function FriendWallContent() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const wallRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+
+
+
+  const [translateY, setTranslateY] = useState(0);
 
   useEffect(() => {
     fetchFriends();
@@ -215,6 +221,8 @@ function FriendWallContent() {
     }
   };
 
+
+
   const handleFriendClick = async (friendId) => {
     try {
       setPreviewLoading(true);
@@ -230,6 +238,48 @@ function FriendWallContent() {
       setPreviewLoading(false);
     }
   };
+
+
+  useEffect(() => {
+    const updateScale = () => {
+      const h = window.innerHeight;
+
+      if (h <= 670) {
+        setScale(0.78); // iPhone SE
+        setTranslateY(-45);
+      } else if (h <= 740) {
+        setScale(0.85); // XR, 11, 12 mini
+        setTranslateY(-15);
+      }
+
+
+      else {
+        setScale(1);
+        setTranslateY(0);
+      }
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const newScale = Math.max(
+        0.7,
+        Math.min(window.innerHeight / 820, 1)
+      );
+      setScale(newScale);
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
+
   return (
     <div className="fixed inset-0 h-[100dvh] w-full text-white font-sans overflow-hidden">
       {/* Background */}
@@ -340,28 +390,49 @@ function FriendWallContent() {
             onClick={(e) => e.stopPropagation()}
           >
 
-            <button
-              type="button"
-              className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl text-white shadow-lg transition hover:bg-white/10 active:scale-95"
-              onClick={() => setIsPreviewOpen(false)}
-            >
-              ✕
-            </button>
-
-            <div className="relative z-10 flex flex-col items-center gap-4 max-h-[90vh]">
 
 
-              <div className="w-full flex justify-center py-4">
-                <div className="origin-center w-full transition-transform">
 
 
-                  <FaceCard
-                    user={{
-                      ...selectedFriend,
-                      age: calculateAge(selectedFriend.dateOfBirth),
-                      city: selectedFriend.preferredCity || selectedFriend.city,
-                    }}
-                  />
+            <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] md:w-[98vw] w-full md:w-[750px]">
+
+              {/* Scrollable container for the face card content */}
+
+
+
+
+
+
+
+
+              <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
+
+
+                <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
+
+                  <div
+                    className={clsx(
+                      "origin-top transition-transform duration-500 w-full flex justify-center mt-3 md:mt-0"
+                    )}
+                    style={
+                      typeof window !== "undefined" && window.innerWidth < 768
+                        ? {
+                          transform: `   translateY(${translateY}px) scale(${scale})`,
+                          transformOrigin: "top center",
+                        }
+                        : undefined
+                    }
+                  >
+
+
+                    <FaceCard
+                      user={{
+                        ...selectedFriend,
+                        age: calculateAge(selectedFriend.dateOfBirth),
+                        city: selectedFriend.preferredCity || selectedFriend.city,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

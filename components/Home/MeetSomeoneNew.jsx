@@ -687,12 +687,14 @@ export default function MeetSomeoneNew({
 
                       {guestId && (
                         <button
-                          type="button"
-                          disabled={squadMemberActionBusyId === guestId}
-                          onClick={() => handleRemoveSquadMember?.(guestId)}
-                          className="absolute -top-1 -right-1 z-20 w-5 h-5 rounded-full bg-red-600 border border-white/90 text-white text-[10px] font-bold flex items-center justify-center"
+                          className="absolute -top-[1px] -right-1 z-20 w-4 h-4 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden"
                         >
-                          x
+                          <span
+                            className="font-bold text-[10px] mix-blend-difference"
+                            style={{ color: "white" }}
+                          >
+                            ✕
+                          </span>
                         </button>
                       )}
 

@@ -1344,6 +1344,48 @@ function BeamTVInner() {
     return () => clearInterval(id);
   }, [status, sessionId, fetchNextBroadcast]);
 
+  // Liveness watcher: while watching, verify the broadcast still exists server-side.
+  // Covers silent broadcaster death (phone off / browser killed) where no
+  // broadcast-stopped WS event ever reaches this viewer — otherwise the last
+  // decoded frame stays frozen forever. Two consecutive misses before advancing
+  // so a transient API hiccup doesn't skip a healthy broadcast.
+  useEffect(() => {
+    if (status !== 'connected') return;
+    const roomId = currentBroadcast?.roomId;
+    if (!roomId) return;
+    let deadChecks = 0;
+    let inFlight = false;
+    const id = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (waitlistPromotionRef.current) return;
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const res = await fetch(API.DISCOVERY.GET_BROADCAST(roomId), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (res.ok) {
+          const body = await res.json().catch(() => null);
+          const broadcast = body?.broadcast?.roomId ? body.broadcast : body;
+          const alive = Boolean(broadcast?.roomId) && broadcast?.exists !== false && broadcast?.isActive !== false;
+          deadChecks = alive ? 0 : deadChecks + 1;
+        } else if (res.status === 404 || res.status === 410) {
+          deadChecks += 1;
+        }
+        // Other statuses (5xx, 429): inconclusive, don't count against the broadcast.
+        if (deadChecks >= 2) {
+          realtimeDebug('[BeamTV] Broadcast no longer live (poll), advancing');
+          handleNext();
+        }
+      } catch (_) {
+        // Network error on our side — inconclusive.
+      } finally {
+        inFlight = false;
+      }
+    }, 12000);
+    return () => clearInterval(id);
+  }, [status, currentBroadcast?.roomId, handleNext]);
+
   // Seed favourite state from backend favourite-broadcasters list.
   useEffect(() => {
     if (!isLoggedIn) return;

@@ -175,6 +175,10 @@ export default function useVideoChat() {
   const hadRemotePeerInSessionRef = useRef(false);
   const pendingProducersRef = useRef([]);
   const roomHealthFailureCountRef = useRef(0);
+  /** Per-user consecutive "missing from server participant list" counts while their tile is shown. */
+  const staleTileMissCountRef = useRef(new Map());
+  /** Consecutive "room no longer exists" observations while remote tiles are still rendered. */
+  const roomGoneWithTilesCountRef = useRef(0);
   const suppressAutoResumeUntilRef = useRef(0);
   const prevRemoteStreamCountRef = useRef(0);
   const getProducersRetryTimeoutsRef = useRef([]);
@@ -587,7 +591,48 @@ export default function useVideoChat() {
       const userId = userIdRef.current;
       if (!roomId || !userId) return;
       if ((remoteStreamsRef.current?.length || 0) === 0 && !hadRemotePeerInSessionRef.current && Date.now() < (mediaEstablishGraceUntilRef.current || 0)) return;
-      if ((remoteStreamsRef.current?.length || 0) > 0) { roomHealthFailureCountRef.current = 0; mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 }); return; }
+      if ((remoteStreamsRef.current?.length || 0) > 0) {
+        roomHealthFailureCountRef.current = 0;
+        mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
+        // Reconcile rendered tiles against the server participant list so a peer whose
+        // device died silently (no participant-left ever delivered) doesn't leave a
+        // frozen tile forever. Two consecutive misses (~16s) before evicting, to ride
+        // out server-side cache staleness right after someone joins.
+        try {
+          const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+          if (!roomState?.exists) {
+            roomGoneWithTilesCountRef.current += 1;
+            if (roomGoneWithTilesCountRef.current >= 3 && !isBroadcastingRef.current) {
+              flowLog('room_health_room_gone_with_tiles', {});
+              await handlePeerLeftAutoResume();
+            }
+            return;
+          }
+          roomGoneWithTilesCountRef.current = 0;
+          const participants = Array.isArray(roomState.participants) ? roomState.participants : null;
+          if (!participants) return;
+          const activeIds = new Set(participants.map(p => String(p.userId)));
+          if (!activeIds.has(String(userId))) return; // our own row is stale/missing; don't trust this snapshot
+          const missCounts = staleTileMissCountRef.current;
+          for (const tile of [...remoteStreamsRef.current]) {
+            const tileId = String(tile.userId);
+            if (tileId.startsWith('producer:')) continue; // identity unknown; cannot reconcile
+            if (activeIds.has(tileId)) { missCounts.delete(tileId); continue; }
+            const misses = (missCounts.get(tileId) || 0) + 1;
+            if (misses >= 2) {
+              missCounts.delete(tileId);
+              flowLog('room_health_evict_stale_tile', { userId: tileId });
+              removeRemoteParticipantFromUi(tileId);
+            } else {
+              missCounts.set(tileId, misses);
+            }
+          }
+          for (const knownId of [...missCounts.keys()]) {
+            if (!remoteStreamsRef.current.some(s => String(s.userId) === knownId)) missCounts.delete(knownId);
+          }
+        } catch { }
+        return;
+      }
       try {
         const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
         const participantCount = Number(roomState?.participantCount || 0);
@@ -1200,6 +1245,17 @@ export default function useVideoChat() {
             remoteStreamsRef.current = next;
             return next;
           });
+          // All of this peer's producers are gone (server closed them on disconnect):
+          // remove the tile so the grid adjusts instead of showing a dead slot.
+          setTimeout(() => {
+            const entry = remoteStreamsRef.current.find(s => sameParticipantId(s.userId, meta.uiRemoteId));
+            if (!entry) return;
+            const liveTracks = (entry.stream?.getTracks?.() || []).filter(t => t.readyState !== 'ended').length;
+            const liveScreenTracks = (entry.screenStream?.getTracks?.() || []).filter(t => t.readyState !== 'ended').length;
+            if (liveTracks === 0 && liveScreenTracks === 0) {
+              removeRemoteParticipantFromUi(entry.userId);
+            }
+          }, 0);
         }
         break;
       }
@@ -1356,6 +1412,18 @@ export default function useVideoChat() {
 
       case 'broadcast-started': { setIsBroadcasting(true); break; }
       case 'broadcast-stopped': { setIsBroadcasting(false); break; }
+
+      // Server ended the room (e.g. the other side's phone died and cleanup ran).
+      // Mirror the user-kicked exit path: leave cleanly and resume discovery.
+      case 'room-ended': {
+        if (!intentionalExitRef.current) {
+          intentionalExitRef.current = true;
+          cleanup();
+          localStorage.removeItem('currentRoom');
+          resumeDiscoveryFromCall();
+        }
+        break;
+      }
     }
   };
 

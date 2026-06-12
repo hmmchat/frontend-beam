@@ -128,7 +128,7 @@ export default function ConversationSidebar({
         </div>
 
         {activeTab !== "inbox" && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between md:mt-4 mt-2">
             <button
               type="button"
               onClick={() => {
@@ -154,7 +154,7 @@ export default function ConversationSidebar({
         )}
       </div>
 
-      <div className="flex h-screen flex-col overflow-hidden md:rounded-[46px] rounded-[30px]  border border-white/50 p-6">
+      <div className="flex h-screen md:mt-3 mt-1.5 flex-col overflow-hidden md:rounded-[46px] rounded-[30px]  border border-white/50 p-6">
         {loading ? (
           <InboxSkeleton />
         ) : listLoadError ? (

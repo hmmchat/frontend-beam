@@ -218,7 +218,10 @@ const FacecardProfile = ({
                 </div>
 
                 {/* Music */}
-                <div className="flex w-[75px] md:w-[72px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[500px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-1 shadow-inner backdrop-blur-sm">
+                <div className="relative flex w-[75px] md:w-[72px]  shrink-0 flex-col items-center rounded-t-[999px] md:rounded-b-[500px] rounded-b-[500px] border border-white/40 px-1  pb-1 pt-1 shadow-inner backdrop-blur-sm">
+                  {user.musicPreference && (
+                    <img src="/musicline.svg" alt="" className="left-0 bottom-12 z-50 absolute" />
+                  )}
                   <div className="w-full aspect-square shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img

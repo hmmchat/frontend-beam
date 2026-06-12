@@ -24,12 +24,18 @@ export default function BeamTvLayout({ remoteStreams, renderTile }) {
 
   if (tiles.length === 3) {
     return (
-      // Mobile: all stacked. Desktop: first tile left, two stacked right.
+      // Mobile: 1 top (above, 58.2%), 2 bottom (below, side-by-side). Desktop: first tile left, two stacked right.
       <div className="w-full h-full flex flex-col md:flex-row gap-2">
-        {renderTile(tiles[0], 0)}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          {renderTile(tiles[1], 1)}
-          {renderTile(tiles[2], 2)}
+        <div className="h-[58.2%] md:h-full w-full md:flex-1">
+          {renderTile(tiles[0], 0)}
+        </div>
+        <div className="flex flex-row md:flex-col flex-1 min-h-0 min-w-0 gap-2 h-[41.8%] md:h-full">
+          <div className="flex-1 min-h-0 min-w-0 relative">
+            {renderTile(tiles[1], 1)}
+          </div>
+          <div className="flex-1 min-h-0 min-w-0 relative">
+            {renderTile(tiles[2], 2)}
+          </div>
         </div>
       </div>
     );

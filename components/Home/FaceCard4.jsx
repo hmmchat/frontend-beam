@@ -325,7 +325,7 @@ const FaceCard4 = ({
                 <div className="flex h-[125px] w-[80px] shrink-0 flex-col items-center  border border-white/40 rounded-t-[79.52px] rounded-b-[49.52px] px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
 
 
-                  <img src="/musicline.svg" alt="" className=" left-1 bottom-14 z-50 absolute   " />
+                  <img src="/musicline.svg" alt="" className=" left-0 bottom-14 z-50 absolute   " />
                   <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img

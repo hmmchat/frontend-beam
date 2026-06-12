@@ -52,7 +52,7 @@ function musicTrackKey(song) {
 }
 
 import ProfileGuard from "@/components/auth/ProfileGuard";
-import { IoEllipsisVerticalSharp, IoLocationOutline } from "react-icons/io5";
+import { IoEllipsisVerticalSharp, IoLocationOutline, IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
 
 export default function FacecardPage() {
   return (
@@ -924,7 +924,7 @@ function FacecardContent() {
   useEffect(() => {
     const updateScale = () => {
       const newScale = Math.max(
-        0.9,
+        0.78,
         Math.min(window.innerHeight / 830, 1)
       );
       setScale(newScale);
@@ -1134,7 +1134,7 @@ function FacecardContent() {
 
 
 
-            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-[98vh]', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'w-[960px]')}>
+            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-[100vh]', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'w-[960px]', 'scale-[0.95]')}>
 
 
               {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
@@ -1169,8 +1169,15 @@ function FacecardContent() {
         
         </div>  */}
 
-
-              <div className={clsx('flex', 'justify-center', 'items-center', 'w-full', 'md:max-h-[96vh] ')}>
+              {/* facecard preview of facecard tool */}
+              <div
+                className={clsx('flex', 'justify-center', 'items-start', 'md:items-center', 'w-full', 'md:max-h-[96vh] ')}
+                style={
+                  typeof window !== "undefined" && window.innerWidth < 768
+                    ? { height: `${660 * scale + 30}px` }
+                    : undefined
+                }
+              >
                 <div
                   ref={facecardPreviewExportRef}
 
@@ -1194,9 +1201,39 @@ function FacecardContent() {
                     onClose={() => setFacecardPreviewOpen(false)}
                     onDownload={handleDownloadFacecard}
                     onShare={handleShareFacecard}
-
+                    className="md:mt-[8vh]"
                   />
                 </div>
+              </div>
+
+              {/* Action Buttons: Close, Share, Download */}
+              <div className={clsx(
+                'flex', 'items-center', 'justify-center', 'gap-6', 'z-30',
+                'bottom-', 'left-0', 'right-0',
+                'md:relative', 'md:bottom-auto', 'md:left-auto', 'md:right-auto', 'md:mt-2', 'md:mb-[5%]'
+              )}>
+                <button
+                  onClick={() => setFacecardPreviewOpen(false)}
+                  className="p-3 rounded-full border border-white/40 text-white  active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  title="Close"
+                >
+                  <IoClose className="text-2xl" />
+                </button>
+
+                <button
+                  onClick={handleDownloadFacecard}
+                  className="p-3 rounded-full border border-white/40 text-white  active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  title="Download"
+                >
+                  <img src="/download.svg" alt="Download" className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={handleShareFacecard}
+                  className="p-3 rounded-full border border-white/40 text-white active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  title="Share"
+                >
+                  <img src="/share.svg" alt="Share" className="w-6 h-6" />
+                </button>
               </div>
             </div>
           </div>

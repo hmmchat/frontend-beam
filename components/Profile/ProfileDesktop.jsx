@@ -317,7 +317,7 @@ export default function ProfileDesktop({
         />
       </div>
 
-      <ProfileHeader icons={["/edit.png", "/setting.png", "/bandage.png"]} />
+      <ProfileHeader icons={["/edit.svg", "/setting.png", "/bandage.png"]} />
 
       <div className="z-10 grid w-full md:max-w-5xl lg:max-w-5xl grid-cols-1 flex-1 min-h-0 gap-3 rounded-[60px] border border-white/70 p-3 md:grid-cols-[0.36fr_0.64fr]">
         <ProfileSidebar

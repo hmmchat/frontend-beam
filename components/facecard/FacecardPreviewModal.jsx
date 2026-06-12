@@ -38,14 +38,16 @@ export default function FacecardPreviewModal({ userId, isOpen, onClose }) {
     const updateScale = () => {
       const h = window.innerHeight;
       if (h <= 670) {
-        setScale(0.78); // iPhone SE
-        setTranslateY(-45);
-      } else if (h <= 740) {
+        setScale(0.80); // iPhone SE
+        setTranslateY(0); // slightly smaller vertical translation to prevent top cut off
+      }
+
+      else if (h <= 740) {
         setScale(0.85); // XR, 11, 12 mini
-        setTranslateY(-15);
+        setTranslateY(-10);
       } else {
         setScale(1);
-        setTranslateY(0);
+        setTranslateY();
       }
     };
 
@@ -58,67 +60,76 @@ export default function FacecardPreviewModal({ userId, isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden cursor-pointer bg-black/20 backdrop-blur-[1px]"
       onClick={onClose}
     >
-      <div
-        className="relative w-full h-full flex flex-col items-center justify-center cursor-pointer"
-        style={{
-          backgroundImage: "url('/assets/mb.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        onClick={onClose}
-      >
-        {/* Close Button on Backdrop (Top-Right of screen) */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-[210] p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 text-white transition-colors"
-          title="Close"
-        >
-          <IoClose className="text-2xl" />
-        </button>
-
+      {loading ? (
         <div
-          className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] md:w-[98vw] w-full md:w-[750px] justify-center cursor-default"
+          className="flex flex-col items-center gap-3 cursor-default"
           onClick={(e) => e.stopPropagation()}
         >
-          {loading ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-              <p className="text-white/60 text-sm">Loading facecard...</p>
-            </div>
-          ) : user ? (
-            <div className="flex flex-col items-center pt-4 pb-4 scrollbar-none z-20">
-              <div className="flex flex-col items-center pt-4 pb-4 scrollbar-none z-20">
-                <div
-                  className={clsx(
-                    "origin-top transition-transform duration-500 w-full flex justify-center mt-3 md:mt-0"
-                  )}
-                  style={
-                    typeof window !== "undefined" && window.innerWidth < 768
-                      ? {
-                          transform: `translateY(${translateY}px) scale(${scale})`,
-                          transformOrigin: "top center",
-                        }
-                      : undefined
-                  }
-                >
-                  <FaceCard
-                    user={{
-                      ...user,
-                      age: calculateAge(user.dateOfBirth),
-                      city: user.preferredCity || user.city,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-white/60">Failed to load facecard.</p>
-          )}
+          <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin " />
+          <p className="text-white/60 text-sm">Loading facecard...</p>
         </div>
-      </div>
+      ) : user ? (
+        <div
+          className={clsx(
+            "relative z-20 flex flex-col items-center border border-white/30 rounded-[30px]  cursor-default",
+            "origin-top transition-transform duration-300"
+          )}
+          style={
+            typeof window !== "undefined" && window.innerWidth < 768
+              ? {
+                backgroundImage: "url('/assets/mb.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                transform: `translateY(${translateY}px) scale(${scale})`,
+                transformOrigin: " center",
+                width: "380px",
+                height: "670px",
+              }
+              : {
+                backgroundImage: "url('/assets/mb.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                width: "365px",
+                height: "675px",
+              }
+          }
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex-1 w-full  flex items-end justify-center">
+            <FaceCard
+              user={{
+                ...user,
+                age: calculateAge(user.dateOfBirth),
+                city: user.preferredCity || user.city,
+              }}
+              className="md:mt-10"
+            />
+          </div>
+
+          <button
+            onClick={onClose}
+            className="absolute -bottom-[7vh] z-[210] p-2  rounded-full border border-white/20 text-white "
+            title="Close"
+            style={{
+              backgroundImage: "url('/assets/mb.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <IoClose className="text-2xl" />
+          </button>
+        </div>
+      ) : (
+        <div
+          className="text-white/60 cursor-default"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Failed to load facecard.
+        </div>
+      )}
     </div>
   );
 }

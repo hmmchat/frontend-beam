@@ -3,15 +3,16 @@
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { getActiveBadgeId } from "@/lib/stickers";
+import { FaAngleRight } from "react-icons/fa6";
 
-export default function ProfileMobileMain({ 
-  router, 
-  user, 
-  displayName, 
-  age, 
-  progress, 
-  moneyModel, 
-  setActiveTab 
+export default function ProfileMobileMain({
+  router,
+  user,
+  displayName,
+  age,
+  progress,
+  moneyModel,
+  setActiveTab
 }) {
   return (
     <>
@@ -56,7 +57,7 @@ export default function ProfileMobileMain({
           </div>
 
           {getActiveBadgeId(user) ? (
-            <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm rounded-full flex items-center justify-center">
+            <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60  rounded-full flex items-center justify-center">
               <div className="relative w-18 h-14 flex items-center justify-center">
                 {user?.activeBadgeImageUrl ? (
                   <Image
@@ -77,7 +78,7 @@ export default function ProfileMobileMain({
                   }}
                   className="absolute -bottom-1 -right-2 w-5 h-5 cursor-pointer"
                 >
-                  <img src="/edit.png" alt="Edit sticker" />
+                  <img src="/edit.svg" alt="Edit sticker" />
                 </div>
               </div>
             </div>
@@ -90,7 +91,7 @@ export default function ProfileMobileMain({
               className="absolute bottom-0 right-[-10px] w-12 h-12 rounded-full border border-dashed border-white/60 bg-[#4f0b99]/40 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white transition-all shadow-lg"
               title="Add sticker"
             >
-              <img src="/edit.png" alt="edit" className="h-4 w-4 opacity-80" />
+              <img src="/edit.svg" alt="edit" className="h-4 w-4 opacity-80" />
             </div>
           )}
         </div>
@@ -108,7 +109,7 @@ export default function ProfileMobileMain({
           >
             <div>
               <p className="text-sm">My account</p>
-              <p className="text-[10px] text-white/60">Fill account details</p>
+              <p className="text-[10px] text-white/60 font-outfit">Fill account details</p>
             </div>
 
             <div className="flex gap-2">
@@ -124,7 +125,7 @@ export default function ProfileMobileMain({
                 {progress}% complete
               </button>
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/60">
-                ›
+                <FaAngleRight />
               </span>
             </div>
           </div>
@@ -135,7 +136,7 @@ export default function ProfileMobileMain({
           >
             <p className="text-sm">My Prompts</p>
             <span className="w-6 h-6 flex items-center justify-center border border-white/60 rounded-full">
-              ›
+              <FaAngleRight />
             </span>
           </div>
 
@@ -145,7 +146,7 @@ export default function ProfileMobileMain({
           >
             <div>
               <p className="text-sm">Get money</p>
-              <p className="text-[10px] text-white/60">
+              <p className="text-[10px] text-white/60 font-outfit">
                 {moneyModel.isUnlocked
                   ? "Ready to withdraw"
                   : `${moneyModel.diamondsLeft} left to withdraw`}
@@ -157,7 +158,7 @@ export default function ProfileMobileMain({
                 💎 {moneyModel.diamonds}
               </span>
               <span className="w-6 h-6 flex items-center justify-center border border-white/60 rounded-full">
-                ›
+                <FaAngleRight />
               </span>
             </div>
           </div>
@@ -168,13 +169,13 @@ export default function ProfileMobileMain({
           >
             <p className="text-sm">Rewards & Referrals</p>
             <span className="w-6 h-6 flex items-center justify-center border border-white/60 rounded-full">
-              ›
+              <FaAngleRight />
             </span>
           </div>
         </div>
       </div>
-      
-      
+
+
     </>
   );
 }

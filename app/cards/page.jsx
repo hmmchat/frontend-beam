@@ -341,7 +341,7 @@ function OfflineCardsContent() {
 
               <div
                 className={clsx(
-                  "origin-top transition-transform duration-500 w-full flex justify-center mt-3 md:mt-0"
+                  "origin-top transition-transform duration-500 w-full  flex justify-center mt-3 md:mt-0"
                 )}
                 style={
                   typeof window !== "undefined" && window.innerWidth < 768
@@ -360,6 +360,7 @@ function OfflineCardsContent() {
                   }}
                   currentIndex={currentImageIndex}
                   onIndexChange={setCurrentImageIndex}
+                  className=""
                 />
               </div>
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { calculateAge } from "@/lib/facecard-utils";
 import { useRouter } from "next/navigation";
 import { getActiveBadgeId } from "@/lib/stickers";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 
 export default function ProfileSidebar({
   activeTab,
@@ -28,7 +29,7 @@ export default function ProfileSidebar({
         </div>
 
         {getActiveBadgeId(user) ? (
-          <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60 bg-[#4f0b99]/40 backdrop-blur-sm">
+          <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60  ">
             <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
               {user?.activeBadgeImageUrl ? (
                 <Image
@@ -39,7 +40,7 @@ export default function ProfileSidebar({
                 />
               ) : (
                 <span className="text-4xl leading-none" aria-hidden>
-                  {user?.activeBadge?.giftEmoji || "🎁"}
+                  {user?.activeBadge?.giftEmoji}
                 </span>
               )}
 
@@ -47,17 +48,17 @@ export default function ProfileSidebar({
                 onClick={() => setActiveTab("stickers")}
                 className="absolute bottom-8 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full"
               >
-                <img src="/edit.png" alt="edit" className="h-4 w-4" />
+                <img src="/edit.svg" alt="edit" className="h-5 w-5 -mt-2" />
               </div>
             </div>
           </div>
         ) : (
           <div
             onClick={() => setActiveTab("stickers")}
-            className="absolute bottom-0 right-[-10px] flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-dashed border-white/60 bg-[#4f0b99]/40 hover:bg-white/10 hover:border-white transition-all shadow-lg"
+            className="absolute -bottom-2 right-[-10px] flex h-16 w-16 cursor-pointer  rounded-full border  border-white/60  hover:bg-white/10 hover:border-white transition-all shadow-lg"
             title="Add sticker"
           >
-            <img src="/edit.png" alt="edit" className="h-4 w-4 opacity-80" />
+            <img src="/edit.svg" alt="edit" className="h-5 w-5 mt-9 ml-12" />
           </div>
         )}
       </div>
@@ -93,7 +94,7 @@ export default function ProfileSidebar({
 
 
             <span className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/70">
-              ›
+              <FaAngleRight />
             </span>
           </div>
         </div>
@@ -104,7 +105,7 @@ export default function ProfileSidebar({
         >
           <p className="text-sm">My Prompts</p>
           <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
-            ›
+            <FaAngleRight />
           </span>
         </div>
 
@@ -126,7 +127,7 @@ export default function ProfileSidebar({
               💎 {moneyModel?.diamonds ?? 0}
             </span>
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
-              ›
+              <FaAngleRight />
             </span>
 
           </div>
@@ -138,7 +139,7 @@ export default function ProfileSidebar({
         >
           <p className="text-sm">Rewards & Referrals</p>
           <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
-            ›
+            <FaAngleRight />
           </span>
         </div>
       </div>

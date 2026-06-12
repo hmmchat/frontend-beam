@@ -16,14 +16,26 @@ export default function WaitlistModal({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-[55] bg-[#1f013d]/55 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
-      <div className="w-full h-[90vh] max-w-4xl bg-gradient-to-b from-[#7015cc]/55 via-[#5e10b8]/52 to-[#4b0e9d]/50 border border-white/20 rounded-[2.2rem] px-5 py-6 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="absolute inset-0 z-[55] flex items-center justify-center p-4" onClick={onClose}>
+
+
+
+      <div className="relative overflow-hidden w-full md:h-[50vh] h-[40vh] max-w-2xl bg-gradient-to-b from-[#7015cc]/55 via-[#5e10b8]/52 to-[#4b0e9d]/50 border border-white/20 rounded-[2.2rem] px-5 py-6 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+
+        <div
+          className="absolute inset-0 bg-[#02004A] -z-50 pointer-events-none"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundRepeat: "repeat",
+            backgroundSize: "cover",
+          }}
+        />
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="text-white text-xl font-black tracking-wide">Waitlist</div>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 border border-white/20 text-white/85 hover:bg-white/15"
+            className="w-10 h-10 rounded-full  border border-white/20 text-white/85 hover:bg-white/5"
             title="Close"
           >
             ✕
@@ -39,7 +51,7 @@ export default function WaitlistModal({
             <div className="text-white/50 text-sm font-bold animate-pulse">Loading…</div>
           )}
           {!waitlistLoading && waitlist.length === 0 && (
-            <div className="text-white/50 text-sm font-bold">No one is waiting to join yet.</div>
+            <div className="text-white/50 text-sm font-outfit">No one is waiting to join yet.</div>
           )}
 
           <div className="flex flex-col">
@@ -69,7 +81,7 @@ export default function WaitlistModal({
                       e.stopPropagation();
                       acceptFromWaitlist(w.userId);
                     }}
-                    className="w-14 h-14 rounded-full border-2 border-white/45 text-white text-4xl leading-none flex items-center justify-center hover:bg-white/15 active:scale-95"
+                    className="w-12 h-12 rounded-full border-2 border-white/45 text-white text-2xl leading-none flex items-center justify-center hover:bg-white/15 active:scale-95"
                     title="Add to call"
                   >
                     +
@@ -84,14 +96,14 @@ export default function WaitlistModal({
           <button
             type="button"
             onClick={refreshWaitlist}
-            className="flex-1 px-4 py-3 rounded-full bg-white/10 text-white border border-white/15 font-black text-xs hover:bg-white/15"
+            className="flex-1 px-4 py-3 rounded-full text-white border border-white/30 font-black text-xs hover:bg-white/5"
           >
             Refresh
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-full bg-white/10 text-white border border-white/15 font-black text-xs hover:bg-white/15"
+            className="flex-1 px-4 py-3 rounded-full text-white border border-white/30 font-black text-xs hover:bg-white/5"
           >
             Done
           </button>

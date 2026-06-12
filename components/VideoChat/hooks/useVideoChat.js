@@ -639,7 +639,13 @@ export default function useVideoChat() {
         const inWaitlistJoinGrace = Date.now() < (mediaEstablishGraceUntilRef.current || 0);
         if (inWaitlistJoinGrace && (!roomState?.exists || participantCount <= 1)) return;
         if (!roomState?.exists || participantCount <= 1) {
-          if (isBroadcastingRef.current) { roomHealthFailureCountRef.current = 0; mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 }); return; }
+          const roomIsBroadcasting = roomState?.isBroadcasting === true || roomState?.callType === 'broadcast';
+          if (isBroadcastingRef.current || roomIsBroadcasting) {
+            if (roomIsBroadcasting && !isBroadcastingRef.current) markRoomAsBroadcasting(roomState);
+            roomHealthFailureCountRef.current = 0;
+            mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
+            return;
+          }
           roomHealthFailureCountRef.current += 1;
           mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: roomHealthFailureCountRef.current });
           if (roomHealthFailureCountRef.current < 10) return;
@@ -861,13 +867,54 @@ export default function useVideoChat() {
   }, [goHomeIdleFromCall]);
 
   // ---- Peer left / auto-resume ---------------------------------------------
+  const markRoomAsBroadcasting = (roomState = null) => {
+    isBroadcastingRef.current = true;
+    setIsBroadcasting(true);
+    setRoomInfo((prev) => {
+      const base = prev || roomInfoRef.current;
+      if (!base) return prev;
+      const next = {
+        ...base,
+        isBroadcasting: true,
+        callType: base.callType || 'broadcast',
+        ...(roomState?.roomId ? { roomId: roomState.roomId } : {})
+      };
+      roomInfoRef.current = next;
+      return next;
+    });
+  };
+
+  const currentRoomIsBroadcasting = () =>
+    isBroadcastingRef.current ||
+    roomInfoRef.current?.isBroadcasting === true ||
+    roomInfoRef.current?.callType === 'broadcast' ||
+    roomInfo?.isBroadcasting === true ||
+    roomInfo?.callType === 'broadcast';
+
+  const refreshCurrentRoomBroadcasting = async (reason = 'peer-left') => {
+    const uid = userIdRef.current;
+    if (!uid) return false;
+    try {
+      const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+      const isActiveBroadcast = Boolean(roomState?.exists) &&
+        (roomState?.isBroadcasting === true || roomState?.callType === 'broadcast');
+      if (isActiveBroadcast) {
+        markRoomAsBroadcasting(roomState);
+        flowLog('solo_beamcast_auto_exit_suppressed', { reason, roomId: roomState.roomId });
+        return true;
+      }
+    } catch { }
+    return false;
+  };
+
   const handlePeerLeftAutoResume = async () => {
-    if (isBroadcastingRef.current) { remoteMediaMissingSinceRef.current = null; return; }
+    if (currentRoomIsBroadcasting()) { remoteMediaMissingSinceRef.current = null; return; }
+    if (await refreshCurrentRoomBroadcasting('peer-left-auto-resume')) { remoteMediaMissingSinceRef.current = null; return; }
     if (autoTransitioningRef.current) return;
     autoTransitioningRef.current = true;
     intentionalExitRef.current = true;
     const sid = roomInfoRef.current?.sessionId || roomInfo?.sessionId || Date.now().toString();
-    leaveRoomAndSetStatusReliable('AVAILABLE').catch(() => { });
+    await leaveRoomAndSetStatusReliable('AVAILABLE');
     cleanup();
     localStorage.removeItem('currentRoom');
     resumeDiscoveryFromCall(sid);
@@ -1564,6 +1611,11 @@ export default function useVideoChat() {
 
       userIdRef.current = uid;
       roomInfoRef.current = info;
+      const startsInBroadcast = info?.callType === 'broadcast' || info?.isBroadcasting === true;
+      if (startsInBroadcast) {
+        isBroadcastingRef.current = true;
+        setIsBroadcasting(true);
+      }
       try { if (sessionStorage.getItem('waitlistJoinRedirect') === '1') { sessionStorage.removeItem('waitlistJoinRedirect'); mediaEstablishGraceUntilRef.current = Date.now() + 60_000; } } catch { }
       squadQuickInvitePeersPostedRoomIdRef.current = null;
       mediaEstablishGraceUntilRef.current = Date.now() + 60_000;

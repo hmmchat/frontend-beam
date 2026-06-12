@@ -187,7 +187,10 @@ export default function useVideoChat() {
   const producerIdToMetaRef = useRef(new Map());
   const isBroadcastingRef = useRef(false);
   const isCamOffRef = useRef(false);
+  const isMutedRef = useRef(false);
   const mediaPausedForBackgroundRef = useRef(false);
+  const localMediaRecoveryInFlightRef = useRef(false);
+  const recoverLocalMediaRef = useRef(null);
   const sfuRerouteAttemptRef = useRef(0);
   const wsReconnectAttemptRef = useRef(0);
   const wsReconnectTimerRef = useRef(null);
@@ -210,6 +213,121 @@ export default function useVideoChat() {
   useEffect(() => { roomSummoningUserIdRef.current = roomSummoningUserId; }, [roomSummoningUserId]);
   useEffect(() => { isBroadcastingRef.current = isBroadcasting; }, [isBroadcasting]);
   useEffect(() => { isCamOffRef.current = isCamOff; }, [isCamOff]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+
+  async function acquireLocalMediaStream() {
+    const audioConstraints = { echoCancellation: true, noiseSuppression: true, channelCount: 1 };
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: getCameraConstraints({ exactFrontCamera: isMobileRuntime() }),
+        audio: audioConstraints
+      });
+    } catch {
+      return navigator.mediaDevices.getUserMedia({
+        video: getCameraConstraints({ exactFrontCamera: false }),
+        audio: audioConstraints
+      });
+    }
+  }
+
+  function applyLocalMediaPreferences(stream) {
+    const videoTrack = stream?.getVideoTracks?.()[0];
+    const audioTrack = stream?.getAudioTracks?.()[0];
+    if (videoTrack) videoTrack.enabled = !isCamOffRef.current;
+    if (audioTrack) audioTrack.enabled = !isMutedRef.current;
+  }
+
+  function hasInterruptedLocalMedia() {
+    const stream = localStreamRef.current;
+    if (!stream) return false;
+    const tracks = stream.getTracks();
+    if (tracks.some(track => track.readyState === 'ended')) return true;
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    return tracks.some(track => track.muted);
+  }
+
+  function monitorLocalMediaTracks(stream) {
+    stream?.getTracks?.().forEach((track) => {
+      track.onended = () => {
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        void recoverLocalMedia('local-track-ended');
+      };
+      track.onmute = () => {
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        setTimeout(() => {
+          if (typeof document !== 'undefined' && document.hidden) return;
+          if (track.readyState === 'ended' || track.muted) void recoverLocalMedia('local-track-muted');
+        }, 2500);
+      };
+    });
+  }
+
+  async function replacePublishedLocalTrack(kind, track) {
+    const transport = sendTransportRef.current;
+    if (!track || !transport || transport.closed) return;
+    const currentProducer = producersRef.current[kind];
+    if (currentProducer && !currentProducer.closed && typeof currentProducer.replaceTrack === 'function') {
+      await currentProducer.replaceTrack({ track });
+      return;
+    }
+
+    if (kind === 'video') {
+      pendingVideoProduceSourceRef.current = 'camera';
+      try {
+        producersRef.current.video = await transport.produce(buildCameraVideoProduceOptions(deviceRef.current, track));
+      } catch {
+        producersRef.current.video = await transport.produce({
+          track,
+          encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }]
+        });
+      }
+      return;
+    }
+
+    producersRef.current.audio = await transport.produce({ track });
+  }
+
+  async function recoverLocalMedia(reason = 'unknown') {
+    if (localMediaRecoveryInFlightRef.current) return;
+    if (intentionalExitRef.current || autoTransitioningRef.current) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (!navigator.mediaDevices?.getUserMedia) return;
+
+    localMediaRecoveryInFlightRef.current = true;
+    try {
+      flowLog('local_media_recover_start', { reason });
+      const previousStream = localStreamRef.current;
+      const nextStream = await acquireLocalMediaStream();
+      applyLocalMediaPreferences(nextStream);
+      monitorLocalMediaTracks(nextStream);
+
+      await Promise.allSettled([
+        replacePublishedLocalTrack('video', nextStream.getVideoTracks()[0]),
+        replacePublishedLocalTrack('audio', nextStream.getAudioTracks()[0])
+      ]);
+
+      localStreamRef.current = nextStream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = nextStream;
+        const playPromise = localVideoRef.current.play?.();
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => { });
+      }
+      setLocalMediaGeneration(n => n + 1);
+
+      previousStream?.getTracks?.().forEach((track) => {
+        if (!nextStream.getTracks().includes(track)) {
+          try { track.stop(); } catch { }
+        }
+      });
+      flowLog('local_media_recover_done', { reason });
+    } catch (error) {
+      console.warn('[WebRTC] Local media recovery failed:', error);
+    } finally {
+      localMediaRecoveryInFlightRef.current = false;
+    }
+  }
+  recoverLocalMediaRef.current = recoverLocalMedia;
 
   useEffect(() => {
     const stream = remoteStreams[0]?.stream;
@@ -265,6 +383,9 @@ export default function useVideoChat() {
       mediaPausedForBackgroundRef.current = false;
       nudgeVideoElements();
       reconnectSignalingIfNeeded();
+      setTimeout(() => {
+        if (hasInterruptedLocalMedia()) void recoverLocalMediaRef.current?.('tab-visible');
+      }, 500);
     };
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
     return () => document.removeEventListener('visibilitychange', applyVisibilityPolicy);
@@ -1248,15 +1369,12 @@ export default function useVideoChat() {
   // ---- Media + signaling startup ------------------------------------------
   const startMediaAndSignaling = async (info, userId) => {
     try {
-      const audioConstraints = { echoCancellation: true, noiseSuppression: true, channelCount: 1 };
-      let stream;
-      try { stream = await navigator.mediaDevices.getUserMedia({ video: getCameraConstraints({ exactFrontCamera: isMobileRuntime() }), audio: audioConstraints }); }
-      catch { stream = await navigator.mediaDevices.getUserMedia({ video: getCameraConstraints({ exactFrontCamera: false }), audio: audioConstraints }); }
+      const stream = await acquireLocalMediaStream();
+      applyLocalMediaPreferences(stream);
+      monitorLocalMediaTracks(stream);
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       setLocalMediaGeneration(n => n + 1);
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) videoTrack.enabled = !isCamOffRef.current;
     } catch (err) { console.error('Media error:', err); }
 
     const accessToken = localStorage.getItem('accessToken') || '';

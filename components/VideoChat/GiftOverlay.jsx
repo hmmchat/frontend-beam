@@ -53,11 +53,21 @@ export default function GiftOverlay({
               };
             });
             setGiftItems(formatted);
+            // Auto-select first gift if nothing is selected yet
+            if (!selectedGiftId && formatted.length > 0) {
+              onSelectGift(formatted[0]);
+            }
           }
         })
         .catch(err => console.error("Failed to load gifts", err));
     }
   }, [isOpen, giftItems.length]);
+
+  useEffect(() => {
+    if (isOpen && giftItems.length > 0 && !selectedGiftId) {
+      onSelectGift(giftItems[0]);
+    }
+  }, [isOpen, giftItems, selectedGiftId, onSelectGift]);
 
   const totalPages = Math.max(1, Math.ceil(giftItems.length / itemsPerPage));
 

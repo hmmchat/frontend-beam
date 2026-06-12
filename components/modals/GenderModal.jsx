@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Button from "../ui/Button";
 import { API, apiRequest } from "@/lib/api";
+import useBackToClose from "@/lib/use-back-to-close";
 
 const MALE_COST = Number(process.env.NEXT_PUBLIC_MALE_FILTER_COST);
 const FEMALE_COST = Number(process.env.NEXT_PUBLIC_FEMALE_FILTER_COST);
@@ -16,6 +17,7 @@ const defaultFilters = [
 ];
 
 export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated, onStartBeaming }) {
+  useBackToClose(isOpen, onClose);
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [initialGender, setInitialGender] = useState("ALL");
   const [screensPerPurchase, setScreensPerPurchase] = useState(10);

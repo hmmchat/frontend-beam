@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import useBackToClose from '@/lib/use-back-to-close';
 
 export default function SignInModal({ isOpen, onClose }) {
+  useBackToClose(isOpen, onClose);
   const [step, setStep] = useState('options'); // 'options', 'mobile', 'otp'
   const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);

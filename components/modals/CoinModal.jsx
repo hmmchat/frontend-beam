@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
+import useBackToClose from '@/lib/use-back-to-close';
 
 const coinPackageImages = {
   coin_pack_100: '/Coins/coin1.png',
@@ -36,6 +37,7 @@ const normalizeCoinPackage = (pkg, index) => {
 };
 
 export default function CoinModal({ isOpen, onClose }) {
+  useBackToClose(isOpen, onClose);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [coinPackages, setCoinPackages] = useState([]);
   const [packageError, setPackageError] = useState(null);

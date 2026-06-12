@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { IoSearchOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
 import { API, apiRequest } from '@/lib/api';
+import useBackToClose from '@/lib/use-back-to-close';
 
 const normalizeCityKey = (value) => String(value || '').trim().toLowerCase();
 
 export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
+  useBackToClose(isOpen, onClose);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [masterCities, setMasterCities] = useState([]);

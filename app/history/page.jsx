@@ -183,7 +183,7 @@ function HistoryContent() {
         </div>
 
         {/* Main Card */}
-        <div className="flex-1  md:px-6 md:px-2 overflow-hidden 
+        <div className="flex-1 rounded-[60px] md:px-6 md:px-2 overflow-hidden 
                         md:ring md:ring-white/50  
                         ">
 

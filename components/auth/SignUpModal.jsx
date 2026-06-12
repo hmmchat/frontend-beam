@@ -16,8 +16,10 @@ import {
   getPendingSquadInviteToken,
   setPostOnboardingRedirectPath,
 } from "@/lib/squad-invite-link";
+import useBackToClose from "@/lib/use-back-to-close";
 
 function SignUpModalContent({ isOpen, onClose }) {
+  useBackToClose(isOpen, onClose);
   const [step, setStep] = useState("options");
   const [mobileNumber, setMobileNumber] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);

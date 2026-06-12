@@ -150,8 +150,9 @@ function OfflineCardsContent() {
   // ── connect (send friend request / heart) ────────────────────────────────
   const handleConnect = async () => {
     if (!card || connectSent) return;
+    const token = localStorage.getItem('accessToken');
+
     try {
-      const token = localStorage.getItem('accessToken');
       await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -160,6 +161,13 @@ function OfflineCardsContent() {
       setConnectSent(true);
     } catch (err) {
       console.error('[OfflineCards] connect error:', err);
+      const errMsg = err?.message || '';
+      const lowerMsg = errMsg.toLowerCase();
+      if (lowerMsg.includes('already sent') || lowerMsg.includes('already friends')) {
+        setConnectSent(true);
+      } else {
+        alert(errMsg || 'Failed to send friend request. Please try again.');
+      }
     }
   };
 
@@ -204,6 +212,11 @@ function OfflineCardsContent() {
           setConnectSent(true);
         } catch (friendErr) {
           console.error('[OfflineCards] auto friend request error:', friendErr);
+          const errMsg = friendErr?.message || '';
+          const lowerMsg = errMsg.toLowerCase();
+          if (lowerMsg.includes('already sent') || lowerMsg.includes('already friends')) {
+            setConnectSent(true);
+          }
         }
       }
 
@@ -566,7 +579,10 @@ function OfflineCardsContent() {
 
             <GiftSuccessPopup
               isOpen={showSuccessPopup}
-              onClose={() => { setShowSuccessPopup(false); setSuccessGift(null); }}
+              onClose={() => {
+                setShowSuccessPopup(false);
+                setSuccessGift(null);
+              }}
               gift={successGift}
               recipientName={card?.name}
             />

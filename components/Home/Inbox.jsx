@@ -1709,7 +1709,7 @@ export default function Inbox() {
         ? requestsHasMore
         : sentHasMore;
 
-  const openRow = (row) => {
+  const openRow = useCallback((row) => {
     setThreadProductMessage(null);
     const cid = row.conversationId || row.id;
     const followId =
@@ -1752,7 +1752,7 @@ export default function Inbox() {
     });
     if (!isSyntheticConversationId(cid))
       void markReadForPeer(row.otherUser?.id || row.otherUserId);
-  };
+  }, [activeTab, markReadForPeer]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1762,17 +1762,33 @@ export default function Inbox() {
 
     if (!cid && !otherUserId) return;
 
-    const row = [...inboxList, ...requestsList, ...sentList].find(
-      (c) =>
-        (cid && String(c.conversationId || c.id) === String(cid)) ||
-        (otherUserId && String(c.otherUser?.id || c.otherUserId) === String(otherUserId)),
-    );
-    if (row) {
-      const rowCid = String(row.conversationId || row.id);
-      if (activeChat?.rowKey === rowCid) return;
-      openRow(row);
-      return;
-    }
+    const findMatch = (sections) =>
+      sections
+        .map(({ tab, rows }) => ({
+          tab,
+          row: rows.find(
+            (c) =>
+              (cid && String(c.conversationId || c.id) === String(cid)) ||
+              (otherUserId &&
+                String(c.otherUser?.id || c.otherUserId) === String(otherUserId)),
+          ),
+        }))
+        .find(({ row }) => row);
+
+    const openMatch = (match) => {
+      const rowCid = String(match.row.conversationId || match.row.id);
+      if (activeChat?.rowKey === rowCid) return true;
+      if (activeTab !== match.tab) setActiveTab(match.tab);
+      openRow(match.row);
+      return true;
+    };
+
+    const localMatch = findMatch([
+      { tab: "inbox", rows: inboxList },
+      { tab: "requests", rows: requestsList },
+      { tab: "sent", rows: sentList },
+    ]);
+    if (localMatch?.row && openMatch(localMatch)) return;
 
     if (
       activeChat &&
@@ -1782,8 +1798,12 @@ export default function Inbox() {
       return;
     }
 
-    if (otherUserId) {
-      setActiveTab("inbox");
+    let cancelled = false;
+
+    const openFallback = () => {
+      if (!otherUserId || cancelled) return;
+      const isFriend = params.get("friend") === "1";
+      setActiveTab(isFriend && cid ? "inbox" : "sent");
       setActiveChat({
         rowKey: cid || `synthetic_${otherUserId}`,
         conversationId: cid || "",
@@ -1793,15 +1813,50 @@ export default function Inbox() {
           displayPictureUrl: params.get("photo") || null,
         },
         otherUserId,
-        isFriend: params.get("friend") === "1",
+        isFriend,
         isFollowRequest: false,
-        isOutgoingFriendRequest: false,
+        isOutgoingFriendRequest: !isFriend,
         followRequestId: null,
         outgoingFriendRequestId: null,
         unreadCount: 0,
       });
-    }
-  }, [activeChat?.rowKey, activeChat?.otherUserId, inboxList, requestsList, sentList]);
+    };
+
+    const resolveAcrossSections = async () => {
+      try {
+        const [inboxData, requestsData, sentData] = await Promise.all([
+          fetchJson(API.FRIENDS.getInboxConversationsUrl({ limit: LIST_LIMIT })),
+          fetchJson(API.FRIENDS.getReceivedRequestsUrl({ limit: LIST_LIMIT })),
+          fetchJson(API.FRIENDS.getSentRequestsUrl({ limit: LIST_LIMIT })),
+        ]);
+        if (cancelled) return;
+        const remoteMatch = findMatch([
+          {
+            tab: "inbox",
+            rows: (inboxData?.conversations || []).filter(shouldShowInboxConversation),
+          },
+          {
+            tab: "requests",
+            rows: (requestsData?.conversations || []).filter(shouldShowSentReceivedApiRow),
+          },
+          {
+            tab: "sent",
+            rows: (sentData?.conversations || []).filter(shouldShowSentReceivedApiRow),
+          },
+        ]);
+        if (remoteMatch?.row && openMatch(remoteMatch)) return;
+      } catch (e) {
+        console.warn("[Inbox] deep link section resolve", e);
+      }
+      openFallback();
+    };
+
+    void resolveAcrossSections();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChat, activeTab, inboxList, requestsList, sentList, openRow]);
 
   const showRecipientFollowActions =
     activeTab === "requests" &&

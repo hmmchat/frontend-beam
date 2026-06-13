@@ -49,13 +49,19 @@ export default function ConversationItem({ conversation, selected, unreadCountDi
     >
       <div className="relative h-12 w-12 shrink-0">
         <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10">
-          <Image
-            src={conversation.otherUser?.displayPictureUrl || "/default-avatar.png"}
-            alt={conversation.otherUser?.username || "User"}
-            fill
-            sizes="48px"
-            className="object-cover"
-          />
+          {(typeof conversation.otherUser?.displayPictureUrl === "string" && conversation.otherUser.displayPictureUrl.trim()) ? (
+            <Image
+              src={conversation.otherUser.displayPictureUrl}
+              alt={conversation.otherUser?.username || "User"}
+              fill
+              sizes="48px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold select-none">
+              {(conversation.otherUser?.username || "U").charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
         {st === "online" && (
           <span

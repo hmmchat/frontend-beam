@@ -130,7 +130,7 @@ export default function ThreadMessages({
                 className={`flex items-start gap-2 ${isMe ? "justify-end" : ""}`}
               >
                 {!isMe && (
-                  activeChat?.otherUser?.displayPictureUrl ? (
+                  (typeof activeChat?.otherUser?.displayPictureUrl === "string" && activeChat.otherUser.displayPictureUrl.trim()) ? (
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                       <Image
                         src={activeChat.otherUser.displayPictureUrl}
@@ -289,7 +289,7 @@ export default function ThreadMessages({
                     )}
                 </div>
                 {isMe && (
-                  myAvatarUrl ? (
+                  (typeof myAvatarUrl === "string" && myAvatarUrl.trim()) ? (
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                       <Image
                         src={myAvatarUrl}
@@ -312,7 +312,7 @@ export default function ThreadMessages({
         )}
         {peerTyping && (
           <div className="flex items-start gap-2 self-start">
-            {activeChat?.otherUser?.displayPictureUrl ? (
+            {(typeof activeChat?.otherUser?.displayPictureUrl === "string" && activeChat.otherUser.displayPictureUrl.trim()) ? (
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
                 <Image
                   src={activeChat.otherUser.displayPictureUrl}

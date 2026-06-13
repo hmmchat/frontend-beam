@@ -43,7 +43,7 @@ export default function ProfileMobileMain({
         {/* PROFILE */}
         <div className="relative">
           <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-white relative">
-            {user?.displayPictureUrl ? (
+            {(typeof user?.displayPictureUrl === "string" && user.displayPictureUrl.trim()) ? (
               <Image
                 src={user.displayPictureUrl}
                 width={144}
@@ -52,7 +52,9 @@ export default function ProfileMobileMain({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <Image src="/" width={120} height={120} alt="" />
+              <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold select-none">
+                {(user?.username || "U").charAt(0).toUpperCase()}
+              </div>
             )}
           </div>
 

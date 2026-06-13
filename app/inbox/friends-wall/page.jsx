@@ -350,12 +350,18 @@ function FriendWallContent() {
                         onClick={() => handleFriendClick(friend.friendId)}
                         className="aspect-square rounded-xl md:rounded-2xl border border-white/40 overflow-hidden bg-white/5 relative group cursor-pointer hover:border-white/80 transition-all "
                       >
-                        <Image
-                          src={friend.photoUrl}
-                          alt="friend"
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
+                        {(typeof friend.photoUrl === "string" && friend.photoUrl.trim()) ? (
+                          <Image
+                            src={friend.photoUrl}
+                            alt="friend"
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xl font-bold select-none">
+                            {(friend.username || "U").charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         {previewLoading && selectedFriend?.id === friend.friendId && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

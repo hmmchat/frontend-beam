@@ -321,15 +321,19 @@ function HistoryContent() {
                                 }}
                                 className="w-14 md:w-20 h-14 md:h-20  rounded-full overflow-hidden border border-white border-2 hover:bg-white/5 transition-colors"
                               >
-                                <Image
-                                  src={
-                                    participant.displayPictureUrl
-                                  }
-                                  alt="user"
-                                  width={56}
-                                  height={56}
-                                  className="object-cover w-full h-full "
-                                />
+                                {(typeof participant.displayPictureUrl === "string" && participant.displayPictureUrl.trim()) ? (
+                                  <Image
+                                    src={participant.displayPictureUrl}
+                                    alt="user"
+                                    width={56}
+                                    height={56}
+                                    className="object-cover w-full h-full "
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xl md:text-3xl font-bold select-none font-outfit">
+                                    {(participant.username || "U").charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                               </button>
 
                               <div className="">
@@ -367,7 +371,9 @@ function HistoryContent() {
                                     username: participant.username || "User",
                                     friend: participant.isFriend ? "1" : "0",
                                   });
-                                  if (participant.displayPictureUrl) q.set("photo", participant.displayPictureUrl);
+                                  if (typeof participant.displayPictureUrl === "string" && participant.displayPictureUrl.trim()) {
+                                    q.set("photo", participant.displayPictureUrl);
+                                  }
                                   router.push(`/inbox?${q.toString()}`);
                                 }}
                                 className="w-10 h-10 md:w-14 md:h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"

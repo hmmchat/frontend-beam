@@ -101,14 +101,19 @@ export default function ThreadHeader({
           <div className={clsx('relative h-12 w-12 shrink-0 overflow-visible')}>
             <div className="relative h-full w-full overflow-hidden rounded-full border  border-[1px] border-white/40">
 
-              <Image
-                src={otherProfile.displayPictureUrl}
-                alt="User"
-                fill
-                sizes="40px"
-                className="object-cover rounded-full "
-              />
-
+              {(typeof otherProfile.displayPictureUrl === "string" && otherProfile.displayPictureUrl.trim()) ? (
+                <Image
+                  src={otherProfile.displayPictureUrl}
+                  alt="User"
+                  fill
+                  sizes="40px"
+                  className="object-cover rounded-full "
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold select-none">
+                  {(otherProfile.username || "U").charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             {headerUserStatus === "online" && (

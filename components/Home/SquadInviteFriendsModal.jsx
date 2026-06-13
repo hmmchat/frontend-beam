@@ -200,7 +200,19 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                     className="flex items-center gap-3 px-3 py-3 "
                   >
                     <div className="relative w-11 h-11 rounded-full overflow-hidden border border-white/30 shrink-0">
-                      <Image src={f.photoUrl} alt="" fill className="object-cover" sizes="44px" />
+                      {(typeof f.photoUrl === "string" && f.photoUrl.trim()) ? (
+                        <Image
+                          src={f.photoUrl}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="44px"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-base font-bold select-none">
+                          {(f.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <span className="flex-1 text-sm font-medium truncate">{f.username}</span>
                     <button

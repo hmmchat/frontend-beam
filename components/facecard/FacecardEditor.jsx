@@ -370,7 +370,7 @@ export default function FacecardEditor({
                   className="w-full aspect-[2/3] border-2 border-white/50 rounded-[1rem] overflow-hidden "
                 >
                   <img
-                    src={user?.displayPictureUrl || "/imageprofile.png"}
+                    src={user?.displayPictureUrl}
                     className="w-full h-full object-cover"
                   />
                 </div>

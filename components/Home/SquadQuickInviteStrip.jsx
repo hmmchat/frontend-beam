@@ -46,13 +46,19 @@ export default function SquadQuickInviteStrip({
                 <div className="absolute inset-0 rounded-full border border-white bg-white/10" />
 
                 <div className="absolute inset-0 rounded-full overflow-hidden border">
-                  <Image
-                    src={f.photoUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="56px"
-                  />
+                  {(typeof f.photoUrl === "string" && f.photoUrl.trim()) ? (
+                    <Image
+                      src={f.photoUrl}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold select-none">
+                      {(f.username || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
 
                 <button

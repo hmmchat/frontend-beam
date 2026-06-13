@@ -54,10 +54,24 @@ function isSyntheticConversationId(cid) {
   );
 }
 
-function canSendTextOnlyNonFriend(messages, currentUserId) {
-  if (!currentUserId) return true;
+function canSendFreeTextNonFriend(messages, currentUserId) {
+  if (!currentUserId) return false;
   const mine = messages.filter((m) => m.fromUserId === currentUserId);
-  return mine.length === 0;
+  if (mine.length > 0) return false;
+  const theirs = messages.filter((m) => m.fromUserId !== currentUserId);
+  return theirs.length > 0;
+}
+
+function requiresGiftForNonFriend(messages, currentUserId) {
+  if (!currentUserId) return false;
+  return messages.some((m) => m.fromUserId === currentUserId);
+}
+
+function isPaidFirstMessageNonFriend(messages, currentUserId) {
+  if (!currentUserId) return false;
+  const mine = messages.filter((m) => m.fromUserId === currentUserId);
+  const theirs = messages.filter((m) => m.fromUserId !== currentUserId);
+  return mine.length === 0 && theirs.length === 0;
 }
 
 /** Backend infers GIF vs GIF_WITH_MESSAGE from `gif` + optional `message` — do not send `messageType` or null fields. */
@@ -1565,11 +1579,25 @@ export default function Inbox() {
     const textOnlyOk =
       activeChat.isFriend ||
       resolvedGift ||
-      canSendTextOnlyNonFriend(messages, currentUserId);
+      canSendFreeTextNonFriend(messages, currentUserId) ||
+      isPaidFirstMessageNonFriend(messages, currentUserId);
     if (!textOnlyOk) {
       setThreadProductMessage({
         variant: "warning",
         text: "Further messages need a gift. Tap the gift button.",
+      });
+      return;
+    }
+    if (
+      !activeChat.isFriend &&
+      isPaidFirstMessageNonFriend(messages, currentUserId) &&
+      !resolvedGift &&
+      (hasText || resolvedGif) &&
+      (walletCoins === null || walletCoins < firstMessageCost)
+    ) {
+      setThreadProductMessage({
+        variant: "error",
+        text: `Insufficient balance. First message costs 🪙 ${firstMessageCost} coins. You have 🪙 ${walletCoins || 0} coins.`,
       });
       return;
     }
@@ -1877,7 +1905,7 @@ export default function Inbox() {
   const textInputLocked =
     showComposer &&
     !activeChat?.isFriend &&
-    !canSendTextOnlyNonFriend(messages, currentUserId);
+    requiresGiftForNonFriend(messages, currentUserId);
 
   const otherProfile = activeChat?.otherUser;
   const peerId = activeChat?.otherUserId || otherProfile?.id || null;
@@ -2134,7 +2162,7 @@ export default function Inbox() {
                     {/* Low Balance Warning inside the border box on top */}
                     {!activeChat.isFriend &&
                       showComposer &&
-                      canSendTextOnlyNonFriend(messages, currentUserId) &&
+                      isPaidFirstMessageNonFriend(messages, currentUserId) &&
                       walletCoins != null &&
                       walletCoins < firstMessageCost && (
                         <p

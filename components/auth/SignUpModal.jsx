@@ -42,7 +42,7 @@ function SignUpModalContent({ isOpen, onClose }) {
   }, [isOpen]);
 
   // Facebook SDK removed
-  useEffect(() => {}, []);
+  useEffect(() => { }, []);
 
   // Google Login Handler
   const handleGoogleLogin = useGoogleLogin({
@@ -321,8 +321,8 @@ function SignUpModalContent({ isOpen, onClose }) {
       />
 
       {/* ── Modal card ── */}
-   <div
-  className="
+      <div
+        className="
     relative overflow-hidden animate-slide-up z-12
     p-3 rounded-none absolute inset-0 h-screen
     w-full
@@ -331,9 +331,9 @@ function SignUpModalContent({ isOpen, onClose }) {
     md:border-[2px] md:border-white/20
     md:max-w-[70vw]
   "
-  style={{ maxHeight: "94vh" }}
-  onClick={(e) => e.stopPropagation()}
->
+        style={{ maxHeight: "94vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="h-full min-h-[700px] sm:rounded-2xl rounded-none flex flex-col">
           <div className="flex flex-col flex-col h-full text-center md:block">
             {/* Header */}
@@ -401,7 +401,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                         if (error) setError("");
                       }}
                       label="Enter Mobile Number"
-                      error={error} 
+                      error={error}
                     />
                   </div>
 
@@ -447,7 +447,7 @@ function SignUpModalContent({ isOpen, onClose }) {
 
                     <ErrorAlert message={error} />
 
- 
+
 
                     <div className="mt-6 flex ">
                       <button
@@ -459,7 +459,7 @@ function SignUpModalContent({ isOpen, onClose }) {
                       </button>
                     </div>
 
-                                     <p className="font-outfit mt-6 text-xs"> Didn’t receive OTP?  <span className="text-yellow-500 font-otomanopee ml-1">  Resend OTP</span></p>  
+                    <p className="font-outfit mt-6 text-xs"> Didn’t receive OTP?  <span className="text-yellow-500 font-otomanopee ml-1">  Resend OTP</span></p>
                   </div>
                 </div>
               )}

@@ -27,12 +27,13 @@ export default function OfflineCardsPage() {
 function OfflineCardsContent() {
   const router = useRouter();
 
-  const [sessionId] = useState(() => makeSessionId());
+  const [sessionId, setSessionId] = useState(() => makeSessionId());
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exhausted, setExhausted] = useState(false);
   const [swiping, setSwiping] = useState(false);
   const [connectSent, setConnectSent] = useState(false);
+  const [isAlreadyFriend, setIsAlreadyFriend] = useState(false);
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
@@ -72,6 +73,19 @@ function OfflineCardsContent() {
       } else {
         setCard(data.card);
         setExhausted(false);
+        // Check if already friends or request already sent
+        setIsAlreadyFriend(false);
+        setConnectSent(false);
+        try {
+          const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(data.card.userId));
+          if (status?.areFriends) {
+            setIsAlreadyFriend(true);
+          } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
+            setConnectSent(true);
+          }
+        } catch {
+          // fail silently — don't block card display
+        }
       }
     } catch (err) {
       console.error('[OfflineCards] fetch error:', err);
@@ -123,7 +137,19 @@ function OfflineCardsContent() {
       if (data.nextCard) {
         setCard(data.nextCard);
         setConnectSent(false);
+        setIsAlreadyFriend(false);
         setCurrentImageIndex(0);
+        // Check friendship for next card
+        try {
+          const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(data.nextCard.userId));
+          if (status?.areFriends) {
+            setIsAlreadyFriend(true);
+          } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
+            setConnectSent(true);
+          }
+        } catch {
+          // fail silently
+        }
       } else {
         await fetchCard();
       }
@@ -149,7 +175,7 @@ function OfflineCardsContent() {
 
   // ── connect (send friend request / heart) ────────────────────────────────
   const handleConnect = async () => {
-    if (!card || connectSent) return;
+    if (!card || connectSent || isAlreadyFriend) return;
     const token = localStorage.getItem('accessToken');
 
     try {
@@ -160,13 +186,25 @@ function OfflineCardsContent() {
       });
       setConnectSent(true);
     } catch (err) {
-      console.error('[OfflineCards] connect error:', err);
-      const errMsg = err?.message || '';
-      const lowerMsg = errMsg.toLowerCase();
-      if (lowerMsg.includes('already sent') || lowerMsg.includes('already friends')) {
-        setConnectSent(true);
+      const errMsg = (err?.message || '').toLowerCase();
+      const isKnownDupe =
+        errMsg.includes('already sent') ||
+        errMsg.includes('already friends') ||
+        errMsg.includes('already friend') ||
+        errMsg.includes('request already') ||
+        errMsg.includes('already pending') ||
+        errMsg.includes('duplicate');
+
+      if (isKnownDupe) {
+        // Silently mark button as selected — no alert, no error log
+        if (errMsg.includes('already friends') || errMsg.includes('already friend')) {
+          setIsAlreadyFriend(true);
+        } else {
+          setConnectSent(true);
+        }
       } else {
-        alert(errMsg || 'Failed to send friend request. Please try again.');
+        console.error('[OfflineCards] connect error:', err);
+        alert(err?.message || 'Failed to send friend request. Please try again.');
       }
     }
   };
@@ -241,7 +279,10 @@ function OfflineCardsContent() {
 
   // ── new session (refresh after exhausted) ───────────────────────────────
   const handleRefresh = () => {
-    router.replace('/cards');
+    const newSessionId = makeSessionId();
+    setSessionId(newSessionId);
+    setExhausted(false);
+    setCard(null);
   };
 
   const age = card ? calculateAge(card.dateOfBirth) ?? card.age : null;
@@ -290,7 +331,7 @@ function OfflineCardsContent() {
   // ── render ───────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
+      className={clsx('fixed', 'inset-0', 'z-[200]', 'flex', 'items-center', 'justify-center', 'overflow-hidden')}
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: 'cover',
@@ -299,19 +340,19 @@ function OfflineCardsContent() {
     >
       {/* Loading */}
       {loading && (
-        <div className="flex flex-col items-center gap-4 text-white/60">
-          <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-          <p className="text-sm tracking-widest uppercase">Loading cards…</p>
+        <div className={clsx('flex', 'flex-col', 'items-center', 'gap-4', 'text-white/60')}>
+          <div className={clsx('w-10', 'h-10', 'border-2', 'border-white/20', 'border-t-white', 'rounded-full', 'animate-spin')} />
+          <p className={clsx('text-sm', 'tracking-widest', 'uppercase')}>Loading cards…</p>
         </div>
       )}
 
       {/* Error */}
       {!loading && error && (
-        <div className="flex flex-col items-center gap-4 text-white text-center px-8">
+        <div className={clsx('flex', 'flex-col', 'items-center', 'gap-4', 'text-white', 'text-center', 'px-8')}>
           <p className="text-white/60">{error}</p>
           <button
             onClick={fetchCard}
-            className="px-6 py-2 rounded-xl border border-white/30 text-sm hover:bg-white/10 transition"
+            className={clsx('px-6', 'py-2', 'rounded-xl', 'border', 'border-white/30', 'text-sm', 'hover:bg-white/10', 'transition')}
           >
             Try again
           </button>
@@ -320,13 +361,13 @@ function OfflineCardsContent() {
 
       {/* Exhausted */}
       {!loading && !error && exhausted && (
-        <div className="flex flex-col items-center gap-6 text-white text-center px-8">
+        <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6', 'text-white', 'text-center', 'px-8')}>
           <div className="text-5xl">🃏</div>
-          <p className="text-xl font-bold">You've seen everyone!</p>
-          <p className="text-white/50 text-sm">Check back later or refresh for new faces.</p>
+          <p className={clsx('text-xl', 'font-bold')}>You've seen everyone!</p>
+          <p className={clsx('text-white/50', 'text-sm')}>Check back later or refresh for new faces.</p>
           <button
             onClick={handleRefresh}
-            className="px-8 py-3 rounded-xl border border-white/30 text-sm hover:bg-white/10 transition"
+            className={clsx('px-8', 'py-3', 'rounded-xl', 'border', 'border-white/30', 'text-sm', 'hover:bg-white/10', 'transition')}
           >
             Refresh
           </button>
@@ -336,10 +377,10 @@ function OfflineCardsContent() {
       {/* Card */}
       {!loading && !error && !exhausted && card && (
         <div
-          className="relative w-full h-full flex flex-col items-center justify-center"
+          className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative z-10 flex flex-col items-center gap-4 border-0 md:border md:border-white/40 h-[92vh] rounded-[60px] md:w-[98vw] w-full md:w-[750px]">
+          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92vh]', 'rounded-[60px]', 'md:w-[98vw]', 'w-full', 'md:w-[750px]')}>
 
             {/* Scrollable container for the face card content */}
 
@@ -350,7 +391,7 @@ function OfflineCardsContent() {
 
 
 
-            <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
+            <div className={clsx('flex', 'flex-col', 'items-center', 'pt-4', 'pb-4', 'scrollbar-none', 'z-20')}>
 
               <div
                 className={clsx(
@@ -378,15 +419,15 @@ function OfflineCardsContent() {
               </div>
 
               {/* MOBILE BOTTOM BAR */}
-              <div className="md:hidden absolute bottom-[2vh] md:bottom-0 w-full flex items-center justify-between h-14 px-4 max-w-[380px] mx-auto z-30 mt-2">
+              <div className={clsx('md:hidden', 'absolute', 'bottom-[2vh]', 'md:bottom-0', 'w-full', 'flex', 'items-center', 'justify-between', 'h-14', 'px-4', 'max-w-[380px]', 'mx-auto', 'z-30', 'mt-2')}>
                 {!isGiftModalOpen && (
                   <>
-                    <div className="absolute left-4 flex gap-2 items-center">
+                    <div className={clsx('absolute', 'left-4', 'flex', 'gap-2', 'items-center')}>
                       <button
                         type="button"
                         onClick={handlePass}
                         disabled={swiping}
-                        className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-xl disabled:opacity-40 active:scale-95"
+                        className={clsx('w-12', 'h-12', 'border', 'border-white/40', 'border-b-4', 'rounded-full', 'grid', 'place-items-center', 'hover:bg-white/10', 'transition-colors', 'text-xl', 'disabled:opacity-40', 'active:scale-95')}
                       >
                         ✕
                       </button>
@@ -394,30 +435,33 @@ function OfflineCardsContent() {
                       <button
                         type="button"
                         onClick={handleMessage}
-                        className="w-12 h-12 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                        className={clsx('w-12', 'h-12', 'border', 'border-white/40', 'border-b-4', 'rounded-full', 'grid', 'place-items-center', 'hover:bg-white/10', 'transition-colors')}
                       >
-                        <img src="/history/mail.svg" alt="message" className="w-6 h-6" />
+                        <img src="/history/mail.svg" alt="message" className={clsx('w-6', 'h-6')} />
                       </button>
 
                       <button
                         type="button"
                         onClick={handleConnect}
-                        disabled={connectSent}
+                        disabled={connectSent || isAlreadyFriend}
                         className={clsx(
                           "w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors",
-                          connectSent
+                          isAlreadyFriend
+                            ? "border-pink-400/60 bg-pink-500/20 cursor-default"
+                            : connectSent
                             ? "border-green-400/60 bg-green-500/20 cursor-default"
                             : "border-white/40 hover:bg-white/10 active:scale-95"
                         )}
+                        title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
                       >
                         <img
                           src="/history/heart.svg"
                           alt="heart"
-                          className={clsx("w-6 h-6", connectSent && "opacity-60")}
+                          className={clsx("w-6 h-6", (connectSent || isAlreadyFriend) && "opacity-60")}
                         />
                       </button>
                     </div>
-                    <div className="absolute right-4 flex items-center">
+                    <div className={clsx('absolute', 'right-4', 'flex', 'items-center')}>
                       <button
                         type="button"
                         onClick={() => {
@@ -436,12 +480,12 @@ function OfflineCardsContent() {
                         <img
                           src="/circle.png"
                           alt=""
-                          className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                          className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-pink-700', 'rounded-full', 'object-contain', 'group-hover:scale-105', 'transition-transform', 'opacity-100')}
                         />
                         <img
                           src="/giftboc.png"
                           alt="gift"
-                          className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
+                          className={clsx('relative', 'w-6', 'h-6', 'object-contain', 'group-hover:rotate-12', 'transition-transform')}
                         />
                       </button>
                     </div>
@@ -464,16 +508,16 @@ function OfflineCardsContent() {
 
 
             {/* ── DESKTOP BOTTOM BAR ── */}
-            <div className="absolute bottom-8 left-0 right-0 w-full px-12 z-50 hidden md:flex items-center h-16">
+            <div className={clsx('absolute', 'bottom-8', 'left-0', 'right-0', 'w-full', 'px-12', 'z-50', 'hidden', 'md:flex', 'items-center', 'h-16')}>
               {!isGiftModalOpen && (
                 <>
                   {/* Left group: X · Message · Heart */}
-                  <div className="absolute left-12 flex gap-3 items-center">
+                  <div className={clsx('absolute', 'left-12', 'flex', 'gap-3', 'items-center')}>
                     <button
                       type="button"
                       onClick={handlePass}
                       disabled={swiping}
-                      className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors text-2xl disabled:opacity-40 active:scale-95"
+                      className={clsx('w-14', 'h-14', 'border', 'border-white/40', 'border-b-4', 'rounded-full', 'grid', 'place-items-center', 'hover:bg-white/10', 'transition-colors', 'text-2xl', 'disabled:opacity-40', 'active:scale-95')}
                       aria-label="Pass"
                     >
                       ✕
@@ -482,39 +526,41 @@ function OfflineCardsContent() {
                     <button
                       type="button"
                       onClick={handleMessage}
-                      className="w-14 h-14 border border-white/40 border-b-4 rounded-full grid place-items-center hover:bg-white/10 transition-colors"
+                      className={clsx('w-14', 'h-14', 'border', 'border-white/40', 'border-b-4', 'rounded-full', 'grid', 'place-items-center', 'hover:bg-white/10', 'transition-colors')}
                       aria-label="Message"
                     >
-                      <img src="/history/mail.svg" alt="message" className="w-8 h-8" />
+                      <img src="/history/mail.svg" alt="message" className={clsx('w-8', 'h-8')} />
                     </button>
 
                     <button
                       type="button"
                       onClick={handleConnect}
-                      disabled={connectSent}
+                      disabled={connectSent || isAlreadyFriend}
                       className={clsx(
                         'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-colors',
-                        connectSent
+                        isAlreadyFriend
+                          ? 'border-pink-400/60 bg-pink-500/20 cursor-default'
+                          : connectSent
                           ? 'border-green-400/60 bg-green-500/20 cursor-default'
                           : 'border-white/40 hover:bg-white/10 active:scale-95'
                       )}
-                      title={connectSent ? 'Friend request sent' : 'Send friend request'}
+                      title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
                       aria-label="Connect"
                     >
                       <img
                         src="/history/heart.svg"
                         alt="heart"
-                        className={clsx('w-8 h-8', connectSent && 'opacity-60')}
+                        className={clsx('w-8 h-8', (connectSent || isAlreadyFriend) && 'opacity-60')}
                       />
                     </button>
                   </div>
 
                   {/* Center group: ← → photo nav */}
-                  <div className="absolute left-1/2 flex gap-3 items-center hidden " style={{ transform: 'translateX(-50%)' }}>
+                  <div className={clsx('absolute', 'left-1/2', 'flex', 'gap-3', 'items-center', 'hidden')} style={{ transform: 'translateX(-50%)' }}>
                     <button
                       onClick={handlePrevImage}
                       disabled={allPhotos.length <= 1}
-                      className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      className={clsx('w-14', 'h-14', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-90', 'disabled:opacity-30')}
                       aria-label="Previous photo"
                     >
                       <IoIosArrowBack />
@@ -522,7 +568,7 @@ function OfflineCardsContent() {
                     <button
                       onClick={handleNextImage}
                       disabled={allPhotos.length <= 1}
-                      className="w-14 h-14 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:bg-white/10 transition active:scale-90 disabled:opacity-30"
+                      className={clsx('w-14', 'h-14', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:bg-white/10', 'transition', 'active:scale-90', 'disabled:opacity-30')}
                       aria-label="Next photo"
                     >
                       <IoIosArrowForward />
@@ -532,7 +578,7 @@ function OfflineCardsContent() {
               )}
 
               {/* Right group: Gift */}
-              <div className="absolute right-12 flex items-center">
+              <div className={clsx('absolute', 'right-12', 'flex', 'items-center')}>
                 <button
                   type="button"
                   onClick={() => {
@@ -551,12 +597,12 @@ function OfflineCardsContent() {
                   <img
                     src="/circle.png"
                     alt=""
-                    className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
+                    className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-pink-700', 'rounded-full', 'object-contain', 'group-hover:scale-105', 'transition-transform', 'opacity-100')}
                   />
                   <img
                     src="/giftboc.png"
                     alt="gift"
-                    className="relative w-8 h-8 object-contain group-hover:rotate-12 transition-transform"
+                    className={clsx('relative', 'w-8', 'h-8', 'object-contain', 'group-hover:rotate-12', 'transition-transform')}
                   />
                 </button>
               </div>
@@ -571,7 +617,7 @@ function OfflineCardsContent() {
               selectedGiftId={selectedGift?.id || null}
               coins={walletCoins}
               onSendGift={handleSendGift}
-              className="bottom-[16vh] md:bottom-24 md:right-4 md:left-4 md:right-20 md:left-auto md:bottom-28 md:translate-y-0"
+              className={clsx('bottom-[16vh]', 'md:bottom-24', 'md:right-4', 'md:left-4', 'md:right-20', 'md:left-auto', 'md:bottom-28', 'md:translate-y-0')}
               desktopBottomBarClassName="bottom-8 left-40 flex gap-4 px-6 py-3 rounded-2xl  items-center z-50"
               mobileBottomBarClassName=""
               hideSendButton={true}

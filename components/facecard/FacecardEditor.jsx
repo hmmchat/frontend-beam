@@ -364,15 +364,18 @@ export default function FacecardEditor({
 
             <div className={clsx('grid', 'grid-cols-3', 'gap-4')}>
               {/* Photo 1 (DP) */}
-              <div
-                onClick={() => handleSlotClick(0)}
-                className={clsx('w-full', 'aspect-[2/3]', 'border-2', 'border-white/50', 'rounded-[1rem]', 'overflow-hidden', 'relative', 'shadow-2xl')}
-              >
-                <img
-                  src={user?.displayPictureUrl || "/imageprofile.png"}
-                  className={clsx('w-full', 'h-full', 'object-cover')}
-                />
-                <div className={clsx('absolute', '-top-2', '-right-2', 'w-6', 'h-6', 'bg-white', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-black', 'text-[10px]', 'z-20', 'absolute')}>
+              <div className="relative">
+                <div
+                  onClick={() => handleSlotClick(0)}
+                  className="w-full aspect-[2/3] border-2 border-white/50 rounded-[1rem] overflow-hidden "
+                >
+                  <img
+                    src={user?.displayPictureUrl || "/imageprofile.png"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-black text-[10px] z-[999] shadow-lg">
                   ✎
                 </div>
               </div>
@@ -380,33 +383,58 @@ export default function FacecardEditor({
               {/* Other Slots */}
               {[0, 1].map((idx) => {
                 const photo = user?.photos?.find((p) => p.order === idx);
+
                 return (
                   <div
                     key={idx}
-                    onClick={() => handleSlotClick(idx + 1)}
-                    className={clsx('w-full', 'aspect-[2/3]', 'border-2', 'border-white/20', 'rounded-[1rem]', 'flex', 'items-center', 'justify-center', 'relative', 'overflow-hidden', 'bg-white/5')}
+                    className="relative overflow-visible"
                   >
-                    {photo ? (
-                      <>
+                    <div
+                      onClick={() => handleSlotClick(idx + 1)}
+                      className={clsx(
+                        'w-full',
+                        'aspect-[2/3]',
+                        'border-2',
+                        'border-white/40',
+                        'rounded-[1rem]',
+                        'flex',
+                        'items-center',
+                        'justify-center',
+                        'overflow-hidden',
+
+                      )}
+                    >
+                      {photo ? (
                         <img
                           src={photo.url}
-                          className={clsx('w-full', 'h-full', 'object-cover')}
+                          className="w-full h-full object-cover"
                         />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onDeletePhoto) onDeletePhoto(photo.id);
-                          }}
-                          className={clsx('absolute', '-top-2', '-right-2', 'w-6', 'h-6', 'bg-white', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-black', 'text-xs', 'z-10', 'hover:bg-red-600', 'active:scale-90', 'transition-all', 'shadow-lg')}
-                        >
-                          ✕
-                        </button>
-                      </>
-                    ) : (
-                      <div className={clsx('w-12', 'h-12', 'border-2', 'border-white/60', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-3xl', 'opacity-40')}>
-                        <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-60')} />
-                      </div>
+                      ) : (
+                        <div className="w-8 h-8 border-2 border-white/60 rounded-full flex items-center justify-center text-3xl opacity-80">
+                          <img
+                            src="/assets/plus.png"
+                            alt=""
+                            className="w-4 h-4 opacity-80"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {photo && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const selectedPhoto = user.photos.find(
+                            (p) => p.order === idx
+                          );
+                          if (onDeletePhoto && selectedPhoto) {
+                            onDeletePhoto(selectedPhoto.id);
+                          }
+                        }}
+                        className="absolute -top-2 -right-2 z-[999] text-[10px] w-5 h-5 rounded-full bg-white text-black flex items-center justify-center "
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
                 );

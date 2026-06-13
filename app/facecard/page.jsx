@@ -156,26 +156,28 @@ function FacecardContent() {
 
     const fetchChoices = async () => {
       try {
+        const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+        const limitParam = isMobile ? "?limit=10" : "";
         const [intRes, valRes, brRes, zodiacRes] = await Promise.all([
-          fetch(API.DISCOVERY.GET_INTERESTS),
-          fetch(API.DISCOVERY.GET_VALUES),
-          fetch(API.DISCOVERY.GET_BRANDS),
+          fetch(`${API.DISCOVERY.GET_INTERESTS}${limitParam}`),
+          fetch(`${API.DISCOVERY.GET_VALUES}${limitParam}`),
+          fetch(`${API.DISCOVERY.GET_BRANDS}${limitParam}`),
           fetch(API.USERS.GET_ZODIACS),
         ]);
         if (intRes.ok) {
           const data = (await intRes.json()).interests;
           setMasterInterests(data);
-          setAllInterests(data);
+          setAllInterests(isMobile ? data.slice(0, 10) : data);
         }
         if (valRes.ok) {
           const data = (await valRes.json()).values;
           setMasterValues(data);
-          setAllValues(data);
+          setAllValues(isMobile ? data.slice(0, 10) : data);
         }
         if (brRes.ok) {
           const data = (await brRes.json()).brands;
           setMasterBrands(data);
-          setAllBrands(data);
+          setAllBrands(isMobile ? data.slice(0, 10) : data);
         }
         if (zodiacRes.ok) {
           const data = await zodiacRes.json();
@@ -274,9 +276,10 @@ function FacecardContent() {
 
   useEffect(() => {
     if (!showSelector) {
-      if (masterInterests.length > 0) setAllInterests(masterInterests);
-      if (masterValues.length > 0) setAllValues(masterValues);
-      if (masterBrands.length > 0) setAllBrands(masterBrands);
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (masterInterests.length > 0) setAllInterests(isMobile ? masterInterests.slice(0, 10) : masterInterests);
+      if (masterValues.length > 0) setAllValues(isMobile ? masterValues.slice(0, 10) : masterValues);
+      if (masterBrands.length > 0) setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
     }
   }, [showSelector, masterInterests, masterValues, masterBrands]);
 
@@ -290,6 +293,11 @@ function FacecardContent() {
     if (exists) {
       newList = current.filter((i) => i.interestId !== interestId);
     } else {
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile && current.length >= 10) {
+        alert("Maximum 10 interests allowed on phone devices");
+        return;
+      }
       newList = [...current, { interestId, interest: { name } }];
     }
 
@@ -321,6 +329,11 @@ function FacecardContent() {
     if (exists) {
       newList = current.filter((v) => v.valueId !== valueId);
     } else {
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile && current.length >= 10) {
+        alert("Maximum 10 causes allowed on phone devices");
+        return;
+      }
       newList = [...current, { valueId, value: { name } }];
     }
 
@@ -352,7 +365,12 @@ function FacecardContent() {
     if (exists) {
       newList = current.filter((b) => b.brandId !== brandId);
     } else {
-      if (current.length >= 5) return;
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      const maxLimit = isMobile ? 10 : 5;
+      if (current.length >= maxLimit) {
+        alert(isMobile ? "Maximum 10 brands allowed on phone devices" : "Maximum 5 brands allowed");
+        return;
+      }
       newList = [...current, { brandId, brand: { name, logoUrl } }];
     }
 
@@ -428,10 +446,11 @@ function FacecardContent() {
   };
 
   const searchItems = async (category, query) => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     if (!query) {
-      if (category === "brands") setAllBrands(masterBrands);
-      else if (category === "interests") setAllInterests(masterInterests);
-      else if (category === "values") setAllValues(masterValues);
+      if (category === "brands") setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
+      else if (category === "interests") setAllInterests(isMobile ? masterInterests.slice(0, 10) : masterInterests);
+      else if (category === "values") setAllValues(isMobile ? masterValues.slice(0, 10) : masterValues);
       return;
     }
 
@@ -439,9 +458,13 @@ function FacecardContent() {
       setIsSearchingItems(true);
       setTimeout(() => {
         if (category === "interests") {
-          setAllInterests(fuzzySearch(query, masterInterests));
+          let results = fuzzySearch(query, masterInterests);
+          if (isMobile) results = results.slice(0, 10);
+          setAllInterests(results);
         } else {
-          setAllValues(fuzzySearch(query, masterValues));
+          let results = fuzzySearch(query, masterValues);
+          if (isMobile) results = results.slice(0, 10);
+          setAllValues(results);
         }
         setIsSearchingItems(false);
       }, 50);
@@ -459,17 +482,26 @@ function FacecardContent() {
 
       if (!endpoint) return;
 
-      const fullUrl =
+      let fullUrl =
         typeof endpoint === "function"
           ? endpoint(query)
           : `${endpoint}?q=${encodeURIComponent(query)}`;
+      if (isMobile) {
+        fullUrl = fullUrl.includes("?") ? `${fullUrl}&limit=10` : `${fullUrl}?limit=10`;
+      }
       const response = await fetch(fullUrl);
       if (response.ok) {
         const data = await response.json();
-        if (category === "brands") setAllBrands(data.brands || []);
-        else if (category === "interests")
-          setAllInterests(data.interests || []);
-        else if (category === "values") setAllValues(data.values || []);
+        let list = [];
+        if (category === "brands") list = data.brands || [];
+        else if (category === "interests") list = data.interests || [];
+        else if (category === "values") list = data.values || [];
+        
+        if (isMobile) list = list.slice(0, 10);
+
+        if (category === "brands") setAllBrands(list);
+        else if (category === "interests") setAllInterests(list);
+        else if (category === "values") setAllValues(list);
       }
     } catch (err) {
       console.error(`Error searching ${category}:`, err);
@@ -1201,6 +1233,7 @@ function FacecardContent() {
                     onClose={() => setFacecardPreviewOpen(false)}
                     onDownload={handleDownloadFacecard}
                     onShare={handleShareFacecard}
+                    hideMenu
                     className="md:mt-[8vh]"
                   />
                 </div>
@@ -1214,7 +1247,7 @@ function FacecardContent() {
               )}>
                 <button
                   onClick={() => setFacecardPreviewOpen(false)}
-                  className="p-3 rounded-full border border-white/40 text-white  active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  className={clsx('p-3', 'rounded-full', 'border', 'border-white/40', 'text-white', 'active:scale-95', 'transition-all', 'cursor-pointer', 'flex', 'items-center', 'justify-center', 'shadow-lg')}
                   title="Close"
                 >
                   <IoClose className="text-2xl" />
@@ -1222,17 +1255,17 @@ function FacecardContent() {
 
                 <button
                   onClick={handleDownloadFacecard}
-                  className="p-3 rounded-full border border-white/40 text-white  active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  className={clsx('p-3', 'rounded-full', 'border', 'border-white/40', 'text-white', 'active:scale-95', 'transition-all', 'cursor-pointer', 'flex', 'items-center', 'justify-center', 'shadow-lg')}
                   title="Download"
                 >
-                  <img src="/download.svg" alt="Download" className="w-6 h-6" />
+                  <img src="/download.svg" alt="Download" className={clsx('w-6', 'h-6')} />
                 </button>
                 <button
                   onClick={handleShareFacecard}
-                  className="p-3 rounded-full border border-white/40 text-white active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                  className={clsx('p-3', 'rounded-full', 'border', 'border-white/40', 'text-white', 'active:scale-95', 'transition-all', 'cursor-pointer', 'flex', 'items-center', 'justify-center', 'shadow-lg')}
                   title="Share"
                 >
-                  <img src="/share.svg" alt="Share" className="w-6 h-6" />
+                  <img src="/share.svg" alt="Share" className={clsx('w-6', 'h-6')} />
                 </button>
               </div>
             </div>

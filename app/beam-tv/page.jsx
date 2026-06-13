@@ -19,6 +19,7 @@ import ChatProfileCard from '@/components/beam-tv/ChatProfileCard';
 import LikedBroadcastersModal from '@/components/beam-tv/LikedBroadcastersModal';
 import FavouritesPanel from '@/components/beam-tv/FavouritesPanel';
 
+
 // WS URL computation (same safely fallbacks as video-chat)
 const getWsUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_STREAMING_WS_URL;
@@ -1513,6 +1514,8 @@ function BeamTVInner() {
         onSendFriendRequest={() => handleSendFriendRequest(uid)}
         allParticipants={remoteStreams}
         isFirst={idx === 0}
+        tileIndex={idx}
+        totalTiles={remoteStreams.length}
       />
     );
   };
@@ -1576,7 +1579,16 @@ function BeamTVInner() {
   }, [status, trySwipeNext]);
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col font-sans overflow-hidden">
+    <div className="relative h-screen w-screen flex flex-col font-sans overflow-hidden">
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
 
       {isLoggedIn && favouritesPanelOpen && (
         <FavouritesPanel
@@ -1628,6 +1640,8 @@ function BeamTVInner() {
 
           {status === 'connected' && remoteStreams.length > 0 && (
             <div className="w-full h-full relative">
+
+
               <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
 
 
@@ -1734,7 +1748,19 @@ function BeamTVInner() {
 
 export default function BeamTV() {
   return (
-    <Suspense fallback={<div className="w-full h-[100dvh] bg-black" />}>
+    <Suspense
+      fallback={
+        <div
+          className="w-full h-[100dvh]"
+          style={{
+            backgroundImage: "url(/assets/mb.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+      }
+    >
       <BeamTVInner />
     </Suspense>
   );

@@ -152,7 +152,7 @@ export default function CoinModal({ isOpen, onClose }) {
                   onClick={() => setSelectedPackage(pkg)}
                   className={`relative group cursor-pointer rounded-[20px] border-2 transition-all duration-300 hover:scale-[1.03] p-4 md:py-6 flex flex-col items-center justify-center gap-1
   ${selectedPackage === pkg
-                      ? 'border-[#7D40FF]'
+                      ? 'border-yellow-500'
                       : 'border-white/40'
                     }
   hover:bg-white/10

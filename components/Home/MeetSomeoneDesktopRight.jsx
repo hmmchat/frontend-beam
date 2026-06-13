@@ -302,7 +302,7 @@ export default function MeetSomeoneDesktopRight({
           isSearching && 'hidden',
         )}
       >
-        <Link href="/beam-tv">
+        <div>
           <button
             className={clsx(
               'group',
@@ -329,7 +329,7 @@ export default function MeetSomeoneDesktopRight({
               className={clsx('h-6', 'w-6', 'transition-transform', 'duration-300', 'group-hover:scale-110')}
             />
           </button>
-        </Link>
+        </div>
 
         <div>
           <button
@@ -735,7 +735,7 @@ export default function MeetSomeoneDesktopRight({
                         'disabled:opacity-50',
                       )}
                     >
-                      <img src="/shareicon3.svg" className={clsx('w-8', 'h-8')} alt="" />
+                      <img src="/shareicon3.svg" className={clsx('w-[25px]', 'h-[25px]')} alt="" />
                     </button>
                     <button
                       type="button"
@@ -750,7 +750,7 @@ export default function MeetSomeoneDesktopRight({
                         'disabled:opacity-50',
                       )}
                     >
-                      <img src="/shareicon2.svg" className={clsx('w-7', 'h-7')} alt="" />
+                      <img src="/shareicon2.svg" className={clsx('w-[25x]', 'h-[25px]')} alt="" />
                     </button>
                     <button
                       type="button"
@@ -765,7 +765,7 @@ export default function MeetSomeoneDesktopRight({
                         'disabled:opacity-50',
                       )}
                     >
-                      <img src="/shareicon1.svg" className={clsx('w-7', 'h-7')} alt="" />
+                      <img src="/shareicon1.svg" className={clsx('w-[25px]', 'h-[25px]')} alt="" />
                     </button>
                     <button
                       type="button"
@@ -780,7 +780,7 @@ export default function MeetSomeoneDesktopRight({
                         'disabled:opacity-50',
                       )}
                     >
-                      <img src="/shareicon4.svg" className={clsx('w-7', 'h-7')} alt="" />
+                      <img src="/shareicon4.svg" className={clsx('w-[25px]', 'h-[25px]')} alt="" />
                     </button>
                   </div>
                 </div>

@@ -49,6 +49,7 @@ const FaceCard = ({
   currentIndex,
   onIndexChange,
   hideHeader,
+  hideMenu = false,
   className,
 }) => {
   const [internalIndex, setInternalIndex] = useState(0);
@@ -159,12 +160,14 @@ const FaceCard = ({
 
 
           {showReportUi && <Report layer={reportLayer} />}
-          <button
-            type="button"
-            className="flex h-6 w-6 items-center justify-center text-white"
-          >
-            <IoEllipsisVerticalSharp />
-          </button>
+          {!hideMenu && (
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center text-white"
+            >
+              <IoEllipsisVerticalSharp />
+            </button>
+          )}
         </div>
       </div>
 
@@ -242,12 +245,14 @@ const FaceCard = ({
                     )}
                   </span> */}
                   {showReportUi && <Report layer={reportLayer} />}
-                  <button
-                    type="button"
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                  >
-                    <IoEllipsisVerticalSharp />
-                  </button>
+                  {!hideMenu && (
+                    <button
+                      type="button"
+                      className="flex h-6 w-6 items-center justify-center text-white"
+                    >
+                      <IoEllipsisVerticalSharp />
+                    </button>
+                  )}
                 </div>
               </div>
             </>

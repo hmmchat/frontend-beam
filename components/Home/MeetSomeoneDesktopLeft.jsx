@@ -308,7 +308,7 @@ export default function MeetSomeoneDesktopLeft({
             )}
           >
             <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-              <img src="/LOGO.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
+              <img src="/logo.png" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
               <p
                 className={clsx(
                   'text-white',

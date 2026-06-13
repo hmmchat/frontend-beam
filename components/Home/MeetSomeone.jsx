@@ -74,7 +74,7 @@ export default function MeetSomeone() {
                     </div>
 
                     <div className="z-10 text-center max-w-lg">
-                        <img src="/assets/Logo.svg" className="md:w-64 mx-auto w-44" />
+                        <img src="/assets/logo.svg" className="md:w-64 mx-auto w-44" />
                         <p className="text-white text-2xl mt-4">Meet someone,</p>
                         <p className="text-white text-2xl">Only god knows who</p>
                     </div>
@@ -161,8 +161,8 @@ export default function MeetSomeone() {
                                 onLocationClick={() => setIsLocationModalOpen(true)}
                                 genderLabel={
                                     genderFilter === "MALE" ? "Male" :
-                                    genderFilter === "FEMALE" ? "Female" :
-                                    genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
+                                        genderFilter === "FEMALE" ? "Female" :
+                                            genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
                                 }
                                 className="mt-20 mb-20"
                             />
@@ -263,12 +263,12 @@ export default function MeetSomeone() {
 
             {/* Modals */}
             <SignUpModal isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} />
-            <GenderModal 
-                isOpen={isGenderModalOpen} 
+            <GenderModal
+                isOpen={isGenderModalOpen}
                 onClose={() => {
                     setIsGenderModalOpen(false);
                     setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
-                }} 
+                }}
                 userCoins={coins}
                 onCoinsUpdated={(cost) => setCoins(prev => Math.max(0, prev - cost))}
                 onStartBeaming={() => {
@@ -277,9 +277,9 @@ export default function MeetSomeone() {
                 }}
             />
             <LocationModal
-              isOpen={isLocationModalOpen}
-              onClose={() => setIsLocationModalOpen(false)}
-              onStartBeaming={() => setIsSignUpOpen(true)}
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+                onStartBeaming={() => setIsSignUpOpen(true)}
             />
         </div>
     );

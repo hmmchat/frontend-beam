@@ -245,9 +245,10 @@ export default function useVideoChat() {
     const stream = localStreamRef.current;
     if (!stream) return false;
     const tracks = stream.getTracks();
-    if (tracks.some(track => track.readyState === 'ended')) return true;
     if (typeof document !== 'undefined' && document.hidden) return false;
-    return tracks.some(track => track.muted);
+    // Only recover when tracks are actually ended. Temporary mute is normal in WebRTC
+    // (simulcast switches, brief stalls) and re-acquiring media causes producer churn.
+    return tracks.some(track => track.readyState === 'ended');
   }
 
   function monitorLocalMediaTracks(stream) {
@@ -256,13 +257,6 @@ export default function useVideoChat() {
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
         if (typeof document !== 'undefined' && document.hidden) return;
         void recoverLocalMedia('local-track-ended');
-      };
-      track.onmute = () => {
-        if (intentionalExitRef.current || autoTransitioningRef.current) return;
-        setTimeout(() => {
-          if (typeof document !== 'undefined' && document.hidden) return;
-          if (track.readyState === 'ended' || track.muted) void recoverLocalMedia('local-track-muted');
-        }, 2500);
       };
     });
   }
@@ -596,8 +590,8 @@ export default function useVideoChat() {
         mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
         // Reconcile rendered tiles against the server participant list so a peer whose
         // device died silently (no participant-left ever delivered) doesn't leave a
-        // frozen tile forever. Two consecutive misses (~16s) before evicting, to ride
-        // out server-side cache staleness right after someone joins.
+        // frozen tile forever. Four consecutive misses (~32s) before evicting, to ride
+        // out server-side cache staleness and transient producer gaps.
         try {
           const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
           if (!roomState?.exists) {
@@ -619,7 +613,7 @@ export default function useVideoChat() {
             if (tileId.startsWith('producer:')) continue; // identity unknown; cannot reconcile
             if (activeIds.has(tileId)) { missCounts.delete(tileId); continue; }
             const misses = (missCounts.get(tileId) || 0) + 1;
-            if (misses >= 2) {
+            if (misses >= 4) {
               missCounts.delete(tileId);
               flowLog('room_health_evict_stale_tile', { userId: tileId });
               removeRemoteParticipantFromUi(tileId);
@@ -746,6 +740,7 @@ export default function useVideoChat() {
       if (status !== 'connected') return;
       if (typeof document !== 'undefined' && document.hidden) return;
       if (mediaPausedForBackgroundRef.current) return;
+      if (localMediaRecoveryInFlightRef.current) return;
       const remoteStream = remoteStreamsRef.current[0]?.stream || null;
       if (remoteStream) {
         hadRemoteMediaRef.current = true;
@@ -758,7 +753,7 @@ export default function useVideoChat() {
       } else { remoteMediaMissingSinceRef.current = null; }
       if (remoteMediaMissingSinceRef.current) {
         const missingForMs = Date.now() - remoteMediaMissingSinceRef.current;
-        if (missingForMs >= 12000) { if (isBroadcastingRef.current) return; flowLog('media_health_auto_resume', { missingForMs }); await handlePeerLeftAutoResume(); }
+        if (missingForMs >= 30000) { if (isBroadcastingRef.current) return; flowLog('media_health_auto_resume', { missingForMs }); await handlePeerLeftAutoResume(); }
       }
     }, 2000);
     return () => clearInterval(intervalId);
@@ -907,9 +902,29 @@ export default function useVideoChat() {
     return false;
   };
 
+  const shouldAutoResumeAfterPeerLeft = async () => {
+    const uid = userIdRef.current;
+    if (!uid) return true;
+    try {
+      const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+      if (!roomState?.exists) return true;
+      if (roomState?.isBroadcasting === true || roomState?.callType === 'broadcast') return false;
+      const participants = Array.isArray(roomState.participants) ? roomState.participants : [];
+      const activeOthers = participants.filter(p => String(p.userId) !== String(uid));
+      return activeOthers.length === 0;
+    } catch {
+      // On API failure, prefer staying in the call over a false drop.
+      return false;
+    }
+  };
+
   const handlePeerLeftAutoResume = async () => {
     if (currentRoomIsBroadcasting()) { remoteMediaMissingSinceRef.current = null; return; }
     if (await refreshCurrentRoomBroadcasting('peer-left-auto-resume')) { remoteMediaMissingSinceRef.current = null; return; }
+    if (!(await shouldAutoResumeAfterPeerLeft())) {
+      remoteMediaMissingSinceRef.current = null;
+      return;
+    }
     if (autoTransitioningRef.current) return;
     autoTransitioningRef.current = true;
     intentionalExitRef.current = true;
@@ -1074,12 +1089,14 @@ export default function useVideoChat() {
     if (remainingAfter === 0 && !skipPeerLeftAutoResume) {
       remoteMediaMissingSinceRef.current = Date.now();
       if (peerLeftAutoResumeTimerRef.current) clearTimeout(peerLeftAutoResumeTimerRef.current);
+      const targetRoomId = roomInfoRef.current?.roomId;
+      if (targetRoomId) scheduleGetProducersRetries(targetRoomId);
       peerLeftAutoResumeTimerRef.current = setTimeout(() => {
         peerLeftAutoResumeTimerRef.current = null;
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
         if ((remoteStreamsRef.current?.length || 0) > 0) return;
         handlePeerLeftAutoResume();
-      }, 0);
+      }, 8000);
     } else {
       remoteMediaMissingSinceRef.current = null;
       if (peerLeftAutoResumeTimerRef.current) { clearTimeout(peerLeftAutoResumeTimerRef.current); peerLeftAutoResumeTimerRef.current = null; }
@@ -1292,8 +1309,15 @@ export default function useVideoChat() {
             remoteStreamsRef.current = next;
             return next;
           });
-          // All of this peer's producers are gone (server closed them on disconnect):
-          // remove the tile so the grid adjusts instead of showing a dead slot.
+          // Producer closed can be transient during track replacement or network blips.
+          // Refresh producers first, then only evict the tile if media stays dead.
+          const targetRoomId = roomInfoRef.current?.roomId;
+          if (targetRoomId) {
+            setTimeout(() => {
+              if (intentionalExitRef.current || autoTransitioningRef.current) return;
+              send({ type: 'get-producers', data: { roomId: targetRoomId } });
+            }, 2000);
+          }
           setTimeout(() => {
             const entry = remoteStreamsRef.current.find(s => sameParticipantId(s.userId, meta.uiRemoteId));
             if (!entry) return;
@@ -1302,7 +1326,7 @@ export default function useVideoChat() {
             if (liveTracks === 0 && liveScreenTracks === 0) {
               removeRemoteParticipantFromUi(entry.userId);
             }
-          }, 0);
+          }, 8000);
         }
         break;
       }
@@ -1461,14 +1485,24 @@ export default function useVideoChat() {
       case 'broadcast-stopped': { setIsBroadcasting(false); break; }
 
       // Server ended the room (e.g. the other side's phone died and cleanup ran).
-      // Mirror the user-kicked exit path: leave cleanly and resume discovery.
+      // Verify with the room API before tearing down — transient WS/cache glitches
+      // should not kick users out of an active call.
       case 'room-ended': {
-        if (!intentionalExitRef.current) {
+        if (intentionalExitRef.current) break;
+        const endedRoomId = data?.roomId || roomInfoRef.current?.roomId;
+        setTimeout(async () => {
+          if (intentionalExitRef.current) return;
+          const uid = userIdRef.current;
+          try {
+            const roomState = uid ? await apiRequest(API.STREAMING.GET_USER_ROOM(uid)) : null;
+            if (roomState?.exists && String(roomState.roomId) === String(endedRoomId)) return;
+          } catch { }
+          if (intentionalExitRef.current) return;
           intentionalExitRef.current = true;
           cleanup();
           localStorage.removeItem('currentRoom');
           resumeDiscoveryFromCall();
-        }
+        }, 1500);
         break;
       }
     }

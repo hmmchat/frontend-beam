@@ -393,7 +393,7 @@ export default function useMeetSomeone() {
               }),
             );
             isEnteringCallRef.current = true;
-            void enterCall();
+            await enterCall();
             router.push('/video-chat');
             return;
           }
@@ -437,7 +437,7 @@ export default function useMeetSomeone() {
           }),
         );
         isEnteringCallRef.current = true;
-        void enterCall();
+        await enterCall();
         router.push('/video-chat');
       } else if (data.success && !data.waiting && !data.roomId) {
         console.log('Both accepted, but backend room creation failed. Creating room via frontend...');
@@ -466,7 +466,7 @@ export default function useMeetSomeone() {
               }),
             );
             isEnteringCallRef.current = true;
-            void enterCall();
+            await enterCall();
             router.push('/video-chat');
             return;
           }
@@ -493,7 +493,7 @@ export default function useMeetSomeone() {
                   }),
                 );
                 isEnteringCallRef.current = true;
-                void enterCall();
+                await enterCall();
                 router.push('/video-chat');
                 return;
               }
@@ -531,7 +531,7 @@ export default function useMeetSomeone() {
                   }),
                 );
                 isEnteringCallRef.current = true;
-                void enterCall();
+                await enterCall();
                 router.push('/video-chat');
                 return;
               }
@@ -720,7 +720,7 @@ export default function useMeetSomeone() {
         };
       }
       isEnteringCallRef.current = true;
-      void enterCall();
+      await enterCall();
       localStorage.setItem(
         'currentRoom',
         JSON.stringify({

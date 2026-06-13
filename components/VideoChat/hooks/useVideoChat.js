@@ -6,6 +6,7 @@ import { API, apiRequest } from '@/lib/api';
 import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
 import { recordSquadCallPeersAsync, recordSquadCallPeersKeepalive } from '@/lib/squad-quick-invite-backend';
 import {
+  enterCall,
   exitCallToHome,
   exitCallToHomeKeepalive,
   exitCallResumeDiscovery,
@@ -71,6 +72,12 @@ export const getRerouteWsUrl = (reroute, fallbackUrl) => {
 export const PULL_STRANGER_WINDOW_SECONDS = (() => {
   const parsed = Number.parseInt(process.env.NEXT_PUBLIC_PULL_STRANGER_WINDOW_SECONDS || '60', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 60;
+})();
+
+/** Grace before room-health auto-resume when remote media has not connected yet. */
+export const MEDIA_ESTABLISH_GRACE_MS = (() => {
+  const parsed = Number.parseInt(process.env.NEXT_PUBLIC_MEDIA_ESTABLISH_GRACE_SECONDS || '180', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 180_000;
 })();
 
 const isRealtimeDebugEnabled = () => process.env.NEXT_PUBLIC_REALTIME_DEBUG === 'true';
@@ -642,7 +649,8 @@ export default function useVideoChat() {
           }
           roomHealthFailureCountRef.current += 1;
           mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: roomHealthFailureCountRef.current });
-          if (roomHealthFailureCountRef.current < 10) return;
+          // Require many consecutive solo-room reads (~50s at 2.5s cadence) before auto-resume.
+          if (roomHealthFailureCountRef.current < 20) return;
           flowLog('room_health_auto_resume', { exists: Boolean(roomState?.exists), participantCount });
           await handlePeerLeftAutoResume();
           return;
@@ -1143,7 +1151,7 @@ export default function useVideoChat() {
             data.participantRoles.forEach(({ userId: id, role }) => { byUserId[String(id)] = role; });
             setCallRoles({ isLocalHost: data.myRole === 'HOST', byUserId });
           }
-          mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
+          mediaEstablishGraceUntilRef.current = Date.now() + MEDIA_ESTABLISH_GRACE_MS;
           setStatus('connected');
           if (Array.isArray(data.producers) && data.producers.length > 0) {
             data.producers.forEach(p => { const isSameUser = sameParticipantId(p.userId, userIdRef.current); const isMyProducer = myProducerIdsRef.current.has(String(p.producerId)); if (!isSameUser || !isMyProducer) consume(p.producerId, p.userId, { kind: p.kind, source: p.source }); });
@@ -1157,7 +1165,7 @@ export default function useVideoChat() {
           data.participantRoles.forEach(({ userId: id, role }) => { byUserId[String(id)] = role; });
           setCallRoles({ isLocalHost: data.myRole === 'HOST', byUserId });
         }
-        mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
+        mediaEstablishGraceUntilRef.current = Date.now() + MEDIA_ESTABLISH_GRACE_MS;
         const { Device } = await import('mediasoup-client');
         const device = new Device();
         await device.load({ routerRtpCapabilities: data.rtpCapabilities });
@@ -1577,6 +1585,8 @@ export default function useVideoChat() {
     let aborted = false;
     const init = async () => {
       hadRemotePeerInSessionRef.current = false;
+      // Ensure discovery session is cleared even if navigation beat enterCall() from home.
+      try { await enterCall(); } catch { }
       try {
         const raw = sessionStorage.getItem('hmm:enteringVideoChat');
         if (raw) { const enteredAt = Number(raw); const base = Number.isFinite(enteredAt) ? enteredAt : Date.now(); suppressUnmountLeaveUntilRef.current = base + 4000; if (Date.now() >= base + 4000) sessionStorage.removeItem('hmm:enteringVideoChat'); }
@@ -1650,9 +1660,9 @@ export default function useVideoChat() {
         isBroadcastingRef.current = true;
         setIsBroadcasting(true);
       }
-      try { if (sessionStorage.getItem('waitlistJoinRedirect') === '1') { sessionStorage.removeItem('waitlistJoinRedirect'); mediaEstablishGraceUntilRef.current = Date.now() + 60_000; } } catch { }
+      try { if (sessionStorage.getItem('waitlistJoinRedirect') === '1') { sessionStorage.removeItem('waitlistJoinRedirect'); mediaEstablishGraceUntilRef.current = Date.now() + MEDIA_ESTABLISH_GRACE_MS; } } catch { }
       squadQuickInvitePeersPostedRoomIdRef.current = null;
-      mediaEstablishGraceUntilRef.current = Date.now() + 60_000;
+      mediaEstablishGraceUntilRef.current = Date.now() + MEDIA_ESTABLISH_GRACE_MS;
       setRoomInfo(info);
       if (info.partner) {
         const enrichedPartner = await enrichUserStickerFields(info.partner);

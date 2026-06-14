@@ -1572,7 +1572,11 @@ export default function useVideoChat() {
       ws.onerror = (err) => { console.error('[WebSocket] Error:', err); };
       ws.onclose = () => {
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
-        if (typeof document !== 'undefined' && document.hidden) { wsPendingReconnectWhileHiddenRef.current = true; if (wsReconnectTimerRef.current) { clearTimeout(wsReconnectTimerRef.current); wsReconnectTimerRef.current = null; } return; }
+        if (typeof document !== 'undefined' && document.hidden) {
+          wsPendingReconnectWhileHiddenRef.current = true;
+        }
+        // Keep reconnecting even while the tab is hidden so we stay inside the
+        // server's preserve-participant grace window (~60s) after a background drop.
         scheduleWsReconnect(baseUrl);
       };
     };

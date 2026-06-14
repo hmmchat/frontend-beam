@@ -59,8 +59,17 @@ function markTabInactive(tabId) {
   return Object.keys(tabs).length === 0;
 }
 
+function isInProtectedCallRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname || "";
+  return path.startsWith("/video-chat") || path.startsWith("/beam-tv");
+}
+
 function sendInactivePresence() {
   if (!hasUsableToken()) return;
+  // Tab hide must not demote IN_SQUAD / IN_BROADCAST users — streaming reconcile
+  // removes participants when user-service status is OFFLINE.
+  if (isInProtectedCallRoute()) return;
   try {
     fetch(API.USERS.REPORT_PRESENCE, {
       method: "POST",
@@ -114,7 +123,10 @@ export default function AppPresence() {
     };
 
     const stopActivePresence = () => {
-      stopTimers();
+      const onCallRoute = isInProtectedCallRoute();
+      if (!onCallRoute) {
+        stopTimers();
+      }
       if (markTabInactive(tabId)) {
         sendInactivePresence();
       }

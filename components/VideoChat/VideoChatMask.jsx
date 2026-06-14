@@ -20,7 +20,7 @@ export default function VideoChatMask({ slots, giftAnimationActive = false }) {
           />
         </svg>
 
-
+        {/* <img src="/2videcall.svg" alt="mask" /> */}
 
 
 

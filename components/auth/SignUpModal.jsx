@@ -92,6 +92,7 @@ function SignUpModalContent({ isOpen, onClose }) {
         // Store tokens
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
+        window.dispatchEvent(new Event("auth-changed"));
 
         // Check if user has a profile
         try {

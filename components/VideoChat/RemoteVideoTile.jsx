@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { GiftAnimationGroup } from './GiftAnimation';
+import ReportUserModal from '@/components/modals/ReportUserModal';
 
 export default function RemoteVideoTile({
   userId,
@@ -396,68 +397,14 @@ export default function RemoteVideoTile({
         )}
 
         {/* Report Modal */}
-        {showReportModal && (
-          <div className={clsx('pointer-events-auto', 'absolute', 'inset-0', 'top-14', 'md:top-0', 'z-50', 'flex', 'items-center', 'justify-center', 'p-6', 'font-otomanopee')} onClick={() => !isReporting && setShowReportModal(false)}>
-            <div className={clsx('w-full', 'max-w-[320px]', 'space-y-1', 'animate-in', 'fade-in', 'zoom-in', 'duration-300')} onClick={e => e.stopPropagation()}>
-
-              {/* Pill Header */}
-              <div className={clsx('relative', 'overflow-hidden', 'md:w-[80%]', 'w-[60%]', 'mx-auto', 'border', 'border-white/50', 'rounded-full', 'py-4', 'text-center')}>
-                <div
-                  className={clsx('absolute', 'inset-0', 'z-0')}
-                  style={{
-                    backgroundImage: 'url(/assets/mb.jpg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                <div className={clsx('absolute', 'inset-0', 'z-[1]')} />
-                <h2 className={clsx('relative', 'z-10', 'text-white', 'md:text-xl', 'text-md', 'font-black', 'tracking-wider')}>
-                  Report User
-                </h2>
-              </div>
-
-              {/* Main Content Box */}
-              <div className={clsx('relative', 'overflow-hidden', 'md:w-full', 'w-[90%]', 'mx-auto', 'border', 'border-white/50', 'rounded-[3rem]', 'p-3', 'py-14', 'md:py-18', 'flex', 'flex-col', 'items-center', 'gap-6', 'text-center', 'shadow-2xl')}>
-                <div
-                  className={clsx('absolute', 'inset-0', 'z-0')}
-                  style={{
-                    backgroundImage: 'url(/assets/mb.jpg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                <div className={clsx('absolute', 'inset-0', 'z-[1]')} />
-
-                <div className={clsx('relative', 'z-10', 'space-y-2')}>
-                  <h3 className={clsx('text-white', 'md:text-2xl', 'text-lg', 'font-black')}>Report {name}</h3>
-                  <p className={clsx('text-white/70', 'md:text-sm', 'text-xs', 'font-outfit', 'px-2', 'leading-relaxed')}>
-                    Are you sure you want to <br /> report this user?
-                  </p>
-                </div>
-
-                <button
-                  disabled={isReporting}
-                  onClick={async () => {
-                    setIsReporting(true);
-                    try {
-                      if (onReportUser) {
-                        await onReportUser(userId);
-                      }
-                    } catch (err) {
-                      console.error(err);
-                    } finally {
-                      setIsReporting(false);
-                      setShowReportModal(false);
-                    }
-                  }}
-                  className={clsx('relative', 'text-sm', 'md:text-md', 'z-10', 'mt-4', 'md:px-10', 'px-6', 'py-3.5', 'md:py-4', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-2xl', 'text-white', 'font-black', 'hover:bg-white/5', 'active:scale-95', 'transition-all', 'disabled:opacity-50')}
-                >
-                  {isReporting ? "Reporting..." : "Report this user"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReportUserModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          userId={userId}
+          name={name}
+          onReportUser={onReportUser}
+          isAbsolute={true}
+        />
 
         <div className={clsx(
           'pointer-events-auto', 'absolute', 'md:top-12', 'top-6', 'md:left-12', 'left-6', 'flex', 'items-center', 'justify-between', 'z-10',

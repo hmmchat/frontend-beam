@@ -415,6 +415,7 @@ function OfflineCardsContent() {
                   currentIndex={currentImageIndex}
                   onIndexChange={setCurrentImageIndex}
                   className=""
+                  onBlockOrReportSuccess={handlePass}
                 />
               </div>
 

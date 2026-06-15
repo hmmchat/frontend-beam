@@ -47,7 +47,7 @@ function VideoChatContent() {
     showChatInput, setShowChatInput, coins,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
-    isGiftModalOpen, setIsGiftModalOpen, isDareOpen,
+    isGiftModalOpen, setIsGiftModalOpen, isDareOpen, isSendingDare,
     selectedGiftId, setSelectedGiftId, activeRemoteGifts, activeLocalGifts,
     activeDareProposal, dareAcceptanceStatus, randomDares, savedDares,
     giftItems, isRolling, setIsRolling, isBroken, setIsBroken,
@@ -462,6 +462,7 @@ function VideoChatContent() {
           onDareSync={handleDareSync}
           dareAcceptanceStatus={dareAcceptanceStatus}
           onSendDare={handleSendDare}
+          isSendingDare={isSendingDare}
           coins={coins}
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
           recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || 'Stranger') : 'Stranger'}

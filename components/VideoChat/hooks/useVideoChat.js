@@ -126,6 +126,8 @@ export default function useVideoChat() {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isDareOpen, setIsDareOpen] = useState(false);
+  const [isSendingDare, setIsSendingDare] = useState(false);
+  const isSendingDareRef = useRef(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [activeRemoteGifts, setActiveRemoteGifts] = useState([]);
   const [activeLocalGifts, setActiveLocalGifts] = useState([]);
@@ -2031,6 +2033,8 @@ export default function useVideoChat() {
 
   const handleCancelDare = useCallback(() => {
     setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle');
+    isSendingDareRef.current = false;
+    setIsSendingDare(false);
     if (roomInfo?.roomId && remoteStreams[0]?.userId) {
       send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareClose: true, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current }) } });
     }
@@ -2044,13 +2048,18 @@ export default function useVideoChat() {
     const giftObj = giftItems.find(g => g.id === selectedGiftId);
     if (!giftObj) return;
 
-    const giftAmount = Number(giftObj.diamonds) || 0;
-    const activeDareId = currentDareRef.current?.id || 'dare-1';
-    // Custom dares use a random dare id on backend (dare-1 fallback)
-    const backendDareId = (activeDareId && !activeDareId.startsWith('custom-') && activeDareId.startsWith('dare-'))
-      ? activeDareId
-      : 'dare-1';
+    if (isSendingDareRef.current) return;
+    isSendingDareRef.current = true;
+    setIsSendingDare(true);
+
     try {
+      const giftAmount = Number(giftObj.diamonds) || 0;
+      const activeDareId = currentDareRef.current?.id || 'dare-1';
+      // Custom dares use a random dare id on backend (dare-1 fallback)
+      const backendDareId = (activeDareId && !activeDareId.startsWith('custom-') && activeDareId.startsWith('dare-'))
+        ? activeDareId
+        : 'dare-1';
+
       const neededCoins = giftAmount * 100;
       if (coins < neededCoins) {
         alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
@@ -2097,8 +2106,13 @@ export default function useVideoChat() {
     } catch (err) {
       console.error('Failed to send dare:', err);
       alert(err.message || 'Failed to send dare');
+    } finally {
+      setIsDareOpen(false);
+      setSelectedGiftId(null);
+      setDareAcceptanceStatus('idle');
+      isSendingDareRef.current = false;
+      setIsSendingDare(false);
     }
-    setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle');
   }, [coins, selectedGiftId, refreshWallet, giftItems]);
 
   const openDareOverlay = () => {
@@ -2171,6 +2185,7 @@ export default function useVideoChat() {
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,
+    isSendingDare,
     selectedGiftId, setSelectedGiftId,
     activeRemoteGift: activeRemoteGifts[0] || null, activeLocalGift: activeLocalGifts[0] || null,
     activeRemoteGifts, activeLocalGifts,

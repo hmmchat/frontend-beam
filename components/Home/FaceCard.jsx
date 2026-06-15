@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
-import { API } from "@/lib/api";
+import { API, apiRequest } from "@/lib/api";
+import { submitUserReport } from "@/lib/report-user";
+import ReportUserModal from "@/components/modals/ReportUserModal";
+import BlockUserModal from "@/components/modals/BlockUserModal";
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -53,8 +56,59 @@ const FaceCard = ({
   hideHeader,
   hideMenu = false,
   className,
+  onBlockOrReportSuccess,
 }) => {
   const [internalIndex, setInternalIndex] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleReportUser = async (reportedUserId) => {
+    try {
+      const res = await submitUserReport({
+        reportedUserId,
+        reportType: 'participant',
+      });
+      if (res.success) {
+        triggerToast('User reported successfully.');
+        if (onBlockOrReportSuccess) {
+          setTimeout(() => onBlockOrReportSuccess(), 1000);
+        }
+      } else {
+        triggerToast('Failed to report user.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(err.message || 'Failed to report user.');
+    }
+  };
+
+  const handleBlockUser = async (blockedUserId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await apiRequest(API.FRIENDS.BLOCK_USER(blockedUserId), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.success || res.message) {
+        triggerToast('User blocked successfully.');
+        if (onBlockOrReportSuccess) {
+          setTimeout(() => onBlockOrReportSuccess(), 1000);
+        }
+      } else {
+        triggerToast('Failed to block user.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(err.message || 'Failed to block user.');
+    }
+  };
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -128,6 +182,13 @@ const FaceCard = ({
     const interval = setInterval(poll, 3000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handleGlobalClick = () => setShowDropdown(false);
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, [showDropdown]);
 
   if (!user) return null;
 
@@ -250,12 +311,45 @@ const FaceCard = ({
 
           {showReportUi && <Report layer={reportLayer} />}
           {!hideMenu && !isFacecardPage && (
-            <button
-              type="button"
-              className="flex h-6 w-6 items-center justify-center text-white"
-            >
-              <IoEllipsisVerticalSharp />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center text-white pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDropdown(prev => !prev);
+                }}
+              >
+                <IoEllipsisVerticalSharp />
+              </button>
+              {showDropdown && (
+                <div
+                  className="absolute right-0 top-8 z-30 w-32 rounded-xl border border-white/20 bg-black/75 backdrop-blur-md py-1 shadow-2xl font-outfit"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setShowBlockModal(true);
+                    }}
+                  >
+                    Block User
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    Report User
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -337,12 +431,45 @@ const FaceCard = ({
                   )}
                   {showReportUi && <Report layer={reportLayer} />}
                   {!hideMenu && !isFacecardPage && (
-                    <button
-                      type="button"
-                      className="flex h-6 w-6 items-center justify-center text-white"
-                    >
-                      <IoEllipsisVerticalSharp />
-                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center text-white pointer-events-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdown(prev => !prev);
+                        }}
+                      >
+                        <IoEllipsisVerticalSharp />
+                      </button>
+                      {showDropdown && (
+                        <div
+                          className="absolute right-0 top-8 z-30 w-32 rounded-xl border border-white/20 bg-black/75 backdrop-blur-md py-1 shadow-2xl font-outfit"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                            onClick={() => {
+                              setShowDropdown(false);
+                              setShowBlockModal(true);
+                            }}
+                          >
+                            Block User
+                          </button>
+                          <button
+                            type="button"
+                            className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                            onClick={() => {
+                              setShowDropdown(false);
+                              setShowReportModal(true);
+                            }}
+                          >
+                            Report User
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -475,6 +602,31 @@ const FaceCard = ({
 
 
           </div>
+
+          <ReportUserModal
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+            userId={user.userId || user.id || user._id}
+            name={user.username || 'User'}
+            onReportUser={handleReportUser}
+            isAbsolute={false}
+          />
+
+          <BlockUserModal
+            isOpen={showBlockModal}
+            onClose={() => setShowBlockModal(false)}
+            userId={user.userId || user.id || user._id}
+            name={user.username || 'User'}
+            onBlockUser={handleBlockUser}
+            isAbsolute={false}
+          />
+
+          {toastMessage && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[110] bg-slate-900/85 backdrop-blur-md outline outline-2 outline-white/20 border border-white/5 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="font-outfit text-sm font-semibold">{toastMessage}</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -39,6 +39,7 @@ export default function DareOverlay({
   onDareSync,
   dareAcceptanceStatus = "idle",
   onSendDare,
+  isSendingDare = false,
   coins = 0,
   onOpenCoinModal,
   recipientName = "Stranger",
@@ -509,7 +510,8 @@ export default function DareOverlay({
             disabled={
               dareAcceptanceStatus !== "accepted" ||
               !hasSufficientCoins ||
-              !selectedGift
+              !selectedGift ||
+              isSendingDare
             }
             onClick={() => onSendDare && onSendDare()}
             className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
@@ -520,14 +522,16 @@ export default function DareOverlay({
                   "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
                   dareAcceptanceStatus !== "accepted" ||
                     !hasSufficientCoins ||
-                    !selectedGift
+                    !selectedGift ||
+                    isSendingDare
                     ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
                     : "border-[#13133b] bg-red-900 "
                 )}
               >
                 {dareAcceptanceStatus === "accepted" &&
                   hasSufficientCoins &&
-                  selectedGift && (
+                  selectedGift &&
+                  !isSendingDare && (
                     <img
                       src="/circle.png"
                       className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
@@ -541,6 +545,7 @@ export default function DareOverlay({
                     dareAcceptanceStatus === "accepted" &&
                     hasSufficientCoins &&
                     selectedGift &&
+                    !isSendingDare &&
                     "group-active:scale-80"
                   )}
                 >
@@ -619,7 +624,8 @@ export default function DareOverlay({
               disabled={
                 dareAcceptanceStatus !== "accepted" ||
                 !hasSufficientCoins ||
-                !selectedGift
+                !selectedGift ||
+                isSendingDare
               }
               onClick={() => onSendDare && onSendDare()}
               className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
@@ -630,14 +636,16 @@ export default function DareOverlay({
                     "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
                     dareAcceptanceStatus !== "accepted" ||
                       !hasSufficientCoins ||
-                      !selectedGift
+                      !selectedGift ||
+                      isSendingDare
                       ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
                       : "border-[#13133b] bg-red-900 "
                   )}
                 >
                   {dareAcceptanceStatus === "accepted" &&
                     hasSufficientCoins &&
-                    selectedGift && (
+                    selectedGift &&
+                    !isSendingDare && (
                       <img
                         src="/circle.png"
                         className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
@@ -652,6 +660,7 @@ export default function DareOverlay({
                       dareAcceptanceStatus === "accepted" &&
                       hasSufficientCoins &&
                       selectedGift &&
+                      !isSendingDare &&
                       "group-active:scale-80"
                     )}
                   >

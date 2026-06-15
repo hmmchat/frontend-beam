@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { subscribePresenceRealtime } from "@/lib/presence-realtime";
+import { API } from "@/lib/api";
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -10,7 +12,7 @@ import {
 } from "react-icons/io5";
 import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
-
+import clsx from 'clsx';
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -47,10 +49,77 @@ const FaceCard4 = ({
   currentIndex,
   onIndexChange,
   hideHeader,
+  hideMenu = false,
 }) => {
   const [internalIndex, setInternalIndex] = useState(0);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const [realtimeStatus, setRealtimeStatus] = useState("");
+  const [realtimeVideoEnabled, setRealtimeVideoEnabled] = useState(null);
+  const [realtimeVideoOn, setRealtimeVideoOn] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setRealtimeStatus(user.status || user.userStatus || "");
+    setRealtimeVideoEnabled(user.videoEnabled);
+    setRealtimeVideoOn(user.videoOn);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const targetUserId = user.userId || user.id || user._id;
+    if (!targetUserId) return;
+
+    const unsub = subscribePresenceRealtime((payload) => {
+      if (payload && String(payload.userId) === String(targetUserId)) {
+        console.log("Realtime presence update in FaceCard4:", targetUserId, payload);
+        if (payload.status !== undefined) {
+          setRealtimeStatus(payload.status);
+        }
+        if (payload.videoEnabled !== undefined) {
+          setRealtimeVideoEnabled(payload.videoEnabled);
+        }
+        if (payload.videoOn !== undefined) {
+          setRealtimeVideoOn(payload.videoOn);
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const targetUserId = user.userId || user.id || user._id;
+    if (!targetUserId) return;
+
+    const poll = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const res = await fetch(`${API.USERS.GET_USER(targetUserId)}?fields=videoEnabled,status`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user?.videoEnabled !== undefined) {
+            setRealtimeVideoEnabled(data.user.videoEnabled);
+          }
+          if (data?.user?.status !== undefined) {
+            setRealtimeStatus(data.user.status);
+          }
+        }
+      } catch (err) {
+        // ignore errors
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (!user) return null;
 
@@ -84,14 +153,18 @@ const FaceCard4 = ({
   const albumArt = mp?.albumArtUrl || "/spotify1.png";
 
   // Status-driven header badges/icons
-  const rawStatus = String(user.status || user.userStatus || "").toUpperCase();
+  const statusToUse = realtimeStatus || user.status || user.userStatus || "";
+  const rawStatus = String(statusToUse).toUpperCase();
   const inSquad = rawStatus.includes("IN_SQUAD") || rawStatus === "SQUAD";
   const isBroadcasting =
     Boolean(user.isBroadcasting || user.broadcastUrl) ||
     rawStatus.includes("IN_BROADCAST") ||
     rawStatus === "BROADCAST";
-  // Default to ON unless explicitly false.
-  const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
+  
+  const videoEnabledToUse = realtimeVideoEnabled !== null && realtimeVideoEnabled !== undefined ? realtimeVideoEnabled : user.videoEnabled;
+  const videoOnToUse = realtimeVideoOn !== null && realtimeVideoOn !== undefined ? realtimeVideoOn : user.videoOn;
+  // Show camera ON only when explicitly true. If undefined/unknown, show OFF.
+  const isVideoOn = videoEnabledToUse === true && videoOnToUse !== false;
 
   // Combine all photos
   const allPhotos = getFacecardPhotos(user);
@@ -132,15 +205,15 @@ const FaceCard4 = ({
   return (
     <>
       {!hideHeader && (
-        <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 hidden md:flex">
+        <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'hidden', 'md:flex')}>
           <div>
-            <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
+            <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
               {user.username || "User"}
               {!hideFacecardAge && (
                 <>
                   {" "}
                   <span
-                    className="text-stroke-yellow  text-2xl"
+                    className={clsx('text-stroke-yellow', 'text-2xl')}
                     style={{ WebkitTextStroke: "0.7px white" }}
                   >
                     {age || "—"}
@@ -148,69 +221,67 @@ const FaceCard4 = ({
                 </>
               )}
             </h1>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+            <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
               {/* <IoLocationOutline className="shrink-0" /> */}
-              <span className="truncate font-outfit">{city}</span>
+              <span className={clsx('truncate', 'font-outfit')}>{city}</span>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className={clsx('flex', 'shrink-0', 'items-center', 'gap-1.5')}>
             {inSquad && (
               <button
                 type="button"
-                className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                className={clsx('rounded-full', 'border', 'border-yellow-300/90', 'px-2.5', 'py-1', 'text-[10px]', 'font-medium', 'text-yellow-300')}
               >
                 Squad
               </button>
             )}
             {isBroadcasting && (
               <span
-                className="flex h-6 w-6 items-center justify-center text-white"
+                className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
                 title="Broadcasting"
               >
-                <IoRadio className="h-5 w-5" />
+                <IoRadio className={clsx('h-5', 'w-5')} />
               </span>
             )}
             <span
-              className="flex h-6 w-6 items-center justify-center text-white"
+              className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
               title={isVideoOn ? "Video on" : "Video off"}
             >
               {isVideoOn ? (
-                <IoVideocam className="h-5 w-5" />
+                <IoVideocam className={clsx('h-5', 'w-5')} />
               ) : (
-                <IoVideocamOff className="h-5 w-5" />
+                <IoVideocamOff className={clsx('h-5', 'w-5')} />
               )}
             </span>
             {showReportUi && <Report layer={reportLayer} className="left-10" />}
-            <button
-              type="button"
-              className="flex h-6 w-6 items-center justify-center text-white"
-            >
-              <IoEllipsisVerticalSharp />
-            </button>
+            {!hideMenu && (
+              <button
+                type="button"
+                className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
+              >
+                <IoEllipsisVerticalSharp />
+              </button>
+            )}
           </div>
         </div>
       )}
 
       <div
-        className="w-[85vw] aspect-[360/670] max-w-[360px] 
-                   sm:w-[340px] md:w-[320px] lg:w-[360px] 
-                md:aspect-[366/660] shrink-0 rounded-[30px] 
-                border border-white/40 p-[2px]
-                md:border-0 md:p-0 mt-4 md:scale-90"
+        className={clsx('w-[85vw]', 'aspect-[360/670]', 'max-w-[360px]', 'sm:w-[340px]', 'md:w-[320px]', 'lg:w-[360px]', 'md:aspect-[366/660]', 'shrink-0', 'rounded-[30px]', 'border', 'border-white/40', 'p-[2px]', 'md:border-0', 'md:p-0', 'mt-4', 'md:scale-90')}
       >
-        <div className="relative h-full w-full overflow-hidden rounded-[28px] ">
+        <div className={clsx('relative', 'h-full', 'w-full', 'overflow-hidden', 'rounded-[28px]')}>
           {/* HEADER */}
           {!hideHeader && (
-            <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
+            <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'md:hidden')}>
               <div>
-                <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
+                <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
                   {user.username || "User"}
                   {!hideFacecardAge && (
                     <>
                       {" "}
                       <span
-                        className="font-sm text-transparent  px-2 py-0.5 rounded-full"
+                        className={clsx('font-sm', 'text-transparent', 'px-2', 'py-0.5', 'rounded-full')}
                         style={{ WebkitTextStroke: "0.7px white" }}
                       >
                         {age || "—"}
@@ -218,55 +289,57 @@ const FaceCard4 = ({
                     </>
                   )}
                 </h1>
-                <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+                <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
                   <IoLocationOutline className="shrink-0" />
                   <span className="truncate">{city}</span>
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className={clsx('flex', 'shrink-0', 'items-center', 'gap-1.5')}>
                 {inSquad && (
                   <button
                     type="button"
-                    className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                    className={clsx('rounded-full', 'border', 'border-yellow-300/90', 'px-2.5', 'py-1', 'text-[10px]', 'font-medium', 'text-yellow-300')}
                   >
                     Squad
                   </button>
                 )}
                 {isBroadcasting && (
                   <span
-                    className="flex h-6 w-6 items-center justify-center text-white"
+                    className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
                     title="Broadcasting"
                   >
-                    <IoRadio className="h-5 w-5" />
+                    <IoRadio className={clsx('h-5', 'w-5')} />
                   </span>
                 )}
                 <span
-                  className="flex h-6 w-6 items-center justify-center text-white"
+                  className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
                   title={isVideoOn ? "Video on" : "Video off"}
                 >
                   {isVideoOn ? (
-                    <IoVideocam className="h-5 w-5" />
+                    <IoVideocam className={clsx('h-5', 'w-5')} />
                   ) : (
-                    <IoVideocamOff className="h-5 w-5" />
+                    <IoVideocamOff className={clsx('h-5', 'w-5')} />
                   )}
                 </span>
                 {showReportUi && <Report layer={reportLayer} />}
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center text-white"
-                >
-                  <IoEllipsisVerticalSharp />
-                </button>
+                {!hideMenu && (
+                  <button
+                    type="button"
+                    className={clsx('flex', 'h-6', 'w-6', 'items-center', 'justify-center', 'text-white')}
+                  >
+                    <IoEllipsisVerticalSharp />
+                  </button>
+                )}
               </div>
             </div>
           )}
 
 
-          <div className="absolute bottom-0 left-1 right-1 top-[3.3rem] rounded-[34.46px] border border-white/45">
+          <div className={clsx('absolute', 'bottom-0', 'left-1', 'right-1', 'top-[3.3rem]', 'rounded-[34.46px]', 'border', 'border-white/45')}>
             {/* Intent */}
-            <div className="absolute left-0 right-0 top-2 z-20 px-2">
-              <div className="rounded-[29.1px] font-outfit border border-white/35 px-3 h-[90px] md:h-[115px] flex items-center justify-center text-center text-[10px] leading-snug text-white backdrop-blur-[2px]">
+            <div className={clsx('absolute', 'left-0', 'right-0', 'top-2', 'z-20', 'px-2')}>
+              <div className={clsx('rounded-[29.1px]', 'font-outfit', 'border', 'border-white/35', 'px-3', 'h-[90px]', 'md:h-[115px]', 'flex', 'items-center', 'justify-center', 'text-center', 'text-[10px]', 'leading-snug', 'text-white', 'backdrop-blur-[2px]')}>
                 <p className="line-clamp-3">
                   {user.intent || "Here to meet strangers and overthink later."}
                 </p>
@@ -274,12 +347,12 @@ const FaceCard4 = ({
             </div>
 
             {/* MAIN BODY — flex row: left sidebar + right image */}
-            <div className="absolute bottom-2 left-0 right-2 top-[6.4rem]  md:top-[8.1rem] flex gap-1 md:gap-0">
+            <div className={clsx('absolute', 'bottom-2', 'left-0', 'right-2', 'top-[6.4rem]', 'md:top-[8.1rem]', 'flex', 'gap-1', 'md:gap-0')}>
               {/* LEFT SIDEBAR */}
-              <div className="w-[26%] flex flex-col items-center gap-[6px] z-20">
+              <div className={clsx('w-[26%]', 'flex', 'flex-col', 'items-center', 'gap-[6px]', 'z-20')}>
                 {/* Brands capsule */}
-                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/40 px-[10px] py-2 shadow-inner">
-                  <div className="flex flex-col items-center gap-1">
+                <div className={clsx('flex', 'w-fit', 'max-w-[90px]', 'flex-col', 'items-center', 'rounded-full', 'border', 'border-white/40', 'px-[10px]', 'py-2', 'shadow-inner')}>
+                  <div className={clsx('flex', 'flex-col', 'items-center', 'gap-1')}>
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const src = brandLogos[idx];
                       return (
@@ -290,7 +363,7 @@ const FaceCard4 = ({
                           {src && (
                             <img
                               src={src}
-                              className="h-full w-full object-cover object-center"
+                              className={clsx('h-full', 'w-full', 'object-cover', 'object-center')}
 
                               alt=""
                             />
@@ -302,54 +375,54 @@ const FaceCard4 = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] shrink-0 flex-col items-center rounded-[15.2px] border border-white/45 px-2 py-2 shadow-inner">
+                <div className={clsx('flex', 'w-[75px]', 'shrink-0', 'flex-col', 'items-center', 'rounded-[15.2px]', 'border', 'border-white/45', 'px-2', 'py-2', 'shadow-inner')}>
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
                       alt={user.zodiac.name || "Zodiac"}
-                      className="h-8 w-10 object-contain"
+                      className={clsx('h-8', 'w-10', 'object-contain')}
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center ">
-                      <span className="text-[20px] leading-none text-white/30">
+                    <div className={clsx('flex', 'h-10', 'w-10', 'items-center', 'justify-center')}>
+                      <span className={clsx('text-[20px]', 'leading-none', 'text-white/30')}>
                         +
                       </span>
                     </div>
                   )}
-                  <span className="mt-1 w-full break-words text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-white/75">
+                  <span className={clsx('mt-1', 'w-full', 'break-words', 'text-center', 'text-[7px]', 'font-semibold', 'uppercase', 'leading-tight', 'tracking-wide', 'text-white/75')}>
                     {user?.zodiac?.name}
                   </span>
                 </div>
 
                 {/* Music */}
-                <div className="flex h-[125px] w-[80px] shrink-0 flex-col items-center  border border-white/40 rounded-t-[79.52px] rounded-b-[49.52px] px-1 pb-1 pt-2 shadow-inner backdrop-blur-sm">
+                <div className={clsx('flex', 'h-[125px]', 'w-[80px]', 'shrink-0', 'flex-col', 'items-center', 'border', 'border-white/40', 'rounded-t-[79.52px]', 'rounded-b-[49.52px]', 'px-1', 'pb-1', 'pt-2', 'shadow-inner', 'backdrop-blur-sm')}>
 
 
-                  <img src="/musicline.svg" alt="" className=" left-0 bottom-14 z-50 absolute   " />
-                  <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                  <img src="/musicline.svg" alt="" className={clsx('left-0', 'bottom-14', 'z-50', 'absolute')} />
+                  <div className={clsx('h-[72px]', 'w-[72px]', 'shrink-0', 'overflow-hidden', 'rounded-full', 'border-2', 'border-white/35', 'shadow-md')}>
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
-                        className="h-full w-full object-cover animate-spin-slow"
+                        className={clsx('h-full', 'w-full', 'object-cover', 'animate-spin-slow')}
                         alt=""
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center" />
+                      <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center')} />
                     )}
                   </div>
 
 
-                  <div className="mt-2 h-px w-[90%] bg-white/30" />
-                  <div className="mt-1.5 w-full px-0.5 text-center text-white">
+                  <div className={clsx('mt-2', 'h-px', 'w-[90%]', 'bg-white/30')} />
+                  <div className={clsx('mt-1.5', 'w-full', 'px-0.5', 'text-center', 'text-white')}>
 
                     <div className="marquee">
-                      <p className="text-[9px] font-medium font-outfit leading-tight tracking-wide whitespace-nowrap">
+                      <p className={clsx('text-[9px]', 'font-medium', 'font-outfit', 'leading-tight', 'tracking-wide', 'whitespace-nowrap')}>
                         {user.musicPreference ? songTitle : '\u00a0'}
                       </p>
                     </div>
 
-                    <div className="marquee  mt-[1px]">
-                      <p className="text-[9px]  marquee font-extralight font-outfit leading-tight text-white whitespace-nowrap">
+                    <div className={clsx('marquee', 'mt-[1px]')}>
+                      <p className={clsx('text-[9px]', 'marquee', 'font-extralight', 'font-outfit', 'leading-tight', 'text-white', 'whitespace-nowrap')}>
                         {user.musicPreference ? artist : '\u00a0'}
                       </p>
                     </div>
@@ -360,7 +433,7 @@ const FaceCard4 = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="flex-1 h-full overflow-hidden ">
+              <div className={clsx('flex-1', 'h-full', 'overflow-hidden')}>
                 <img
                   src={allPhotos[activeIndex]}
                   className={`h-full w-full object-cover rounded-[20px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
@@ -374,7 +447,7 @@ const FaceCard4 = ({
 
             {/* Pagination */}
             {allPhotos.length > 1 && (
-              <div className="absolute -bottom-2 left-0 right-0 z-20 flex justify-center gap-2">
+              <div className={clsx('absolute', '-bottom-2', 'left-0', 'right-0', 'z-20', 'flex', 'justify-center', 'gap-2')}>
                 {allPhotos.map((_, idx) => (
                   <div
                     key={idx}
@@ -391,11 +464,11 @@ const FaceCard4 = ({
       </div>
 
       {!hideArrows && (
-        <div className="flex items-center justify-center gap-6 mt-4 hidden md:flex">
+        <div className={clsx('flex', 'items-center', 'justify-center', 'gap-6', 'mt-4', 'hidden', 'md:flex')}>
           {/* Left Button */}
           <button
             onClick={handlePrev}
-            className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:text-white transition active:scale-90"
+            className={clsx('w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:text-white', 'transition', 'active:scale-90')}
           >
             <IoIosArrowBack />
           </button>
@@ -403,7 +476,7 @@ const FaceCard4 = ({
           {/* Right Button */}
           <button
             onClick={handleNext}
-            className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center text-white text-3xl hover:border-white transition active:scale-90"
+            className={clsx('w-12', 'h-12', 'rounded-full', 'border', 'border-white/40', 'flex', 'items-center', 'justify-center', 'text-white', 'text-3xl', 'hover:border-white', 'transition', 'active:scale-90')}
           >
             <IoIosArrowForward />
           </button>
@@ -443,7 +516,7 @@ export default FaceCard4;
 
 //   return (
 //     <div
-//       className="flex min-h-screen  w-full flex-col  text-white outfit-font overflow-hidden  "
+//       className={clsx('flex', 'min-h-screen', 'w-full', 'flex-col', 'text-white', 'outfit-font', 'overflow-hidden')}
 //       style={{
 //         backgroundImage: "url('/assets/mb.jpg')",
 //         backgroundSize: "cover",
@@ -452,32 +525,23 @@ export default FaceCard4;
 //       }}
 //     >
 //       <div
-//         className=" flex w-full flex-1 flex-col gap-3 px-3 py-3 
-//                       sm:px-4 md:flex-row md:gap-4 md:px-6 lg:gap-6 xl:gap-10"
+//         className={clsx('flex', 'w-full', 'flex-1', 'flex-col', 'gap-3', 'px-3', 'py-3', '//', 'sm:px-4', 'md:flex-row', 'md:gap-4', 'md:px-6', 'lg:gap-6', 'xl:gap-10')}
 //       >
 
 
 //         {/* LEFT — phone preview area */}
 //         <div
-//           className="flex md:flex-1 flex-col items-center justify-center md:justify-center
-//                        md:min-h-0
-//                       md:overflow-visible
-                      
-//                       md:border md:border-white/30 md:rounded-[60px] 
-//                         sm:px-4 "
+//           className={clsx('flex', 'md:flex-1', 'flex-col', 'items-center', 'justify-center', 'md:justify-center', '//', 'md:min-h-0', '//', 'md:overflow-visible', '//', 'md:border', 'md:border-white/30', 'md:rounded-[60px]', '//', 'sm:px-4')}
 //         >
 //           <div
-//             className="flex w-full flex-col items-center text-center 
-//                        md:flex-1 justify-center 
-//                         md:mt-0
-//                          md:scale-100 justify-between "
+//             className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'text-center', '//', 'md:flex-1', 'justify-center', '//', 'md:mt-0', '//', 'md:scale-100', 'justify-between')}
 //           >
 //             <div >
-//               <p className="text-lg font-semibold sm:text-lg md:text-sm lg:text-base md:hidden ">
+//               <p className={clsx('text-lg', 'font-semibold', 'sm:text-lg', 'md:text-sm', 'lg:text-base', 'md:hidden')}>
 //                 This is Your FaceCard
 //               </p>
 
-//               <p className="text-[10px] sm:text-[14px] font-outfit md:text-[11px] font-thin  md:hidden">
+//               <p className={clsx('text-[10px]', 'sm:text-[14px]', 'font-outfit', 'md:text-[11px]', 'font-thin', 'md:hidden')}>
 //                 People will see this before meeting you <br />
 //                 You can add more info to get better matches
 //               </p>
@@ -485,21 +549,7 @@ export default FaceCard4;
 
 //             {/* CARD */}
 //             <div
-//               className="w-full mx-auto flex justify-center 
-//    max-[321px]:scale-65 max-[321px]:-translate-y-30
-//       max-[340px]:scale-70 max-[340px]:-translate-y-28
-//    max-[370px]:scale-75 max-[370px]:-translate-y-20
-//   max-[390px]:scale-78 max-[390px]:-translate-y-18
-//   max-[403px]:scale-83 max-[403px]:-translate-y-[7vh]
-//  max-[405px]:scale-85 max-[405px]:-translate-y-[10vh]
-
-
-
-
-//    max-[416px]:scale-88 max-[416px]:-translate-y-8
-
-
-//       max-[440px]:scale-98 max-[440px]:-translate-y-2"
+//               className={clsx('w-full', 'mx-auto', 'flex', 'justify-center', '//', 'max-[321px]:scale-65', 'max-[321px]:-translate-y-30', '//', 'max-[340px]:scale-70', 'max-[340px]:-translate-y-28', '//', 'max-[370px]:scale-75', 'max-[370px]:-translate-y-20', '//', 'max-[390px]:scale-78', 'max-[390px]:-translate-y-18', '//', 'max-[403px]:scale-83', 'max-[403px]:-translate-y-[7vh]', '//', 'max-[405px]:scale-85', 'max-[405px]:-translate-y-[10vh]', '//', 'max-[416px]:scale-88', 'max-[416px]:-translate-y-8', '//', 'max-[440px]:scale-98', 'max-[440px]:-translate-y-2')}
 
 //             >
 //               <FaceCard
@@ -515,19 +565,19 @@ export default FaceCard4;
 
 //             {/* MOBILE BUTTONS */}
 
-//             <div className="flex absolute w-full px-6 justify-center gap-4 mx-auto md:hidden bottom-[1vh]  ">
+//             <div className={clsx('flex', 'absolute', 'w-full', 'px-6', 'justify-center', 'gap-4', 'mx-auto', 'md:hidden', 'bottom-[1vh]')}>
 
 
 //               <button
 //                 onClick={() => router.push("/")}
-//                 className="rounded-full w-full px-6 py-4 text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+//                 className={clsx('rounded-full', 'w-full', 'px-6', 'py-4', 'text-[12px]', 'sm:text-sm', 'border', 'border-white/30', 'transition', 'hover:bg-yellow-400', 'hover:text-black', 'whitespace-nowrap')}
 //               >
 //                 Later 🥱
 //               </button>
 
 //               <button
 //                 onClick={() => setView("editor")}
-//                 className="rounded-full px-6 py-4 w-full text-[12px] sm:text-sm  border border-white/30 transition hover:bg-yellow-400 hover:text-black whitespace-nowrap"
+//                 className={clsx('rounded-full', 'px-6', 'py-4', 'w-full', 'text-[12px]', 'sm:text-sm', 'border', 'border-white/30', 'transition', 'hover:bg-yellow-400', 'hover:text-black', 'whitespace-nowrap')}
 //               >
 //                 Add Info More 😤
 //               </button>
@@ -542,31 +592,28 @@ export default FaceCard4;
 
 //         {/* RIGHT — desktop info panel */}
 //         <div
-//           className="hidden md:flex flex-1 flex-col items-center justify-center text-center 
-//                         rounded-[60px] border border-white/30 
-//                         px-4 py-5 
-//                         lg:px-6 lg:py-6 xl:px-10"
+//           className={clsx('hidden', 'md:flex', 'flex-1', 'flex-col', 'items-center', 'justify-center', 'text-center', '//', 'rounded-[60px]', 'border', 'border-white/30', '//', 'px-4', 'py-5', '//', 'lg:px-6', 'lg:py-6', 'xl:px-10')}
 //         >
-//           <h1 className="text-center justify-center text-white text-[36px] font-normal font-Otomanopee_One">
+//           <h1 className={clsx('text-center', 'justify-center', 'text-white', 'text-[36px]', 'font-normal', 'font-Otomanopee_One')}>
 //             Meet your Facecard
 //           </h1>
 
-//           <p className="mt-3 max-w-md font-thin text-xs md:text-[20px] lg:text-xl text-white/90 font-outfit">
+//           <p className={clsx('mt-3', 'max-w-md', 'font-thin', 'text-xs', 'md:text-[20px]', 'lg:text-xl', 'text-white/90', 'font-outfit')}>
 //             This is what people see before meeting you. Adding more details
 //             makes it cooler and gets you better matches &amp; conversations.
 //           </p>
 
-//           <div className="w-full max-w-[400px] mt-20 space-y-3 md:space-y-7">
+//           <div className={clsx('w-full', 'max-w-[400px]', 'mt-20', 'space-y-3', 'md:space-y-7')}>
 //             <button
 //               onClick={() => setView("editor")}
-//               className="w-full rounded-[18px] border-[2px] border-white/50 border-b-[4px] md:py-5 py-3 md:px-2 px-6 text-sm md:text-[18px] lg:text-[20px] font-semibold transition hover:bg-yellow-400 hover:text-black"
+//               className={clsx('w-full', 'rounded-[18px]', 'border-[2px]', 'border-white/50', 'border-b-[4px]', 'md:py-5', 'py-3', 'md:px-2', 'px-6', 'text-sm', 'md:text-[18px]', 'lg:text-[20px]', 'font-semibold', 'transition', 'hover:bg-yellow-400', 'hover:text-black')}
 //             >
 //               Make my Facecard cooler 😤
 //             </button>
 
 //             <button
 //               onClick={() => router.push("/")}
-//               className="text-xs md:text-[18px] text-white/90 hover:text-white"
+//               className={clsx('text-xs', 'md:text-[18px]', 'text-white/90', 'hover:text-white')}
 //             >
 //               I’ll do it later 🥱
 //             </button>

@@ -20,118 +20,112 @@ export default function GroupMembersModal({
       className="absolute inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in"
       onClick={onClose}
     >
+      {/* Semi-transparent backdrop overlay */}
+
+
       <div
-        className="relative border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+        className="relative border border-white/10 rounded-[1.5rem] w-full max-w-sm overflow-hidden  animate-in zoom-in-95 duration-200 "
         onClick={(e) => e.stopPropagation()}
       >
+
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-0 "
           style={{
             backgroundImage: "url(/assets/mb.jpg)",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            opacity: 0.8,
           }}
         />
 
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
-        <div className="relative z-10">
-          <div className="p-4 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-white font-black text-lg">Group Members</h3>
 
-            <button
-              onClick={onClose}
-              className="text-white/50 hover:text-white p-1"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        <div className="relative z-10 p-5 max-h-[70vh] overflow-y-auto scrollbar-none flex flex-col gap-2">
+          {remoteStreams.map((s) => {
+            const profile = getRemoteTileProfile(s);
+            const isSent = friendRequestSentTo[s.userId];
+            const isFriend = friendshipWithRemote[s.userId];
+
+            return (
+              <div
+                key={s.userId}
+                className="flex items-center gap-4 py-4 border-b border-white/10 last:border-0 last:pb-0"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+                {/* Avatar with yellow/golden border */}
+                <div className="w-14 h-14 rounded-full border-[3px] border-[#FFD338] overflow-hidden bg-gray-800 flex-shrink-0">
+                  <img
+                    src={profile.displayPictureUrl}
+                    className="w-full h-full object-cover"
+                    alt=""
+                  />
+                </div>
 
-          <div className="p-2 max-h-[60vh] overflow-y-auto">
-            {remoteStreams.map((s) => {
-              const profile = getRemoteTileProfile(s);
-              const isSent = friendRequestSentTo[s.userId];
-              const isFriend = friendshipWithRemote[s.userId];
-
-              return (
-                <div
-                  key={s.userId}
-                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
-                    <img
-                      src={profile.displayPictureUrl}
-                      className="w-full h-full object-cover"
-                      alt=""
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold truncate font-otomanopee">
-                      {profile.name || "Matched!"}
-                    </div>
-
-                    {profile.city && profile.city !== "Unknown" && (
-                      <div className="text-white/50 text-xs truncate font-['Outfit']">
-                        {profile.city}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {!isFriend && (
-                      <button
-                        onClick={() => {
-                          if (!isSent) handleSendFriendRequest(s.userId);
-                        }}
-                        disabled={isSent}
-                        className={clsx(
-                          "px-4 py-2 rounded-full text-sm font-bold transition-all",
-                          isSent
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-white/10 text-white hover:bg-white/20 active:scale-95"
-                        )}
-                      >
-                        {isSent ? "Sent" : "Add"}
-                      </button>
-                    )}
-
-                    <button
-                      onClick={async () => {
-                        if (!reportedUserIds.has(s.userId)) {
-                          await handleReportUser(s.userId);
-                        }
-                        onClose();
-                      }}
-                      disabled={reportedUserIds.has(s.userId)}
-                      className={clsx(
-                        "px-4 py-2 rounded-full text-sm font-bold transition-all",
-                        reportedUserIds.has(s.userId)
-                          ? "bg-green-500/20 text-green-400 cursor-not-allowed"
-                          : "bg-red-500/20 text-red-400 hover:bg-red-500/40 active:scale-95"
-                      )}
-                    >
-                      {reportedUserIds.has(s.userId) ? "Reported" : "Report"}
-                    </button>
+                {/* User Info (Name only) */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-black text-md md:text-lg truncate font-otomanopee">
+                    {profile.name || "Matched!"}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Actions: Heart + Report */}
+                <div className="flex gap-2.5">
+                  {/* Heart / Add Friend Button */}
+                  <button
+                    onClick={() => {
+                      if (!isFriend && !isSent) handleSendFriendRequest(s.userId);
+                    }}
+                    disabled={isFriend || isSent}
+                    className={clsx(
+                      "w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 border",
+                      isFriend
+                        ? "border-pink-400/60 bg-pink-500/20 cursor-default"
+                        : isSent
+                          ? "border-green-400/60 bg-green-500/20 cursor-default"
+                          : "border-white/40 bg-white/5 hover:bg-white/10"
+                    )}
+                    title={isFriend ? 'Already friends' : isSent ? 'Friend request sent' : 'Send friend request'}
+                  >
+                    <img
+                      src="/history/heart.svg"
+                      alt="heart"
+                      className={clsx("w-6 h-6 object-contain", (isSent || isFriend) && "opacity-60")}
+                    />
+                  </button>
+
+                  {/* Report Button */}
+                  <button
+                    onClick={async () => {
+                      if (!reportedUserIds.has(s.userId)) {
+                        await handleReportUser(s.userId);
+                      }
+                    }}
+                    disabled={reportedUserIds.has(s.userId)}
+                    className={clsx(
+                      "w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 border",
+                      reportedUserIds.has(s.userId)
+                        ? "border-green-500/60 bg-green-500/20 cursor-not-allowed"
+                        : "border-white/40 bg-white/5 hover:bg-white/10"
+                    )}
+                    title={reportedUserIds.has(s.userId) ? 'Reported' : 'Report user'}
+                  >
+                    {reportedUserIds.has(s.userId) ? (
+                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <img
+                        src="/report-line.svg"
+                        className={clsx('md:w-6', 'md:h-6', 'w-5', 'h-5', 'object-contain', 'pointer-events-none')}
+                        alt="Report"
+                      />
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
+

@@ -1405,13 +1405,28 @@ export default function useVideoChat() {
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
-            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined)) {
+            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined)) {
               isControlMessage = true; controlParsed = parsed;
             }
           }
         } catch { }
 
         if (isControlMessage && controlParsed) {
+          if (controlParsed.isCamOffChanged !== undefined) {
+            const remoteUserId = controlParsed.senderId;
+            const camOff = Boolean(controlParsed.isCamOff);
+            setRemoteStreams(prev => prev.map(s => {
+              if (String(s.userId) === String(remoteUserId)) {
+                return {
+                  ...s,
+                  videoEnabled: !camOff,
+                  videoOn: !camOff
+                };
+              }
+              return s;
+            }));
+            return;
+          }
           if (controlParsed.isPeerNextClicked) { handlePeerLeftAutoResume(); return; }
           if (controlParsed.isDareSync) {
             if (String(controlParsed.targetUserId) === String(myId)) {
@@ -1722,9 +1737,51 @@ export default function useVideoChat() {
     if (track) { track.enabled = isMuted; setIsMuted(!isMuted); }
   };
 
-  const toggleCam = () => {
+  const toggleCam = async () => {
     const track = localStreamRef.current?.getVideoTracks()[0];
-    if (track) { track.enabled = isCamOff; setIsCamOff(!isCamOff); }
+    if (track) {
+      const nextCamOff = !isCamOff;
+      track.enabled = !nextCamOff;
+      setIsCamOff(nextCamOff);
+
+      // Save to localStorage
+      localStorage.setItem('isCamOff', String(nextCamOff));
+      localStorage.setItem('isVideoOn', String(!nextCamOff));
+
+      // Notify backend via profile PATCH!
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          await fetch(API.USERS.UPDATE_PROFILE, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              videoEnabled: !nextCamOff
+            })
+          });
+        }
+      } catch (err) {
+        console.error('Failed to notify backend about cam toggle:', err);
+      }
+
+      // Send WS control message to update the peer
+      if (roomInfoRef.current?.roomId) {
+        send({
+          type: 'chat-message',
+          data: {
+            roomId: roomInfoRef.current.roomId,
+            message: JSON.stringify({
+              isCamOffChanged: true,
+              isCamOff: nextCamOff,
+              senderId: userIdRef.current
+            })
+          }
+        });
+      }
+    }
   };
 
   // ---- Icebreaker / randomness ---------------------------------------------
@@ -2082,8 +2139,9 @@ export default function useVideoChat() {
   const getRemoteTileProfile = (s) => {
     const pid = partnerInfo.id != null && partnerInfo.id !== '' ? String(partnerInfo.id) : '';
     const isPartner = pid !== '' && sameParticipantId(s.userId, pid);
-    if (isPartner) return { name: s.name || partnerInfo.name || 'Matched!', age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null };
-    return { name: s.name || 'Guest', age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null };
+    const isVideoOn = s.videoEnabled !== false && s.videoOn !== false;
+    if (isPartner) return { name: s.name || partnerInfo.name || 'Matched!', age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn };
+    return { name: s.name || 'Guest', age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn };
   };
 
   const localVideoProps = {

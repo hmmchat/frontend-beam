@@ -24,10 +24,10 @@ export default function ParticipantCluster({ participants }) {
           if (i === 2) style = { ...style, bottom: '4px', right: '0', zIndex: 30 };
         } else {
           // 4 users
-          if (i === 0) style = { ...style, top: '0', left: '0', zIndex: 10, width: '32px', height: '32px' };
-          if (i === 1) style = { ...style, top: '0', right: '0', zIndex: 20, width: '32px', height: '32px' };
-          if (i === 2) style = { ...style, bottom: '0', left: '0', zIndex: 30, width: '32px', height: '32px' };
-          if (i === 3) style = { ...style, bottom: '0', right: '0', zIndex: 40, width: '32px', height: '32px' };
+          if (i === 0) style = { ...style, top: '0', left: '0', zIndex: 10, width: '38px', height: '38px' };
+          if (i === 1) style = { ...style, top: '0', right: '0', zIndex: 20, width: '38px', height: '38px' };
+          if (i === 2) style = { ...style, bottom: '0', left: '0', zIndex: 30, width: '38px', height: '38px' };
+          if (i === 3) style = { ...style, bottom: '0', right: '0', zIndex: 40, width: '38px', height: '38px' };
         }
 
         return (

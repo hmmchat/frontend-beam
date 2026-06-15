@@ -981,6 +981,25 @@ export default function useMeetSomeone() {
       localStorage.setItem('isVideoOn', String(isVideoOn));
       localStorage.setItem('isCamOff', String(!isVideoOn));
     }
+    const updateCamStatus = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        await fetch(API.USERS.UPDATE_PROFILE, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            videoEnabled: isVideoOn
+          })
+        });
+      } catch (err) {
+        console.error('Failed to sync cam status with backend:', err);
+      }
+    };
+    updateCamStatus();
   }, [isVideoOn]);
 
   useEffect(() => {

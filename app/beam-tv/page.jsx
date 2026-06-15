@@ -11,6 +11,7 @@ import BroadcastSkeleton from '@/components/beam-tv/BroadcastSkeleton';
 import BroadcastHud from '@/components/VideoChat/BroadcastHud';
 import ParticipantCluster from '@/components/beam-tv/ParticipantCluster';
 import RemoteVideoTile from '@/components/beam-tv/RemoteVideoTile';
+import GroupMembersModal from '@/components/VideoChat/GroupMembersModal';
 import BeamTvLayout from '@/components/beam-tv/BeamTvLayout';
 import ChatMessagesOverlay from '@/components/beam-tv/ChatMessagesOverlay';
 import BeamTVActions from '@/components/beam-tv/BeamTVActions';
@@ -18,6 +19,9 @@ import ShareSheet from '@/components/beam-tv/ShareSheet';
 import ChatProfileCard from '@/components/beam-tv/ChatProfileCard';
 import LikedBroadcastersModal from '@/components/beam-tv/LikedBroadcastersModal';
 import FavouritesPanel from '@/components/beam-tv/FavouritesPanel';
+import GiftOverlay from '@/components/VideoChat/GiftOverlay';
+import GiftAnimation from '@/components/VideoChat/GiftAnimation';
+import CoinModal from '@/components/modals/CoinModal';
 
 
 // WS URL computation (same safely fallbacks as video-chat)
@@ -125,6 +129,16 @@ function BeamTVInner() {
   const [currentBroadcast, setCurrentBroadcast] = useState(null);
   const [sessionId, setSessionId] = useState('');
   const [requestedJoin, setRequestedJoin] = useState({ roomId: '', userId: '' }); // for cancel on leave
+  const requestedJoinRef = useRef(requestedJoin);
+  useEffect(() => {
+    requestedJoinRef.current = requestedJoin;
+  }, [requestedJoin]);
+  const [coins, setCoins] = useState(0);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState(null);
+  const [animGift, setAnimGift] = useState(null);
+  const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
 
   const wsRef = useRef(null);
   const deviceRef = useRef(null);
@@ -261,6 +275,55 @@ function BeamTVInner() {
       void exitBeamTvViewer();
     };
   }, [cleanup]);
+
+  const refreshWallet = useCallback(async () => {
+    if (!isLoggedIn) return;
+    try {
+      const b = await apiRequest(API.WALLET.GET_BALANCE);
+      setCoins(typeof b?.balance === 'number' ? b.balance : 0);
+    } catch {
+      setCoins(0);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshWallet();
+    }
+  }, [isLoggedIn, refreshWallet]);
+
+  const giftParticipants = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+
+    // First use remoteStreams (active video tiles)
+    for (const s of remoteStreams) {
+      const uid = String(s.userId || '');
+      if (uid && uid !== 'broadcaster' && !uid.startsWith('producer:') && !seen.has(uid)) {
+        seen.add(uid);
+        list.push({
+          userId: uid,
+          name: s.name || 'Broadcaster',
+          displayPictureUrl: s.displayPictureUrl || ''
+        });
+      }
+    }
+
+    // Fallback/add from currentBroadcast.participants
+    const ps = currentBroadcast?.participants || [];
+    for (const p of ps) {
+      const uid = String(p?.userId || '');
+      if (uid && !seen.has(uid)) {
+        seen.add(uid);
+        list.push({
+          userId: uid,
+          name: p.username || p.name || 'Broadcaster',
+          displayPictureUrl: p.displayPictureUrl || ''
+        });
+      }
+    }
+    return list;
+  }, [remoteStreams, currentBroadcast]);
 
   // Sync HUD metrics with current broadcast
   useEffect(() => {
@@ -425,8 +488,8 @@ function BeamTVInner() {
   }, [sessionId, roomIdParam, fetchNextBroadcast, fetchBroadcastByRoomId]);
 
   const cancelJoinIfNeeded = useCallback(async () => {
-    const roomId = requestedJoin.roomId;
-    const userId = requestedJoin.userId;
+    const roomId = requestedJoinRef.current?.roomId;
+    const userId = requestedJoinRef.current?.userId;
     if (!roomId || !userId) return;
     try {
       await apiRequest(API.STREAMING.CANCEL_JOIN_REQUEST(roomId), {
@@ -436,7 +499,7 @@ function BeamTVInner() {
     } catch (_) { }
     setRequestedJoin({ roomId: '', userId: '' });
     setJoinState({ state: 'idle', message: '' });
-  }, [requestedJoin.roomId, requestedJoin.userId]);
+  }, []);
 
   const proceedToNextBroadcast = useCallback(async () => {
     if (!currentBroadcast || !sessionId) return;
@@ -991,23 +1054,91 @@ function BeamTVInner() {
       setShowAuthModal(true);
       return;
     }
-    setEngagementMsg('Gifting is currently only available during 1-on-1 and Group calls.');
+    if (giftParticipants.length === 0) {
+      setEngagementMsg('No active participants to gift.');
+      return;
+    }
+    setIsGiftModalOpen(true);
   };
+
+  const handleSendGift = useCallback(async (gift, targetUserId) => {
+    const senderId = getAuthedUserId();
+    const targetId = targetUserId || giftParticipants[0]?.userId;
+    const roomId = currentBroadcast?.roomId;
+    if (!gift || !senderId || !targetId || !roomId) return;
+
+    try {
+      const coinCost = Number(gift.price) || 0;
+      const diamondAmount = Number(gift.diamonds) || 0;
+      if (coins < coinCost) {
+        setEngagementMsg(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+        return;
+      }
+      await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
+        method: 'POST',
+        body: JSON.stringify({ diamondAmount }),
+      });
+      await apiRequest(API.STREAMING.SEND_GIFT(roomId), {
+        method: 'POST',
+        body: JSON.stringify({
+          toUserId: targetId,
+          amount: diamondAmount,
+          giftId: gift.id,
+          fromUserId: senderId,
+        }),
+      });
+      await refreshWallet();
+      const msgId = `${Date.now()}${Math.random().toString(36).slice(2, 9)}`;
+      send({
+        type: 'chat-message',
+        data: {
+          roomId,
+          message: JSON.stringify({
+            isGift: true,
+            messageId: msgId,
+            gift: {
+              name: gift.name,
+              img: gift.img,
+              imageUrl: gift.imageUrl,
+              price: gift.price,
+              diamonds: gift.diamonds,
+            },
+            targetUserId: targetId,
+            senderId,
+          }),
+        },
+      });
+      setAnimGift({
+        name: gift.name,
+        img: gift.img,
+        imageUrl: gift.imageUrl,
+        price: gift.price,
+        diamonds: gift.diamonds,
+      });
+    } catch (err) {
+      console.error('Failed to send gift:', err);
+      setEngagementMsg(err.message || 'Failed to send gift');
+    }
+    setIsGiftModalOpen(false);
+    setSelectedGiftId(null);
+  }, [coins, giftParticipants, currentBroadcast, refreshWallet, send]);
 
   // If user closes tab / navigates away while waitlisted, cancel request so waitlist count stays accurate.
   useEffect(() => {
     const onBeforeUnload = () => {
       exitBeamTvViewerKeepalive();
-      if (!requestedJoin.roomId || !requestedJoin.userId) return;
+      const rId = requestedJoinRef.current?.roomId;
+      const uId = requestedJoinRef.current?.userId;
+      if (!rId || !uId) return;
       try {
         const token = localStorage.getItem('accessToken');
-        fetch(API.STREAMING.CANCEL_JOIN_REQUEST(requestedJoin.roomId), {
+        fetch(API.STREAMING.CANCEL_JOIN_REQUEST(rId), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ userId: requestedJoin.userId }),
+          body: JSON.stringify({ userId: uId }),
           keepalive: true
         }).catch(() => { });
       } catch (_) { }
@@ -1018,7 +1149,26 @@ function BeamTVInner() {
       window.removeEventListener('beforeunload', onBeforeUnload);
       window.removeEventListener('pagehide', onBeforeUnload);
     };
-  }, [requestedJoin.roomId, requestedJoin.userId]);
+  }, []);
+
+  // Cancel waitlist join request on component unmount (client-side routing transitions)
+  useEffect(() => {
+    return () => {
+      const rId = requestedJoinRef.current?.roomId;
+      const uId = requestedJoinRef.current?.userId;
+      if (rId && uId) {
+        const token = localStorage.getItem('accessToken');
+        fetch(API.STREAMING.CANCEL_JOIN_REQUEST(rId), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ userId: uId })
+        }).catch(() => {});
+      }
+    };
+  }, []);
 
   const handleSignal = async (msg, roomId, userId) => {
     const { type, data } = msg;
@@ -1251,6 +1401,25 @@ function BeamTVInner() {
         const senderId = String(data?.userId || '');
         const message = String(data?.message || '').trim();
         if (!message) break;
+
+        // Skip control/gift JSON messages from showing up in chat list
+        let isControlMessage = false;
+        try {
+          if (message.startsWith('{')) {
+            const parsed = JSON.parse(message);
+            if (parsed && parsed.isGift) {
+              setAnimGift(parsed.gift);
+              isControlMessage = true;
+            } else if (parsed) {
+              isControlMessage = true;
+            }
+          }
+        } catch (_) { }
+
+        if (isControlMessage) {
+          break;
+        }
+
         const isParticipant = Boolean(senderId && (broadcasterIds.has(senderId) || participantIds.has(senderId)));
         const name = resolveChatName(senderId, isParticipant);
         const streamProfile = getStreamProfileByUserId(senderId);
@@ -1344,6 +1513,38 @@ function BeamTVInner() {
     }, 3000);
     return () => clearInterval(id);
   }, [status, sessionId, fetchNextBroadcast]);
+
+  // Sync waitlist requested state with server
+  useEffect(() => {
+    const userId = getAuthedUserId();
+    const roomId = currentBroadcast?.roomId;
+    if (!userId || !roomId || status !== 'connected') {
+      return;
+    }
+    let cancelled = false;
+    const checkWaitlist = async () => {
+      try {
+        const res = await apiRequest(API.STREAMING.GET_WAITLIST(roomId));
+        if (cancelled) return;
+        const list = Array.isArray(res?.waitlist) ? res.waitlist : [];
+        const isWaitlisted = list.some(entry => String(entry.userId || entry) === String(userId));
+        if (isWaitlisted) {
+          setJoinState({ state: 'requested', message: 'Requested to join. Waiting for host…' });
+          setRequestedJoin({ roomId, userId: String(userId) });
+        } else {
+          setJoinState(prev => prev.state === 'requested' ? { state: 'idle', message: '' } : prev);
+        }
+      } catch (_) { }
+    };
+    checkWaitlist();
+
+    const intervalId = setInterval(checkWaitlist, 10000); // Check waitlist status every 10 seconds
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [currentBroadcast?.roomId, status, isLoggedIn, remoteStreams.length]);
 
   // Liveness watcher: while watching, verify the broadcast still exists server-side.
   // Covers silent broadcaster death (phone off / browser killed) where no
@@ -1497,6 +1698,25 @@ function BeamTVInner() {
     const showAddFriend = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
     const showFollow = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
     const { screenStream: tileScreen, ...tileRest } = tile || {};
+    const totalTiles = remoteStreams.length;
+    const isRightTile = totalTiles === 1 ||
+      (totalTiles === 2 && idx === 1) ||
+      (totalTiles === 3 && (idx === 1 || idx === 2)) ||
+      (totalTiles === 4 && (idx === 1 || idx === 3));
+
+    let borderBottomClass = undefined;
+    if (totalTiles === 3) {
+      if (idx === 1) {
+        borderBottomClass = "md:bottom-4 bottom-18";
+      }
+    } else if (totalTiles >= 4) {
+      if (idx === 0 || idx === 1) {
+        borderBottomClass = "md:bottom-4 bottom-2";
+      } else {
+        borderBottomClass = "md:bottom-24 bottom-18";
+      }
+    }
+
     return (
       <RemoteVideoTile
         key={`beam-tile-${uid}-${idx}`}
@@ -1515,7 +1735,11 @@ function BeamTVInner() {
         allParticipants={remoteStreams}
         isFirst={idx === 0}
         tileIndex={idx}
-        totalTiles={remoteStreams.length}
+        totalTiles={totalTiles}
+        isGiftModalOpen={isGiftModalOpen}
+        isRightTile={isRightTile}
+        borderBottomClass={borderBottomClass}
+        onAvatarClick={() => setShowGroupMembersModal(true)}
       />
     );
   };
@@ -1639,106 +1863,137 @@ function BeamTVInner() {
           )}
 
           {status === 'connected' && remoteStreams.length > 0 && (
-            <div className="w-full h-full relative">
+            <>
+              <div className="w-full h-full relative">
 
 
-              <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
+                <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
 
 
 
-              {/* Sound toggle */}
-              <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
-                <button
-                  type="button"
-                  onClick={toggleSound}
-                  className={clsx(
-                    'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
-                    soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-                  )}
-                  title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
-                >
-                  {soundEnabled ? '🔊' : '🔇'}
-                  <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
-                </button>
-              </div>
-
-              {/* Realtime chat overlay */}
-              <ChatMessagesOverlay
-                chatMessages={chatMessages}
-                chatProfilesByUserId={chatProfilesByUserId}
-                openChatProfileSheet={openChatProfileSheet}
-              />
-              {/* Bottom Right Actions: Chat Input, Join, Gift */}
-              <BeamTVActions
-                viewerChatInput={viewerChatInput}
-                setViewerChatInput={setViewerChatInput}
-                sendViewerChat={sendViewerChat}
-                joinState={joinState}
-                handleJoinBroadcast={handleJoinBroadcast}
-                onGiftClick={handleGiftClick}
-              />
-
-              {engagementMsg && (
-                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-black/70 border border-white/15 text-white/80 text-xs font-bold px-4 py-2 rounded-full">
-                  {engagementMsg}
+                {/* Sound toggle */}
+                <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
+                  <button
+                    type="button"
+                    onClick={toggleSound}
+                    className={clsx(
+                      'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
+                      soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                    )}
+                    title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
+                  >
+                    {soundEnabled ? '🔊' : '🔇'}
+                    <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
+                  </button>
                 </div>
-              )}
+
+                {/* Realtime chat overlay */}
+                <ChatMessagesOverlay
+                  chatMessages={chatMessages}
+                  chatProfilesByUserId={chatProfilesByUserId}
+                  openChatProfileSheet={openChatProfileSheet}
+                />
+                {/* Bottom Right Actions: Chat Input, Join, Gift */}
+                {!isGiftModalOpen && (
+                  <BeamTVActions
+                    viewerChatInput={viewerChatInput}
+                    setViewerChatInput={setViewerChatInput}
+                    sendViewerChat={sendViewerChat}
+                    joinState={joinState}
+                    handleJoinBroadcast={handleJoinBroadcast}
+                    onGiftClick={handleGiftClick}
+                  />
+                )}
+
+                {engagementMsg && (
+                  <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-black/70 border border-white/15 text-white/80 text-xs font-bold px-4 py-2 rounded-full">
+                    {engagementMsg}
+                  </div>
+                )}
 
 
 
-              {/* Viewer share sheet */}
-              {shareOpen && (
-                <ShareSheet
-                  shareUrl={shareUrl}
+                {/* Viewer share sheet */}
+                {shareOpen && (
+                  <ShareSheet
+                    shareUrl={shareUrl}
+                    copyShareUrl={copyShareUrl}
+                    setShareOpen={setShareOpen}
+                  />
+                )}
+
+                {/* Chat profile card (friend-request only) */}
+                {chatProfileSheet.open && chatProfileSheet.user && (
+                  <ChatProfileCard
+                    user={chatProfileSheet.user}
+                    isLoggedIn={isLoggedIn}
+                    friendRequestSent={Boolean(friendRequestSentTo[String(chatProfileSheet.user.id || '')])}
+                    onSendFriendRequest={handleSendFriendRequest}
+                    onClose={() => setChatProfileSheet({ open: false, user: null })}
+                  />
+                )}
+
+                {/* Broadcast HUD (Eye, Heart, Share) */}
+                <BroadcastHud
+                  isBroadcasting={true}
+                  variant="beam-tv"
+                  className="mr-20"
+                  broadcastHud={broadcastHud}
+                  setBroadcastHud={setBroadcastHud}
+                  setShowWaitlist={openLikedModal}
+                  handleShareBroadcastLink={handleShare}
                   copyShareUrl={copyShareUrl}
-                  setShareOpen={setShareOpen}
                 />
-              )}
 
-              {/* Chat profile card (friend-request only) */}
-              {chatProfileSheet.open && chatProfileSheet.user && (
-                <ChatProfileCard
-                  user={chatProfileSheet.user}
-                  isLoggedIn={isLoggedIn}
-                  friendRequestSent={Boolean(friendRequestSentTo[String(chatProfileSheet.user.id || '')])}
-                  onSendFriendRequest={handleSendFriendRequest}
-                  onClose={() => setChatProfileSheet({ open: false, user: null })}
+                {/* Liked Users Modal (Beamcasting rn) */}
+                {showLikedModal && (
+                  <LikedBroadcastersModal
+                    likedBroadcasters={likedBroadcasters}
+                    onClose={() => setShowLikedModal(false)}
+                    onSelectBroadcaster={(b) => {
+                      setShowLikedModal(false);
+                      router.push(`/beam-tv?roomId=${b.roomId}`);
+                    }}
+                  />
+                )}
+
+                <SignUpModal
+                  isOpen={showAuthModal}
+                  onClose={() => setShowAuthModal(false)}
                 />
-              )}
 
-              {/* Broadcast HUD (Eye, Heart, Share) */}
-              <BroadcastHud
-                isBroadcasting={true}
-                variant="beam-tv"
-                className="mr-20"
-                broadcastHud={broadcastHud}
-                setBroadcastHud={setBroadcastHud}
-                setShowWaitlist={openLikedModal}
-                handleShareBroadcastLink={handleShare}
-                copyShareUrl={copyShareUrl}
-              />
+                <GiftOverlay
+                  isOpen={isGiftModalOpen}
+                  onClose={() => { setIsGiftModalOpen(false); setSelectedGiftId(null); }}
+                  onOpenCoinModal={() => setIsCoinModalOpen(true)}
+                  onSelectGift={(gift) => setSelectedGiftId(gift.id)}
+                  selectedGiftId={selectedGiftId}
+                  coins={coins}
+                  participants={giftParticipants}
+                  onSendGift={handleSendGift}
 
-              {/* Liked Users Modal (Beamcasting rn) */}
-              {showLikedModal && (
-                <LikedBroadcastersModal
-                  likedBroadcasters={likedBroadcasters}
-                  onClose={() => setShowLikedModal(false)}
-                  onSelectBroadcaster={(b) => {
-                    setShowLikedModal(false);
-                    router.push(`/beam-tv?roomId=${b.roomId}`);
-                  }}
                 />
-              )}
 
-              <SignUpModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-              />
+                <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
 
-
-
-
-            </div>
+                <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+                <GroupMembersModal
+                  isOpen={showGroupMembersModal}
+                  onClose={() => setShowGroupMembersModal(false)}
+                  remoteStreams={remoteStreams}
+                  getRemoteTileProfile={(s) => ({
+                    name: s.name || 'Broadcaster',
+                    displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png',
+                    city: s.city || ''
+                  })}
+                  friendRequestSentTo={friendRequestSentTo}
+                  friendshipWithRemote={{}}
+                  handleSendFriendRequest={handleSendFriendRequest}
+                  reportedUserIds={reportedUserIds}
+                  handleReportUser={handleReportUser}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

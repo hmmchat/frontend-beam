@@ -128,7 +128,6 @@ export default function FacecardDisplay({ user, age, setView, router }) {
                 }}
                 currentIndex={currentImageIndex}
                 onIndexChange={setCurrentImageIndex}
-                hideMenu
               />
             </div>
 

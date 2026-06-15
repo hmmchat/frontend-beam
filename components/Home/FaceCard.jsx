@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { subscribePresenceRealtime } from "@/lib/presence-realtime";
+import { API } from "@/lib/api";
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -56,6 +58,77 @@ const FaceCard = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const normalizedPathname = pathname?.replace(/\/$/, "");
+  const isCardsPage = normalizedPathname === "/cards";
+  const isFacecardPage = normalizedPathname === "/facecard";
+  const isCardsOrFacecardPage = isCardsPage || isFacecardPage;
+
+  // Realtime presence state (mirrors FaceCard4 pattern)
+  const [realtimeStatus, setRealtimeStatus] = useState("");
+  const [realtimeVideoEnabled, setRealtimeVideoEnabled] = useState(null);
+  const [realtimeVideoOn, setRealtimeVideoOn] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setRealtimeStatus(user.status || user.userStatus || "");
+    setRealtimeVideoEnabled(user.videoEnabled);
+    setRealtimeVideoOn(user.videoOn);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const targetUserId = user.userId || user.id || user._id;
+    if (!targetUserId) return;
+
+    const unsub = subscribePresenceRealtime((payload) => {
+      if (payload && String(payload.userId) === String(targetUserId)) {
+        if (payload.status !== undefined) {
+          setRealtimeStatus(payload.status);
+        }
+        if (payload.videoEnabled !== undefined) {
+          setRealtimeVideoEnabled(payload.videoEnabled);
+        }
+        if (payload.videoOn !== undefined) {
+          setRealtimeVideoOn(payload.videoOn);
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const targetUserId = user.userId || user.id || user._id;
+    if (!targetUserId) return;
+
+    const poll = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const res = await fetch(`${API.USERS.GET_USER(targetUserId)}?fields=videoEnabled,status`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user?.videoEnabled !== undefined) {
+            setRealtimeVideoEnabled(data.user.videoEnabled);
+          }
+          if (data?.user?.status !== undefined) {
+            setRealtimeStatus(data.user.status);
+          }
+        }
+      } catch (err) {
+        // ignore errors
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   if (!user) return null;
 
   // Compute report layer dynamically if not directly available
@@ -87,15 +160,19 @@ const FaceCard = ({
   const artist = mp?.artist || mp?.artistName || "";
   const albumArt = mp?.albumArtUrl || "/spotify1.png";
 
-  // Status-driven header badges/icons
-  const rawStatus = String(user.status || user.userStatus || "").toUpperCase();
+  // Status-driven header badges/icons — use realtime values
+  const statusToUse = realtimeStatus || user.status || user.userStatus || "";
+  const rawStatus = String(statusToUse).toUpperCase();
   const inSquad = rawStatus.includes("IN_SQUAD") || rawStatus === "SQUAD";
   const isBroadcasting =
     Boolean(user.isBroadcasting || user.broadcastUrl) ||
     rawStatus.includes("IN_BROADCAST") ||
     rawStatus === "BROADCAST";
-  // Default to ON unless explicitly false.
-  const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
+
+  const videoEnabledToUse = realtimeVideoEnabled !== null && realtimeVideoEnabled !== undefined ? realtimeVideoEnabled : user.videoEnabled;
+  const videoOnToUse = realtimeVideoOn !== null && realtimeVideoOn !== undefined ? realtimeVideoOn : user.videoOn;
+  // Show camera ON only when explicitly true. If undefined/unknown, show OFF.
+  const isVideoOn = videoEnabledToUse === true && videoOnToUse !== false;
 
   // Combine all photos
   const allPhotos = getFacecardPhotos(user);
@@ -154,13 +231,25 @@ const FaceCard = ({
               <IoRadio className="h-5 w-5" />
             </span>
           )}
+          {!isCardsOrFacecardPage && (
+            <span
+              className="flex h-6 w-6 items-center justify-center text-white"
+              title={isVideoOn ? "Video on" : "Video off"}
+            >
+              {isVideoOn ? (
+                <IoVideocam className="h-5 w-5" />
+              ) : (
+                <IoVideocamOff className="h-5 w-5" />
+              )}
+            </span>
+          )}
 
 
 
 
 
           {showReportUi && <Report layer={reportLayer} />}
-          {!hideMenu && (
+          {!hideMenu && !isFacecardPage && (
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center text-white"
@@ -234,18 +323,20 @@ const FaceCard = ({
                       <IoRadio className="h-5 w-5" />
                     </span>
                   )}
-                  {/* <span
-                    className="flex h-6 w-6 items-center justify-center text-white"
-                    title={isVideoOn ? "Video on" : "Video off"}
-                  >
-                    {isVideoOn ? (
-                      <IoVideocam className="h-5 w-5" />
-                    ) : (
-                      <IoVideocamOff className="h-5 w-5" />
-                    )}
-                  </span> */}
+                  {!isCardsOrFacecardPage && (
+                    <span
+                      className="flex h-6 w-6 items-center justify-center text-white"
+                      title={isVideoOn ? "Video on" : "Video off"}
+                    >
+                      {isVideoOn ? (
+                        <IoVideocam className="h-5 w-5" />
+                      ) : (
+                        <IoVideocamOff className="h-5 w-5" />
+                      )}
+                    </span>
+                  )}
                   {showReportUi && <Report layer={reportLayer} />}
-                  {!hideMenu && (
+                  {!hideMenu && !isFacecardPage && (
                     <button
                       type="button"
                       className="flex h-6 w-6 items-center justify-center text-white"

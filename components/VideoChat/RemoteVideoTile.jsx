@@ -55,6 +55,7 @@ export default function RemoteVideoTile({
   activeGiftLabel,
   activeLocalGiftLabel,
   giftAnimationActive = false,
+  isVideoOn = true,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -208,8 +209,20 @@ export default function RemoteVideoTile({
             className={clsx('absolute', 'bottom-4', 'right-4', 'z-[5]', 'aspect-video', 'max-h-[32%]', 'w-[32%]', 'max-w-[220px]', 'rounded-xl', 'border-2', 'border-white/50', 'object-cover', 'shadow-2xl')}
           />
         </>
+      ) : !isVideoOn ? (
+        <div className="absolute inset-0 w-full h-full bg-gray-950 flex flex-col items-center justify-center">
+          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/30 shadow-2xl bg-[#0d0726]">
+            <img
+              src={displayPictureUrl || "/assets/ico.png"}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+          </div>
+          <span className="text-white/70 text-xs md:text-sm mt-4 tracking-wider font-semibold font-outfit bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10">
+            Camera is off
+          </span>
+        </div>
       ) : (
-
         <video
           ref={videoRef}
           autoPlay

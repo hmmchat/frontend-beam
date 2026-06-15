@@ -21,6 +21,7 @@ import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
 import clsx from "clsx";
 import { FaUserPlus } from "react-icons/fa6";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
+import { RiUserAddLine } from "react-icons/ri";
 
 
 /** Backend ConversationQuerySchema.filter */
@@ -2018,10 +2019,11 @@ export default function Inbox() {
             "w-full",
             "flex-col",
             "rounded-[48px]",
-            "md:ring-2",
-            "md:ring-white/50",
-            "md:ring-offset-2",
-            "md:ring-offset-purple-900/90",
+            "md:border-2",
+            "md:border-white/50",
+            "rounded-[58px]",
+
+
             "overflow-hidden",
             "bg-transparent",
             "md:h-[78vh]",
@@ -2098,10 +2100,9 @@ export default function Inbox() {
                           "my-3",
                           "p-4",
                           "rounded-[24px]",
-                          "bg-[#25123e]/90",
-                          "border",
-                          "border-white/15",
-                          "backdrop-blur-md",
+                          "bg-[#0A032D]/20",
+
+
                           "flex",
                           "items-center",
                           "justify-between",
@@ -2109,8 +2110,8 @@ export default function Inbox() {
                         )}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 shrink-0">
-                            <FaUserPlus className="text-white text-xl" />
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5  shrink-0">
+                            <RiUserAddLine className="text-white text-xl" />
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-white text-sm md:text-base tracking-wide">

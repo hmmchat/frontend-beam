@@ -93,7 +93,7 @@ export default function ThreadHeader({
             'px-1 py-1',
             'rounded-full',
             'border border-white/30',
-            'pr-2',
+            'pr-5',
             'w-fit max-w-full cursor-pointer hover:bg-white/5 transition-all active:scale-[0.98]'
           )}
         >

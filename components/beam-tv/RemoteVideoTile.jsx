@@ -84,6 +84,34 @@ export default function RemoteVideoTile({
     return ['rounded-[1.5rem]', 'md:rounded-[4rem]'];
   })();
 
+  const isBottomTile = totalTiles > 1 && (
+    (totalTiles === 2 && tileIndex === 1) ||
+    (totalTiles === 3 && (tileIndex === 1 || tileIndex === 2)) ||
+    (totalTiles >= 4 && (tileIndex === 2 || tileIndex === 3))
+  );
+
+  const getNameBottomClass = () => {
+    if (borderBottomClass) {
+      if (borderBottomClass.includes("md:bottom-24")) return "md:bottom-32";
+      if (borderBottomClass.includes("md:bottom-4")) return "md:bottom-10";
+    }
+    if (isRightTile) {
+      return isGiftModalOpen ? "md:bottom-36" : "md:bottom-32";
+    }
+    return "md:bottom-10";
+  };
+
+  const getPhoneNameBottomClass = () => {
+    if (borderBottomClass) {
+      if (borderBottomClass.includes("bottom-18")) return "bottom-24";
+      if (borderBottomClass.includes("bottom-2")) return "bottom-8";
+    }
+    if (isRightTile) {
+      return "bottom-24";
+    }
+    return "bottom-8";
+  };
+
   return (
     <div
       className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', roundedClasses, 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl', 'isolate')}
@@ -179,6 +207,19 @@ export default function RemoteVideoTile({
               : "border-white/30 md:bottom-4 bottom-2")
         )}
       />
+
+      {name && (
+        <span
+          className={clsx(
+            "absolute z-30 text-white md:bottom-12 font-semibold text-sm md:text-lg select-none pointer-events-none font-outfit text-white/60",
+            isBottomTile
+              ? ["top-6 md:top-10 right-6 md:right-12", getNameBottomClass(), "md:right-8 md:top-auto"]
+              : [getPhoneNameBottomClass(), "right-6", getNameBottomClass(), "md:right-12"]
+          )}
+        >
+          {name}
+        </span>
+      )}
     </div>
   );
 }

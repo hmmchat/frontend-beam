@@ -414,8 +414,12 @@ function OfflineCardsContent() {
                   }}
                   currentIndex={currentImageIndex}
                   onIndexChange={setCurrentImageIndex}
-                  className=""
+                  className="md:[@media(max-height:1200px)]:mt-[1vh]   md:[@media(max-height:1200px)]:scale-[0.90]
+      md:[@media(max-height:1000px)]:scale-[0.85]
+      md:[@media(max-height:800px)]:scale-[0.81] md:[@media(max-height:800px)]:mt-[-3vh]
+      md:[@media(max-height:700px)]:scale-[0.77] md:[@media(max-height:700px)]:mt-[-5vh]"
                   onBlockOrReportSuccess={handlePass}
+
                 />
               </div>
 
@@ -450,8 +454,8 @@ function OfflineCardsContent() {
                           isAlreadyFriend
                             ? "border-pink-400/60 bg-pink-500/20 cursor-default"
                             : connectSent
-                            ? "border-green-400/60 bg-green-500/20 cursor-default"
-                            : "border-white/40 hover:bg-white/10 active:scale-95"
+                              ? "border-green-400/60 bg-green-500/20 cursor-default"
+                              : "border-white/40 hover:bg-white/10 active:scale-95"
                         )}
                         title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
                       >
@@ -542,8 +546,8 @@ function OfflineCardsContent() {
                         isAlreadyFriend
                           ? 'border-pink-400/60 bg-pink-500/20 cursor-default'
                           : connectSent
-                          ? 'border-green-400/60 bg-green-500/20 cursor-default'
-                          : 'border-white/40 hover:bg-white/10 active:scale-95'
+                            ? 'border-green-400/60 bg-green-500/20 cursor-default'
+                            : 'border-white/40 hover:bg-white/10 active:scale-95'
                       )}
                       title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
                       aria-label="Connect"

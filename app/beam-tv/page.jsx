@@ -1874,7 +1874,7 @@ function BeamTVInner() {
 
 
                 {/* Sound toggle */}
-                <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-40">
+                <div className="absolute bottom-4 md:bottom-12 left-4 md:left-12 z-40">
                   <button
                     type="button"
                     onClick={toggleSound}

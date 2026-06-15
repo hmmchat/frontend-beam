@@ -15,14 +15,14 @@ export default function BroadcastHud({
   return (
     <div className={`absolute left-8 md:left-12 top-28 md:top-32 z-40 flex flex-col gap-3 ${className || ''}`}>
       {/* Eye (viewer count) + Waitlist + Share */}
-      <div className="w-10 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden md:py-5">
+      <div className="md:w-10 w-8 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden md:py-5">
         <button
           type="button"
           className="w-full h-14 flex items-center justify-center text-white/90"
           title="Viewers"
         >
           <div className="flex flex-col items-center leading-none">
-            <div className="text-[18px]"><img src="/eye-line.svg" className="w-5 h-5" alt="" /></div>
+            <div className="text-[18px]"><img src="/eye-line.svg" className="md:w-5 md:h-5 w-4 h-4" alt="" /></div>
             <div className="text-[11px] font-black mt-1">{broadcastHud.viewerCount}</div>
           </div>
         </button>
@@ -35,7 +35,7 @@ export default function BroadcastHud({
           title={variant === 'beam-tv' ? 'Liked Broadcasters' : 'Waitlist'}
         >
           <div className="flex flex-col items-center leading-none">
-            <div className="text-[18px]"><img src={variant === 'beam-tv' ? '/heart.svg' : '/3queue.svg'} className="w-5 h-5" alt="" /></div>
+            <div className="text-[18px]"><img src={variant === 'beam-tv' ? '/heart.svg' : '/3queue.svg'} className="md:w-5 md:h-5 w-4 h-4" alt="" /></div>
             {variant !== 'beam-tv' && (
               <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
             )}

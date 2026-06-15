@@ -113,7 +113,7 @@ export default function FacecardEditor({
                       fill="none"
                     >
                       <g
-                        filter="url(#filter0_f_11224_6532)"
+                        filter="url(#filter_mobile_progress_glow)"
                         style={{ mixBlendMode: "plus-lighter" }}
                       >
                         <path
@@ -124,7 +124,7 @@ export default function FacecardEditor({
 
                       <defs>
                         <filter
-                          id="filter0_f_11224_6532"
+                          id="filter_mobile_progress_glow"
                           x="-0.00164413"
                           y="0.00030899"
                           width="280.136"
@@ -141,7 +141,7 @@ export default function FacecardEditor({
                           />
                           <feGaussianBlur
                             stdDeviation="10.3329"
-                            result="effect1_foregroundBlur_11224_6532"
+                            result="effect1_foregroundBlur_mobile"
                           />
                         </filter>
                       </defs>
@@ -898,7 +898,7 @@ export default function FacecardEditor({
                       preserveAspectRatio="xMidYMid meet"
                     >
                       <g
-                        filter="url(#filter0_f_11224_6532)"
+                        filter="url(#filter_desktop_progress_glow)"
                         style={{ mixBlendMode: "plus-lighter" }}
                       >
                         <path
@@ -909,7 +909,7 @@ export default function FacecardEditor({
 
                       <defs>
                         <filter
-                          id="filter0_f_11224_6532"
+                          id="filter_desktop_progress_glow"
                           x="-0.00164413"
                           y="0.00030899"
                           width="280.136"
@@ -926,7 +926,7 @@ export default function FacecardEditor({
                           />
                           <feGaussianBlur
                             stdDeviation="10.3329"
-                            result="effect1_foregroundBlur_11224_6532"
+                            result="effect1_foregroundBlur_desktop"
                           />
                         </filter>
                       </defs>
@@ -977,17 +977,17 @@ export default function FacecardEditor({
                 {user?.musicPreference ? (
                   /* when music is selected */
                   <div className={clsx('absolute', '-right-8', 'z-10')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="134" height="100" viewBox="0 0 130 88" fill="none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="90" viewBox="0 0 130 88" fill="none">
                       <path d="M127.589 1.93553L52.3248 1.93551L11.4682 73.876" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
                       <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(-1.03187e-07 1 1 1.03187e-07 3.74761e-06 71.542)" fill="white" fillOpacity="0.5" />
                     </svg>
                   </div>
                 ) : (
                   /* when music is not selected */
-                  <div className={clsx('absolute', '-right-18', 'z-10', 'transform')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="134" height="100" viewBox="0 0 138 88" fill="none">
+                  <div className="absolute -right-16 z-10 ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="124" height="130" viewBox="0 0 154 140" fill="none">
                       <path d="M111.059 1.93613L45.5457 38.9875L45.3976 121.72" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
-                      <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 36.2666 125.335)" fill="white" fillOpacity="0.5" />
+                      <circle cx="8.06439" cy="8.06439" r="8.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 34.2666 125.335)" fill="white" fillOpacity="0.5" />
                     </svg>
                   </div>
                 )}
@@ -998,7 +998,7 @@ export default function FacecardEditor({
                   <div className={clsx('absolute', 'inset-0', 'rounded-full', 'border-[2px]', 'border-white/80')} />
                   <div className={clsx('absolute', 'inset-[2.2px]', 'rounded-full', 'border-[2px]', 'border-white/50')} />
 
-                  <div className={clsx('absolute', 'inset-3', 'rounded-full', 'overflow-hidden', 'border-2', 'border-white/30', 'shadow-2xl', 'animate-spin-slow', 'flex', 'items-center', 'justify-center')}>
+                  <div className={clsx('absolute', 'inset-3', 'rounded-full', 'overflow-hidden', 'border-2', 'border-white/30', 'animate-spin-slow', 'flex', 'items-center', 'justify-center')}>
                     {user?.musicPreference?.albumArtUrl ? (
                       <img
                         src={user.musicPreference.albumArtUrl}
@@ -1006,7 +1006,7 @@ export default function FacecardEditor({
                         alt="Album Art"
                       />
                     ) : (
-                      <span className={clsx('text-6xl', 'opacity-20', 'text-white')}>+</span>
+                      <span className={clsx('text-6xl', 'opacity-80', 'text-white')}><img src="/assets/plus.png" alt="" /></span>
                     )}
                   </div>
 
@@ -1065,7 +1065,7 @@ export default function FacecardEditor({
         </div>
 
         <p className={clsx('font-outfit', 'md:w-[90%]', 'mt-3', 'text-xs', 'font-thin', 'text-right')}>Facecard Creation tool V1</p>
-      </section>
+      </section >
 
 
       <style jsx>{`
@@ -1152,7 +1152,7 @@ export default function FacecardEditor({
           -webkit-mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
         }
       `}</style>
-    </div>
+    </div >
   );
 }
 

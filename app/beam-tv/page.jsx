@@ -1167,7 +1167,7 @@ function BeamTVInner() {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
           body: JSON.stringify({ userId: uId })
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
   }, []);
@@ -1805,7 +1805,7 @@ function BeamTVInner() {
   }, [status, trySwipeNext]);
 
   return (
-    <div className="relative h-screen w-screen flex flex-col font-sans overflow-hidden">
+    <div className="relative h-dvh w-screen flex flex-col font-sans overflow-hidden">
       <div
         className="fixed inset-0 -z-10"
         style={{

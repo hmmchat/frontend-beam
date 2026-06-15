@@ -85,10 +85,13 @@ export default function RemoteVideoTile({
   })();
 
   return (
-    <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', roundedClasses, 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl')}>
+    <div
+      className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', roundedClasses, 'overflow-hidden', 'bg-gray-900', 'border', 'border-white/5', 'shadow-2xl', 'isolate')}
+      style={{ transform: 'translateZ(0)' }}
+    >
       {/* Background backdrop image shown when video is shrunk/active tray */}
       <div
-        className="absolute inset-0 z-0 transition-opacity duration-500"
+        className={clsx("absolute inset-0 z-0 transition-opacity duration-500", roundedClasses)}
         style={{
           backgroundImage: "url(/assets/mb.jpg)",
           backgroundRepeat: "repeat",
@@ -105,7 +108,8 @@ export default function RemoteVideoTile({
             muted
             className={clsx(
               "absolute inset-0 z-0 h-full w-full bg-black object-contain transition-all duration-500",
-              (isGiftModalOpen && isRightTile) ? "md:h-[87vh] h-[45vh]" : "h-full"
+              (isGiftModalOpen && isRightTile) ? "md:h-[87vh] h-[45vh]" : "h-full",
+              roundedClasses
             )}
           />
           <video
@@ -126,13 +130,14 @@ export default function RemoteVideoTile({
             "h-full w-full min-h-0 object-cover relative z-10 transition-all duration-500",
             (isGiftModalOpen && isRightTile)
               ? "md:h-[85vh] rounded-b-[1.5rem] md:rounded-b-[4rem]"
-              : "h-full"
+              : "h-full",
+            roundedClasses
           )}
         />
       )}
 
       {isFirst && (
-        <div className="absolute top-3 md:top-8 left-3 md:left-6 right-3 md:right-5 flex items-start justify-between z-10">
+        <div className="absolute top-3 md:top-8 left-3 md:left-6 right-6 md:right-16 flex items-start justify-between z-10">
           <div className="flex items-center">
             <div
               className="flex items-center px-1 md:px-3 py-1 md:py-2 rounded-[2.5rem] min-w-0 md:max-w-[320px] pointer-events-auto cursor-pointer active:scale-95 transition-transform"
@@ -146,7 +151,18 @@ export default function RemoteVideoTile({
             </div>
           </div>
 
-
+          <div className="text-[12px] md:text-lg mt-3 text-xs font-black leading-none">
+            beam
+            <span
+              className="block text-right uppercase text-white
+             font-['Permanent_Marker']
+             -rotate-10
+             font-normal"
+              style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
+            >
+              tv
+            </span>
+          </div>
         </div>
       )}
 

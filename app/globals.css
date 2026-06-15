@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -26,6 +27,16 @@
 
 .font-sigmar {
   font-family: var(--font-sigmar);
+}
+
+.permanent-marker-regular {
+  font-family: "Permanent Marker", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+[class*="font-['Permanent_Marker']"] {
+  font-family: "Permanent Marker", cursive;
 }
 
 

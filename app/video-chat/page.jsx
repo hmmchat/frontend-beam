@@ -172,7 +172,7 @@ function VideoChatContent() {
           <>
             <VideoChatMask slots={2} giftAnimationActive={hasActiveGift || hasActiveDare} />
             <RemoteVideoTile
-              className={clsx('h-[58%]', 'md:h-auto', 'md:flex-1')}
+              className={clsx('h-[58%]', 'md:h-auto', 'md:flex-1', 'rounded-t-[1.5rem]', 'md:rounded-[60px]')}
               key={`remote-${remoteStreams[0].userId}`}
               userId={remoteStreams[0].userId}
               isReported={reportedUserIds.has(remoteStreams[0].userId)}
@@ -196,8 +196,8 @@ function VideoChatContent() {
               activeLocalGiftLabel={activeLocalGiftLabel}
               giftAnimationActive={hasActiveGift || hasActiveDare}
             />
-            <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-              <LocalVideoSection {...localVideoProps} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
+            <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'isolate')} style={{ transform: 'translateZ(0)' }}>
+              <LocalVideoSection {...localVideoProps} roundedClass="rounded-b-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
             </div>
           </>
 
@@ -207,7 +207,7 @@ function VideoChatContent() {
           <>
             <VideoChatMask slots={3} giftAnimationActive={hasActiveGift || hasActiveDare} />
             <RemoteVideoTile
-              className={clsx('h-[58.2%]', 'md:h-auto', 'md:flex-1')}
+              className={clsx('h-[58.2%]', 'md:h-auto', 'md:flex-1', 'rounded-t-[1.5rem]', 'md:rounded-[60px]')}
               key={`remote-${remoteStreams[0].userId}`}
               userId={remoteStreams[0].userId}
               isReported={reportedUserIds.has(remoteStreams[0].userId)}
@@ -243,7 +243,7 @@ function VideoChatContent() {
               giftAnimationActive={hasActiveGift || hasActiveDare}
             />
             <div className={clsx('flex', 'min-h-0', 'min-w-0', 'flex-1', 'md:flex-col', 'md:gap-2')}>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative')}>
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-bl-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'isolate')} style={{ transform: 'translateZ(0)' }}>
                 <RemoteVideoTile
                   key={remoteStreams[1] ? `remote-${remoteStreams[1].userId}` : 'summoning-slot'}
                   userId={remoteStreams[1]?.userId ?? ''}
@@ -264,7 +264,7 @@ function VideoChatContent() {
                   gifts={getRemoteGifts(remoteStreams[1]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   onGiftDismissStart={handleRemoteGiftDismissStart}
-                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
+                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-bl-[1.5rem]')}
                   showMinusButton={!!remoteStreams[1] && callRoles.isLocalHost}
                   onMinus={remoteStreams[1] ? () => handleKickRemote(remoteStreams[1].userId) : undefined}
                   activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1]?.userId)}
@@ -277,8 +277,8 @@ function VideoChatContent() {
                   />
                 )}
               </div>
-              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
+              <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-br-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'isolate')} style={{ transform: 'translateZ(0)' }}>
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} roundedClass="rounded-br-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
               </div>
             </div>
           </>
@@ -288,8 +288,10 @@ function VideoChatContent() {
           /* ---- Grid Layout (4 participants): 2×2 ---- */
           <>
             <VideoChatMask slots={4} giftAnimationActive={hasActiveGift || hasActiveDare} />
-            <div className={clsx('grid', 'min-h-0', 'min-w-0', 'flex-1', 'grid-cols-2', 'grid-rows-[58.2%]', 'md:grid-rows-2', 'md:gap-2')}>              <RemoteVideoTile
-              key={`remote-${remoteStreams[0].userId}`}
+            <div className={clsx('grid', 'min-h-0', 'min-w-0', 'flex-1', 'grid-cols-2', 'grid-rows-[58.2%]', 'md:grid-rows-2', 'md:gap-2')}>
+              <RemoteVideoTile
+                className={clsx('flex-1', 'rounded-tl-[1.5rem]', 'md:rounded-[60px]')}
+                key={`remote-${remoteStreams[0].userId}`}
               userId={remoteStreams[0].userId}
               isReported={reportedUserIds.has(remoteStreams[0].userId)}
               onReportUser={handleReportUser}
@@ -322,6 +324,7 @@ function VideoChatContent() {
               giftAnimationActive={hasActiveGift || hasActiveDare}
             />
               <RemoteVideoTile
+                className={clsx('flex-1', 'rounded-tr-[1.5rem]', 'md:rounded-[60px]')}
                 key={`remote-${remoteStreams[1].userId}`}
                 userId={remoteStreams[1].userId}
                 isReported={reportedUserIds.has(remoteStreams[1].userId)}
@@ -347,7 +350,7 @@ function VideoChatContent() {
                 onMinus={() => handleKickRemote(remoteStreams[1].userId)}
                 activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1].userId)}
               />
-              <div className="relative">
+              <div className={clsx('relative', 'rounded-bl-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'isolate')} style={{ transform: 'translateZ(0)' }}>
                 <RemoteVideoTile
                   key={remoteStreams[2] ? `remote-${remoteStreams[2].userId}` : 'summoning-slot-2'}
                   userId={remoteStreams[2]?.userId ?? ''}
@@ -367,7 +370,7 @@ function VideoChatContent() {
                   gifts={getRemoteGifts(remoteStreams[2]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   onGiftDismissStart={handleRemoteGiftDismissStart}
-                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
+                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-bl-[1.5rem]')}
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}
                   activeRemoteDareText={getRemoteActiveDareText(remoteStreams[2]?.userId)}
@@ -380,8 +383,8 @@ function VideoChatContent() {
                   />
                 )}
               </div>
-              <div className={clsx('relative', 'min-h-0', 'min-w-0', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5')}>
-                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
+              <div className={clsx('relative', 'min-h-0', 'min-w-0', 'rounded-br-[1.5rem]', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'isolate')} style={{ transform: 'translateZ(0)' }}>
+                <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} roundedClass="rounded-br-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
               </div>
             </div>
           </>

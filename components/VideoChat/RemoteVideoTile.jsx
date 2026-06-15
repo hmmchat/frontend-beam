@@ -169,11 +169,14 @@ export default function RemoteVideoTile({
     if (p) playSafely(p);
   }, [stream, screenShareStream]);
 
+  const roundedClasses = className ? className.split(' ').filter(c => c.includes('rounded') && !c.startsWith('md:')) : [];
+
   return (
     <div
       onTouchStart={handleTouch}
       onTouchMove={handleTouch}
-      className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden',)}
+      className={clsx(className || 'flex-1', 'min-h-0', 'min-w-0', 'relative', 'overflow-hidden', 'isolate')}
+      style={{ transform: 'translateZ(0)' }}
     >
       {activeRemoteDareText && (
         <div className={clsx('absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
@@ -200,7 +203,7 @@ export default function RemoteVideoTile({
             ref={screenRef}
             autoPlay
             playsInline
-            className={clsx('absolute', 'inset-0', 'z-0', 'h-full', 'w-full', 'bg-black', 'object-contain')}
+            className={clsx('absolute', 'inset-0', 'z-0', 'h-full', 'w-full', 'bg-black', 'object-contain', roundedClasses)}
           />
           <video
             ref={pipRef}
@@ -210,7 +213,7 @@ export default function RemoteVideoTile({
           />
         </>
       ) : !isVideoOn ? (
-        <div className="absolute inset-0 w-full h-full bg-gray-950 flex flex-col items-center justify-center">
+        <div className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-gray-950', 'flex', 'flex-col', 'items-center', 'justify-center', roundedClasses)}>
           <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/30 shadow-2xl bg-[#0d0726]">
             <img
               src={displayPictureUrl || "/assets/ico.png"}
@@ -227,7 +230,7 @@ export default function RemoteVideoTile({
           ref={videoRef}
           autoPlay
           playsInline
-          className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]')}
+          className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]', roundedClasses)}
           style={{ transform: 'translateZ(0)' }}
         />
       )}

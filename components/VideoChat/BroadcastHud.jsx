@@ -7,12 +7,13 @@ export default function BroadcastHud({
   handleShareBroadcastLink,
   setBroadcastHud,
   copyShareUrl,
-  variant = 'normal'
+  variant = 'normal',
+  className
 }) {
   if (!isBroadcasting && variant !== 'beam-tv') return null;
 
   return (
-    <div className="absolute left-8 md:left-12 top-28 md:top-32  flex flex-col gap-3">
+    <div className={`absolute left-8 md:left-12 top-28 md:top-32 z-40 flex flex-col gap-3 ${className || ''}`}>
       {/* Eye (viewer count) + Waitlist + Share */}
       <div className="w-10 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden md:py-5">
         <button

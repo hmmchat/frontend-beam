@@ -160,6 +160,7 @@ function BeamTVInner() {
   const chatProfileCacheRef = useRef(new Map());
   const transitionLockRef = useRef(false);
   const sfuRerouteAttemptRef = useRef(0);
+  const waitlistPromotionRef = useRef(false);
   const [feedTransitionPhase, setFeedTransitionPhase] = useState('idle'); // idle | out | pre-in | in
 
   const cleanup = useCallback((opts = {}) => {
@@ -666,6 +667,7 @@ function BeamTVInner() {
           // Stop polling immediately — prevent double-redirect
           cancelled = true;
           if (intervalId) clearInterval(intervalId);
+          waitlistPromotionRef.current = true;
 
           // Tell streaming WS not to remove our new participant row when this Beam TV tab closes.
           if (wsRef.current?.readyState === WebSocket.OPEN) {

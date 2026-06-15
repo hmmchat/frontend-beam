@@ -37,6 +37,7 @@ export default function LocalVideoSection({
   activeLocalDareText,
   activeLocalGiftLabel,
   giftAnimationActive = false,
+  roundedClass = "",
 }) {
   const chatContainerRef = useRef(null);
 
@@ -78,9 +79,7 @@ export default function LocalVideoSection({
       <div
         className={clsx(
           "relative flex-1 min-h-0 min-w-0 transition-all duration-500 md:rounded-[60px] overflow-hidden",
-          (isGiftModalOpen || isDareOpen) &&
-          selectedGiftId &&
-          " mb-2",
+          roundedClass,
           (isGiftModalOpen || isDareOpen) &&
           selectedGiftId &&
           " mb-2",
@@ -93,6 +92,7 @@ export default function LocalVideoSection({
           playsInline
           className={clsx(
             "absolute inset-0 w-full object-cover scale-x-[-1] md:rounded-[60px]",
+            roundedClass,
             isGiftModalOpen || isDareOpen
               ? (isGroupCall ? "h-[37.5vh]" : "md:h-[87vh] h-[45vh]")
               : "h-full",
@@ -136,6 +136,7 @@ export default function LocalVideoSection({
               "tracking-widest",
               "italic",
               "z-10",
+              roundedClass
             )}
           >
             Camera is off

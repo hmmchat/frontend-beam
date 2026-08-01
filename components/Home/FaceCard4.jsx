@@ -18,6 +18,7 @@ import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 import clsx from 'clsx';
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
+import KycVerifiedBadge from "../facecard/KycVerifiedBadge";
 import { usePathname, useSearchParams } from "next/navigation";
 function brandLogoUrl(entry) {
   if (!entry) return null;
@@ -272,6 +273,7 @@ const FaceCard4 = ({
           <div>
             <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
               {user.username || "User"}
+              <KycVerifiedBadge user={user} />
               {!hideFacecardAge && (
                 <>
                   {" "}
@@ -373,6 +375,7 @@ const FaceCard4 = ({
               <div>
                 <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
                   {user.username || "User"}
+                  <KycVerifiedBadge user={user} />
                   {!hideFacecardAge && (
                     <>
                       {" "}

@@ -18,6 +18,7 @@ import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
+import KycVerifiedBadge from "../facecard/KycVerifiedBadge";
 import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
@@ -262,6 +263,7 @@ const FaceCard = ({
         <div>
           <h1 className="font-sigmar text-xl font-extrabold text-[#F2AD00]">
             {user.username || "User"}
+            <KycVerifiedBadge user={user} />
             {!hideFacecardAge && (
               <>
                 {" "}
@@ -387,6 +389,7 @@ const FaceCard = ({
                 <div>
                   <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
                     {user.username || "User"}
+                    <KycVerifiedBadge user={user} />
                     {!hideFacecardAge && (
                       <>
                         {" "}

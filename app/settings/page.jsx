@@ -130,6 +130,45 @@ function SettingsContent() {
   const router = useRouter();
   const [busy, setBusy] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
+  const [showAsModerator, setShowAsModerator] = useState(true);
+  const [modToggleBusy, setModToggleBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await apiRequest(
+          `${API.USERS.GET_ME}?fields=isModerator,moderatorFaceCardActive`
+        );
+        if (cancelled) return;
+        setIsModerator(Boolean(me?.isModerator));
+        setShowAsModerator(me?.moderatorFaceCardActive !== false);
+      } catch (e) {
+        console.warn("[Settings] Failed to load moderator flags:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const toggleModeratorVisibility = async () => {
+    if (modToggleBusy) return;
+    const next = !showAsModerator;
+    setModToggleBusy(true);
+    try {
+      await apiRequest(API.USERS.PATCH_MODERATOR_FACE_CARD, {
+        method: "PATCH",
+        body: JSON.stringify({ active: next }),
+      });
+      setShowAsModerator(next);
+    } catch (e) {
+      alert(e?.message || "Could not update moderator mode.");
+    } finally {
+      setModToggleBusy(false);
+    }
+  };
 
   const closeDeleteModal = useCallback(() => {
     if (busy === "delete") return;
@@ -228,6 +267,29 @@ function SettingsContent() {
             <PlaceholderRow label="Contact Us" />
           </div>
         </section>
+
+        {isModerator ? (
+          <section className="mb-4">
+            <h2 className="mb-1 text-sm font-semibold text-white md:text-sm font-otomanopee">
+              Moderator
+            </h2>
+            <div className="w-[95%] ml-auto divide-y divide-white/15">
+              <ActionRow
+                label={
+                  showAsModerator
+                    ? "Mode: Show as moderator (KYC + reports)"
+                    : "Mode: Disguised (critical only)"
+                }
+                onClick={toggleModeratorVisibility}
+                disabled={modToggleBusy || busy !== null}
+              />
+              <p className="py-2 text-xs text-white/55">
+                Tap to switch. Show as moderator handles KYC and non-critical reports.
+                Disguised only matches critical reports (violence/self-harm, child abuse).
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         <section>
           <h2 className="mb-1 text-sm font-semibold text-white md:text-sm font-otomanopee">

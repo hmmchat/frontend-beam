@@ -1516,6 +1516,10 @@ export default function useVideoChat() {
       case 'room-ended': {
         if (intentionalExitRef.current) break;
         const endedRoomId = data?.roomId || roomInfoRef.current?.roomId;
+        const modMessage = typeof data?.message === 'string' ? data.message.trim() : '';
+        if (modMessage) {
+          try { alert(modMessage); } catch { }
+        }
         setTimeout(async () => {
           if (intentionalExitRef.current) return;
           const uid = userIdRef.current;

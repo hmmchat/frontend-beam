@@ -114,6 +114,8 @@ function BeamTVInner() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   // Computed once on client mount — safe for SSR (localStorage not available server-side)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
+  const [moderationEndBanner, setModerationEndBanner] = useState('');
 
   const [broadcastHud, setBroadcastHud] = useState({
     viewerCount: 0,
@@ -839,16 +841,19 @@ function BeamTVInner() {
     setChatProfileSheet({ open: true, user: p });
   };
 
-  // Prime current user's profile so "You" avatar is always available.
+  // Prime current user's profile so "You" avatar is always available; also load moderator flag.
   useEffect(() => {
     const myId = String(getAuthedUserId() || '');
     if (!myId) return;
-    if (chatProfileCacheRef.current.has(myId)) return;
     (async () => {
       try {
-        const meResp = await apiRequest(API.USERS.GET_ME);
+        const meResp = await apiRequest(
+          `${API.USERS.GET_ME}?fields=id,username,displayPictureUrl,preferredCity,isModerator`
+        );
         const me = meResp?.user || meResp || null;
         if (!me) return;
+        setIsModerator(Boolean(me.isModerator));
+        if (chatProfileCacheRef.current.has(myId)) return;
         const mapped = {
           id: String(me.id || myId),
           username: me.username || getMyDisplayName() || 'You',
@@ -900,7 +905,11 @@ function BeamTVInner() {
       setEngagementMsg('Chat unavailable. Reconnecting…');
       return;
     }
-    send({ type: 'chat-message', data: { roomId, message: msg } });
+    if (isModerator) {
+      send({ type: 'moderator-overlay', data: { roomId, message: msg } });
+    } else {
+      send({ type: 'chat-message', data: { roomId, message: msg } });
+    }
     setViewerChatInput('');
   };
 
@@ -1447,12 +1456,42 @@ function BeamTVInner() {
         });
         break;
       }
+      case 'moderator-overlay': {
+        const message = String(data?.message || '').trim();
+        if (!message) break;
+        setChatMessages((prev) => {
+          const next = [
+            ...prev,
+            {
+              id: data?.id || `mod_${Date.now()}_${Math.random()}`,
+              userId: String(data?.userId || ''),
+              name: data?.label || 'Moderator',
+              label: data?.label || 'Moderator',
+              message,
+              isModeratorOverlay: true,
+              avatarUrl: ''
+            }
+          ];
+          return next.slice(-8);
+        });
+        break;
+      }
       case 'broadcast-stopped':
       case 'room-ended':
-      case 'participant-kicked':
-        // Handle stream death or user kick nicely => move to next broadcast
-        handleNext();
+      case 'participant-kicked': {
+        const endMsg = String(data?.message || '').trim();
+        if (endMsg) {
+          setModerationEndBanner(endMsg);
+          setTimeout(() => {
+            setModerationEndBanner('');
+            handleNext();
+          }, 3200);
+        } else {
+          // Handle stream death or user kick nicely => move to next broadcast
+          handleNext();
+        }
         break;
+      }
       default:
         break;
     }
@@ -1905,7 +1944,17 @@ function BeamTVInner() {
                     joinState={joinState}
                     handleJoinBroadcast={handleJoinBroadcast}
                     onGiftClick={handleGiftClick}
+                    isModerator={isModerator}
                   />
+                )}
+
+                {moderationEndBanner && (
+                  <div className="absolute inset-x-4 top-1/3 z-[60] mx-auto max-w-md rounded-[1.5rem] border border-white/40 bg-black/80 px-5 py-4 text-center text-sm font-bold text-white shadow-2xl backdrop-blur-md md:text-base">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wide text-[#F2AD00]">
+                      Moderator
+                    </div>
+                    {moderationEndBanner}
+                  </div>
                 )}
 
                 {engagementMsg && (

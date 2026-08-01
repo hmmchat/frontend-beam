@@ -8,7 +8,8 @@ export default function BeamTVActions({
   sendViewerChat,
   joinState,
   handleJoinBroadcast,
-  onGiftClick
+  onGiftClick,
+  isModerator = false
 }) {
   return (
     <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
@@ -23,8 +24,13 @@ export default function BeamTVActions({
         <input
           value={viewerChatInput}
           onChange={(e) => setViewerChatInput(e.target.value)}
-          placeholder="Add comment"
-          className="w-full bg-white/10 border border-white/60 rounded-[16px] px-4 py-3 text-white text-sm outline-none placeholder:text-white/50 focus:border-white/90 transition-all"
+          placeholder={isModerator ? 'Moderator notice…' : 'Add comment'}
+          className={clsx(
+            'w-full rounded-[16px] px-4 py-3 text-sm outline-none transition-all',
+            isModerator
+              ? 'bg-[#F2AD00]/20 border border-[#F2AD00]/70 text-white placeholder:text-[#F2AD00]/70 focus:border-[#F2AD00]'
+              : 'bg-white/10 border border-white/60 text-white placeholder:text-white/50 focus:border-white/90'
+          )}
         />
       </form>
 

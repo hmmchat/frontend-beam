@@ -83,7 +83,21 @@ function SignUpModalContent({ isOpen, onClose }) {
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Backend error:", errorData);
-          throw new Error(errorData.message || "Google login failed");
+          if (
+            errorData?.code === "ACCOUNT_BANNED" ||
+            /you are banned currently/i.test(String(errorData?.message || ""))
+          ) {
+            throw new Error(
+              typeof errorData.message === "string"
+                ? errorData.message
+                : "You are banned currently. Contact mods@antiscroll.in for support."
+            );
+          }
+          const msg =
+            typeof errorData.message === "string"
+              ? errorData.message
+              : errorData.message?.message || "Google login failed";
+          throw new Error(msg);
         }
 
         const data = await response.json();
@@ -251,8 +265,21 @@ function SignUpModalContent({ isOpen, onClose }) {
       console.log("Verify Response:", data);
 
       if (!response.ok) {
-        // Show the actual error message from backend
-        const errorMsg = data.message || data.error || "Invalid OTP";
+        if (
+          data?.code === "ACCOUNT_BANNED" ||
+          /you are banned currently/i.test(String(data?.message || ""))
+        ) {
+          throw new Error(
+            typeof data.message === "string"
+              ? data.message
+              : "You are banned currently. Contact mods@antiscroll.in for support."
+          );
+        }
+        const errorMsg =
+          (typeof data.message === "string" && data.message) ||
+          data.message?.message ||
+          data.error ||
+          "Invalid OTP";
         throw new Error(errorMsg);
       }
 

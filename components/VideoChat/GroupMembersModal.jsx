@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import clsx from 'clsx';
+import ReportUserModal from '@/components/modals/ReportUserModal';
 
 export default function GroupMembersModal({
   isOpen,
@@ -13,6 +15,8 @@ export default function GroupMembersModal({
   reportedUserIds,
   handleReportUser,
 }) {
+  const [reportTarget, setReportTarget] = useState(null);
+
   if (!isOpen) return null;
 
   return (
@@ -93,9 +97,12 @@ export default function GroupMembersModal({
 
                   {/* Report Button */}
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       if (!reportedUserIds.has(s.userId)) {
-                        await handleReportUser(s.userId);
+                        setReportTarget({
+                          userId: s.userId,
+                          name: profile.name || 'User',
+                        });
                       }
                     }}
                     disabled={reportedUserIds.has(s.userId)}
@@ -125,7 +132,17 @@ export default function GroupMembersModal({
           })}
         </div>
       </div>
+
+      <ReportUserModal
+        isOpen={Boolean(reportTarget)}
+        onClose={() => setReportTarget(null)}
+        userId={reportTarget?.userId}
+        name={reportTarget?.name}
+        isAbsolute={false}
+        onReportUser={async (userId, reason) => {
+          await handleReportUser?.(userId, reason);
+        }}
+      />
     </div>
   );
 }
-

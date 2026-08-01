@@ -1659,7 +1659,7 @@ function BeamTVInner() {
     }
   };
 
-  const handleReportUser = async (reportedUserId) => {
+  const handleReportUser = async (reportedUserId, reason = 'basic') => {
     const tid = String(reportedUserId || '');
     if (!tid || tid === 'broadcaster' || tid.startsWith('producer:')) {
       setEngagementMsg('Cannot report this user.');
@@ -1683,6 +1683,7 @@ function BeamTVInner() {
         reportedUserId: tid,
         reportType,
         roomId,
+        reason,
       });
       if (res.success) {
         setReportedUserIds((prev) => new Set([...prev, tid]));

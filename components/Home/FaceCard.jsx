@@ -69,11 +69,12 @@ const FaceCard = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleReportUser = async (reportedUserId) => {
+  const handleReportUser = async (reportedUserId, reason = 'basic') => {
     try {
       const res = await submitUserReport({
         reportedUserId,
         reportType: 'participant',
+        reason,
       });
       if (res.success) {
         triggerToast('User reported successfully.');

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
+import { forceLogoutBanned } from '@/lib/force-logout';
 import { recordSquadCallPeersAsync, recordSquadCallPeersKeepalive } from '@/lib/squad-quick-invite-backend';
 import {
   enterCall,
@@ -1583,6 +1584,15 @@ export default function useVideoChat() {
           openSignalingSocket(rerouteUrl);
           return;
         }
+        if (msg.type === 'account-banned') {
+          void forceLogoutBanned({
+            message:
+              msg.data?.message ||
+              'You are banned currently. Contact mods@antiscroll.in for support.',
+            redirect: true,
+          });
+          return;
+        }
         if (msg.type === 'error') { console.warn('[WS] Error:', msg.data?.error); if (msg.data?.error?.includes('not found')) handleStaleRoom(); return; }
         await handleSignal(msg, info, userId);
       };
@@ -1718,7 +1728,7 @@ export default function useVideoChat() {
 
   const triggerReportToast = (message) => { setReportNotification(message); setTimeout(() => setReportNotification(null), 3000); };
 
-  const handleReportUser = async (reportedUserId) => {
+  const handleReportUser = async (reportedUserId, reason = 'basic') => {
     const tid = String(reportedUserId ?? '');
     if (!tid || tid.startsWith('producer:')) { triggerReportToast('Cannot report this user type.'); return; }
     if (reportedUserIds.has(tid)) { triggerReportToast('You have already reported this user.'); return; }
@@ -1727,7 +1737,13 @@ export default function useVideoChat() {
     const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
     const callSessionId = roomInfoRef.current?.sessionId || roomInfo?.sessionId;
     try {
-      const res = await submitUserReport({ reportedUserId: tid, reportType, roomId, callSessionId });
+      const res = await submitUserReport({
+        reportedUserId: tid,
+        reportType,
+        roomId,
+        callSessionId,
+        reason,
+      });
       if (res.success) { setReportedUserIds(prev => new Set([...prev, tid])); triggerReportToast('User reported successfully.'); }
       else triggerReportToast('Failed to report user.');
     } catch (err) { console.error('[Report] failed:', err); triggerReportToast(err.message || 'Failed to report user.'); }

@@ -631,7 +631,7 @@ export default function Onboarding() {
 
 
               {/* <div className="pt-10 px-4 flex flex-col items-center text-center  md:mb-10">
-  <img src="/logo.png" className="w-40 mx-auto" />
+  <img src="/logo.gif" alt="beam" className="w-40 mx-auto" />
   <p className="text-white text-lg font-medium mt-1">
     Meet someone here
   </p>
@@ -666,7 +666,7 @@ export default function Onboarding() {
 
 
                     <div className="mx-auto md:hidden  flex flex-col items-center text-center mb-6 ">
-                      <img src="/logo.png" className="w-28 mx-auto" />
+                      <img src="/logo.gif" alt="beam" className="w-28 mx-auto" />
 
                       <p className="text-sm font-bold outfit-font">Welcome onboard!</p>
                       <p className="md:text-sm text-sm md:mt-3 md:font-medium opacity-95 outfit-font">getting your started now</p>

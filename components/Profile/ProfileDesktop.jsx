@@ -16,7 +16,6 @@ import RewardsTab from "./Desktop/RewardsTab";
 import StickersTab from "./Desktop/StickersTab";
 
 import { API, apiRequest } from "@/lib/api";
-import { buildGetMoneyModel } from "@/lib/getMoney";
 import { enrichUserStickerFields } from "@/lib/stickers";
 
 export default function ProfileDesktop({
@@ -35,14 +34,13 @@ export default function ProfileDesktop({
   photoUploading = false,
 }) {
   const [user, setUser] = useState(initialUser);
-  const [activeTab, setActiveTab] = useState("default"); // "default" | "prompts" | "account" | "getmoney" | "rewards" | "stickers"
+  const [activeTab, setActiveTab] = useState("default"); // "default" | "prompts" | "account" | "mysterybox" | "rewards" | "stickers"
   const [interestIndex, setInterestIndex] = useState(0);
   const [causeIndex, setCauseIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [walletSnapshot, setWalletSnapshot] = useState({
-    diamonds: 0,
-    coins: 0,
-    loading: true,
+  const [seasonSummary, setSeasonSummary] = useState({
+    subtitle: "Season rewards",
+    badge: null,
   });
   const facecardExportRef = useRef(null);
 
@@ -93,40 +91,36 @@ export default function ProfileDesktop({
     return () => clearInterval(interval);
   }, [interests.length]);
 
-  const loadWallet = async () => {
+  const loadSeasonSummary = async () => {
     try {
-      const balance = await apiRequest(API.WALLET.GET_BALANCE);
-      setWalletSnapshot({
-        diamonds: Number(balance?.diamonds) || 0,
-        coins: Number(balance?.balance) || 0,
-        loading: false,
-      });
+      const view = await apiRequest(API.SEASON.GET_MY_SEASON);
+      const tasks = view?.tasks || [];
+      const done = tasks.filter((t) => t.completed).length;
+      const total = tasks.length;
+      let subtitle = "Season rewards";
+      let badge = null;
+      if (view?.uiMode === "NO_ACTIVE_SEASON") {
+        subtitle = "Cooking next season";
+      } else if (view?.uiMode === "PENDING") {
+        subtitle = "Awaiting approval";
+      } else if (view?.uiMode === "APPROVED" || view?.uiMode === "GIFT_SENT") {
+        subtitle = "Box on the way";
+      } else if (view?.uiMode === "CLAIM_READY") {
+        subtitle = "Ready to claim";
+        badge = "Ship it";
+      } else if (total > 0) {
+        subtitle = `${done}/${total} tasks`;
+        badge = `${view?.global?.approvedCount ?? 0}/${view?.global?.giftPoolSize ?? 0}`;
+      }
+      setSeasonSummary({ subtitle, badge });
     } catch (err) {
-      console.error("Failed to fetch wallet balance:", err);
-      setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+      console.error("Failed to fetch season summary:", err);
     }
   };
 
   useEffect(() => {
-    loadWallet();
+    loadSeasonSummary();
   }, []);
-
-  const handleAdRewardGranted = (result) => {
-    if (typeof result?.newBalance === "number") {
-      setWalletSnapshot((prev) => ({
-        ...prev,
-        coins: result.newBalance,
-        loading: false,
-      }));
-      return;
-    }
-    loadWallet();
-  };
-
-  const moneyModel = buildGetMoneyModel({
-    diamonds: walletSnapshot.diamonds,
-    coins: walletSnapshot.coins,
-  });
 
   const handleShareFacecard = async () => {
     if (!user?.id || typeof window === "undefined") return;
@@ -326,7 +320,7 @@ export default function ProfileDesktop({
           user={user}
           firstName={firstName}
           progress={progress}
-          moneyModel={moneyModel}
+          seasonSummary={seasonSummary}
         />
 
         <div
@@ -380,14 +374,8 @@ export default function ProfileDesktop({
 
             // <div className="min-h-0 flex-1 overflow-y-auto flex items-start justify-center">
             <div className="min-h-0 flex-1 flex items-start justify-center">
-              {activeTab === "getmoney" ? (
-
-
-                <GetMoneyTab
-                  moneyModel={moneyModel}
-                  loading={walletSnapshot.loading}
-                  onRewardGranted={handleAdRewardGranted}
-                />
+              {activeTab === "mysterybox" ? (
+                <GetMoneyTab />
               ) : activeTab === "prompts" ? (
                 <div className="flex h-full w-full items-center justify-center overflow-hidden">
                   <div className="

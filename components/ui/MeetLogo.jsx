@@ -12,8 +12,10 @@ export default function MeetLogo({
   return (
     <div className={clsx("flex flex-col items-center justify-center text-center", className)}>
       <img
-        src="/logo.png"
+        src="/logo.gif"
         alt="logo"
+        fetchPriority="high"
+        decoding="async"
         className={clsx("w-[155px] h-[55px] object-contain mx-auto", logoClassName)}
       />
 

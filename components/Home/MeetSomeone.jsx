@@ -74,7 +74,7 @@ export default function MeetSomeone() {
                     </div>
 
                     <div className="z-10 text-center max-w-lg">
-                        <img src="/assets/logo.svg" className="md:w-64 mx-auto w-44" />
+                        <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="md:w-64 mx-auto w-44" />
                         <p className="text-white text-2xl mt-4">Meet someone,</p>
                         <p className="text-white text-2xl">Only god knows who</p>
                     </div>

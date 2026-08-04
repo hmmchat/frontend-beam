@@ -129,7 +129,7 @@ function MinimalStyledReferralQr({ encodeData }) {
         className="h-full w-full [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
       />
       <img
-        src="/beam-logo-center.png"
+        src="/logo.gif"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 h-[24px] w-auto -translate-x-1/2 -translate-y-1/2"

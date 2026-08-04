@@ -12,7 +12,7 @@ export default function ProfileSidebar({
   user,
   firstName,
   progress,
-  moneyModel,
+  seasonSummary,
 }) {
   const router = useRouter();
   return (
@@ -110,26 +110,25 @@ export default function ProfileSidebar({
         </div>
 
         <div
-          onClick={() => setActiveTab("getmoney")}
-          className={`flex cursor-pointer items-center justify-between border-b border-white/20 pb-3 ${activeTab === "getmoney" ? "opacity-100" : "opacity-70"}`}
+          onClick={() => setActiveTab("mysterybox")}
+          className={`flex cursor-pointer items-center justify-between border-b border-white/20 pb-3 ${activeTab === "mysterybox" ? "opacity-100" : "opacity-70"}`}
         >
           <div>
-            <p className="text-sm">Get money</p>
+            <p className="text-sm">Mystery beam box</p>
             <p className="text-[10px] text-white/60 font-outfit">
-              {moneyModel?.isUnlocked
-                ? "Ready to withdraw"
-                : `${moneyModel?.diamondsLeft ?? 0} left to withdraw`}
+              {seasonSummary?.subtitle || "Season rewards"}
             </p>
           </div>
 
           <div className="flex gap-2">
-            <span className="rounded-full border border-white/40 px-3 py-1 text-[9px]">
-              💎 {moneyModel?.diamonds ?? 0}
-            </span>
+            {seasonSummary?.badge ? (
+              <span className="rounded-full border border-white/40 px-3 py-1 text-[9px] font-outfit">
+                {seasonSummary.badge}
+              </span>
+            ) : null}
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white">
               <FaAngleRight />
             </span>
-
           </div>
         </div>
 

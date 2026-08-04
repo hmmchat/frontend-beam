@@ -2,6 +2,7 @@
 
 import React from 'react';
 import clsx from 'clsx';
+import BeamTransparentLogo from '@/components/ui/BeamTransparentLogo';
 
 export default function MobileMultiUserControls({
   toggleCam,
@@ -67,10 +68,8 @@ export default function MobileMultiUserControls({
       </div>
 
       {/* Center Logo */}
-      <img
-        src="/logotransparent.png"
-        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-8 w-auto object-contain pointer-events-none z-10"
-        alt="Beam"
+      <BeamTransparentLogo
+        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-8 w-auto pointer-events-none z-10"
       />
 
       {/* Right buttons (Dare + Gift) */}

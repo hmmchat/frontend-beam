@@ -43,7 +43,7 @@ export default function MemeLoader({ loadingMeme }) {
       >
         {/* Beam Logo */}
         <img
-          src="/logo.png"
+          src="/logo.gif"
           alt="Beam Logo"
           className="h-8 md:h-16 md:w-40 md:mb-2 object-contain"
         />

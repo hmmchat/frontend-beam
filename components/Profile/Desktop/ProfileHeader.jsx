@@ -28,7 +28,7 @@ export default function ProfileHeader({
       </button>
 
 
-      <img src="/logo.png" alt="beam" className="h-12 w-28 object-contain" />
+      <img src="/logo.gif" alt="beam" className="h-12 w-28 object-contain" />
 
       <div className="flex items-center gap-1">
         {icons.map((src, i) => {

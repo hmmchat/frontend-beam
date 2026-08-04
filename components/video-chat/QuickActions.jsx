@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import clsx from 'clsx';
+import BeamTransparentLogo from '@/components/ui/BeamTransparentLogo';
 
 export default function QuickActions({
   callRoles,
@@ -73,11 +74,7 @@ export default function QuickActions({
 
 
       <div className="absolute hidden md:flex left-4 right-4 md:left-8 md:right-auto md:w-[44%] top-0 bottom-0 pointer-events-none flex items-center justify-center">
-        <img
-          src="/logotransparent.png"
-          className="h-8 w-auto object-contain pointer-events-none z-10"
-          alt="Beam"
-        />
+        <BeamTransparentLogo className="h-8 w-auto pointer-events-none z-10" />
       </div>
 
 

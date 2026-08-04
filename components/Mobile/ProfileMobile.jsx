@@ -9,7 +9,6 @@ import html2canvas from "html2canvas";
 // Utils and API
 import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
 import { API, apiRequest } from "@/lib/api";
-import { buildGetMoneyModel } from "@/lib/getMoney";
 import { enrichUserStickerFields } from "@/lib/stickers";
 
 // Sub-components
@@ -26,10 +25,9 @@ export default function ProfileMobile() {
   const [selectedSticker, setSelectedSticker] = useState(3);
   const [user, setUser] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [walletSnapshot, setWalletSnapshot] = useState({
-    diamonds: 0,
-    coins: 0,
-    loading: true,
+  const [seasonSummary, setSeasonSummary] = useState({
+    subtitle: "Season rewards",
+    badge: null,
   });
   const facecardExportRef = useRef(null);
 
@@ -50,46 +48,42 @@ export default function ProfileMobile() {
     load();
   }, []);
 
-  // Load Wallet Data
-  const loadWallet = async () => {
+  const loadSeasonSummary = async () => {
     try {
-      const balance = await apiRequest(API.WALLET.GET_BALANCE);
-      setWalletSnapshot({
-        diamonds: Number(balance?.diamonds) || 0,
-        coins: Number(balance?.balance) || 0,
-        loading: false,
-      });
+      const view = await apiRequest(API.SEASON.GET_MY_SEASON);
+      const tasks = view?.tasks || [];
+      const done = tasks.filter((t) => t.completed).length;
+      const total = tasks.length;
+      let subtitle = "Season rewards";
+      let badge = null;
+      if (view?.uiMode === "NO_ACTIVE_SEASON") {
+        subtitle = "Cooking next season";
+      } else if (view?.uiMode === "PENDING") {
+        subtitle = "Awaiting approval";
+      } else if (view?.uiMode === "APPROVED" || view?.uiMode === "GIFT_SENT") {
+        subtitle = "Box on the way";
+      } else if (view?.uiMode === "CLAIM_READY") {
+        subtitle = "Ready to claim";
+        badge = "Ship it";
+      } else if (total > 0) {
+        subtitle = `${done}/${total} tasks`;
+        badge = `${view?.global?.approvedCount ?? 0}/${view?.global?.giftPoolSize ?? 0}`;
+      }
+      setSeasonSummary({ subtitle, badge });
     } catch (e) {
-      console.error("[ProfileMobile] Failed to load wallet:", e);
-      setWalletSnapshot((prev) => ({ ...prev, loading: false }));
+      console.error("[ProfileMobile] Failed to load season:", e);
     }
   };
 
   useEffect(() => {
-    loadWallet();
+    loadSeasonSummary();
   }, []);
-
-  const handleAdRewardGranted = (result) => {
-    if (typeof result?.newBalance === "number") {
-      setWalletSnapshot((prev) => ({
-        ...prev,
-        coins: result.newBalance,
-        loading: false,
-      }));
-      return;
-    }
-    loadWallet();
-  };
 
   // Derived Data
   const progress = user ? calculateProgress(user) : 0;
   const displayName = user?.username?.trim() || "Profile";
   const firstName = user?.username?.split(" ")[0] || "User";
   const age = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
-  const moneyModel = buildGetMoneyModel({
-    diamonds: walletSnapshot.diamonds,
-    coins: walletSnapshot.coins,
-  });
 
   // Facecard Handlers
   const handleShareFacecard = async () => {
@@ -257,13 +251,8 @@ export default function ProfileMobile() {
         <ProfileMobileRewards onBack={() => setActiveTab("main")} />
       )}
 
-      {activeTab === "getmoney" && (
-        <ProfileMobileGetMoney
-          onBack={() => setActiveTab("main")}
-          walletSnapshot={walletSnapshot}
-          moneyModel={moneyModel}
-          handleAdRewardGranted={handleAdRewardGranted}
-        />
+      {activeTab === "mysterybox" && (
+        <ProfileMobileGetMoney onBack={() => setActiveTab("main")} />
       )}
 
       {activeTab === "facePreview" && (
@@ -286,7 +275,7 @@ export default function ProfileMobile() {
           displayName={displayName}
           age={age}
           progress={progress}
-          moneyModel={moneyModel}
+          seasonSummary={seasonSummary}
           setActiveTab={setActiveTab}
         />
       )}

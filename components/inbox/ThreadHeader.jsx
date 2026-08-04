@@ -205,7 +205,7 @@ export default function ThreadHeader({
                     </button>
                   )}
 
-                <img src="/logo.png" alt="Logo" className="w-20 md:hidden  " />
+                <img src="/logo.gif" alt="Logo" className="w-20 md:hidden  " />
 
                 <button
                   type="button"

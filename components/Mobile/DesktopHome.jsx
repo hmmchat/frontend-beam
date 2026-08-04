@@ -57,7 +57,7 @@ export default function DesktopHome() {
 
           <div className={clsx('rounded-[60px]', 'border-2', 'border-white/30', 'z-10', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex')}>
             <div className={clsx('z-10', 'text-center', 'max-w-lg')}>
-              <img src="/logo.png" className={clsx('md:w-[230px]', 'mx-auto', 'w-44', 'sm:w-5')} />
+              <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className={clsx('md:w-[230px]', 'mx-auto', 'w-44', 'sm:w-5')} />
 
               <p className={clsx('text-white', 'text-[20px]', 'md:text-[20px]', 'font-otomanopee', '-mt-2')}>
                 Meet someone here

@@ -11,7 +11,7 @@ export default function ProfileMobileMain({
   displayName,
   age,
   progress,
-  moneyModel,
+  seasonSummary,
   setActiveTab
 }) {
   return (
@@ -143,22 +143,22 @@ export default function ProfileMobileMain({
           </div>
 
           <div
-            onClick={() => setActiveTab("getmoney")}
+            onClick={() => setActiveTab("mysterybox")}
             className="flex items-center justify-between border-b border-white/20 pb-5 cursor-pointer"
           >
             <div>
-              <p className="text-sm">Get money</p>
+              <p className="text-sm">Mystery beam box</p>
               <p className="text-[10px] text-white/60 font-outfit">
-                {moneyModel.isUnlocked
-                  ? "Ready to withdraw"
-                  : `${moneyModel.diamondsLeft} left to withdraw`}
+                {seasonSummary?.subtitle || "Season rewards"}
               </p>
             </div>
 
             <div className="flex gap-2">
-              <span className="text-[9px] border border-white/90 px-3 py-1 rounded-full">
-                💎 {moneyModel.diamonds}
-              </span>
+              {seasonSummary?.badge ? (
+                <span className="text-[9px] border border-white/90 px-3 py-1 rounded-full font-outfit">
+                  {seasonSummary.badge}
+                </span>
+              ) : null}
               <span className="w-6 h-6 flex items-center justify-center border border-white/60 rounded-full">
                 <FaAngleRight />
               </span>

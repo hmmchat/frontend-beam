@@ -82,7 +82,7 @@ export default function Home(
                 <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl  pointer-events-none" />
 
                 <div className="flex flex-col items-center justify-center mb-10 shrink-0">
-                  <img src="/logo.png" className="w-[129px] mb-2" />
+                  <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="w-[129px] mb-2" />
                   <p className="text-white text-[14px] font-medium opacity-90">
                     Meet someone here
                   </p>

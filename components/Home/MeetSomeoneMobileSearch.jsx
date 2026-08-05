@@ -6,10 +6,9 @@ import MatchButtons from './MeetSomeoneMatchButtons';
 import CityHandoffBar from './CityHandoffBar';
 import CityBoxesPanel from './CityBoxesPanel';
 import EmptyOrbitPanel from './EmptyOrbitPanel';
-import SearchingPopup from './SearchingPopup';
+import DiscoveryMemeLoader from './DiscoveryMemeLoader';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { useEffect, useState } from 'react';
-import { exitDiscovery } from '@/lib/discovery-presence';
 
 /**
  * Mobile top-half (or fullscreen) card + bottom cam preview
@@ -99,18 +98,9 @@ export default function MeetSomeoneMobileSearch({
                 onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
               />
             ) : isSearchingState ? (
-              <SearchingPopup
-                isVisible={true}
-                label="Searching"
-                onCancel={() => {
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('searching');
-                    window.history.pushState({}, '', url.toString());
-                  }
-                  void exitDiscovery().catch(() => {});
-                }}
-              />
+              <div className={clsx('w-full', 'min-h-[280px]', 'h-[50vh]', 'max-h-[420px]')}>
+                <DiscoveryMemeLoader />
+              </div>
             ) : showCityHandoff ? (
               <div
                 className={clsx(

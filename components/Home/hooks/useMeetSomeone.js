@@ -78,7 +78,7 @@ export default function useMeetSomeone() {
   const [handoffSecondsLeft, setHandoffSecondsLeft] = useState(5);
   const [handoffCountdownSeconds, setHandoffCountdownSeconds] = useState(10);
   const [handoffValidityPollMs, setHandoffValidityPollMs] = useState(3000);
-  const [availableCitiesPollMs, setAvailableCitiesPollMs] = useState(8000);
+  const [availableCitiesPollMs, setAvailableCitiesPollMs] = useState(5000);
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const pollRef = useRef(null);
@@ -104,6 +104,8 @@ export default function useMeetSomeone() {
   const handoffTimerRef = useRef(null);
   const handoffCompletingRef = useRef(false);
   const handoffCancelledRef = useRef(false);
+  /** After Cancel on city handoff: stay on city boxes until the user taps a city. */
+  const manualCitySelectOnlyRef = useRef(false);
   const applyAvailableCitiesRef = useRef(null);
 
   // Mirror some state in refs for event handler closures
@@ -209,6 +211,10 @@ export default function useMeetSomeone() {
         enterEmptyOrbit();
         return;
       }
+      // User cancelled auto-switch — never start another handoff until they tap a box.
+      if (manualCitySelectOnlyRef.current) {
+        return;
+      }
       handoffCityRef.current = card.city;
       handoffCompletingRef.current = false;
       handoffCancelledRef.current = false;
@@ -228,6 +234,7 @@ export default function useMeetSomeone() {
     handoffCityRef.current = null;
     handoffCompletingRef.current = false;
     handoffCancelledRef.current = false;
+    manualCitySelectOnlyRef.current = false;
     setAvailableCities([]);
     setHandoffSecondsLeft(handoffCountdownSeconds);
     setDeckPhase('user');
@@ -394,11 +401,19 @@ export default function useMeetSomeone() {
       const isLocation = card && (card.type === 'LOCATION' || data?.isLocationCard);
       const phase = deckPhaseRef.current;
 
-      // During city handoff / boxes / empty: only accept a USER face card so we
-      // don't reset the countdown or clobber UI with LOCATION/exhausted noise.
-      // Mutual match must surface immediately on both sides.
-      if (phase === 'cityHandoff' || phase === 'cityBoxes' || phase === 'emptyOrbit') {
+      if (phase === 'cityHandoff') {
+        // Mid-countdown: only accept a USER match (don't reset timer with LOCATION).
         if (card && !isLocation) {
+          applyCardResponse(data, { silent: true });
+        }
+      } else if (phase === 'cityBoxes' || manualCitySelectOnlyRef.current) {
+        // User cancelled auto-switch — stay on boxes; never auto LOCATION / USER.
+        // (City entry only via box tap → select-location.)
+      } else if (phase === 'emptyOrbit') {
+        // Recover as soon as someone is showable — USER or next-city LOCATION.
+        if (card && !isLocation) {
+          applyCardResponse(data, { silent: true });
+        } else if (isLocation && card?.city) {
           applyCardResponse(data, { silent: true });
         }
       } else {
@@ -424,6 +439,13 @@ export default function useMeetSomeone() {
   /** Immediate card pull when a mutual match is pushed over WS — no phase gating delay. */
   const fetchMatchedCardNow = useCallback(async () => {
     if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+    // Cancelled auto-switch: don't yank them off city boxes into a face card.
+    if (
+      manualCitySelectOnlyRef.current ||
+      deckPhaseRef.current === 'cityBoxes'
+    ) {
+      return;
+    }
     const sid = sessionIdRef.current;
     if (!sid) return;
     try {
@@ -774,6 +796,8 @@ export default function useMeetSomeone() {
   const handleSelectLocation = async (city, { persistPreference = false } = {}) => {
     if (!city) return;
     setSwiping(true);
+    // Explicit box tap — allow leaving city-boxes mode.
+    manualCitySelectOnlyRef.current = false;
     try {
       const soloMode = mode === 'solo';
       const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
@@ -818,6 +842,8 @@ export default function useMeetSomeone() {
     // Cancel always wins over a late countdown complete
     handoffCancelledRef.current = true;
     handoffCompletingRef.current = false;
+    // Stay on city boxes until the user explicitly taps a city — no auto-switch back.
+    manualCitySelectOnlyRef.current = true;
     if (handoffTimerRef.current) {
       clearInterval(handoffTimerRef.current);
       handoffTimerRef.current = null;
@@ -1984,28 +2010,21 @@ export default function useMeetSomeone() {
         if (phaseNow === 'cityBoxes') {
           applyAvailableCitiesRef.current?.(cities);
           if (cities.length === 0) {
-            try {
-              const cardData = await apiRequest(
-                API.DISCOVERY.GET_CARD(sid, modeRef.current === 'solo'),
-              );
-              if (waitingForMatchRef.current || isEnteringCallRef.current) return;
-              const card = cardData?.card;
-              const isLocation = card && (card.type === 'LOCATION' || cardData?.isLocationCard);
-              if (card && !isLocation) {
-                applyCardResponse(cardData, { silent: true });
-              } else if (isLocation && card?.city) {
-                enterCityHandoff(card);
-              } else {
-                enterEmptyOrbit();
-              }
-            } catch (_) {
-              enterEmptyOrbit();
-            }
+            // Never auto-handoff from boxes — only empty orbit when nothing left.
+            enterEmptyOrbit();
           }
           return;
         }
 
         if (phaseNow === 'emptyOrbit') {
+          // After Cancel: show boxes when cities reappear — never auto-start handoff.
+          if (manualCitySelectOnlyRef.current) {
+            if (cities.length > 0) {
+              enterCityBoxes(cities);
+            }
+            return;
+          }
+
           try {
             const cardData = await apiRequest(
               API.DISCOVERY.GET_CARD(sid, modeRef.current === 'solo'),
@@ -2024,7 +2043,21 @@ export default function useMeetSomeone() {
           } catch (_) {
             /* keep empty */
           }
-          if (cities.length > 0) {
+          // Someone appeared elsewhere — hop straight into the top city when there's only one.
+          if (cities.length === 1) {
+            const top = cities[0];
+            enterCityHandoff({
+              type: 'LOCATION',
+              city: top.city,
+              availableCount: top.availableCount,
+              faceCardImageUrl: top.faceCardImageUrl,
+              intent: top.intent,
+              label: top.label,
+              isLocationCard: true,
+            });
+            return;
+          }
+          if (cities.length > 1) {
             enterCityBoxes(cities);
           }
         }

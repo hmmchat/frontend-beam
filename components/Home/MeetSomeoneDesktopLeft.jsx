@@ -1,13 +1,12 @@
 'use client';
 import clsx from 'clsx';
 import FaceCard4 from './FaceCard4';
-import SearchingPopup from './SearchingPopup';
 import MatchButtons from './MeetSomeoneMatchButtons';
 import CityHandoffBar from './CityHandoffBar';
 import CityBoxesPanel from './CityBoxesPanel';
 import EmptyOrbitPanel from './EmptyOrbitPanel';
+import DiscoveryMemeLoader from './DiscoveryMemeLoader';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
-import { exitDiscovery } from '@/lib/discovery-presence';
 
 export default function MeetSomeoneDesktopLeft({
   isSearching,
@@ -24,8 +23,6 @@ export default function MeetSomeoneDesktopLeft({
   handleProceed,
   waitingMessage,
   handleCancelWaiting,
-  setIsSearching,
-  setCurrentCard,
   deckPhase = 'user',
   availableCities = [],
   handoffSecondsLeft = 10,
@@ -103,23 +100,7 @@ export default function MeetSomeoneDesktopLeft({
           )}
         >
           {isResumeLoading && !showEmptyOrbit && !showCityBoxes && !showCityHandoff && !showUserCard ? (
-            <div
-              className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}
-            >
-              <SearchingPopup
-                isVisible={true}
-                onCancel={() => {
-                  setIsSearching(false);
-                  setCurrentCard(null);
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('searching');
-                    window.history.pushState({}, '', url.toString());
-                  }
-                  void exitDiscovery();
-                }}
-              />
-            </div>
+            <DiscoveryMemeLoader />
           ) : showEmptyOrbit ? (
             <EmptyOrbitPanel />
           ) : showCityBoxes ? (
@@ -253,23 +234,7 @@ export default function MeetSomeoneDesktopLeft({
               </div>
             </div>
           ) : (
-            <div
-              className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}
-            >
-              <SearchingPopup
-                isVisible={true}
-                onCancel={() => {
-                  setIsSearching(false);
-                  setCurrentCard(null);
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('searching');
-                    window.history.pushState({}, '', url.toString());
-                  }
-                  void exitDiscovery();
-                }}
-              />
-            </div>
+            <DiscoveryMemeLoader />
           )}
         </div>
       ) : (

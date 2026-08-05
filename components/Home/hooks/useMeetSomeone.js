@@ -72,6 +72,13 @@ export default function useMeetSomeone() {
   });
   const [discoveryBlockedByOtherTab, setDiscoveryBlockedByOtherTab] = useState(false);
   const [isDiscoveryUserFetching, setIsDiscoveryUserFetching] = useState(false);
+  /** user | cityHandoff | cityBoxes | emptyOrbit */
+  const [deckPhase, setDeckPhase] = useState('user');
+  const [availableCities, setAvailableCities] = useState([]);
+  const [handoffSecondsLeft, setHandoffSecondsLeft] = useState(5);
+  const [handoffCountdownSeconds, setHandoffCountdownSeconds] = useState(5);
+  const [handoffValidityPollMs, setHandoffValidityPollMs] = useState(3000);
+  const [availableCitiesPollMs, setAvailableCitiesPollMs] = useState(8000);
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const pollRef = useRef(null);
@@ -91,6 +98,13 @@ export default function useMeetSomeone() {
   const allowUnmountCleanupRef = useRef(false);
   const mountCleanupArmTimerRef = useRef(null);
   const latestSilentFetchIdRef = useRef(0);
+  const deckPhaseRef = useRef('user');
+  const handoffCityRef = useRef(null);
+  const availableCitiesPollRef = useRef(null);
+  const handoffTimerRef = useRef(null);
+  const handoffCompletingRef = useRef(false);
+  const handoffCancelledRef = useRef(false);
+  const applyAvailableCitiesRef = useRef(null);
 
   // Mirror some state in refs for event handler closures
   const squadLobbyMicMutedRef = useRef(squadLobbyMicMuted);
@@ -136,16 +150,134 @@ export default function useMeetSomeone() {
     if (!currentCard || (currentCard.type !== 'LOCATION' && !currentCard.isLocationCard)) return null;
     return buildDiscoveryCityFaceCardUser({
       city: currentCard.city,
-      availableCount: currentCard.availableCount,
       faceCardImageUrl: currentCard.faceCardImageUrl,
+      intent: currentCard.intent,
+      label: currentCard.label,
     });
   }, [
     currentCard?.type,
     currentCard?.isLocationCard,
     currentCard?.city,
-    currentCard?.availableCount,
     currentCard?.faceCardImageUrl,
+    currentCard?.intent,
+    currentCard?.label,
   ]);
+
+  const citiesSignature = useCallback((cities) => {
+    return (cities || []).map((c) => c.city).join('|');
+  }, []);
+
+  const applyAvailableCities = useCallback(
+    (cities) => {
+      const next = Array.isArray(cities) ? cities.slice(0, 3) : [];
+      setAvailableCities((prev) => {
+        if (citiesSignature(prev) === citiesSignature(next)) return prev;
+        return next;
+      });
+      return next;
+    },
+    [citiesSignature],
+  );
+  applyAvailableCitiesRef.current = applyAvailableCities;
+
+  const enterEmptyOrbit = useCallback(() => {
+    handoffCityRef.current = null;
+    setCurrentCard(null);
+    setAvailableCities([]);
+    setDeckPhase('emptyOrbit');
+    deckPhaseRef.current = 'emptyOrbit';
+  }, []);
+
+  const enterCityBoxes = useCallback(
+    (cities) => {
+      handoffCityRef.current = null;
+      const next = applyAvailableCities(cities);
+      setCurrentCard(null);
+      if (next.length === 0) {
+        enterEmptyOrbit();
+        return;
+      }
+      setDeckPhase('cityBoxes');
+      deckPhaseRef.current = 'cityBoxes';
+    },
+    [applyAvailableCities, enterEmptyOrbit],
+  );
+
+  const enterCityHandoff = useCallback(
+    (card) => {
+      if (!card?.city) {
+        enterEmptyOrbit();
+        return;
+      }
+      handoffCityRef.current = card.city;
+      handoffCompletingRef.current = false;
+      handoffCancelledRef.current = false;
+      setCurrentCard(card);
+      setHandoffSecondsLeft(handoffCountdownSeconds);
+      setDeckPhase('cityHandoff');
+      deckPhaseRef.current = 'cityHandoff';
+    },
+    [enterEmptyOrbit, handoffCountdownSeconds],
+  );
+
+  const resetHandoffUiState = useCallback(() => {
+    if (handoffTimerRef.current) {
+      clearInterval(handoffTimerRef.current);
+      handoffTimerRef.current = null;
+    }
+    handoffCityRef.current = null;
+    handoffCompletingRef.current = false;
+    handoffCancelledRef.current = false;
+    setAvailableCities([]);
+    setHandoffSecondsLeft(handoffCountdownSeconds);
+    setDeckPhase('user');
+    deckPhaseRef.current = 'user';
+  }, [handoffCountdownSeconds]);
+
+  const applyUiConfigFromResponse = useCallback((ui) => {
+    if (!ui) return;
+    if (ui.cityHandoffCountdownSeconds > 0) {
+      setHandoffCountdownSeconds(ui.cityHandoffCountdownSeconds);
+    }
+    if (ui.cityHandoffValidityPollMs >= 1000) {
+      setHandoffValidityPollMs(ui.cityHandoffValidityPollMs);
+    }
+    if (ui.availableCitiesPollMs >= 1000) {
+      setAvailableCitiesPollMs(ui.availableCitiesPollMs);
+    }
+  }, []);
+
+  const applyCardResponse = useCallback(
+    (data, { silent = false } = {}) => {
+      const card = data?.card || null;
+      const exhausted = Boolean(data?.exhausted);
+      const isLocation =
+        card && (card.type === 'LOCATION' || data?.isLocationCard || card.isLocationCard);
+
+      if (isLocation && card?.city) {
+        enterCityHandoff(card);
+        return;
+      }
+
+      if (!card || exhausted) {
+        enterEmptyOrbit();
+        return;
+      }
+
+      handoffCityRef.current = null;
+      setDeckPhase('user');
+      deckPhaseRef.current = 'user';
+      setCurrentCard((prev) => {
+        const nextId = card?.userId || card?._id || card?.id;
+        const prevId = prev?.userId || prev?._id || prev?.id;
+        if (silent && nextId === prevId && prevId) {
+          return { ...prev, ...card };
+        }
+        return card;
+      });
+    },
+    [enterCityHandoff, enterEmptyOrbit],
+  );
 
   const user = currentCard;
 
@@ -230,14 +362,7 @@ export default function useMeetSomeone() {
       const soloMode = isSolo !== null ? isSolo : mode === 'solo';
       const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       console.log('Got Card:', data);
-      setCurrentCard((prev) => {
-        const nextId = data?.card?.userId || data?.card?._id || data?.card?.id;
-        const prevId = prev?.userId || prev?._id || prev?.id;
-        if (nextId === prevId && prevId) {
-          return { ...prev, ...data.card };
-        }
-        return data?.card || null;
-      });
+      applyCardResponse(data);
       setSessionId(data.sessionId || currentSid || Date.now().toString());
       if (soloMode) {
         startDiscoveryHeartbeat(data.sessionId || currentSid);
@@ -261,17 +386,20 @@ export default function useMeetSomeone() {
       flowLog('fetchCardSilently_start', { currentSid, soloMode });
       const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       if (reqId !== latestSilentFetchIdRef.current) return;
-      if (data?.card) {
+      if (data?.card || data?.exhausted) {
         setIsSearching(true);
       }
-      setCurrentCard((prev) => {
-        const nextId = data?.card?.userId || data?.card?._id || data?.card?.id;
-        const prevId = prev?.userId || prev?._id || prev?.id;
-        if (nextId === prevId && prevId) {
-          return { ...prev, ...data.card };
+      // Don't clobber handoff/boxes/empty with stale silent polls mid-phase
+      if (deckPhaseRef.current !== 'user' && deckPhaseRef.current !== 'cityHandoff') {
+        // empty/boxes recover via available-cities poll; only accept a real user card here
+        const card = data?.card;
+        const isLocation = card && (card.type === 'LOCATION' || data?.isLocationCard);
+        if (card && !isLocation) {
+          applyCardResponse(data, { silent: true });
         }
-        return data?.card || null;
-      });
+      } else {
+        applyCardResponse(data, { silent: true });
+      }
       setSessionId(data?.sessionId || currentSid || Date.now().toString());
       if (soloMode) {
         startDiscoveryHeartbeat(data.sessionId || currentSid);
@@ -279,6 +407,7 @@ export default function useMeetSomeone() {
       flowLog('fetchCardSilently_done', {
         hasCard: Boolean(data?.card),
         cardType: data?.card?.type || 'USER',
+        exhausted: Boolean(data?.exhausted),
       });
     } catch (_) {
       flowLog('fetchCardSilently_error');
@@ -295,6 +424,7 @@ export default function useMeetSomeone() {
     const nextSid = sid || sessionId || Date.now().toString();
     setSessionId(nextSid);
     setIsSearching(true);
+    resetHandoffUiState();
     setDiscoveryBlockedByOtherTab(false);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
@@ -317,8 +447,8 @@ export default function useMeetSomeone() {
   const handleRaincheck = async () => {
     if (!currentCard || swiping) return;
 
+    // Raincheck is only for real user face cards
     if (currentCard.type === 'LOCATION' || currentCard.isLocationCard) {
-      await fetchCard(sessionId);
       return;
     }
 
@@ -346,8 +476,8 @@ export default function useMeetSomeone() {
   const handleProceed = async () => {
     if (!currentCard || swiping || waitingForMatch) return;
 
+    // Meet rn only enters a call for real user cards — never opens a city deck
     if (currentCard.type === 'LOCATION' || currentCard.isLocationCard) {
-      await handleSelectLocation(currentCard.city);
       return;
     }
 
@@ -507,49 +637,88 @@ export default function useMeetSomeone() {
         setWaitingMatchedUser(currentCard);
 
         let emptyPollCount = 0;
-        const MAX_POLL_TICKS = 30;
+        // Align with backend MATCH_ACCEPTANCE_TIMEOUT_SECONDS (~30s): 15 × 2s
+        const MAX_POLL_TICKS = 15;
+        const POLL_MS = 2000;
+
+        const enterMatchedRoom = async (roomId, roomSessionId) => {
+          if (!roomId || isEnteringCallRef.current) return;
+          clearInterval(pollRef.current);
+          clearTimeout(rescueTimeoutRef.current);
+          localStorage.setItem(
+            'currentRoom',
+            JSON.stringify({
+              roomId,
+              sessionId: roomSessionId || roomId,
+              partner: {
+                id: currentCard.userId,
+                username: currentCard.username,
+                age: currentCard.age,
+                city: currentCard.city,
+                displayPictureUrl: currentCard.displayPictureUrl,
+              },
+            }),
+          );
+          isEnteringCallRef.current = true;
+          await enterCall();
+          router.push('/video-chat');
+        };
 
         const startPollingRoom = () => {
           pollRef.current = setInterval(async () => {
             try {
+              // 1) Discovery Redis assignment (source of truth after mutual accept)
+              try {
+                const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
+                if (assigned?.hasRoom && assigned?.roomId) {
+                  await enterMatchedRoom(assigned.roomId, assigned.sessionId);
+                  return;
+                }
+              } catch (_) {
+                /* fall through to streaming lookup */
+              }
+
+              // 2) Streaming participant room (backup)
               const streamData = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
-              if (streamData.exists && streamData.roomId) {
-                clearInterval(pollRef.current);
-                clearTimeout(rescueTimeoutRef.current);
-                localStorage.setItem(
-                  'currentRoom',
-                  JSON.stringify({
-                    roomId: streamData.roomId,
-                    sessionId: streamData.sessionId || streamData.roomId,
-                    partner: {
-                      id: currentCard.userId,
-                      username: currentCard.username,
-                      age: currentCard.age,
-                      city: currentCard.city,
-                      displayPictureUrl: currentCard.displayPictureUrl,
-                    },
-                  }),
-                );
-                isEnteringCallRef.current = true;
-                await enterCall();
-                router.push('/video-chat');
+              if (streamData?.exists && streamData?.roomId) {
+                await enterMatchedRoom(streamData.roomId, streamData.sessionId || streamData.roomId);
                 return;
               }
 
               emptyPollCount++;
               if (emptyPollCount >= MAX_POLL_TICKS) {
                 clearInterval(pollRef.current);
+                clearTimeout(rescueTimeoutRef.current);
                 setWaitingForMatch(false);
                 setWaitingMatchedUser(null);
-                setError('The other person did not respond in time. Fetching next card...');
+                setError('The other person did not join in time. Finding someone new...');
                 setTimeout(() => setError(''), 3000);
-                fetchCard(sessionId);
+                // Resume discovery cleanly — do not leave zombie waiting UI
+                await fetchCard(sessionId);
               }
-            } catch { }
-          }, 3000);
+            } catch {
+              emptyPollCount++;
+              if (emptyPollCount >= MAX_POLL_TICKS) {
+                clearInterval(pollRef.current);
+                setWaitingForMatch(false);
+                setWaitingMatchedUser(null);
+                await fetchCard(sessionId);
+              }
+            }
+          }, POLL_MS);
         };
 
-        startPollingRoom();
+        // Immediate first check (don't wait for first interval)
+        (async () => {
+          try {
+            const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
+            if (assigned?.hasRoom && assigned?.roomId) {
+              await enterMatchedRoom(assigned.roomId, assigned.sessionId);
+              return;
+            }
+          } catch (_) { }
+          startPollingRoom();
+        })();
       } else {
         await fetchCard(sessionId);
       }
@@ -570,6 +739,7 @@ export default function useMeetSomeone() {
   };
 
   const handleSelectLocation = async (city, { persistPreference = false } = {}) => {
+    if (!city) return;
     setSwiping(true);
     try {
       const soloMode = mode === 'solo';
@@ -583,20 +753,122 @@ export default function useMeetSomeone() {
         }),
       });
 
+      handoffCityRef.current = null;
+      handoffCancelledRef.current = false;
       if (data.success && data.nextCard) {
-        setCurrentCard(data.nextCard);
-        setIsSearching(true);
-        void fetchCardSilently(sessionId, soloMode);
+        const next = data.nextCard;
+        const isLocation = next.type === 'LOCATION' || data.isLocationCard;
+        if (isLocation) {
+          // Prefer boxes/empty over chaining another handoff from a box tap failure path
+          await cancelCityHandoff();
+        } else {
+          setDeckPhase('user');
+          deckPhaseRef.current = 'user';
+          setCurrentCard(next);
+          setIsSearching(true);
+          void fetchCardSilently(sessionId, soloMode);
+        }
       } else {
-        await fetchCard(sessionId);
+        await cancelCityHandoff();
       }
     } catch (error) {
       console.error('Error selecting location:', error);
       setError('Failed to select location. Please try again.');
+      await cancelCityHandoff();
     } finally {
       setSwiping(false);
+      handoffCompletingRef.current = false;
     }
   };
+
+  const cancelCityHandoff = useCallback(async () => {
+    // Cancel always wins over a late countdown complete
+    handoffCancelledRef.current = true;
+    handoffCompletingRef.current = false;
+    if (handoffTimerRef.current) {
+      clearInterval(handoffTimerRef.current);
+      handoffTimerRef.current = null;
+    }
+    handoffCityRef.current = null;
+    const sid = sessionIdRef.current || sessionId;
+    if (!sid) {
+      enterEmptyOrbit();
+      return;
+    }
+    try {
+      const data = await apiRequest(
+        API.DISCOVERY.AVAILABLE_CITIES(sid, {
+          limit: 3,
+          soloOnly: modeRef.current === 'solo',
+        }),
+      );
+      applyUiConfigFromResponse(data?.ui);
+      if (handoffCancelledRef.current === false) {
+        // A newer handoff may have started; don't clobber it
+        return;
+      }
+      enterCityBoxes(data?.cities || []);
+    } catch (err) {
+      console.error('Error loading available cities:', err);
+      if (handoffCancelledRef.current) {
+        enterEmptyOrbit();
+      }
+    }
+  }, [applyUiConfigFromResponse, enterCityBoxes, enterEmptyOrbit, sessionId]);
+
+  const completeCityHandoff = useCallback(async () => {
+    if (handoffCancelledRef.current) return;
+    if (handoffCompletingRef.current) return;
+    const city = handoffCityRef.current;
+    if (!city) {
+      await cancelCityHandoff();
+      return;
+    }
+    handoffCompletingRef.current = true;
+    setSwiping(true);
+    try {
+      if (handoffCancelledRef.current) return;
+      const soloMode = modeRef.current === 'solo';
+      const sid = sessionIdRef.current;
+      const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId: sid,
+          city,
+          persistPreference: false,
+          soloOnly: soloMode,
+        }),
+      });
+
+      // User cancelled while select-location was in flight — abort enter-city
+      if (handoffCancelledRef.current) return;
+
+      const next = data?.success ? data.nextCard : null;
+      const isLocation = next && (next.type === 'LOCATION' || data.isLocationCard);
+      const isUserCard = next && !isLocation;
+
+      if (isUserCard) {
+        handoffCityRef.current = null;
+        setDeckPhase('user');
+        deckPhaseRef.current = 'user';
+        setCurrentCard(next);
+        setIsSearching(true);
+        void fetchCardSilently(sid, soloMode);
+      } else {
+        // No user card (failure, empty, or another LOCATION) → never stuck on dead handoff
+        await cancelCityHandoff();
+      }
+    } catch (error) {
+      console.error('Error completing city handoff:', error);
+      if (!handoffCancelledRef.current) {
+        setError('Failed to enter city. Please try again.');
+        await cancelCityHandoff();
+      }
+    } finally {
+      setSwiping(false);
+      handoffCompletingRef.current = false;
+    }
+  }, [cancelCityHandoff]);
 
   const handleNextImage = (e) => {
     e?.stopPropagation();
@@ -963,6 +1235,15 @@ export default function useMeetSomeone() {
     };
 
     if (waitingForMatch) {
+      // Hard stop handoff/boxes polling + countdown while Meet rn is waiting
+      if (handoffTimerRef.current) {
+        clearInterval(handoffTimerRef.current);
+        handoffTimerRef.current = null;
+      }
+      if (availableCitiesPollRef.current) {
+        clearInterval(availableCitiesPollRef.current);
+        availableCitiesPollRef.current = null;
+      }
       void fetchWaitingMessage();
       messageInterval = setInterval(fetchWaitingMessage, 5000);
     } else {
@@ -1109,6 +1390,10 @@ export default function useMeetSomeone() {
         return;
       }
       const nextSid = sid || Date.now().toString();
+      // Clean resume from call: wipe leftover handoff/boxes/countdown before GET /card
+      resetHandoffUiState();
+      setWaitingForMatch(false);
+      setWaitingMatchedUser(null);
       setSessionId(nextSid);
       setIsSearching(true);
       setDiscoveryBlockedByOtherTab(false);
@@ -1136,6 +1421,9 @@ export default function useMeetSomeone() {
 
       if (leftCallToHome) {
         flowLog('home_idle_online');
+        resetHandoffUiState();
+        setWaitingForMatch(false);
+        setWaitingMatchedUser(null);
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
         void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
         setIsSearching(false);
@@ -1503,7 +1791,8 @@ export default function useMeetSomeone() {
   }, [mode]);
 
   useEffect(() => {
-    const shouldPollDiscovery = isSearching && !waitingForMatch && !swiping;
+    const shouldPollDiscovery =
+      isSearching && !waitingForMatch && !swiping && deckPhase === 'user';
 
     if (!shouldPollDiscovery) {
       if (discoveryPollRef.current) {
@@ -1524,7 +1813,211 @@ export default function useMeetSomeone() {
         discoveryPollRef.current = null;
       }
     };
-  }, [isSearching, waitingForMatch, swiping, sessionId, mode]);
+  }, [isSearching, waitingForMatch, swiping, sessionId, mode, deckPhase]);
+
+  // Load handoff / poll UI config once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiRequest(API.DISCOVERY.UI_CONFIG);
+        if (cancelled || !data) return;
+        applyUiConfigFromResponse(data);
+      } catch (_) {
+        /* defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applyUiConfigFromResponse]);
+
+  // City handoff countdown
+  useEffect(() => {
+    if (deckPhase !== 'cityHandoff' || waitingForMatch) {
+      if (handoffTimerRef.current) {
+        clearInterval(handoffTimerRef.current);
+        handoffTimerRef.current = null;
+      }
+      return;
+    }
+
+    setHandoffSecondsLeft(handoffCountdownSeconds);
+    handoffTimerRef.current = setInterval(() => {
+      if (handoffCancelledRef.current || waitingForMatchRef.current || isEnteringCallRef.current) {
+        return;
+      }
+      setHandoffSecondsLeft((prev) => {
+        if (prev <= 1) {
+          if (handoffTimerRef.current) {
+            clearInterval(handoffTimerRef.current);
+            handoffTimerRef.current = null;
+          }
+          void completeCityHandoff();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (handoffTimerRef.current) {
+        clearInterval(handoffTimerRef.current);
+        handoffTimerRef.current = null;
+      }
+    };
+  }, [deckPhase, handoffCountdownSeconds, completeCityHandoff, waitingForMatch]);
+
+  // Quiet available-cities poll:
+  // - cityHandoff: ~3s validity
+  // - cityBoxes / emptyOrbit: fixed 8s
+  // - hard stop while waiting for Meet rn or entering a call
+  useEffect(() => {
+    const active =
+      isSearching &&
+      !waitingForMatch &&
+      (deckPhase === 'cityHandoff' || deckPhase === 'cityBoxes' || deckPhase === 'emptyOrbit');
+
+    if (!active) {
+      if (availableCitiesPollRef.current) {
+        clearInterval(availableCitiesPollRef.current);
+        availableCitiesPollRef.current = null;
+      }
+      return;
+    }
+
+    const pollMs =
+      deckPhase === 'cityHandoff' ? handoffValidityPollMs : availableCitiesPollMs;
+
+    const tick = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+      const sid = sessionIdRef.current;
+      if (!sid) return;
+      const phase = deckPhaseRef.current;
+      if (phase !== 'cityHandoff' && phase !== 'cityBoxes' && phase !== 'emptyOrbit') return;
+
+      try {
+        const data = await apiRequest(
+          API.DISCOVERY.AVAILABLE_CITIES(sid, {
+            limit: 3,
+            soloOnly: modeRef.current === 'solo',
+          }),
+        );
+        applyUiConfigFromResponse(data?.ui);
+        if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+
+        const cities = Array.isArray(data?.cities) ? data.cities : [];
+        const phaseNow = deckPhaseRef.current;
+
+        if (phaseNow === 'cityHandoff') {
+          if (handoffCancelledRef.current || handoffCompletingRef.current) return;
+          const handoffCity = handoffCityRef.current;
+          const stillValid =
+            handoffCity &&
+            cities.some((c) => String(c.city).toLowerCase() === String(handoffCity).toLowerCase());
+          if (!stillValid) {
+            // Peer may already have matched us after hopping into our city — prefer that
+            // USER card over canceling into empty boxes while mid opposite-direction handoff.
+            try {
+              const soloMode = modeRef.current === 'solo';
+              const cardData = await apiRequest(API.DISCOVERY.GET_CARD(sid, soloMode));
+              if (handoffCancelledRef.current || handoffCompletingRef.current) return;
+              if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+              const card = cardData?.card;
+              const isLocation =
+                card && (card.type === 'LOCATION' || cardData?.isLocationCard);
+              if (card && !isLocation) {
+                applyCardResponse(cardData, { silent: true });
+                return;
+              }
+            } catch (_) {
+              /* fall through to cancel */
+            }
+            await cancelCityHandoff();
+          }
+          return;
+        }
+
+        if (phaseNow === 'cityBoxes') {
+          applyAvailableCitiesRef.current?.(cities);
+          if (cities.length === 0) {
+            try {
+              const cardData = await apiRequest(
+                API.DISCOVERY.GET_CARD(sid, modeRef.current === 'solo'),
+              );
+              if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+              const card = cardData?.card;
+              const isLocation = card && (card.type === 'LOCATION' || cardData?.isLocationCard);
+              if (card && !isLocation) {
+                applyCardResponse(cardData, { silent: true });
+              } else if (isLocation && card?.city) {
+                enterCityHandoff(card);
+              } else {
+                enterEmptyOrbit();
+              }
+            } catch (_) {
+              enterEmptyOrbit();
+            }
+          }
+          return;
+        }
+
+        if (phaseNow === 'emptyOrbit') {
+          try {
+            const cardData = await apiRequest(
+              API.DISCOVERY.GET_CARD(sid, modeRef.current === 'solo'),
+            );
+            if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+            const card = cardData?.card;
+            const isLocation = card && (card.type === 'LOCATION' || cardData?.isLocationCard);
+            if (card && !isLocation) {
+              applyCardResponse(cardData, { silent: true });
+              return;
+            }
+            if (isLocation && card?.city) {
+              enterCityHandoff(card);
+              return;
+            }
+          } catch (_) {
+            /* keep empty */
+          }
+          if (cities.length > 0) {
+            enterCityBoxes(cities);
+          }
+        }
+      } catch (_) {
+        /* keep UI stable on poll errors */
+      }
+    };
+
+    void tick();
+    availableCitiesPollRef.current = setInterval(tick, pollMs);
+
+    return () => {
+      if (availableCitiesPollRef.current) {
+        clearInterval(availableCitiesPollRef.current);
+        availableCitiesPollRef.current = null;
+      }
+    };
+  }, [
+    isSearching,
+    waitingForMatch,
+    deckPhase,
+    handoffValidityPollMs,
+    availableCitiesPollMs,
+    applyCardResponse,
+    applyUiConfigFromResponse,
+    cancelCityHandoff,
+    enterCityBoxes,
+    enterCityHandoff,
+    enterEmptyOrbit,
+  ]);
+
+  // Keep deckPhaseRef in sync
+  useEffect(() => {
+    deckPhaseRef.current = deckPhase;
+  }, [deckPhase]);
 
   // ── Return everything the UI needs ─────────────────────────────────────────
   return {
@@ -1584,6 +2077,9 @@ export default function useMeetSomeone() {
     setIsVideoOn,
     discoveryBlockedByOtherTab,
     isDiscoveryUserFetching,
+    deckPhase,
+    availableCities,
+    handoffSecondsLeft,
     // Derived
     myUserId,
     squadGuestIds,
@@ -1606,6 +2102,7 @@ export default function useMeetSomeone() {
     handleProceed,
     handleCancelWaiting,
     handleSelectLocation,
+    cancelCityHandoff,
     handleNextImage,
     handlePrevImage,
     toggleFullscreen,

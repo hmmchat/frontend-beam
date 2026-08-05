@@ -580,92 +580,119 @@ export default function useVideoChat() {
   }
 
   // ---- Room health watcher -------------------------------------------------
+  // Alone (peer tab-close / network cut): confirm via GET_USER_ROOM participant
+  // count for ~5s, then auto-exit + resume discovery. Silent UI during grace.
   useEffect(() => {
+    const ALONE_EXIT_MS = Number.parseInt(
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_CALL_ALONE_EXIT_MS) || '5000',
+      10
+    ) || 5000;
+    const aloneSinceRef = { current: null };
+
     const mergeRoomHealthDebug = (next) => setRoomHealthDebug(prev => {
       if (prev.graceActive === next.graceActive && prev.graceRemainingSec === next.graceRemainingSec && prev.failureCount === next.failureCount) return prev;
       return next;
     });
+
     const tick = async () => {
       if (intentionalExitRef.current || autoTransitioningRef.current) return;
       if (typeof document !== 'undefined' && document.hidden) return;
       const now = Date.now();
       const graceMs = suppressAutoResumeUntilRef.current - now;
-      if (graceMs > 0) { mergeRoomHealthDebug({ graceActive: true, graceRemainingSec: Math.ceil(graceMs / 1000), failureCount: roomHealthFailureCountRef.current }); return; }
+      if (graceMs > 0) {
+        aloneSinceRef.current = null;
+        mergeRoomHealthDebug({ graceActive: true, graceRemainingSec: Math.ceil(graceMs / 1000), failureCount: roomHealthFailureCountRef.current });
+        return;
+      }
       const roomId = roomInfoRef.current?.roomId;
       const userId = userIdRef.current;
       if (!roomId || !userId) return;
-      if ((remoteStreamsRef.current?.length || 0) === 0 && !hadRemotePeerInSessionRef.current && Date.now() < (mediaEstablishGraceUntilRef.current || 0)) return;
-      if ((remoteStreamsRef.current?.length || 0) > 0) {
-        roomHealthFailureCountRef.current = 0;
-        mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
-        // Reconcile rendered tiles against the server participant list so a peer whose
-        // device died silently (no participant-left ever delivered) doesn't leave a
-        // frozen tile forever. Four consecutive misses (~32s) before evicting, to ride
-        // out server-side cache staleness and transient producer gaps.
-        try {
-          const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
-          if (!roomState?.exists) {
-            roomGoneWithTilesCountRef.current += 1;
-            if (roomGoneWithTilesCountRef.current >= 3 && !isBroadcastingRef.current) {
-              flowLog('room_health_room_gone_with_tiles', {});
-              await handlePeerLeftAutoResume();
-            }
-            return;
-          }
-          roomGoneWithTilesCountRef.current = 0;
-          const participants = Array.isArray(roomState.participants) ? roomState.participants : null;
-          if (!participants) return;
-          const activeIds = new Set(participants.map(p => String(p.userId)));
-          if (!activeIds.has(String(userId))) return; // our own row is stale/missing; don't trust this snapshot
-          const missCounts = staleTileMissCountRef.current;
-          for (const tile of [...remoteStreamsRef.current]) {
-            const tileId = String(tile.userId);
-            if (tileId.startsWith('producer:')) continue; // identity unknown; cannot reconcile
-            if (activeIds.has(tileId)) { missCounts.delete(tileId); continue; }
-            const misses = (missCounts.get(tileId) || 0) + 1;
-            if (misses >= 4) {
-              missCounts.delete(tileId);
-              flowLog('room_health_evict_stale_tile', { userId: tileId });
-              removeRemoteParticipantFromUi(tileId);
-            } else {
-              missCounts.set(tileId, misses);
-            }
-          }
-          for (const knownId of [...missCounts.keys()]) {
-            if (!remoteStreamsRef.current.some(s => String(s.userId) === knownId)) missCounts.delete(knownId);
-          }
-        } catch { }
+      if ((remoteStreamsRef.current?.length || 0) === 0 && !hadRemotePeerInSessionRef.current && Date.now() < (mediaEstablishGraceUntilRef.current || 0)) {
+        aloneSinceRef.current = null;
         return;
       }
+
       try {
         const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
         const participantCount = Number(roomState?.participantCount || 0);
+        const participants = Array.isArray(roomState?.participants) ? roomState.participants : [];
+        const others = participants.filter((p) => String(p.userId) !== String(userId));
+        const roomIsBroadcasting = roomState?.isBroadcasting === true || roomState?.callType === 'broadcast';
         const inWaitlistJoinGrace = Date.now() < (mediaEstablishGraceUntilRef.current || 0);
-        if (inWaitlistJoinGrace && (!roomState?.exists || participantCount <= 1)) return;
-        if (!roomState?.exists || participantCount <= 1) {
-          const roomIsBroadcasting = roomState?.isBroadcasting === true || roomState?.callType === 'broadcast';
-          if (isBroadcastingRef.current || roomIsBroadcasting) {
-            if (roomIsBroadcasting && !isBroadcastingRef.current) markRoomAsBroadcasting(roomState);
-            roomHealthFailureCountRef.current = 0;
-            mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
-            return;
+
+        // Reconcile stale remote tiles against server participant list (frozen tiles after silent peer death)
+        if ((remoteStreamsRef.current?.length || 0) > 0 && roomState?.exists && participants.length) {
+          const activeIds = new Set(participants.map((p) => String(p.userId)));
+          if (activeIds.has(String(userId))) {
+            const missCounts = staleTileMissCountRef.current;
+            for (const tile of [...remoteStreamsRef.current]) {
+              const tileId = String(tile.userId);
+              if (tileId.startsWith('producer:')) continue;
+              if (activeIds.has(tileId)) {
+                missCounts.delete(tileId);
+                continue;
+              }
+              const misses = (missCounts.get(tileId) || 0) + 1;
+              if (misses >= 2) {
+                missCounts.delete(tileId);
+                flowLog('room_health_evict_stale_tile', { userId: tileId });
+                removeRemoteParticipantFromUi(tileId);
+              } else {
+                missCounts.set(tileId, misses);
+              }
+            }
+            for (const knownId of [...missCounts.keys()]) {
+              if (!remoteStreamsRef.current.some((s) => String(s.userId) === knownId)) missCounts.delete(knownId);
+            }
           }
+        }
+
+        const alone =
+          !roomIsBroadcasting &&
+          !isBroadcastingRef.current &&
+          !inWaitlistJoinGrace &&
+          (!roomState?.exists ||
+            participantCount <= 1 ||
+            (participants.length > 0 && others.length === 0));
+
+        if (alone) {
+          if (aloneSinceRef.current == null) aloneSinceRef.current = now;
+          const aloneForMs = now - aloneSinceRef.current;
+          const remainingSec = Math.max(0, Math.ceil((ALONE_EXIT_MS - aloneForMs) / 1000));
           roomHealthFailureCountRef.current += 1;
-          mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: roomHealthFailureCountRef.current });
-          // Require many consecutive solo-room reads (~50s at 2.5s cadence) before auto-resume.
-          if (roomHealthFailureCountRef.current < 20) return;
-          flowLog('room_health_auto_resume', { exists: Boolean(roomState?.exists), participantCount });
+          mergeRoomHealthDebug({
+            graceActive: aloneForMs < ALONE_EXIT_MS,
+            graceRemainingSec: remainingSec,
+            failureCount: roomHealthFailureCountRef.current,
+          });
+          if (aloneForMs < ALONE_EXIT_MS) return;
+          flowLog('room_health_auto_resume', {
+            exists: Boolean(roomState?.exists),
+            participantCount,
+            aloneForMs,
+          });
+          aloneSinceRef.current = null;
           await handlePeerLeftAutoResume();
           return;
         }
+
+        aloneSinceRef.current = null;
         roomHealthFailureCountRef.current = 0;
+        roomGoneWithTilesCountRef.current = 0;
         mergeRoomHealthDebug({ graceActive: false, graceRemainingSec: 0, failureCount: 0 });
-      } catch { }
+      } catch {
+        /* prefer staying in call on transient API errors */
+      }
     };
+
     let timeoutId;
     const scheduleRoomHealth = () => {
-      const delay = (remoteStreamsRef.current?.length || 0) > 0 ? 8000 : 2500;
-      timeoutId = setTimeout(async () => { await tick(); scheduleRoomHealth(); }, delay);
+      // Fast enough to confirm ~5s alone; slightly slower when peers are visibly present
+      const delay = (remoteStreamsRef.current?.length || 0) > 0 ? 2000 : 1500;
+      timeoutId = setTimeout(async () => {
+        await tick();
+        scheduleRoomHealth();
+      }, delay);
     };
     scheduleRoomHealth();
     return () => clearTimeout(timeoutId);
@@ -1107,7 +1134,7 @@ export default function useVideoChat() {
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
         if ((remoteStreamsRef.current?.length || 0) > 0) return;
         handlePeerLeftAutoResume();
-      }, 8000);
+      }, 5000);
     } else {
       remoteMediaMissingSinceRef.current = null;
       if (peerLeftAutoResumeTimerRef.current) { clearTimeout(peerLeftAutoResumeTimerRef.current); peerLeftAutoResumeTimerRef.current = null; }

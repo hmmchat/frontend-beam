@@ -50,6 +50,13 @@ export default function MeetSomeoneDesktopRight({
   setIsGenderModalOpen,
   setIsLocationModalOpen,
 
+  // City handoff / empty orbit
+  deckPhase = 'user',
+  availableCities = [],
+  handoffSecondsLeft = 5,
+  cancelCityHandoff,
+  handleSelectLocation,
+
   // Squad
   squadLobby,
   squadMeetBusy,
@@ -442,6 +449,11 @@ export default function MeetSomeoneDesktopRight({
                 translateY={translateY}
                 isVideoOn={isVideoOn}
                 setMode={setMode}
+                deckPhase={deckPhase}
+                availableCities={availableCities}
+                handoffSecondsLeft={handoffSecondsLeft}
+                cancelCityHandoff={cancelCityHandoff}
+                handleSelectLocation={handleSelectLocation}
               />
 
               {/* 🎥 VIDEO (Desktop only) */}

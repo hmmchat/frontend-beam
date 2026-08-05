@@ -65,6 +65,9 @@ export default function MeetSomeoneDynamic() {
     isVideoOn,
     setIsVideoOn,
     discoveryBlockedByOtherTab,
+    deckPhase,
+    availableCities,
+    handoffSecondsLeft,
     // Derived
     myUserId,
     squadGuestIds,
@@ -79,6 +82,8 @@ export default function MeetSomeoneDynamic() {
     handleRaincheck,
     handleProceed,
     handleCancelWaiting,
+    handleSelectLocation,
+    cancelCityHandoff,
     handleNextImage,
     handlePrevImage,
     toggleFullscreen,
@@ -165,6 +170,11 @@ export default function MeetSomeoneDynamic() {
             handleCancelWaiting={handleCancelWaiting}
             setIsSearching={setIsSearching}
             setCurrentCard={setCurrentCard}
+            deckPhase={deckPhase}
+            availableCities={availableCities}
+            handoffSecondsLeft={handoffSecondsLeft}
+            cancelCityHandoff={cancelCityHandoff}
+            handleSelectLocation={handleSelectLocation}
           />
 
           {/* RIGHT SIDE (DESKTOP + MOBILE SEARCHING) */}
@@ -202,6 +212,11 @@ export default function MeetSomeoneDynamic() {
             toggleFullscreen={toggleFullscreen}
             setIsGenderModalOpen={setIsGenderModalOpen}
             setIsLocationModalOpen={setIsLocationModalOpen}
+            deckPhase={deckPhase}
+            availableCities={availableCities}
+            handoffSecondsLeft={handoffSecondsLeft}
+            cancelCityHandoff={cancelCityHandoff}
+            handleSelectLocation={handleSelectLocation}
             // Squad
             squadLobby={squadLobby}
             squadMeetBusy={squadMeetBusy}

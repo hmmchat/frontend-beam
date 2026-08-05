@@ -288,7 +288,7 @@ const FaceCard4 = ({
             </h1>
             <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
               {/* <IoLocationOutline className="shrink-0" /> */}
-              <span className={clsx('truncate', 'font-outfit')}>{city}</span>
+              {city ? <span className={clsx('truncate', 'font-outfit')}>{city}</span> : null}
             </div>
           </div>
 

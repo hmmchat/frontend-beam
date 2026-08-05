@@ -3,6 +3,9 @@ import clsx from 'clsx';
 import FaceCard4 from './FaceCard4';
 import SearchingPopup from './SearchingPopup';
 import MatchButtons from './MeetSomeoneMatchButtons';
+import CityHandoffBar from './CityHandoffBar';
+import CityBoxesPanel from './CityBoxesPanel';
+import EmptyOrbitPanel from './EmptyOrbitPanel';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { exitDiscovery } from '@/lib/discovery-presence';
 
@@ -23,7 +26,24 @@ export default function MeetSomeoneDesktopLeft({
   handleCancelWaiting,
   setIsSearching,
   setCurrentCard,
+  deckPhase = 'user',
+  availableCities = [],
+  handoffSecondsLeft = 5,
+  cancelCityHandoff,
+  handleSelectLocation,
 }) {
+  const showEmptyOrbit = deckPhase === 'emptyOrbit';
+  const showCityBoxes = deckPhase === 'cityBoxes';
+  const showCityHandoff =
+    deckPhase === 'cityHandoff' &&
+    (currentCard?.type === 'LOCATION' || currentCard?.isLocationCard) &&
+    discoveryCityFaceUser;
+  const showUserCard =
+    deckPhase === 'user' &&
+    currentCard &&
+    currentCard.type !== 'LOCATION' &&
+    !currentCard.isLocationCard;
+
   return (
     <div
       className={clsx(
@@ -52,7 +72,6 @@ export default function MeetSomeoneDesktopLeft({
         }}
       />
 
-      {/* 🔲 HUD BORDER FRAME (Desktop Left) */}
       <div
         className={clsx(
           'hidden',
@@ -82,7 +101,7 @@ export default function MeetSomeoneDesktopLeft({
             'p-2',
           )}
         >
-          {!currentCard || isResumeLoading ? (
+          {isResumeLoading && !showEmptyOrbit && !showCityBoxes && !showCityHandoff && !showUserCard ? (
             <div
               className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}
             >
@@ -100,101 +119,46 @@ export default function MeetSomeoneDesktopLeft({
                 }}
               />
             </div>
-          ) : currentCard.type === 'LOCATION' || currentCard.isLocationCard ? (
-            discoveryCityFaceUser ? (
-              <div
-                className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}
-              >
-                <div
-                  className={clsx(
-                    'flex',
-                    'w-full',
-                    'flex-col',
-                    'items-center',
-                    'justify-center',
-                    'px-4',
-                  )}
-                >
-                  <FaceCard4
-                    user={discoveryCityFaceUser}
-                    hideArrows={true}
-                    currentIndex={currentImageIndex}
-                    onIndexChange={setCurrentImageIndex}
-                  />
-                </div>
-                <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
-                  <div
-                    className={clsx(
-                      'flex',
-                      'items-center',
-                      'justify-between',
-                      'gap-3',
-                      'mx-auto',
-                    )}
-                  >
-                    {!waitingForMatch && (
-                      <button
-                        onClick={handlePrevImage}
-                        className={clsx(
-                          'w-12',
-                          'h-12',
-                          'flex',
-                          'items-center',
-                          'justify-center',
-                          'rounded-full',
-                          'border',
-                          'border-white/30',
-                          'text-white',
-                          'text-2xl',
-                          'backdrop-blur-md',
-                          'hover:bg-white/10',
-                          'transition',
-                          'active:scale-90',
-                        )}
-                      >
-                        <IoIosArrowBack />
-                      </button>
-                    )}
-                    <MatchButtons
-                      waitingForMatch={waitingForMatch}
-                      waitingMessage={waitingMessage}
-                      handleCancelWaiting={handleCancelWaiting}
-                      handleRaincheck={handleRaincheck}
-                      handleProceed={handleProceed}
-                      isDesktop={false}
-                    />
-                    {!waitingForMatch && (
-                      <button
-                        onClick={handleNextImage}
-                        className={clsx(
-                          'w-12',
-                          'h-12',
-                          'flex',
-                          'items-center',
-                          'justify-center',
-                          'rounded-full',
-                          'border',
-                          'border-white/30',
-                          'text-white',
-                          'text-2xl',
-                          'backdrop-blur-md',
-                          'hover:bg-white/10',
-                          'transition',
-                          'active:scale-90',
-                        )}
-                      >
-                        <IoIosArrowForward />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : null
-          ) : (
+          ) : showEmptyOrbit ? (
+            <EmptyOrbitPanel />
+          ) : showCityBoxes ? (
+            <CityBoxesPanel
+              cities={availableCities}
+              onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
+            />
+          ) : showCityHandoff ? (
             <div
               className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}
             >
-              {/* CENTER CONTENT */}
+              <div
+                className={clsx(
+                  'flex',
+                  'w-full',
+                  'flex-1',
+                  'flex-col',
+                  'items-center',
+                  'justify-center',
+                  'px-4',
+                  'gap-4',
+                )}
+              >
+                <FaceCard4
+                  user={discoveryCityFaceUser}
+                  hideArrows={true}
+                  currentIndex={currentImageIndex}
+                  onIndexChange={setCurrentImageIndex}
+                />
+                <CityHandoffBar
+                  cityLabel={discoveryCityFaceUser?.username}
+                  secondsLeft={handoffSecondsLeft}
+                  onCancel={cancelCityHandoff}
+                />
+              </div>
+            </div>
+          ) : showUserCard ? (
+            <div
+              className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}
+            >
               <div
                 className={clsx(
                   'flex',
@@ -213,7 +177,6 @@ export default function MeetSomeoneDesktopLeft({
                 />
               </div>
 
-              {/* 🔥 FIXED BOTTOM BUTTONS */}
               <div className={clsx('absolute', 'bottom-1', 'left-0', 'w-full', 'px-4', 'z-50')}>
                 <div
                   className={clsx(
@@ -282,6 +245,24 @@ export default function MeetSomeoneDesktopLeft({
                   )}
                 </div>
               </div>
+            </div>
+          ) : (
+            <div
+              className={clsx('relative', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center')}
+            >
+              <SearchingPopup
+                isVisible={true}
+                onCancel={() => {
+                  setIsSearching(false);
+                  setCurrentCard(null);
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('searching');
+                    window.history.pushState({}, '', url.toString());
+                  }
+                  void exitDiscovery();
+                }}
+              />
             </div>
           )}
         </div>

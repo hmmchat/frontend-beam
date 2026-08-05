@@ -112,6 +112,9 @@ const FaceCard4 = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const normalizedPathname = pathname?.replace(/\/$/, "");
+  const isFacecardPage = normalizedPathname === "/facecard";
+
   const [realtimeStatus, setRealtimeStatus] = useState("");
   const [realtimeVideoEnabled, setRealtimeVideoEnabled] = useState(null);
   const [realtimeVideoOn, setRealtimeVideoOn] = useState(null);
@@ -227,7 +230,7 @@ const FaceCard4 = ({
     Boolean(user.isBroadcasting || user.broadcastUrl) ||
     rawStatus.includes("IN_BROADCAST") ||
     rawStatus === "BROADCAST";
-  
+
   const videoEnabledToUse = realtimeVideoEnabled !== null && realtimeVideoEnabled !== undefined ? realtimeVideoEnabled : user.videoEnabled;
   const videoOnToUse = realtimeVideoOn !== null && realtimeVideoOn !== undefined ? realtimeVideoOn : user.videoOn;
   // Show camera ON only when explicitly true. If undefined/unknown, show OFF.
@@ -275,6 +278,9 @@ const FaceCard4 = ({
         <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'hidden', 'md:flex')}>
           <div>
             <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
+              {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
+                <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
+              )}
               {user.username || "User"}
               <KycVerifiedBadge user={user} />
               {!hideFacecardAge && (
@@ -379,6 +385,9 @@ const FaceCard4 = ({
             <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'md:hidden')}>
               <div>
                 <h1 className={clsx('font-sigmar', 'text-xl', 'font-bold', 'text-[#F2AD00]')}>
+                  {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
+                    <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
+                  )}
                   {user.username || "User"}
                   <KycVerifiedBadge user={user} />
                   {!hideFacecardAge && (
@@ -598,33 +607,33 @@ const FaceCard4 = ({
 
 
 
-          <ReportUserModal
-            isOpen={showReportModal}
-            onClose={() => setShowReportModal(false)}
-            userId={user.userId || user.id || user._id}
-            name={user.username || 'User'}
-            onReportUser={handleReportUser}
-            isAbsolute={false}
-          />
+            <ReportUserModal
+              isOpen={showReportModal}
+              onClose={() => setShowReportModal(false)}
+              userId={user.userId || user.id || user._id}
+              name={user.username || 'User'}
+              onReportUser={handleReportUser}
+              isAbsolute={false}
+            />
 
-          <BlockUserModal
-            isOpen={showBlockModal}
-            onClose={() => setShowBlockModal(false)}
-            userId={user.userId || user.id || user._id}
-            name={user.username || 'User'}
-            onBlockUser={handleBlockUser}
-            isAbsolute={false}
-          />
+            <BlockUserModal
+              isOpen={showBlockModal}
+              onClose={() => setShowBlockModal(false)}
+              userId={user.userId || user.id || user._id}
+              name={user.username || 'User'}
+              onBlockUser={handleBlockUser}
+              isAbsolute={false}
+            />
 
-          {toastMessage && (
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[110] bg-slate-900/85 backdrop-blur-md outline outline-2 outline-white/20 border border-white/5 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-outfit text-sm font-semibold">{toastMessage}</span>
-            </div>
-          )}
+            {toastMessage && (
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[110] bg-slate-900/85 backdrop-blur-md outline outline-2 outline-white/20 border border-white/5 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="font-outfit text-sm font-semibold">{toastMessage}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
       {!hideArrows && (
         <div className={clsx('flex', 'items-center', 'justify-center', 'gap-6', 'mt-4', 'hidden', 'md:flex')}>

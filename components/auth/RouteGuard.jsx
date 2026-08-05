@@ -19,7 +19,10 @@ const PUBLIC_PATHS = [
 
 function isPublicPath(pathname) {
   const clean = pathname.replace(/\/$/, "") || "/";
-  return PUBLIC_PATHS.some((p) => clean === p.replace(/\/$/, ""));
+  return PUBLIC_PATHS.some((p) => {
+    const cleanP = p.replace(/\/$/, "") || "/";
+    return clean === cleanP;
+  });
 }
 
 function hasValidToken() {

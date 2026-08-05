@@ -210,7 +210,7 @@ const FaceCard = ({
   const hideFacecardAge = Boolean(user.hideFacecardAge);
   const age = user.age ?? calculateAge(user.dateOfBirth);
   const rawCity = user.city || user.preferredCity || "Unknown";
-  const city = (!rawCity || rawCity === rawCity === 'Anywhere')
+  const city = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
     ? 'Anywhere'
     : rawCity === 'Unknown'
       ? 'Unknown'
@@ -262,6 +262,9 @@ const FaceCard = ({
       <div className="absolute left-0 top-[3vh] z-20   flex w-full items-center justify-between px-5 hidden md:flex">
         <div>
           <h1 className="font-sigmar text-xl font-extrabold text-[#F2AD00]">
+            {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
+              <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
+            )}
             {user.username || "User"}
             <KycVerifiedBadge user={user} />
             {!hideFacecardAge && (
@@ -276,6 +279,10 @@ const FaceCard = ({
               </>
             )}
           </h1>
+          <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+            {/* <IoLocationOutline className="shrink-0" /> */}
+            <span className="truncate font-outfit">{city}</span>
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -387,6 +394,9 @@ const FaceCard = ({
               <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
                 <div>
                   <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
+                    {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
+                      <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
+                    )}
                     {user.username || "User"}
                     <KycVerifiedBadge user={user} />
                     {!hideFacecardAge && (
@@ -401,6 +411,10 @@ const FaceCard = ({
                       </>
                     )}
                   </h1>
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+                    <IoLocationOutline className="shrink-0" />
+                    <span className="truncate">{city}</span>
+                  </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">

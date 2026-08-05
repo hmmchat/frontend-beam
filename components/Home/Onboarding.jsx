@@ -1165,7 +1165,6 @@ export default function Onboarding() {
                           ⟳
                         </button>
                       </div>
-
                       <div className="flex flex-wrap gap-2 h-auto md:h-[300px] content-start items-start mt-6 overflow-visible md:overflow-hidden">
                         {suggestions.map((text, i) => {
                           const isLong = text.length > 25;
@@ -1189,12 +1188,12 @@ export default function Onboarding() {
     ${isSelected ? "border-yellow-400 bg-yellow-400/10" : ""}
     
     inline-flex items-center justify-center
-    whitespace-nowrap
-    
     max-w-full
   `}
                             >
-                              {text}
+                              <span className="line-clamp-2 whitespace-normal text-start break-words">
+                                {text}
+                              </span>
                             </button>
                           );
                         })}

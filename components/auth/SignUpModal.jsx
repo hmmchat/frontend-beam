@@ -122,9 +122,9 @@ function SignUpModalContent({ isOpen, onClose }) {
           const pendingSquadJoinPath = getPendingSquadJoinPath();
 
           if (profileResponse.ok) {
-            // Profile exists - go to dashboard
-            console.log("Profile exists, redirecting to dashboard");
-            router.push(pendingSquadJoinPath || "/facecard");
+            // Profile exists — returning user, go straight to home (MeetSomeoneDynamic)
+            console.log("Profile exists, redirecting to home");
+            router.push(pendingSquadJoinPath || "/");
           } else {
             // No profile - go to onboarding
             console.log("No profile, redirecting to onboarding");

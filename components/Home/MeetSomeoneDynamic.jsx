@@ -68,6 +68,7 @@ export default function MeetSomeoneDynamic() {
     deckPhase,
     availableCities,
     handoffSecondsLeft,
+    handoffCountdownSeconds,
     // Derived
     myUserId,
     squadGuestIds,
@@ -173,6 +174,7 @@ export default function MeetSomeoneDynamic() {
             deckPhase={deckPhase}
             availableCities={availableCities}
             handoffSecondsLeft={handoffSecondsLeft}
+            handoffCountdownSeconds={handoffCountdownSeconds}
             cancelCityHandoff={cancelCityHandoff}
             handleSelectLocation={handleSelectLocation}
           />
@@ -215,6 +217,7 @@ export default function MeetSomeoneDynamic() {
             deckPhase={deckPhase}
             availableCities={availableCities}
             handoffSecondsLeft={handoffSecondsLeft}
+            handoffCountdownSeconds={handoffCountdownSeconds}
             cancelCityHandoff={cancelCityHandoff}
             handleSelectLocation={handleSelectLocation}
             // Squad

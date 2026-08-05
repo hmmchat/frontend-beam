@@ -28,7 +28,8 @@ export default function MeetSomeoneDesktopLeft({
   setCurrentCard,
   deckPhase = 'user',
   availableCities = [],
-  handoffSecondsLeft = 5,
+  handoffSecondsLeft = 10,
+  handoffCountdownSeconds = 10,
   cancelCityHandoff,
   handleSelectLocation,
 }) {
@@ -128,29 +129,34 @@ export default function MeetSomeoneDesktopLeft({
             />
           ) : showCityHandoff ? (
             <div
-              className={clsx('relative', 'flex', 'h-full', 'w-full', 'flex-col', 'overflow-hidden')}
+              className={clsx('relative', 'flex', 'h-full', 'min-h-0', 'w-full', 'flex-col', 'overflow-hidden')}
             >
               <div
                 className={clsx(
                   'flex',
                   'w-full',
                   'flex-1',
+                  'min-h-0',
                   'flex-col',
                   'items-center',
                   'justify-center',
-                  'px-4',
-                  'gap-4',
+                  'px-3',
+                  'gap-2',
+                  'overflow-hidden',
                 )}
               >
-                <FaceCard4
-                  user={discoveryCityFaceUser}
-                  hideArrows={true}
-                  currentIndex={currentImageIndex}
-                  onIndexChange={setCurrentImageIndex}
-                />
+                <div className={clsx('min-h-0', 'flex-1', 'w-full', 'flex', 'items-center', 'justify-center', 'overflow-hidden')}>
+                  <FaceCard4
+                    user={discoveryCityFaceUser}
+                    hideArrows={true}
+                    currentIndex={currentImageIndex}
+                    onIndexChange={setCurrentImageIndex}
+                  />
+                </div>
                 <CityHandoffBar
                   cityLabel={discoveryCityFaceUser?.username}
                   secondsLeft={handoffSecondsLeft}
+                  totalSeconds={handoffCountdownSeconds}
                   onCancel={cancelCityHandoff}
                 />
               </div>

@@ -53,7 +53,8 @@ export default function MeetSomeoneDesktopRight({
   // City handoff / empty orbit
   deckPhase = 'user',
   availableCities = [],
-  handoffSecondsLeft = 5,
+  handoffSecondsLeft = 10,
+  handoffCountdownSeconds = 10,
   cancelCityHandoff,
   handleSelectLocation,
 
@@ -452,6 +453,7 @@ export default function MeetSomeoneDesktopRight({
                 deckPhase={deckPhase}
                 availableCities={availableCities}
                 handoffSecondsLeft={handoffSecondsLeft}
+                handoffCountdownSeconds={handoffCountdownSeconds}
                 cancelCityHandoff={cancelCityHandoff}
                 handleSelectLocation={handleSelectLocation}
               />

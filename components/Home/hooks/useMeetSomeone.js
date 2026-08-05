@@ -76,7 +76,7 @@ export default function useMeetSomeone() {
   const [deckPhase, setDeckPhase] = useState('user');
   const [availableCities, setAvailableCities] = useState([]);
   const [handoffSecondsLeft, setHandoffSecondsLeft] = useState(5);
-  const [handoffCountdownSeconds, setHandoffCountdownSeconds] = useState(5);
+  const [handoffCountdownSeconds, setHandoffCountdownSeconds] = useState(10);
   const [handoffValidityPollMs, setHandoffValidityPollMs] = useState(3000);
   const [availableCitiesPollMs, setAvailableCitiesPollMs] = useState(8000);
 
@@ -389,17 +389,22 @@ export default function useMeetSomeone() {
       if (data?.card || data?.exhausted) {
         setIsSearching(true);
       }
-      // Don't clobber handoff/boxes/empty with stale silent polls mid-phase
-      if (deckPhaseRef.current !== 'user' && deckPhaseRef.current !== 'cityHandoff') {
-        // empty/boxes recover via available-cities poll; only accept a real user card here
-        const card = data?.card;
-        const isLocation = card && (card.type === 'LOCATION' || data?.isLocationCard);
+
+      const card = data?.card;
+      const isLocation = card && (card.type === 'LOCATION' || data?.isLocationCard);
+      const phase = deckPhaseRef.current;
+
+      // During city handoff / boxes / empty: only accept a USER face card so we
+      // don't reset the countdown or clobber UI with LOCATION/exhausted noise.
+      // Mutual match must surface immediately on both sides.
+      if (phase === 'cityHandoff' || phase === 'cityBoxes' || phase === 'emptyOrbit') {
         if (card && !isLocation) {
           applyCardResponse(data, { silent: true });
         }
       } else {
         applyCardResponse(data, { silent: true });
       }
+
       setSessionId(data?.sessionId || currentSid || Date.now().toString());
       if (soloMode) {
         startDiscoveryHeartbeat(data.sessionId || currentSid);
@@ -415,6 +420,34 @@ export default function useMeetSomeone() {
       setTimeout(() => setIsResumeLoading(false), 500);
     }
   };
+
+  /** Immediate card pull when a mutual match is pushed over WS — no phase gating delay. */
+  const fetchMatchedCardNow = useCallback(async () => {
+    if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    try {
+      const soloMode = modeRef.current === 'solo';
+      const data = await apiRequest(API.DISCOVERY.GET_CARD(sid, soloMode));
+      const card = data?.card;
+      const isLocation = card && (card.type === 'LOCATION' || data?.isLocationCard);
+      if (card && !isLocation) {
+        handoffCancelledRef.current = true;
+        handoffCompletingRef.current = false;
+        if (handoffTimerRef.current) {
+          clearInterval(handoffTimerRef.current);
+          handoffTimerRef.current = null;
+        }
+        applyCardResponse(data, { silent: false });
+        setIsSearching(true);
+        if (soloMode) {
+          startDiscoveryHeartbeat(data.sessionId || sid);
+        }
+      }
+    } catch (_) {
+      /* next poll retries */
+    }
+  }, [applyCardResponse]);
 
   const beginDiscoverySearch = async (sid = null) => {
     if (isDiscoveryActiveElsewhere()) {
@@ -1553,8 +1586,9 @@ export default function useMeetSomeone() {
     const unsubTab = subscribeTabCoordinator(syncTabDiscoveryState);
     const unsubPresence = subscribePresenceRealtime((payload) => {
       if (payload?.eventType === 'discovery:matched') {
-        if (isSearchingRef.current && !waitingForMatchRef.current) {
-          void fetchCardSilently(sessionIdRef.current, modeRef.current === 'solo');
+        // Peer already has our face card — show theirs immediately (any deck phase).
+        if (isSearchingRef.current) {
+          void fetchMatchedCardNow();
         }
         return;
       }
@@ -1566,7 +1600,7 @@ export default function useMeetSomeone() {
           setCurrentCard(null);
         }
         if (payload.status === 'MATCHED' && isSearchingRef.current && !waitingForMatchRef.current) {
-          void fetchCardSilently(sessionIdRef.current, modeRef.current === 'solo');
+          void fetchMatchedCardNow();
         }
       }
     });
@@ -1582,7 +1616,7 @@ export default function useMeetSomeone() {
         window.removeEventListener('presence:changed', onPresenceChanged);
       }
     };
-  }, [myProfile?.id]);
+  }, [myProfile?.id, fetchMatchedCardNow]);
 
   useEffect(() => {
     const prev = prevModeSquadRef.current;
@@ -1791,8 +1825,15 @@ export default function useMeetSomeone() {
   }, [mode]);
 
   useEffect(() => {
-    const shouldPollDiscovery =
-      isSearching && !waitingForMatch && !swiping && deckPhase === 'user';
+    // Always watch for mutual USER cards while searching — including handoff/boxes/empty.
+    // Fast poll when we don't already have a user face card (realtime reciprocity).
+    const shouldPollDiscovery = isSearching && !waitingForMatch && !swiping;
+    const hasUserFaceCard =
+      deckPhase === 'user' &&
+      currentCard &&
+      currentCard.type !== 'LOCATION' &&
+      !currentCard.isLocationCard;
+    const pollMs = hasUserFaceCard ? 5000 : 1000;
 
     if (!shouldPollDiscovery) {
       if (discoveryPollRef.current) {
@@ -1804,8 +1845,9 @@ export default function useMeetSomeone() {
 
     discoveryPollRef.current = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      fetchCardSilently(sessionId || null, mode === 'solo');
-    }, 5000);
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+      fetchCardSilently(sessionIdRef.current || sessionId || null, modeRef.current === 'solo');
+    }, pollMs);
 
     return () => {
       if (discoveryPollRef.current) {
@@ -1813,7 +1855,7 @@ export default function useMeetSomeone() {
         discoveryPollRef.current = null;
       }
     };
-  }, [isSearching, waitingForMatch, swiping, sessionId, mode, deckPhase]);
+  }, [isSearching, waitingForMatch, swiping, sessionId, mode, deckPhase, currentCard]);
 
   // Load handoff / poll UI config once
   useEffect(() => {
@@ -2080,6 +2122,7 @@ export default function useMeetSomeone() {
     deckPhase,
     availableCities,
     handoffSecondsLeft,
+    handoffCountdownSeconds,
     // Derived
     myUserId,
     squadGuestIds,

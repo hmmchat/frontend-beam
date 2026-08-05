@@ -6,8 +6,10 @@ import MatchButtons from './MeetSomeoneMatchButtons';
 import CityHandoffBar from './CityHandoffBar';
 import CityBoxesPanel from './CityBoxesPanel';
 import EmptyOrbitPanel from './EmptyOrbitPanel';
+import SearchingPopup from './SearchingPopup';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { useEffect, useState } from 'react';
+import { exitDiscovery } from '@/lib/discovery-presence';
 
 /**
  * Mobile top-half (or fullscreen) card + bottom cam preview
@@ -30,7 +32,8 @@ export default function MeetSomeoneMobileSearch({
   setMode,
   deckPhase = 'user',
   availableCities = [],
-  handoffSecondsLeft = 5,
+  handoffSecondsLeft = 10,
+  handoffCountdownSeconds = 10,
   cancelCityHandoff,
   handleSelectLocation,
 }) {
@@ -96,10 +99,30 @@ export default function MeetSomeoneMobileSearch({
                 onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
               />
             ) : isSearchingState ? (
-              <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', '')} />
+              <SearchingPopup
+                isVisible={true}
+                label="Searching"
+                onCancel={() => {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('searching');
+                    window.history.pushState({}, '', url.toString());
+                  }
+                  void exitDiscovery().catch(() => {});
+                }}
+              />
             ) : showCityHandoff ? (
               <div
-                className={clsx('relative', 'w-full', 'flex', 'flex-col', 'items-center', 'gap-3')}
+                className={clsx(
+                  'relative',
+                  'w-full',
+                  'max-h-full',
+                  'flex',
+                  'flex-col',
+                  'items-center',
+                  'gap-2',
+                  'overflow-hidden',
+                )}
                 style={
                   typeof window !== 'undefined' && window.innerWidth < 768
                     ? {
@@ -118,6 +141,7 @@ export default function MeetSomeoneMobileSearch({
                 <CityHandoffBar
                   cityLabel={discoveryCityFaceUser?.username}
                   secondsLeft={handoffSecondsLeft}
+                  totalSeconds={handoffCountdownSeconds}
                   onCancel={cancelCityHandoff}
                 />
               </div>

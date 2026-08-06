@@ -87,15 +87,16 @@ export default function MeetSomeoneDesktopLeft({
       {isSearching ? (
         <div
           className={clsx(
-            'relative',
+            'absolute',
+            'inset-6',
+            'z-10',
             'flex',
-            'h-full',
             'min-h-0',
-            'w-full',
-            'flex-1',
             'flex-col',
             'items-center',
             'justify-center',
+            'overflow-hidden',
+            'rounded-[60px]',
             'p-2',
           )}
         >

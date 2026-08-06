@@ -365,8 +365,7 @@ const FaceCard = ({
         data-facecard-boundary="true"
         className="w-[380px] h-[660px] md:h-[673px]   
                  md:w-[320px] lg:w-[360px] 
-           shrink-0 rounded-[30px] 
-            
+           shrink-0 rounded-[30px] overflow-hidden
                "
       >
         <div className={clsx("relative h-full w-full overflow-hidden rounded-[28px]", className)}>

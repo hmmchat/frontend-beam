@@ -380,7 +380,7 @@ function OfflineCardsContent() {
           className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92vh]', 'rounded-[60px]', 'md:w-[98vw]', 'w-full', 'md:w-[750px]')}>
+          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92vh]', 'rounded-[60px]', 'overflow-hidden', 'md:w-[98vw]', 'w-full', 'md:w-[750px]')}>
 
             {/* Scrollable container for the face card content */}
 

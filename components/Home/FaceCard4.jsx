@@ -201,13 +201,16 @@ const FaceCard4 = ({
   const showReportUi = (pathname === "/cards" || (pathname === "/" && isSearchingParam)) && hasReportLayer;
 
   const hideFacecardAge = Boolean(user.hideFacecardAge);
+  const isCityCard = user.type === 'LOCATION' || Boolean(user.isLocationCard) || hideFacecardAge;
   const age = user.age ?? calculateAge(user.dateOfBirth);
   const rawCity = user.city || user.preferredCity || "Unknown";
-  const city = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
-    ? 'Anywhere'
-    : rawCity === 'Unknown'
-      ? 'Unknown'
-      : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  const city = isCityCard
+    ? ''
+    : (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
+      ? 'Anywhere'
+      : rawCity === 'Unknown'
+        ? 'Unknown'
+        : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
 
@@ -286,10 +289,12 @@ const FaceCard4 = ({
                 </>
               )}
             </h1>
-            <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
-              {/* <IoLocationOutline className="shrink-0" /> */}
-              {city ? <span className={clsx('truncate', 'font-outfit')}>{city}</span> : null}
-            </div>
+            {!isCityCard && city ? (
+              <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
+                {/* <IoLocationOutline className="shrink-0" /> */}
+                <span className={clsx('truncate', 'font-outfit')}>{city}</span>
+              </div>
+            ) : null}
           </div>
 
           <div className={clsx('flex', 'shrink-0', 'items-center', 'gap-1.5')}>
@@ -366,7 +371,7 @@ const FaceCard4 = ({
       )}
 
       <div
-        className={clsx('w-[85vw]', 'aspect-[360/670]', 'max-w-[360px]', 'sm:w-[340px]', 'md:w-[320px]', 'lg:w-[360px]', 'md:aspect-[366/660]', 'shrink-0', 'rounded-[30px]', 'border', 'border-white/40', 'p-[2px]', 'md:border-0', 'md:p-0', 'mt-4', 'md:scale-90')}
+        className={clsx('w-[85vw]', 'aspect-[360/670]', 'max-w-[360px]', 'sm:w-[340px]', 'md:w-[320px]', 'lg:w-[360px]', 'md:aspect-[366/660]', 'shrink-0', 'rounded-[30px]', 'border', 'border-white/40', 'p-[2px]', 'overflow-hidden', 'md:border-0', 'md:p-0', 'mt-4', 'md:scale-90')}
       >
         <div className={clsx('relative', 'h-full', 'w-full', 'overflow-hidden', 'rounded-[28px]')}>
           {/* HEADER */}
@@ -388,10 +393,12 @@ const FaceCard4 = ({
                     </>
                   )}
                 </h1>
-                <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
-                  <IoLocationOutline className="shrink-0" />
-                  <span className="truncate">{city}</span>
-                </div>
+                {!isCityCard && city ? (
+                  <div className={clsx('mt-0.5', 'flex', 'items-center', 'gap-1', 'text-xs', 'text-white/80')}>
+                    <IoLocationOutline className="shrink-0" />
+                    <span className="truncate">{city}</span>
+                  </div>
+                ) : null}
               </div>
 
               <div className={clsx('flex', 'shrink-0', 'items-center', 'gap-1.5')}>

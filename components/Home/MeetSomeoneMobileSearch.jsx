@@ -88,7 +88,7 @@ export default function MeetSomeoneMobileSearch({
           className={clsx('absolute', 'inset-0', 'rounded-[2rem]', 'pointer-events-none', 'z-30')}
         />
 
-        <div className="absolute inset-0 overflow-y-auto w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20">
+        <div className="absolute inset-0 overflow-y-auto overflow-x-hidden w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 rounded-[2rem]">
           <div className={clsx(' transition-transform duration-500 mb-16 sm:mb-0')}>
             {showEmptyOrbit ? (
               <EmptyOrbitPanel />

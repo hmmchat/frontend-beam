@@ -13,7 +13,18 @@ import { clearPendingReferralCode } from "@/components/CaptureReferralFromUrl";
 
 const MeetSomeoneDynamic = dynamic(
   () => import("@/components/Home/MeetSomeoneDynamic"),
-
+  {
+    loading: () => (
+      <>
+        <div className="hidden md:block">
+          <HomeSkeletonDesktop />
+        </div>
+        <div className="block md:hidden">
+          <HomeSkeletonMobile />
+        </div>
+      </>
+    ),
+  },
 );
 
 const MyComponent = () => {

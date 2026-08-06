@@ -1,16 +1,20 @@
 "use client";
 
-import Skeleton from "@/components/ui/Skeleton";
+import Bone from "@/components/skeletons/Bone";
 
 /**
- * Very light skeleton for the mobile home page.
- * Mirrors only the key elements: logo area, meet-now button, bottom bar.
- * Everything else stays transparent/invisible so the background shows through.
+ * Instagram-style mobile home skeleton.
+ * Mirrors MeetSomeoneNew phone layout: top HUD, logo, mid toggle,
+ * Meet Now + filters, bottom nav — bones sit on the real home bg.
  */
 export default function HomeSkeletonMobile() {
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden flex flex-col">
-      {/* Background — same as real home */}
+    <div
+      className="relative h-[100dvh] w-full overflow-hidden"
+      role="status"
+      aria-label="Loading home"
+    >
+      {/* Real homepage background underneath */}
       <div
         className="absolute inset-0 opacity-70 mix-blend-hard-light"
         style={{
@@ -21,38 +25,43 @@ export default function HomeSkeletonMobile() {
         }}
       />
 
-      <div className="relative z-10 flex flex-col h-full">
-        {/* Main box border */}
-        <div className="w-[96vw] mt-3 mx-auto flex-1 rounded-4xl overflow-hidden flex items-center justify-center border border-white/20">
-          <div className="flex w-full flex-col items-center justify-center h-full text-center px-4 relative">
+      <div className="absolute inset-0 bg-black/15" />
 
-            {/* Info icon placeholder — top right */}
-            <Skeleton className="absolute top-6 right-6 w-9 h-9 rounded-full opacity-40" />
+      {/* Decorative frame — matches phone home border */}
+      <div className="pointer-events-none absolute inset-x-[2.5%] top-3 bottom-[5.5rem] z-10 rounded-[2rem] border border-white/25" />
 
-            {/* Logo skeleton — centered upper area */}
-            <div className="absolute bottom-[71%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-              {/* Logo image shape */}
-              <Skeleton className="w-36 h-10 rounded-xl opacity-40" />
-              {/* "Meet someone here" tagline */}
-              <Skeleton className="w-28 h-3 rounded-full opacity-30 mt-1" />
-              {/* meeting count badge */}
-              <Skeleton className="w-20 h-3 rounded-full opacity-25 mt-1" />
-            </div>
-
-            {/* Meet Now button skeleton */}
-            <div className="absolute bottom-[25%] sm:bottom-[20%] left-1/2 -translate-x-1/2 w-full max-w-[520px] px-3 sm:px-4">
-              <Skeleton className="w-full h-14 rounded-2xl opacity-40" />
-            </div>
-          </div>
+      {/* ── Top bar: coins | crown + scan ── */}
+      <div className="absolute top-8 left-0 right-0 z-20 flex items-center justify-between px-8">
+        <Bone className="h-12 w-[7.25rem]" />
+        <div className="flex items-center gap-2">
+          <Bone className="h-12 w-12" />
+          <Bone className="h-12 w-12" />
         </div>
+      </div>
 
-        {/* Bottom bar */}
-        <div className="w-full flex items-center justify-between px-4 py-4">
-          {/* Beam TV button */}
-          <Skeleton className="w-14 h-14 rounded-full opacity-35" />
-          {/* Sign Up button */}
-          <Skeleton className="w-24 h-12 rounded-full opacity-35" />
-        </div>
+      {/* ── Logo cluster ── */}
+      <div className="absolute top-[18%] left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2">
+        <Bone className="h-10 w-36 !rounded-xl" />
+        <Bone className="h-3 w-28" />
+        <Bone className="mt-1 h-3 w-24" />
+      </div>
+
+      {/* ── Mid: TV | Solo/Squad | Cards ── */}
+      <div className="absolute top-[49%] left-1/2 z-20 flex w-[95%] max-w-md -translate-x-1/2 -translate-y-1/2 items-center justify-center px-3">
+        <Bone className="absolute left-3 h-10 w-10" />
+        <Bone className="h-[4.5vh] w-[40vw] min-h-9 max-w-[11rem]" />
+        <Bone className="absolute right-3 h-12 w-12" />
+      </div>
+
+      {/* ── Meet Now + filters ── */}
+      <div className="absolute bottom-[25%] left-1/2 z-20 w-full max-w-[520px] -translate-x-1/2 px-3 sm:bottom-[20%] sm:px-4">
+        <Bone className="mx-auto aspect-[23/5] w-[clamp(300px,85vw,520px)] !rounded-2xl" />
+        <Bone className="mx-auto mt-5 h-12 w-[clamp(295px,65vw,420px)] !rounded-2xl" />
+      </div>
+
+      {/* ── Bottom nav pill ── */}
+      <div className="absolute bottom-[1.5%] left-1/2 z-20 w-[94%] max-w-sm -translate-x-1/2 px-4">
+        <Bone className="h-16 w-full" />
       </div>
     </div>
   );

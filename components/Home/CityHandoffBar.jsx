@@ -120,8 +120,16 @@ export default function CityHandoffBar({
           >
             {left}
           </span>
-          <span className={clsx('text-[10px]', 'uppercase', 'tracking-wide', 'text-white/80')}>
-            Cancel
+          <span
+            className={clsx(
+              'text-sm',
+              'leading-none',
+              'text-white/80',
+              'font-medium',
+            )}
+            aria-hidden
+          >
+            ×
           </span>
         </span>
       </button>

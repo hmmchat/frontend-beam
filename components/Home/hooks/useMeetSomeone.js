@@ -155,6 +155,8 @@ export default function useMeetSomeone() {
       faceCardImageUrl: currentCard.faceCardImageUrl,
       intent: currentCard.intent,
       label: currentCard.label,
+      brands: currentCard.brands,
+      musicPreference: currentCard.musicPreference,
     });
   }, [
     currentCard?.type,
@@ -163,6 +165,8 @@ export default function useMeetSomeone() {
     currentCard?.faceCardImageUrl,
     currentCard?.intent,
     currentCard?.label,
+    currentCard?.brands,
+    currentCard?.musicPreference,
   ]);
 
   const citiesSignature = useCallback((cities) => {
@@ -2053,6 +2057,8 @@ export default function useMeetSomeone() {
               faceCardImageUrl: top.faceCardImageUrl,
               intent: top.intent,
               label: top.label,
+              brands: top.brands || [],
+              musicPreference: top.musicPreference || null,
               isLocationCard: true,
             });
             return;

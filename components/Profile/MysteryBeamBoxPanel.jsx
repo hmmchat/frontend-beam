@@ -179,7 +179,7 @@ function FacecardLockedGate({ progress, onBack }) {
         </button>
 
         <p className="font-outfit text-sm text-white/70">
-          Hit <span className="text-[#F2AD00]">100%</span> to unlock
+          Hit <span className="text-[#F2AD00]">100%</span> on your Facecard to unlock
         </p>
       </div>
     </div>

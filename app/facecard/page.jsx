@@ -33,9 +33,10 @@ async function readHttpErrorMessage(res) {
     if (ct && ct.includes("application/json")) {
       const j = await res.json();
       if (typeof j === "string") return j;
-      return (
-        j.message || j.error || j.detail || `Request failed (${res.status})`
-      );
+      const msg = j.message || j.error || j.detail;
+      if (Array.isArray(msg)) return msg.filter(Boolean).join(" ");
+      if (typeof msg === "string" && msg.trim()) return msg;
+      return `Request failed (${res.status})`;
     }
     const t = await res.text();
     return (t && t.trim()) || res.statusText || `HTTP ${res.status}`;
@@ -88,6 +89,7 @@ function FacecardContent() {
   const [isSearchingItems, setIsSearchingItems] = useState(false);
   const [facecardPreviewOpen, setFacecardPreviewOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const [musicSavingKey, setMusicSavingKey] = useState(null);
   const [exitEditorToProfile, setExitEditorToProfile] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -636,6 +638,7 @@ function FacecardContent() {
 
   const handleSlotClick = (slotIndex) => {
     if (photoUploading) return;
+    setPhotoError("");
     setActiveSlot(slotIndex);
     fileInputRef.current?.click();
   };
@@ -646,6 +649,7 @@ function FacecardContent() {
 
     try {
       setPhotoUploading(true);
+      setPhotoError("");
       const res = await fetch(API.USERS.DELETE_PHOTO(photoId), {
         method: "DELETE",
         headers: {
@@ -665,7 +669,9 @@ function FacecardContent() {
       }));
     } catch (err) {
       console.error("Error deleting photo:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete photo");
+      setPhotoError(
+        err instanceof Error ? err.message : "Failed to delete photo",
+      );
     } finally {
       setPhotoUploading(false);
     }
@@ -674,6 +680,8 @@ function FacecardContent() {
   const closeCropModal = () => {
     setCropModalOpen(false);
     setCropTargetSlot(null);
+    // Crop modal shows its own ErrorAlert; never leave that on the facecard editor.
+    setPhotoError("");
     setCropImageUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
@@ -683,8 +691,7 @@ function FacecardContent() {
   const uploadSlotPhoto = async (file, slotIndex) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      alert("You need to be signed in to upload photos.");
-      return;
+      throw new Error("You need to be signed in to upload photos.");
     }
 
     const formData = new FormData();
@@ -702,17 +709,15 @@ function FacecardContent() {
 
     if (!uploadRes.ok) {
       const msg = await readHttpErrorMessage(uploadRes);
-      alert(msg || "Upload failed. Check the file and try again.");
-      return;
+      throw new Error(msg || "Upload failed. Check the file and try again.");
     }
 
     const uploadData = await uploadRes.json();
     const uploadedUrl = uploadData?.file?.url;
     if (!uploadedUrl) {
-      alert(
+      throw new Error(
         "Upload succeeded but no file URL was returned. Please try again.",
       );
-      return;
     }
 
     if (slotIndex === 0) {
@@ -726,8 +731,9 @@ function FacecardContent() {
       });
       if (!updateRes.ok) {
         const msg = await readHttpErrorMessage(updateRes);
-        alert(msg || "Photo uploaded but profile could not be updated.");
-        return;
+        throw new Error(
+          msg || "Photo uploaded but profile could not be updated.",
+        );
       }
       setUser((prev) => ({ ...prev, displayPictureUrl: uploadedUrl }));
     } else {
@@ -742,10 +748,9 @@ function FacecardContent() {
       });
       if (!photoRes.ok) {
         const msg = await readHttpErrorMessage(photoRes);
-        alert(
+        throw new Error(
           msg || "Photo uploaded but could not be added to your gallery.",
         );
-        return;
       }
       setUser((prev) => {
         const currentPhotos = prev.photos || [];
@@ -774,16 +779,17 @@ function FacecardContent() {
     setPhotoUploading(true);
     try {
       await uploadSlotPhoto(file, slot);
-    } catch (err) {
-      console.error("Photo upload error:", err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to upload photo. Please try again.",
-      );
-    } finally {
       setPhotoUploading(false);
       closeCropModal();
+    } catch (err) {
+      console.error("Photo upload error:", err);
+      setPhotoUploading(false);
+      // Keep error only on the crop screen — do not set photoError on the facecard editor.
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to upload photo. Please try again.";
+      throw err instanceof Error ? err : new Error(message);
     }
   };
 
@@ -792,23 +798,25 @@ function FacecardContent() {
     if (e.target) e.target.value = "";
     if (!file) return;
 
+    setPhotoError("");
+
     if (!PROFILE_PHOTO_ACCEPT_TYPES.includes(file.type)) {
-      alert("Please choose a JPEG, PNG, WebP, or GIF image.");
+      setPhotoError("Please choose a JPEG, PNG, WebP, or GIF image.");
       return;
     }
     if (file.size > PROFILE_PHOTO_MAX_BYTES) {
-      alert("Image must be 10MB or smaller.");
+      setPhotoError("Image must be 10MB or smaller.");
       return;
     }
 
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      alert("You need to be signed in to upload photos.");
+      setPhotoError("You need to be signed in to upload photos.");
       return;
     }
 
     if (activeSlot === null || activeSlot === undefined) {
-      alert("Pick a photo slot first.");
+      setPhotoError("Pick a photo slot first.");
       return;
     }
 
@@ -1113,6 +1121,7 @@ function FacecardContent() {
             handleFileChange={handleFileChange}
             onOpenFacecardPreview={() => setFacecardPreviewOpen(true)}
             photoUploading={photoUploading}
+            photoError={photoError}
             onDeletePhoto={handleDeletePhoto}
           />
         )}

@@ -76,97 +76,46 @@ export default function Home(
             </div>
 
             {isInfoOpen && (
-              <div className="absolute top-24  z-20 inset-x-0 bottom-8 z-50 bg-black/10 backdrop-blur-xs flex flex-col items-center py-12 overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2.25rem] border border-[1px] border-white/70">
+              <div className="absolute top-24 z-20 inset-x-0 bottom-8 z-50 bg-black/10 backdrop-blur-xs flex flex-col items-center pt-[70px] pb-6 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2.25rem] border border-[1px] border-white/70">
                 {/* Decorative Side Brackets */}
-                <div className="absolute right-0 top-1/4 h-[174px] w-[18px] border-[1px] border-white/70 border-r-0 rounded-l-xl  pointer-events-none" />
-                <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl  pointer-events-none" />
+                <div className="absolute right-0 top-1/4 h-[174px] w-[18px] border-[1px] border-white/70 border-r-0 rounded-l-xl pointer-events-none" />
+                <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl pointer-events-none" />
 
-                <div className="flex flex-col items-center justify-center mb-10 shrink-0">
-                  <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="w-[129px] mb-2" />
-                  <p className="text-white text-[14px] font-medium opacity-90">
-                    Meet someone here
+                <div className="flex flex-col items-center justify-center shrink-0 mb-4">
+                  <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="w-[129px]" />
+                  <p className="text-white text-[12px] font-[family-name:var(--font-otomanopee)] text-center">
+                    Meet Someone here
                   </p>
                 </div>
 
-                <div className="w-full flex overflow-y-scroll justify-center opacity-80 px-10 custom-scroll">
-                  <div className="text-white text-[14px] font-normal font-[Outfit] leading-relaxed text-left  pb-10 space-y-6">
+                <div className="w-full flex-1 min-h-0 flex overflow-y-auto justify-center opacity-80 px-8 custom-scroll">
+                  <div className="text-white text-[14px] font-normal font-[family-name:var(--font-outfit)] leading-normal text-center max-w-[287px] pb-6 space-y-4">
                     <p>
-                      At 10:30 pm, when people are done for the day and slip
-                      into bed, something small happens.
+                      Beam is the liminal corner of the internet. A place
+                      between awake and asleep. It&apos;s dreamy here. It&apos;s
+                      not listed on any map. This website is the only known way
+                      in.
                     </p>
-
                     <p>
-                      A portal opens under the bed.
+                      You&apos;ll only find real people here. You can&apos;t
+                      always tell, though. You&apos;re a projection too. Just
+                      like everyone else.
+                    </p>
+                    <p>
+                      Come here if you feel like talking about something, just
+                      to see what happens next.
+                    </p>
+                    <p className="text-[10px] pt-2">
+                      — Beam Serendipity Labs
                       <br />
-                      It’s quiet. Almost shy.
-                    </p>
-
-                    <p>
-                      The portal leads to the iland that doesn’t exist on any
-                      map. Not lost, not hidden—just never recorded. It feels
-                      like another realm, close to Earth but not part of it. The
-                      only way in is through the space beneath your bed.
-                    </p>
-
-                    <p>
-                      On this island, no one can see anyone.
-                      <br />
-                      You walk, you pass by others, you feel movement around
-                      you—but there are no faces, no bodies, no eye contact.
-                      Everyone is invisible. And somehow, that feels normal
-                      here.
-                    </p>
-
-                    <p>
-                      Scattered across the island are television booths, like
-                      the old payphones on Earth. You find them
-                      everywhere—standing alone, clustered together, facing
-                      nothing in particular.
-                    </p>
-
-                    <p>
-                      When you stand in front of a booth, the screen turns on.
-                      <br />
-                      On the other side, someone is standing there too. Not
-                      fully clear—just an image. And just like you, they aren’t
-                      seeing themselves. They’re seeing you.
-                    </p>
-
-                    <p>If both of you tap the screen, something changes.</p>
-
-                    <p className="font-semibold">
-                      You become visible to each other.
-                      <br />
-                      Still invisible to everyone else.
-                    </p>
-
-                    <p>
-                      You step out of the booth together. You talk. You walk
-                      around the island. You share stories or sit quietly or say
-                      nothing important at all. There’s no pressure to be
-                      interesting. No reason to pretend. It’s just two
-                      strangers, briefly visible.
-                    </p>
-
-                    <p>
-                      When the portal closes, you’re back in your room.
-                      <br />
-                      Back in this world.
-                    </p>
-
-                    <p>
-                      Whatever happened on the island stays there.
-                      <br />
-                      No proof. No memory that needs explaining.
-                    </p>
-
-                    <p className="italic opacity-80 pt-4">
-                      And every night at 10:30 pm, the island opens again—
-                      <br />
-                      exactly the same, and never quite the same.
+                      © 2026 Beam
                     </p>
                   </div>
                 </div>
+
+                <p className="shrink-0 text-white/80 text-[10px] font-[family-name:var(--font-outfit)] underline underline-offset-2 pt-3">
+                  How to use Beam?
+                </p>
               </div>
             )}
 
@@ -221,7 +170,7 @@ export default function Home(
           </div>
 
           <button
-            className="border text-12 border-white/60 border-b-4 text-white px-6 py-4 rounded-full"
+            className="border text-[12px] border-white/50 border-b-[3px] text-white px-6 py-4 rounded-full font-[family-name:var(--font-otomanopee)]"
             onClick={() => setIsSignUpOpen(true)}
           >
             Sign Up

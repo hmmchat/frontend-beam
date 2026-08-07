@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { API } from '@/lib/api';
 import PortraitImageCropModal from '@/components/ui/PortraitImageCropModal';
+import ErrorAlert from '@/components/ui/ErrorAlert';
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = [
@@ -19,9 +20,10 @@ async function readHttpErrorMessage(res) {
     if (ct && ct.includes('application/json')) {
       const j = await res.json();
       if (typeof j === 'string') return j;
-      return (
-        j.message || j.error || j.detail || `Request failed (${res.status})`
-      );
+      const msg = j.message || j.error || j.detail;
+      if (Array.isArray(msg)) return msg.filter(Boolean).join(' ');
+      if (typeof msg === 'string' && msg.trim()) return msg;
+      return `Request failed (${res.status})`;
     }
     const t = await res.text();
     return (t && t.trim()) || res.statusText || `HTTP ${res.status}`;
@@ -153,21 +155,21 @@ export default function PhotosOnboarding() {
       });
 
       if (!response.ok) {
-        let message = 'Failed to save photo';
-        try {
-          const errorData = await response.json();
-          message = errorData.message || message;
-        } catch { /* ignore */ }
-        throw new Error(message);
+        const msg = await readHttpErrorMessage(response);
+        throw new Error(msg || 'Failed to save photo');
       }
 
       await fetchPhotos();
-    } catch (err) {
-      console.error('Error uploading photo:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upload photo');
-    } finally {
       setUploading(false);
       closeCropModal();
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      const message =
+        err instanceof Error ? err.message : 'Failed to upload photo';
+      setError(message);
+      setUploading(false);
+      // Keep crop modal open; ErrorAlert shows there too.
+      throw err instanceof Error ? err : new Error(message);
     }
   };
 
@@ -290,8 +292,8 @@ export default function PhotosOnboarding() {
           )}
 
           {error && (
-            <div className="text-center text-red-300 mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              {error}
+            <div className="mb-4 max-w-md mx-auto w-full px-1">
+              <ErrorAlert message={error} className="mt-0" />
             </div>
           )}
 

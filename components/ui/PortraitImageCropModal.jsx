@@ -5,6 +5,7 @@ import Cropper from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { FACECARD_PORTRAIT_ASPECT } from "@/lib/facecard-portrait";
 import { getCroppedImageBlob } from "@/lib/crop-image";
+import ErrorAlert from "@/components/ui/ErrorAlert";
 
 /**
  * @param {object} props
@@ -27,6 +28,7 @@ export default function PortraitImageCropModal({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) {
@@ -34,6 +36,7 @@ export default function PortraitImageCropModal({
       setZoom(1);
       setCroppedAreaPixels(null);
       setSaving(false);
+      setError("");
     }
   }, [open, imageUrl]);
 
@@ -53,6 +56,7 @@ export default function PortraitImageCropModal({
   const handleSave = async () => {
     if (!imageUrl || !croppedAreaPixels || busy || saving) return;
     setSaving(true);
+    setError("");
     try {
       const blob = await getCroppedImageBlob(imageUrl, croppedAreaPixels);
       const file = new File([blob], `portrait-${Date.now()}.jpg`, {
@@ -61,7 +65,7 @@ export default function PortraitImageCropModal({
       await onComplete(file);
     } catch (e) {
       console.error(e);
-      alert(e instanceof Error ? e.message : "Could not crop image.");
+      setError(e instanceof Error ? e.message : "Could not crop image.");
     } finally {
       setSaving(false);
     }
@@ -106,7 +110,7 @@ export default function PortraitImageCropModal({
         />
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-white/15 px-4 py-4 shrink-0 safe-area-pb">
+      <div className="flex flex-col gap-3 sm:gap-4 border-t border-white/15 px-3 sm:px-4 py-3 sm:py-4 shrink-0 safe-area-pb max-w-lg w-full mx-auto">
         <div className="flex items-center gap-3">
           <span className="text-xs text-white/60 w-12">Zoom</span>
           <input
@@ -120,9 +124,10 @@ export default function PortraitImageCropModal({
             className="flex-1 accent-yellow-400"
           />
         </div>
-        <p className="text-[11px] text-white/50 text-center">
+        <p className="text-[11px] text-white/50 text-center px-1">
           Pinch-style: drag to frame your face. Portrait ratio matches your face card.
         </p>
+        {error && <ErrorAlert message={error} className="mt-0" />}
         <button
           type="button"
           onClick={handleSave}

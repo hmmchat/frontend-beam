@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 import { FaArrowLeft } from "react-icons/fa";
 import clsx from 'clsx';
+import ErrorAlert from "@/components/ui/ErrorAlert";
 export default function FacecardEditor({
   className,
 
@@ -20,6 +21,7 @@ export default function FacecardEditor({
   handleFileChange,
   onOpenFacecardPreview,
   photoUploading = false,
+  photoError = "",
   onDeletePhoto,
 }) {
   const leaveEditor = () => {
@@ -61,7 +63,8 @@ export default function FacecardEditor({
     >
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
-      <div className={clsx('py-4', 'flex', 'items-center', 'justify-center', 'md:hidden', 'px-2')}>
+      {/* Phone + tablet editor; desktop uses the lg:flex layout below */}
+      <div className={clsx('py-4', 'flex', 'items-center', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto')}>
         <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'min-h-[90dvh]', 'flex-col', 'gap-5', 'px-2', 'relative', 'z-10')}>
           {/* TOP ROW: Close, Name Box, Progress */}
           <div className={clsx('grid', 'grid-cols-12', 'gap-2', 'items-center', 'px-2', 'mt-2', 'mt-4')}>
@@ -440,6 +443,11 @@ export default function FacecardEditor({
                 );
               })}
             </div>
+            {photoError ? (
+              <div className="px-1 sm:px-2 w-full max-w-md mx-auto">
+                <ErrorAlert message={photoError} className="mt-3 mb-1" />
+              </div>
+            ) : null}
           </div>
 
           <div className={clsx('w-full', 'flex', 'items-center', 'justify-between', 'mb-4', 'px-3')}>
@@ -678,11 +686,13 @@ export default function FacecardEditor({
                   />
                 </div>
 
-
-
-
-
               </div>
+
+              {photoError ? (
+                <div className="w-full max-w-lg mx-auto px-2 -mt-4">
+                  <ErrorAlert message={photoError} className="mt-0 mb-1" />
+                </div>
+              ) : null}
 
               {/* Info Sections Area */}
               <div className={clsx('grid', 'grid-cols-10', 'mt-5', 'gap-2', 'items-center')}>

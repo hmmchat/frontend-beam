@@ -7,7 +7,26 @@ import SignInModal from "../auth/SignInModel"; // adjust path/casing if needed
 import { API, apiRequest } from "@/lib/api";
 import Skeleton from '@/components/ui/Skeleton';
 import PortraitImageCropModal from "@/components/ui/PortraitImageCropModal";
+import ErrorAlert from "@/components/ui/ErrorAlert";
 import { CiCirclePlus } from "react-icons/ci";
+
+async function readHttpErrorMessage(res) {
+  try {
+    const ct = res.headers.get("content-type");
+    if (ct && ct.includes("application/json")) {
+      const j = await res.json();
+      if (typeof j === "string") return j;
+      const msg = j.message || j.error || j.detail;
+      if (Array.isArray(msg)) return msg.filter(Boolean).join(" ");
+      if (typeof msg === "string" && msg.trim()) return msg;
+      return `Request failed (${res.status})`;
+    }
+    const t = await res.text();
+    return (t && t.trim()) || res.statusText || `HTTP ${res.status}`;
+  } catch {
+    return res.statusText || `HTTP ${res.status}`;
+  }
+}
 
 /** Match user-service DisplayNameSchema: map unicode spaces to ASCII (keeps intentional double spaces). */
 function normalizeDisplayNameWhitespace(s) {
@@ -270,13 +289,14 @@ export default function Onboarding() {
     if (e.target) e.target.value = "";
     if (!file) return;
     if (!PROFILE_PHOTO_ACCEPT_TYPES.includes(file.type)) {
-      alert("Please choose a JPEG, PNG, WebP, or GIF image.");
+      setApiError("Please choose a JPEG, PNG, WebP, or GIF image.");
       return;
     }
     if (file.size > PROFILE_PHOTO_MAX_BYTES) {
-      alert("Image must be 10MB or smaller.");
+      setApiError("Image must be 10MB or smaller.");
       return;
     }
+    setApiError("");
     openPhotoCrop(file, index);
   };
 
@@ -321,10 +341,14 @@ export default function Onboarding() {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to upload image');
+      const msg = await readHttpErrorMessage(response);
+      throw new Error(msg || 'Failed to upload image');
     }
 
     const data = await response.json();
+    if (!data?.file?.url) {
+      throw new Error('Upload succeeded but no file URL was returned.');
+    }
     return data.file.url;
   };
 
@@ -758,6 +782,11 @@ export default function Onboarding() {
                                 <p className="text-white/50 text-sm text-center font-outfit mt-3">
                                   Upload your niceeee pictures
                                 </p>
+                                {apiError && !apiError.includes('username') && (
+                                  <div className="px-2 sm:px-3 max-w-md mx-auto">
+                                    <ErrorAlert message={apiError} className="mt-3" />
+                                  </div>
+                                )}
                               </div>
 
                               {/* 3️⃣ Name input */}
@@ -1016,13 +1045,6 @@ export default function Onboarding() {
 
                               </div>
 
-                              {/* Error Message */}
-                              {apiError && !apiError.includes('username') && (
-                                <div className="text-red-400 text-sm mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
-                                  {apiError}
-                                </div>
-                              )}
-
                               {/* 6️⃣ Bottom button */}
 
 
@@ -1182,9 +1204,7 @@ export default function Onboarding() {
                     <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex flex-col items-center">
 
                       {apiError && !apiError.includes('username') && (
-                        <div className="text-red-400 text-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center w-full">
-                          {apiError}
-                        </div>
+                        <ErrorAlert message={apiError} className="mt-0 mb-4 w-full" />
                       )}
 
                       <button

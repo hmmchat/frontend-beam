@@ -100,67 +100,45 @@ export default function DesktopHome() {
           </div>
 
           {isInfoOpen && (
-            <div className={clsx('absolute', 'top-24', 'z-20', 'inset-x-26', 'bottom-38', 'z-50', 'bg-black/10', 'backdrop-blur-xs', 'flex', 'flex-col', 'items-center', 'py-12', 'overflow-y-auto', 'animate-in', 'fade-in', 'slide-in-from-top-4', 'duration-300', 'rounded-[2.25rem]', 'border', 'border-[1px]', 'border-white/70')}>
+            <div className={clsx('absolute', 'top-24', 'z-20', 'inset-x-26', 'bottom-38', 'z-50', 'bg-black/10', 'backdrop-blur-xs', 'flex', 'flex-col', 'items-center', 'pt-[70px]', 'pb-6', 'overflow-hidden', 'animate-in', 'fade-in', 'slide-in-from-top-4', 'duration-300', 'rounded-[2.25rem]', 'border', 'border-[1px]', 'border-white/70')}>
               {/* Decorative Side Brackets */}
               <div className={clsx('absolute', 'right-0', 'top-1/4', 'h-[174px]', 'w-[18px]', 'border-[1px]', 'border-white/70', 'border-r-0', 'rounded-l-xl', 'pointer-events-none')} />
               <div className={clsx('absolute', 'right-0', 'top-[26%]', 'h-[158px]', 'w-[13px]', 'border-[1px]', 'border-white/70', 'border-r-0', 'rounded-l-xl', 'pointer-events-none')} />
 
-              <div className={clsx('w-full', 'flex', 'overflow-y-scroll', 'justify-center', 'opacity-80', 'px-10', 'custom-scroll')}>
-                <div className={clsx('text-white', 'text-[14px]', 'font-normal', 'font-[Outfit]', 'leading-relaxed', 'text-left', 'pb-10', 'space-y-6')}>
+              <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'shrink-0', 'mb-4')}>
+                <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className={clsx('w-[129px]')} />
+                <p className={clsx('text-white', 'text-[12px]', 'font-[family-name:var(--font-otomanopee)]', 'text-center')}>
+                  Meet Someone here
+                </p>
+              </div>
+
+              <div className={clsx('w-full', 'flex-1', 'min-h-0', 'flex', 'overflow-y-auto', 'justify-center', 'opacity-80', 'px-10', 'custom-scroll')}>
+                <div className={clsx('text-white', 'text-[14px]', 'font-normal', 'font-[family-name:var(--font-outfit)]', 'leading-normal', 'text-center', 'max-w-[320px]', 'pb-6', 'space-y-4')}>
                   <p>
-                    {" "}
-                    Every night, when the day is done and you slip into bed —
-                    something small happens.
-                  </p>{" "}
-                  <p>
-                    {" "}
-                    A portal opens. Right there, beneath you. Quiet. Almost shy
-                    about it.{" "}
-                  </p>{" "}
-                  <p>
-                    It leads somewhere uncanny, surreal, liminal — not on any
-                    map, not because it's lost or hidden, but because no one
-                    ever thought to write it down. Pressed right up against
-                    Earth but never part of it. The only way in is through.{" "}
-                  </p>
-                  <p>Here, no one can see anyone.</p>
-                  <p>
-                    {" "}
-                    You walk, you feel bodies move past you, air shifting,
-                    presence everywhere — but no faces, no eyes, nothing. Total
-                    invisibility. You could do the most unhinged thing you've
-                    ever wanted — and nobody bats an eye, because nobody sees a
-                    thing.{" "}
+                    Beam is the liminal corner of the internet. A place between
+                    awake and asleep. It&apos;s dreamy here. It&apos;s not
+                    listed on any map. This website is the only known way in.
                   </p>
                   <p>
-                    Scattered across are television booths. Like old payphones,
-                    standing alone, in clusters, facing nothing in particular.
-                    No logic to where they are. They just are. Walk up to one
-                    and the screen blinks on. On the other side, someone is
-                    standing there too. Not fully clear — just an image. A
-                    beautiful silhouette. You touch the screen.{" "}
-                  </p>{" "}
-                  <p>They touch the screen.</p>
-                  <p>
-                    And then — the place shifts. Like it exhaled. The silhouette
-                    bleeds into color, into edges, into a person standing right
-                    there in front of you, real and ridiculous and alive. Two
-                    strangers, visible only to each other, in all that vastness.
+                    You&apos;ll only find real people here. You can&apos;t
+                    always tell, though. You&apos;re a projection too. Just like
+                    everyone else.
                   </p>
                   <p>
-                    {" "}
-                    You wander. You talk or you don't. You find a river and sit
-                    by it for what feels like years. Time moves differently here
-                    — or maybe it doesn't move at all.
+                    Come here if you feel like talking about something, just to
+                    see what happens next.
                   </p>
-                  <p> It all feels like a dream.</p>
-                  <p> It probably is. </p>
-                  <p> And yet — here you are again.</p>
-                  <p> The screen, glowing.</p>
-                  <p> The silhouette on the other side.</p>
-                  <p> Again.</p>
+                  <p className={clsx('text-[10px]', 'pt-2')}>
+                    — Beam Serendipity Labs
+                    <br />
+                    © 2026 Beam
+                  </p>
                 </div>
               </div>
+
+              <p className={clsx('shrink-0', 'text-white/80', 'text-[10px]', 'font-[family-name:var(--font-outfit)]', 'underline', 'underline-offset-2', 'pt-3')}>
+                How to use Beam?
+              </p>
             </div>
           )}
           {/* Background */}
@@ -213,7 +191,7 @@ export default function DesktopHome() {
                   </Link>
                 </div>
                 <button
-                  className={clsx('rounded-full', 'border-2', 'text-sm', 'border-b-4', 'border-white/40', 'py-4', 'px-10', 'hover:border-white', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.25)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}
+                  className={clsx('rounded-full', 'border-2', 'text-[12px]', 'border-b-4', 'border-white/50', 'py-4', 'px-10', 'font-[family-name:var(--font-otomanopee)]', 'hover:border-white', 'hover:scale-105', 'hover:shadow-[0_0_15px_rgba(168,85,247,0.25)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}
                   onClick={() => setIsSignUpOpen(true)}
                 >
                   Sign Up

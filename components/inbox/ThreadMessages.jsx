@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-
-
+import { useRouter } from "next/navigation";
+import SystemAvatar from "./SystemAvatar";
+import { getSystemLine, isSystemNotificationThread } from "../../lib/system-notifications";
 
 function isSyntheticConversationId(cid) {
   if (cid == null || cid === "") return true;
@@ -45,6 +46,27 @@ function TypingDots() {
   );
 }
 
+function linkifyText(text) {
+  const str = String(text || "");
+  const parts = str.split(/(https?:\/\/[^\s]+)/g);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-yellow-300/90 break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export default function ThreadMessages({
   messages,
   currentUserId,
@@ -59,7 +81,20 @@ export default function ThreadMessages({
   activePendingSquadInvitationIds,
   peerTyping,
 }) {
+  const router = useRouter();
   const [squadBusyId, setSquadBusyId] = useState(null);
+  const systemLine = getSystemLine(activeChat);
+  const isSystemThread = isSystemNotificationThread(activeChat);
+
+  const handleCta = (cta) => {
+    if (!cta?.url) return;
+    const url = String(cta.url).trim();
+    if (cta.kind === "deep" || url.startsWith("/")) {
+      router.push(url.startsWith("/") ? url : `/${url}`);
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   const terminalSquadInvitationIds = useMemo(() => {
     const ids = new Set();
@@ -118,6 +153,8 @@ export default function ThreadMessages({
               message.messageType === "GIF" ||
               message.messageType === "GIF_WITH_MESSAGE" ||
               Boolean(message.gif?.previewUrl || message.gif?.url);
+            const isSystemNotification = message.messageType === "SYSTEM_NOTIFICATION";
+            const notificationMeta = message.notificationMeta || {};
             const giftUnreadOnly =
               unreadBubble &&
               !hasText &&
@@ -130,13 +167,16 @@ export default function ThreadMessages({
                 className={`flex items-start gap-2 ${isMe ? "justify-end" : ""}`}
               >
                 {!isMe && (
-                  (typeof activeChat?.otherUser?.displayPictureUrl === "string" && activeChat.otherUser.displayPictureUrl.trim()) ? (
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                  isSystemThread ? (
+                    <SystemAvatar line={systemLine} size={32} />
+                  ) : (typeof activeChat?.otherUser?.displayPictureUrl === "string" && activeChat.otherUser.displayPictureUrl.trim()) ? (
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative bg-black/30">
                       <Image
                         src={activeChat.otherUser.displayPictureUrl}
                         alt="avatar"
                         fill
-                        className="object-cover"
+                        sizes="32px"
+                        className="object-cover object-center"
                       />
                     </div>
                   ) : (
@@ -147,8 +187,51 @@ export default function ThreadMessages({
                 )}
                 <div
                   className={`p-1 rounded-lg max-w-[75%] shadow-md overflow-hidden ${isMe ? "bg-black/20 text-white  " : "bg-black/20 text-white  "
-                    }`}
+                    } ${unreadBubble && isSystemNotification ? "ring-2 ring-yellow-400/40 border border-yellow-400/50" : ""}`}
                 >
+                  {isSystemNotification && (
+                    <div className="px-4 py-3 space-y-3">
+                      {notificationMeta.title ? (
+                        <p className={`text-sm font-bold text-white ${unreadBubble ? "" : ""}`}>
+                          {notificationMeta.title}
+                        </p>
+                      ) : null}
+                      <p className={`md:text-[12px] text-[11px] font-outfit text-white/95 whitespace-pre-wrap break-words ${unreadBubble ? "font-bold" : ""}`}>
+                        {linkifyText(notificationMeta.body || message.message)}
+                      </p>
+                      {Array.isArray(notificationMeta.images) &&
+                        notificationMeta.images.map((src, imgIdx) =>
+                          src ? (
+                            <div
+                              key={`${message.id}-img-${imgIdx}`}
+                              className="relative w-full max-w-[18rem] overflow-hidden rounded-xl border border-white/10"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={src}
+                                alt=""
+                                className="block w-full h-auto object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : null
+                        )}
+                      {Array.isArray(notificationMeta.ctas) && notificationMeta.ctas.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {notificationMeta.ctas.map((cta, ctaIdx) => (
+                            <button
+                              key={`${message.id}-cta-${ctaIdx}`}
+                              type="button"
+                              onClick={() => handleCta(cta)}
+                              className="flex items-center gap-2 px-4 py-2 rounded-[10px] border border-white/40 border-b-4 text-white text-xs font-semibold hover:bg-white/10"
+                            >
+                              {cta.label || "Open"}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {isGif && (
                     <button
                       type="button"
@@ -279,23 +362,25 @@ export default function ThreadMessages({
                   {message.message &&
                     (!isGif || message.messageType === "GIF_WITH_MESSAGE") &&
                     !isSquadInvite &&
-                    !isSquadOutcome && (
+                    !isSquadOutcome &&
+                    !isSystemNotification && (
                       <div
                         className={`md:px-4  px-3 py-2 whitespace-pre-wrap break-words md:text-[12px] text-[11px] font-outfit   ${unreadBubble ? "font-bold" : ""
                           }`}
                       >
-                        {message.message}
+                        {linkifyText(message.message)}
                       </div>
                     )}
                 </div>
                 {isMe && (
                   (typeof myAvatarUrl === "string" && myAvatarUrl.trim()) ? (
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative bg-black/30">
                       <Image
                         src={myAvatarUrl}
                         alt="me"
                         fill
-                        className="object-cover"
+                        sizes="32px"
+                        className="object-cover object-center"
                       />
                     </div>
                   ) : (
@@ -313,12 +398,13 @@ export default function ThreadMessages({
         {peerTyping && (
           <div className="flex items-start gap-2 self-start">
             {(typeof activeChat?.otherUser?.displayPictureUrl === "string" && activeChat.otherUser.displayPictureUrl.trim()) ? (
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/90 relative bg-black/30">
                 <Image
                   src={activeChat.otherUser.displayPictureUrl}
                   alt="avatar"
                   fill
-                  className="object-cover"
+                  sizes="32px"
+                  className="object-cover object-center"
                 />
               </div>
             ) : (

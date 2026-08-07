@@ -4,6 +4,12 @@ import { IoChevronBack, IoLocationOutline, IoEllipsisVertical } from "react-icon
 import { FaBan, FaUserMinus } from "react-icons/fa6";
 import { TiUserAdd } from "react-icons/ti";
 import clsx from 'clsx';
+import SystemAvatar from "./SystemAvatar";
+import {
+  getSystemLine,
+  isSystemNotificationThread,
+  systemThreadDisplayName,
+} from "../../lib/system-notifications";
 
 function TypingDots() {
   return (
@@ -45,10 +51,16 @@ export default function ThreadHeader({
   handleBlockPeer,
   onProfileClick,
 }) {
+  const systemLine = getSystemLine(activeChat);
+  const isSystem = isSystemNotificationThread(activeChat);
   const headerUserStatus = activeChat?.userStatus;
   const headerLive =
+    !isSystem &&
     activeChat?.broadcastUrl &&
     (activeChat.isBroadcasting || headerUserStatus === "broadcasting");
+  const headerName = isSystem
+    ? systemThreadDisplayName(systemLine)
+    : otherProfile?.username || "User";
 
   const openBroadcast = (e, url) => {
     e.preventDefault();
@@ -87,62 +99,74 @@ export default function ThreadHeader({
 
 
         <div
-          onClick={onProfileClick}
+          onClick={isSystem ? undefined : onProfileClick}
           className={clsx(
             'flex items-center gap-1',
             'px-1 py-1',
             'rounded-full',
             'border border-white/30',
             'pr-5',
-            'w-fit max-w-full cursor-pointer hover:bg-white/5 transition-all active:scale-[0.98]'
+            'w-fit max-w-full transition-all',
+            isSystem ? 'cursor-default' : 'cursor-pointer hover:bg-white/5 active:scale-[0.98]'
           )}
         >
           {/* Avatar */}
           <div className={clsx('relative h-12 w-12 shrink-0 overflow-visible')}>
-            <div className="relative h-full w-full overflow-hidden rounded-full border  border-[1px] border-white/40">
+            {isSystem ? (
+              <SystemAvatar line={systemLine} size={48} />
+            ) : (
+              <>
+                <div className="relative h-full w-full overflow-hidden rounded-full border border-[1px] border-white/40 bg-black/30">
 
-              {(typeof otherProfile.displayPictureUrl === "string" && otherProfile.displayPictureUrl.trim()) ? (
-                <Image
-                  src={otherProfile.displayPictureUrl}
-                  alt="User"
-                  fill
-                  sizes="40px"
-                  className="object-cover rounded-full "
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold select-none">
-                  {(otherProfile.username || "U").charAt(0).toUpperCase()}
+                  {(typeof otherProfile.displayPictureUrl === "string" && otherProfile.displayPictureUrl.trim()) ? (
+                    <Image
+                      src={otherProfile.displayPictureUrl}
+                      alt="User"
+                      fill
+                      sizes="48px"
+                      className="object-cover object-center rounded-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold select-none">
+                      {(otherProfile.username || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {headerUserStatus === "online" && (
-              <span className="absolute bottom-0 right-0 z-10 h-3 w-3 translate-x-[1px] translate-y-[1px] rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm" />
-            )}
+                {headerUserStatus === "online" && (
+                  <span className="absolute bottom-0 right-0 z-10 h-3 w-3 translate-x-[1px] translate-y-[1px] rounded-full border-2 border-[#1a0a2e] bg-emerald-400 shadow-sm" />
+                )}
 
-            {headerLive && (
-              <button
-                type="button"
-                onClick={(e) => openBroadcast(e, activeChat.broadcastUrl)}
-                className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
-              >
-                LIVE
-              </button>
+                {headerLive && (
+                  <button
+                    type="button"
+                    onClick={(e) => openBroadcast(e, activeChat.broadcastUrl)}
+                    className="absolute -right-1 -top-1 z-10 rounded bg-pink-600 px-1 text-[8px] font-black uppercase leading-none shadow"
+                  >
+                    LIVE
+                  </button>
+                )}
+              </>
             )}
           </div>
 
           {/* Text Section */}
           <div className="flex flex-col min-w-0 flex-1">
             <span className="md:font-bold md:text-md text-sm text-white truncate flex items-center gap-2">
-              {otherProfile?.username || "User"}
-              {ageFromDob(otherProfile?.dateOfBirth)
+              {headerName}
+              {!isSystem &&
+                ageFromDob(otherProfile?.dateOfBirth)
                 ? `, ${ageFromDob(otherProfile?.dateOfBirth)}`
                 : ""}
 
 
             </span>
 
-            {peerTyping ? (
+            {isSystem ? (
+              <div className="text-xs text-white/50 font-outfit font-thin truncate">
+                Official messages
+              </div>
+            ) : peerTyping ? (
               <div className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
                 <span>typing</span>
                 <TypingDots />
@@ -164,7 +188,8 @@ export default function ThreadHeader({
 
         <div className="w-[36%] md:hidden flex justify-start">
 
-          {(activeTab === "inbox" || activeTab === "requests") &&
+          {!isSystem &&
+            (activeTab === "inbox" || activeTab === "requests") &&
             !activeChat.isFriend &&
             otherProfile?.id && (
               <button
@@ -186,7 +211,7 @@ export default function ThreadHeader({
 
 
 
-        {peerId && (
+        {peerId && !isSystem && (
           <div className={clsx('relative', 'flex-shrink-0', 'self-center', 'pr-1', 'flex', 'items-center', 'gap-3')} ref={threadMenuRef}>
             {threadActionBusy ? (
               <span className={clsx('inline-flex', 'px-2', 'text-xs', 'text-white/45')}>…</span>
@@ -246,6 +271,11 @@ export default function ThreadHeader({
                 )}
               </>
             )}
+          </div>
+        )}
+        {isSystem && (
+          <div className="pr-1 flex items-center">
+            <img src="/logo.gif" alt="Logo" className="w-20 md:hidden" />
           </div>
         )}
       </div>

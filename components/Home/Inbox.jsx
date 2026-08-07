@@ -22,6 +22,10 @@ import clsx from "clsx";
 import { FaUserPlus } from "react-icons/fa6";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
 import { RiUserAddLine } from "react-icons/ri";
+import {
+  getSystemLine,
+  isSystemNotificationThread,
+} from "@/lib/system-notifications";
 
 
 /** Backend ConversationQuerySchema.filter */
@@ -151,6 +155,12 @@ function lastMessagePreview(conv) {
   }
   if (t === "SQUAD_INVITE") return "Squad call invite";
   if (t === "SQUAD_INVITE_OUTCOME") return lm.message?.trim() || "Squad update";
+  if (t === "SYSTEM_NOTIFICATION") {
+    const meta = lm.notificationMeta;
+    const title = meta?.title?.trim();
+    if (title) return title;
+    return (meta?.body || lm.message || "").trim() || "Notification";
+  }
   return lm.message || "Message";
 }
 
@@ -309,6 +319,7 @@ export default function Inbox() {
   const activeChatRef = useRef(null);
   const currentUserIdRef = useRef(null);
   const loadListsRef = useRef(null);
+  const loadThreadMessagesRef = useRef(null);
   const loadNotificationBadgeRef = useRef(null);
   const markReadForPeerRef = useRef(null);
   const wsListSyncTimerRef = useRef(null);
@@ -1082,6 +1093,7 @@ export default function Inbox() {
   activeChatRef.current = activeChat;
   currentUserIdRef.current = currentUserId;
   loadListsRef.current = loadLists;
+  loadThreadMessagesRef.current = loadThreadMessages;
   loadNotificationBadgeRef.current = scheduleNotificationBadge;
   markReadForPeerRef.current = markReadForPeer;
 
@@ -1208,6 +1220,7 @@ export default function Inbox() {
                   giftAmount: m.giftAmount,
                   gif: m.gif || null,
                   squadMeta: m.squadMeta ?? null,
+                  notificationMeta: m.notificationMeta ?? null,
                   createdAt: m.createdAt,
                 },
                 lastMessageAt: m.createdAt,
@@ -1265,10 +1278,22 @@ export default function Inbox() {
         }
       }
 
-      if (msg.type === "friend:refresh") {
+      if (
+        msg.type === "friend:refresh" ||
+        msg.type === "friend:campaign_sent" ||
+        msg.type === "friend:campaign_recalled"
+      ) {
         loadListsRef.current?.({ quiet: true, skipNotificationBadge: true });
         loadNotificationBadgeRef.current?.({ force: true });
         refreshPendingSquadInvitationIdsRef.current?.();
+        // If the open thread is a system line that was recalled, reload messages.
+        const ac = activeChatRef.current;
+        if (ac && isSystemNotificationThread(ac)) {
+          const loadThread = loadThreadMessagesRef.current;
+          if (typeof loadThread === "function") {
+            void loadThread(ac, { quiet: true });
+          }
+        }
       }
 
       if (msg.type === "friend:typing" && msg.data) {
@@ -1433,6 +1458,8 @@ export default function Inbox() {
 
   useEffect(() => {
     if (!activeChat?.rowKey) return;
+    // Never hydrate BEAM / BEAM MOD from user-service — keeps logo + read-only UX.
+    if (isSystemNotificationThread(activeChat)) return;
     const oid = activeChat.otherUserId || activeChat.otherUser?.id;
     if (!oid) return;
     const rk = activeChat.rowKey;
@@ -1440,7 +1467,7 @@ export default function Inbox() {
     enrichUser(oid).then((u) => {
       if (cancelled) return;
       setActiveChat((prev) =>
-        prev && prev.rowKey === rk
+        prev && prev.rowKey === rk && !isSystemNotificationThread(prev)
           ? { ...prev, otherUser: { ...prev.otherUser, ...u } }
           : prev,
       );
@@ -1448,7 +1475,7 @@ export default function Inbox() {
     return () => {
       cancelled = true;
     };
-  }, [activeChat?.rowKey, enrichUser]);
+  }, [activeChat?.rowKey, activeChat?.systemLine, activeChat?.otherUserId, enrichUser]);
 
   useLayoutEffect(() => {
     const pending = pendingThreadScrollRestoreRef.current;
@@ -1533,6 +1560,7 @@ export default function Inbox() {
   };
 
   const sendOfflineFriendRequest = async (toUserId) => {
+    if (isSystemNotificationThread(activeChat)) return;
     if (!toUserId || sendFriendBusy) return;
     setSendFriendBusy(true);
     try {
@@ -1764,20 +1792,22 @@ export default function Inbox() {
     if (activeTab === "inbox") clearUnread(setInboxList);
     else if (activeTab === "requests") clearUnread(setRequestsList);
     else clearUnread(setSentList);
+    const systemLine = getSystemLine(row) || row.systemLine || null;
     setActiveChat({
       rowKey: cid,
       conversationId: cid,
       otherUser: row.otherUser,
       otherUserId: row.otherUserId,
-      isFriend: Boolean(row.isFriend),
-      isFollowRequest: Boolean(row.isFollowRequest),
-      isOutgoingFriendRequest: Boolean(row.isOutgoingFriendRequest),
-      followRequestId: followId || null,
-      outgoingFriendRequestId: outgoingId || null,
+      systemLine,
+      isFriend: Boolean(row.isFriend) && !systemLine,
+      isFollowRequest: Boolean(row.isFollowRequest) && !systemLine,
+      isOutgoingFriendRequest: Boolean(row.isOutgoingFriendRequest) && !systemLine,
+      followRequestId: systemLine ? null : followId || null,
+      outgoingFriendRequestId: systemLine ? null : outgoingId || null,
       unreadCount: 0,
-      userStatus: row.userStatus,
-      isBroadcasting: row.isBroadcasting,
-      broadcastUrl: row.broadcastUrl,
+      userStatus: systemLine ? "offline" : row.userStatus,
+      isBroadcasting: systemLine ? false : row.isBroadcasting,
+      broadcastUrl: systemLine ? null : row.broadcastUrl,
     });
     if (!isSyntheticConversationId(cid))
       void markReadForPeer(row.otherUser?.id || row.otherUserId);
@@ -1896,6 +1926,7 @@ export default function Inbox() {
 
   const showComposer =
     activeChat &&
+    !isSystemNotificationThread(activeChat) &&
     !showRecipientFollowActions &&
     (activeTab === "inbox" ||
       !activeChat.isFollowRequest ||
@@ -1909,9 +1940,13 @@ export default function Inbox() {
     requiresGiftForNonFriend(messages, currentUserId);
 
   const otherProfile = activeChat?.otherUser;
-  const peerId = activeChat?.otherUserId || otherProfile?.id || null;
+  const isSystemChat = isSystemNotificationThread(activeChat);
+  const peerId = isSystemChat
+    ? null
+    : activeChat?.otherUserId || otherProfile?.id || null;
 
   const handleUnfriendPeer = async () => {
+    if (isSystemNotificationThread(activeChat)) return;
     if (!peerId || !activeChat?.isFriend || threadActionBusy) return;
     const label = otherProfile?.username || "this user";
     if (
@@ -1941,6 +1976,7 @@ export default function Inbox() {
   };
 
   const handleBlockPeer = async () => {
+    if (isSystemNotificationThread(activeChat)) return;
     if (!peerId || threadActionBusy) return;
     const label = otherProfile?.username || "this user";
     if (
@@ -2084,6 +2120,7 @@ export default function Inbox() {
                     handleUnfriendPeer={handleUnfriendPeer}
                     handleBlockPeer={handleBlockPeer}
                     onProfileClick={() => {
+                      if (isSystemNotificationThread(activeChat)) return;
                       if (peerId) {
                         setPreviewUserId(peerId);
                         setIsPreviewOpen(true);

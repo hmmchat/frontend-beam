@@ -323,14 +323,16 @@ export default function Onboarding() {
     });
   };
 
-  const uploadToService = async (file) => {
+  const uploadToService = async (file, slotIndex = 0) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'profile-photos');
 
+    // First slot becomes DP; remaining slots are gallery (groups/objects OK)
+    const moderationPurpose = slotIndex === 0 ? 'display' : 'gallery';
     const token = localStorage.getItem('accessToken');
     const response = await fetch(
-      `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88`,
+      `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88&moderationPurpose=${moderationPurpose}`,
       {
         method: 'POST',
         headers: {
@@ -407,9 +409,10 @@ export default function Onboarding() {
     try {
       // 1. Upload photos first
       const uploadedUrls = [];
-      for (const file of photoFiles) {
+      for (let slotIndex = 0; slotIndex < photoFiles.length; slotIndex++) {
+        const file = photoFiles[slotIndex];
         if (file) {
-          const url = await uploadToService(file);
+          const url = await uploadToService(file, slotIndex);
           uploadedUrls.push(url);
         }
       }

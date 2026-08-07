@@ -698,8 +698,10 @@ function FacecardContent() {
     formData.append("file", file);
     formData.append("folder", "profile-photos");
 
+    // Slot 0 = DP (person-focused); slots 1–2 allow groups/objects
+    const moderationPurpose = slotIndex === 0 ? "display" : "gallery";
     const uploadRes = await fetch(
-      `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88`,
+      `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88&moderationPurpose=${moderationPurpose}`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

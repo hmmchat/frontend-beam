@@ -121,8 +121,9 @@ export default function PhotosOnboarding() {
       formData.append('file', file);
       formData.append('folder', 'profile-photos');
 
+      // Additional onboarding photos are gallery slots (groups/objects OK)
       const uploadRes = await fetch(
-        `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88`,
+        `${API.FILES.UPLOAD}?folder=profile-photos&maxWidth=1600&maxHeight=2400&quality=88&moderationPurpose=gallery`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },

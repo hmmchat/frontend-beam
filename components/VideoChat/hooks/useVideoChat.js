@@ -750,19 +750,36 @@ export default function useVideoChat() {
     return () => { cancelled = true; if (cycleInterval) clearInterval(cycleInterval); };
   }, []);
 
-  // Remote stream count changes — reset summoning state
+  // Remote stream count changes — end summoning only when someone beyond the
+  // original squad/match set joins (stranger). Squads of 3 already have 2 remotes
+  // before pull-stranger; clearing at n>=2 was wiping the Summoning overlay.
   useEffect(() => {
     const n = remoteStreams.length;
     const prev = prevRemoteStreamCountRef.current;
     prevRemoteStreamCountRef.current = n;
     if (n > 0 && peerLeftAutoResumeTimerRef.current) { clearTimeout(peerLeftAutoResumeTimerRef.current); peerLeftAutoResumeTimerRef.current = null; remoteMediaMissingSinceRef.current = null; }
-    if (n >= 2) {
+
+    const memberIds = roomInfoRef.current?.memberIds;
+    const expectedBaseRemotes =
+      Array.isArray(memberIds) && memberIds.length >= 2
+        ? memberIds.length - 1
+        : 1;
+
+    if (n > expectedBaseRemotes) {
       setPullStrangerCooldownSec(s => s > 0 ? 0 : s);
       setRoomSummoningUserId(null);
       suppressAutoResumeUntilRef.current = 0;
       setRoomHealthDebug(d => d.graceActive ? { graceActive: false, graceRemainingSec: 0, failureCount: d.failureCount } : d);
       return;
     }
+
+    if (n >= 2) {
+      // Friends connected; keep summoning UI if pull-stranger window is still active.
+      suppressAutoResumeUntilRef.current = 0;
+      setRoomHealthDebug(d => d.graceActive ? { graceActive: false, graceRemainingSec: 0, failureCount: d.failureCount } : d);
+      return;
+    }
+
     if (n === 1 && prev >= 2) {
       suppressAutoResumeUntilRef.current = 0;
       setPullStrangerCooldownSec(s => s > 0 ? 0 : s);

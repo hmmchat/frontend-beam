@@ -1687,6 +1687,27 @@ export default function useMeetSomeone() {
         }
         return;
       }
+      if (payload?.eventType === 'squad:call_started' && payload?.roomId) {
+        // Another member pressed Meet someone now — join without waiting on lobby poll.
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/video-chat')) {
+          return;
+        }
+        void (async () => {
+          try {
+            cleanupSquadLobbyBackgroundAudio();
+            const data = await apiRequest(API.SQUAD.ENTER_CALL, { method: 'POST' });
+            await applySquadEnterResponse(data, { navigate: true });
+          } catch (e) {
+            if (e?.status === 410) {
+              await refreshSquadLobby();
+            } else {
+              // Fall back to poll-driven IN_CALL effect.
+              await refreshSquadLobby();
+            }
+          }
+        })();
+        return;
+      }
       if (!payload?.userId) return;
       if (payload.userId === myUserIdRef.current) {
         void fetchMyProfile();
@@ -1712,7 +1733,13 @@ export default function useMeetSomeone() {
         window.removeEventListener('presence:changed', onPresenceChanged);
       }
     };
-  }, [myProfile?.id, fetchMatchedCardNow]);
+  }, [
+    myProfile?.id,
+    fetchMatchedCardNow,
+    applySquadEnterResponse,
+    cleanupSquadLobbyBackgroundAudio,
+    refreshSquadLobby,
+  ]);
 
   useEffect(() => {
     const prev = prevModeSquadRef.current;
@@ -1741,17 +1768,20 @@ export default function useMeetSomeone() {
       return;
     }
     void refreshSquadLobby();
+    // Poll faster while waiting in lobby so Meet someone now is picked up quickly
+    // if the realtime push is missed. Slow down once already in call / video-chat.
+    const pollMs = squadLobby?.status === 'IN_CALL' ? 4000 : 1000;
     squadPollRef.current = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       void refreshSquadLobby();
-    }, 4000);
+    }, pollMs);
     return () => {
       if (squadPollRef.current) {
         clearInterval(squadPollRef.current);
         squadPollRef.current = null;
       }
     };
-  }, [mode, refreshSquadLobby]);
+  }, [mode, refreshSquadLobby, squadLobby?.status]);
 
   useEffect(() => {
     let cancelled = false;

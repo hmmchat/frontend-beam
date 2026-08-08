@@ -208,13 +208,16 @@ const FaceCard = ({
   const showReportUi = (pathname === "/cards" || (pathname === "/" && isSearchingParam)) && hasReportLayer;
 
   const hideFacecardAge = Boolean(user.hideFacecardAge);
+  const isCityCard =
+    user.type === 'LOCATION' || Boolean(user.isLocationCard) || hideFacecardAge;
   const age = user.age ?? calculateAge(user.dateOfBirth);
-  const rawCity = user.city || user.preferredCity || "Unknown";
-  const city = (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
-    ? 'Anywhere'
-    : rawCity === 'Unknown'
-      ? 'Unknown'
+  const rawCity = user.city || user.preferredCity || '';
+  const city = isCityCard
+    ? ''
+    : (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
+      ? 'Anywhere'
       : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  const showLocationRow = !isCityCard && Boolean(city);
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
 
@@ -279,10 +282,11 @@ const FaceCard = ({
               </>
             )}
           </h1>
-          <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-            {/* <IoLocationOutline className="shrink-0" /> */}
-            <span className="truncate font-outfit">{city}</span>
-          </div>
+          {showLocationRow ? (
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+              <span className="truncate font-outfit">{city}</span>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -411,10 +415,12 @@ const FaceCard = ({
                       </>
                     )}
                   </h1>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-                    <IoLocationOutline className="shrink-0" />
-                    <span className="truncate">{city}</span>
-                  </div>
+                  {showLocationRow ? (
+                    <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
+                      <IoLocationOutline className="shrink-0" />
+                      <span className="truncate">{city}</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -434,7 +440,7 @@ const FaceCard = ({
                       <IoRadio className="h-5 w-5" />
                     </span>
                   )}
-                  {!isCardsOrFacecardPage && (
+                  {!isCityCard && !isCardsOrFacecardPage && (
                     <span
                       className="flex h-6 w-6 items-center justify-center text-white"
                       title={isVideoOn ? "Video on" : "Video off"}
@@ -447,7 +453,7 @@ const FaceCard = ({
                     </span>
                   )}
                   {showReportUi && <Report layer={reportLayer} />}
-                  {!hideMenu && !isFacecardPage && (
+                  {!isCityCard && !hideMenu && !isFacecardPage && (
                     <div className="relative">
                       <button
                         type="button"
@@ -493,8 +499,13 @@ const FaceCard = ({
             </>
           )}
 
-          {/* Inner chrome */}
-          <div className="absolute md:bottom-12  bottom-1 left-[5px] right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
+          {/* Inner chrome — leave room for 1-line (city) or 2-line (user+location) header */}
+          <div
+            className={clsx(
+              'absolute md:bottom-12 bottom-1 left-[5px] right-1 md:top-[1.75rem] rounded-[26px] border border-white/45',
+              showLocationRow ? 'top-[4.75rem]' : 'top-[3.5rem]',
+            )}
+          >
             {/* Intent */}
             <div className="absolute left-0 right-0 top-[8px] z-20 px-2 ">
               <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[100px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">

@@ -458,7 +458,7 @@ export default function MeetSomeoneDesktopRight({
                 handleSelectLocation={handleSelectLocation}
               />
 
-              {/* 🎥 VIDEO (Desktop only) */}
+              {/* 🎥 VIDEO (Desktop / tablet) — frame comes from panel HUD above */}
               <div
                 className={clsx(
                   'hidden',
@@ -477,7 +477,6 @@ export default function MeetSomeoneDesktopRight({
                   isVideoOn={isVideoOn}
                   onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
                 />
-                <div className={clsx('hidden', 'md:block', 'absolute', 'inset-4', 'pointer-events-none')} />
               </div>
             </div>
           )}

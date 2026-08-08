@@ -11,8 +11,8 @@ import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { useEffect, useState } from 'react';
 
 /**
- * Mobile top-half (or fullscreen) card + bottom cam preview
- * rendered inside the RIGHT panel during isSearching === true.
+ * Mobile matchmaking: top status/card pane + bottom local cam,
+ * both framed like desktop video windows.
  */
 export default function MeetSomeoneMobileSearch({
   currentCard,
@@ -49,21 +49,20 @@ export default function MeetSomeoneMobileSearch({
     !currentCard.isLocationCard;
   const isSearchingState =
     isResumeLoading || (!showEmptyOrbit && !showCityBoxes && !showCityHandoff && !showUserCard);
-  const isFaceCardState = showUserCard;
-  const isLocationState = showCityHandoff;
 
-  // Match desktop: keep local cam visible under search / empty / city-pick states.
-  const showBottomVideo = showEmptyOrbit || showCityBoxes || isSearchingState;
+  // Desktop always keeps local cam visible during discovery — same on phone.
+  const showBottomVideo = true;
+  const topIsCompactCard = showUserCard || showCityHandoff;
 
   const [scale, setScale] = useState(1);
   const [translateY, setTranslateY] = useState(0);
 
   useEffect(() => {
     const updateScale = () => {
-      const height = window.innerHeight;
-      // Face card (+ buttons) must fit the available phone height without the old +40 push.
-      const newScale = Math.max(0.62, Math.min(height / 860, 1));
-      const newTranslateY = Math.max(-100, Math.min(12, (height - 860) * 0.18));
+      // Scale against the top pane (~half viewport) so face cards fit with frames.
+      const paneH = window.innerHeight * 0.5;
+      const newScale = Math.max(0.55, Math.min(paneH / 720, 0.92));
+      const newTranslateY = Math.max(-40, Math.min(8, (paneH - 720) * 0.12));
       setScale(newScale);
       setTranslateY(newTranslateY);
     };
@@ -73,173 +72,119 @@ export default function MeetSomeoneMobileSearch({
   }, []);
 
   return (
-    <>
+    <div className="flex md:hidden flex-col w-full h-full min-h-0 relative z-20">
+      {/* Top pane — empty / search / face / city */}
       <div
         className={clsx(
-          'flex md:hidden w-full relative z-20 items-center justify-center md:pt-14 md:pb-4 md:px-4 overflow-hidden transition-all duration-500',
-          showBottomVideo ? 'h-1/2' : isFaceCardState || isLocationState ? 'h-full' : 'h-1/2',
+          'relative flex-1 min-h-0 w-full p-2.5 pb-1.5',
+          topIsCompactCard ? 'flex-[1.15]' : 'flex-1',
         )}
-        style={{
-          backgroundImage: 'url(/assets/mb.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
       >
         <div
-          className={clsx('absolute', 'inset-0', 'rounded-[2rem]', 'pointer-events-none', 'z-30')}
-        />
-
-        <div className="absolute inset-0 overflow-y-auto overflow-x-hidden w-full h-full flex flex-col items-center justify-center pt-4 pb-6 scrollbar-none z-20 rounded-[2rem]">
-          <div className={clsx('w-full flex flex-col items-center transition-transform duration-500')}>
-            {showEmptyOrbit ? (
-              <EmptyOrbitPanel />
-            ) : showCityBoxes ? (
-              <CityBoxesPanel
-                cities={availableCities}
-                onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
-              />
-            ) : isSearchingState ? (
-              <div className={clsx('w-full', 'h-full', 'min-h-[200px]', 'max-h-full')}>
-                <DiscoveryMemeLoader />
-              </div>
-            ) : showCityHandoff ? (
-              <div
-                className={clsx(
-                  'relative',
-                  'w-full',
-                  'max-h-full',
-                  'flex',
-                  'flex-col',
-                  'items-center',
-                  'gap-2',
-                  'overflow-hidden',
-                )}
-                style={
-                  typeof window !== 'undefined' && window.innerWidth < 768
-                    ? {
-                        transform: `translateY(${translateY}px) scale(${scale})`,
-                        transformOrigin: 'top center',
-                      }
-                    : undefined
-                }
-              >
-                <FaceCard
-                  user={discoveryCityFaceUser}
-                  hideArrows={true}
-                  currentIndex={currentImageIndex}
-                  onIndexChange={setCurrentImageIndex}
+          className="relative h-full w-full overflow-hidden rounded-[1.75rem] border-2 border-white/35"
+          style={{
+            backgroundImage: 'url(/assets/mb.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          <div className="absolute inset-0 overflow-y-auto overflow-x-hidden w-full h-full flex flex-col items-center justify-center pt-3 pb-4 scrollbar-none z-20">
+            <div className="w-full flex flex-col items-center">
+              {showEmptyOrbit ? (
+                <EmptyOrbitPanel />
+              ) : showCityBoxes ? (
+                <CityBoxesPanel
+                  cities={availableCities}
+                  onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
                 />
-                <CityHandoffBar
-                  cityLabel={discoveryCityFaceUser?.username}
-                  secondsLeft={handoffSecondsLeft}
-                  totalSeconds={handoffCountdownSeconds}
-                  onCancel={cancelCityHandoff}
-                />
-              </div>
-            ) : (
-              <div
-                className={clsx('relative')}
-                style={
-                  typeof window !== 'undefined' && window.innerWidth < 768
-                    ? {
-                        transform: `translateY(${translateY}px) scale(${scale})`,
-                        transformOrigin: 'top center',
-                      }
-                    : undefined
-                }
-              >
-                <FaceCard
-                  user={currentCard}
-                  hideArrows={true}
-                  currentIndex={currentImageIndex}
-                  onIndexChange={setCurrentImageIndex}
-                />
-
+              ) : isSearchingState ? (
+                <div className="w-full h-full min-h-[160px] max-h-full px-2">
+                  <DiscoveryMemeLoader />
+                </div>
+              ) : showCityHandoff ? (
                 <div
-                  className={clsx(
-                    'relative',
-                    'md:bottom-6',
-                    'w-full',
-                    'flex',
-                    'gap-1',
-                    'items-center',
-                    'justify-between',
-                    '-bottom-2',
-                  )}
+                  className="relative w-full max-h-full flex flex-col items-center gap-2 overflow-hidden"
+                  style={{
+                    transform: `translateY(${translateY}px) scale(${scale})`,
+                    transformOrigin: 'top center',
+                  }}
                 >
-                  {!waitingForMatch && (
-                    <button
-                      onClick={handlePrevImage}
-                      className="w-13 h-13 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
-                    >
-                      <IoIosArrowBack />
-                    </button>
-                  )}
-
-                  <MatchButtons
-                    waitingForMatch={waitingForMatch}
-                    waitingMessage={waitingMessage}
-                    handleCancelWaiting={handleCancelWaiting}
-                    handleRaincheck={handleRaincheck}
-                    handleProceed={handleProceed}
-                    isDesktop={true}
+                  <FaceCard
+                    user={discoveryCityFaceUser}
+                    hideArrows={true}
+                    currentIndex={currentImageIndex}
+                    onIndexChange={setCurrentImageIndex}
+                  />
+                  <CityHandoffBar
+                    cityLabel={discoveryCityFaceUser?.username}
+                    secondsLeft={handoffSecondsLeft}
+                    totalSeconds={handoffCountdownSeconds}
+                    onCancel={cancelCityHandoff}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="relative"
+                  style={{
+                    transform: `translateY(${translateY}px) scale(${scale})`,
+                    transformOrigin: 'top center',
+                  }}
+                >
+                  <FaceCard
+                    user={currentCard}
+                    hideArrows={true}
+                    currentIndex={currentImageIndex}
+                    onIndexChange={setCurrentImageIndex}
                   />
 
-                  {!waitingForMatch && (
-                    <button
-                      onClick={handleNextImage}
-                      className={clsx(
-                        'relative',
-                        'z-[110]',
-                        'w-13',
-                        'h-13',
-                        'rounded-full',
-                        'border',
-                        'border-white/40',
-                        'flex',
-                        'items-center',
-                        'justify-center',
-                        'text-white',
-                        'text-2xl',
-                        'hover:bg-white/10',
-                        'transition',
-                        'active:scale-75',
-                        'cursor-pointer',
-                        'backdrop-blur-sm',
-                        'shrink-0',
-                      )}
-                    >
-                      <IoIosArrowForward />
-                    </button>
-                  )}
+                  <div className="relative w-full flex gap-1 items-center justify-between -bottom-2">
+                    {!waitingForMatch && (
+                      <button
+                        onClick={handlePrevImage}
+                        className="w-13 h-13 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:text-white transition active:scale-90 shrink-0"
+                      >
+                        <IoIosArrowBack />
+                      </button>
+                    )}
+
+                    <MatchButtons
+                      waitingForMatch={waitingForMatch}
+                      waitingMessage={waitingMessage}
+                      handleCancelWaiting={handleCancelWaiting}
+                      handleRaincheck={handleRaincheck}
+                      handleProceed={handleProceed}
+                      isDesktop={true}
+                    />
+
+                    {!waitingForMatch && (
+                      <button
+                        onClick={handleNextImage}
+                        className="relative z-[110] w-13 h-13 rounded-full border border-white/40 flex items-center justify-center text-white text-2xl hover:bg-white/10 transition active:scale-75 cursor-pointer backdrop-blur-sm shrink-0"
+                      >
+                        <IoIosArrowForward />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Bottom pane — local camera (desktop parity) */}
       {showBottomVideo && (
-        <div
-          className={clsx(
-            'flex',
-            'md:hidden',
-            'h-1/2',
-            'w-full',
-            'relative',
-            'z-[1]',
-            'min-h-0',
-          )}
-        >
-          <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
-          <LocalVideo
-            showSoloCheckbox={false}
-            isVideoOn={isVideoOn}
-            onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
-          />
+        <div className="relative flex-1 min-h-0 w-full p-2.5 pt-1.5">
+          <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] border-2 border-white/35">
+            <LocalVideo
+              showSoloCheckbox={false}
+              isVideoOn={isVideoOn}
+              onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
+            />
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

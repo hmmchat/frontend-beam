@@ -1125,10 +1125,11 @@ export default function Onboarding() {
                       <textarea
                         value={prompt}
                         onChange={(e) => {
-                          setPrompt(e.target.value);
+                          setPrompt(e.target.value.slice(0, 255));
                           setSelectedPrompts([]);
                           if (apiError) setApiError("");
                         }}
+                        maxLength={255}
                         placeholder="Type your own"
                         className="w-full font-outfit bg-transparent resize-none outline-none text-center placeholder-white/60 h-[72px] md:h-[96px]"
                       />

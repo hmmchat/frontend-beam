@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 export const REPORT_REASON_OPTIONS = [
-  { value: 'basic', label: 'Basic report' },
+  { value: 'basic', label: 'General concern' },
   { value: 'violence_self_harm', label: 'Violence or Self-Harm' },
   { value: 'child_abuse', label: 'Child Abuse' },
 ];

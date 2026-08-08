@@ -53,23 +53,24 @@ export default function MatchButtons({
   }
 
   if (isDesktop) {
+    // Figma phone facecard footer: ~120×52 pills, 12px label
     return (
       <div className="flex items-center gap-2">
         <button
           onClick={handleRaincheck}
           className={clsx(
-            'w-[126px]',
-            'h-[55px]',
+            'w-[120px]',
+            'h-[52px]',
             'flex',
             'items-center',
             'justify-center',
-            'rounded-full',
+            'rounded-[35px]',
             'border',
-            'border-white/30',
+            'border-white/50',
             'text-white',
-            'text-xs',
+            'text-[12px]',
+            'font-[family-name:var(--font-otomanopee)]',
             'whitespace-nowrap',
-
             'transition',
             'active:scale-95',
           )}
@@ -80,16 +81,17 @@ export default function MatchButtons({
         <button
           onClick={handleProceed}
           className={clsx(
-            'w-[126px]',
-            'h-[55px]',
+            'w-[120px]',
+            'h-[52px]',
             'flex',
             'items-center',
             'justify-center',
-            'rounded-full',
+            'rounded-[35px]',
             'border',
-            'border-white/30',
+            'border-white/50',
             'text-white',
-            'text-xs',
+            'text-[12px]',
+            'font-[family-name:var(--font-otomanopee)]',
             'whitespace-nowrap',
             'hover:bg-white/10',
             'transition',

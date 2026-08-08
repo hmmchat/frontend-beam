@@ -73,7 +73,8 @@ export default function DiscoveryMemeLoader({ className }) {
 
   return (
     <div className={clsx('relative', 'h-full', 'w-full', 'min-h-0', className)}>
-      <MemeLoader loadingMeme={loadingMeme} />
+      {/* Pocket stroke lives on the parent (Figma 10945:36945) — no nested frame */}
+      <MemeLoader loadingMeme={loadingMeme} showFrame={false} />
     </div>
   );
 }

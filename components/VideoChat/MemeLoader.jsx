@@ -2,23 +2,25 @@
 
 import clsx from 'clsx';
 
-export default function MemeLoader({ loadingMeme }) {
+export default function MemeLoader({ loadingMeme, showFrame = true }) {
   return (
     <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden')}>
-      <div
-        className="
-          absolute inset-0
-          h-[95%] w-[95%]
-          border border-white/40
-          rounded-3xl md:rounded-[60px]
-          pointer-events-none
-          z-20
-          transition-colors
-          box-border
-          mx-auto
-          my-auto
-        "
-      />
+      {showFrame ? (
+        <div
+          className="
+            absolute inset-0
+            h-[95%] w-[95%]
+            border border-white/40
+            rounded-3xl md:rounded-[60px]
+            pointer-events-none
+            z-20
+            transition-colors
+            box-border
+            mx-auto
+            my-auto
+          "
+        />
+      ) : null}
       <div
         className="absolute inset-0 z-0 "
         style={{

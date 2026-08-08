@@ -458,15 +458,15 @@ export default function MeetSomeoneDesktopRight({
                 handleSelectLocation={handleSelectLocation}
               />
 
-              {/* 🎥 VIDEO (Desktop / tablet) — frame comes from panel HUD above */}
+              {/* 🎥 VIDEO (Desktop) — phone/tablet use MeetSomeoneMobileSearch */}
               <div
                 className={clsx(
                   'hidden',
-                  'md:block',
+                  'lg:block',
                   'relative',
                   'flex-1',
-                  'md:absolute',
-                  'md:inset-0',
+                  'lg:absolute',
+                  'lg:inset-0',
                   'z-[1]',
                   'w-full',
                   'min-h-0',

@@ -1,9 +1,18 @@
 'use client';
 
-export default function VideoChatMask({ slots, giftAnimationActive = false }) {
+export default function VideoChatMask({
+  slots,
+  giftAnimationActive = false,
+  /** Override shell classes (e.g. discovery keeps mask through tablet). */
+  className,
+}) {
+  const shellClass =
+    className ||
+    `absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`;
+
   if (slots === 2) {
     return (
-      <div className={`absolute inset-3 bottom-[10.5%] top-[2.25%] flex justify-center md:hidden z-10 pointer-events-none transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={shellClass}>
 
 
 

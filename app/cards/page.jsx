@@ -369,7 +369,7 @@ function OfflineCardsContent() {
           className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border', 'border-white/40', 'h-[92dvh]', 'rounded-[32px]', 'md:rounded-[60px]', 'overflow-hidden', 'md:w-[98vw]', 'w-[min(100%,92vw)]', 'md:w-[750px]', 'mx-auto')}>
+          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92dvh]', 'rounded-none', 'md:rounded-[60px]', 'overflow-hidden', 'w-full', 'md:w-[750px]', 'mx-auto')}>
 
             {/* Scrollable container for the face card content */}
 
@@ -380,16 +380,20 @@ function OfflineCardsContent() {
 
 
 
-            <div className={clsx('flex', 'flex-col', 'items-center', 'pt-4', 'pb-4', 'scrollbar-none', 'z-20')}>
-
+            {/*
+              FaceCard uses w-[min(380px,100%)]. A shrink-wrap parent makes that
+              100% resolve to 0 (thin vertical line). Give the scale shell a real width.
+            */}
+            <div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'pt-4', 'pb-4', 'scrollbar-none', 'z-20')}>
               <div
                 className={clsx(
-                  "origin-top transition-transform duration-500 w-full  flex justify-center mt-3 md:mt-0"
+                  'relative flex w-full max-w-[380px] shrink-0 items-center justify-center',
+                  'origin-top transition-transform duration-500 mt-3 md:mt-0',
                 )}
                 style={
                   typeof window !== "undefined" && window.innerWidth < 768
                     ? {
-                      transform: `   translateY(${translateY}px) scale(${scale})`,
+                      transform: `translateY(${translateY}px) scale(${scale})`,
                       transformOrigin: "top center",
                     }
                     : undefined
@@ -408,7 +412,6 @@ function OfflineCardsContent() {
       md:[@media(max-height:800px)]:scale-[0.81] md:[@media(max-height:800px)]:mt-[-3vh]
       md:[@media(max-height:700px)]:scale-[0.77] md:[@media(max-height:700px)]:mt-[-5vh]"
                   onBlockOrReportSuccess={handlePass}
-
                 />
               </div>
 

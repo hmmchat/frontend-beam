@@ -28,22 +28,17 @@ export default function ProfileSidebar({
           />
         </div>
 
-        {getActiveBadgeId(user) ? (
-          <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60  ">
+        {typeof user?.activeBadgeImageUrl === "string" &&
+        user.activeBadgeImageUrl.trim() &&
+        getActiveBadgeId(user) ? (
+          <div className="absolute bottom-0 right-[-10] flex h-20 w-20 items-center justify-center rounded-full border border-white/60">
             <div className="relative flex h-32 w-32 items-center justify-center rounded-full">
-              {user?.activeBadgeImageUrl ? (
-                <Image
-                  src={user.activeBadgeImageUrl}
-                  alt="sticker"
-                  fill
-                  className="object-contain"
-                />
-              ) : (
-                <span className="text-4xl leading-none" aria-hidden>
-                  {user?.activeBadge?.giftEmoji}
-                </span>
-              )}
-
+              <Image
+                src={user.activeBadgeImageUrl}
+                alt="sticker"
+                fill
+                className="object-contain"
+              />
               <div
                 onClick={() => setActiveTab("stickers")}
                 className="absolute bottom-8 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full"
@@ -55,7 +50,7 @@ export default function ProfileSidebar({
         ) : (
           <div
             onClick={() => setActiveTab("stickers")}
-            className="absolute -bottom-2 right-[-10px] flex h-16 w-16 cursor-pointer  rounded-full border  border-white/60  hover:bg-white/10 hover:border-white transition-all shadow-lg"
+            className="absolute -bottom-2 right-[-10px] flex h-16 w-16 cursor-pointer rounded-full border border-white/60 hover:bg-white/10 hover:border-white transition-all shadow-lg"
             title="Add sticker"
           >
             <img src="/edit.svg" alt="edit" className="h-5 w-5 mt-9 ml-12" />

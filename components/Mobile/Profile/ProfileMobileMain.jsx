@@ -58,21 +58,19 @@ export default function ProfileMobileMain({
             )}
           </div>
 
-          {getActiveBadgeId(user) ? (
-            <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60  rounded-full flex items-center justify-center">
+          {/* Only show sticker art when we have a real image URL.
+              Mobile used to fall back to 🎁 for empty/missing art — desktop never did. */}
+          {typeof user?.activeBadgeImageUrl === "string" &&
+          user.activeBadgeImageUrl.trim() &&
+          getActiveBadgeId(user) ? (
+            <div className="absolute bottom-0 right-[-10px] w-20 h-20 border border-white/60 rounded-full flex items-center justify-center">
               <div className="relative w-18 h-14 flex items-center justify-center">
-                {user?.activeBadgeImageUrl ? (
-                  <Image
-                    src={user.activeBadgeImageUrl}
-                    fill
-                    alt="sticker"
-                    className="object-contain"
-                  />
-                ) : (
-                  <span className="text-3xl leading-none" aria-hidden>
-                    {user?.activeBadge?.giftEmoji || "🎁"}
-                  </span>
-                )}
+                <Image
+                  src={user.activeBadgeImageUrl}
+                  fill
+                  alt="sticker"
+                  className="object-contain"
+                />
                 <div
                   onClick={(e) => {
                     e.stopPropagation();

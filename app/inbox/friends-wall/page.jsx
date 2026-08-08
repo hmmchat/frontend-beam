@@ -411,34 +411,28 @@ function FriendWallContent() {
 
 
 
-              <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
-
-
-                <div className="   flex flex-col  items-center pt-4 pb-4 scrollbar-none z-20 ">
-
-                  <div
-                    className={clsx(
-                      "origin-top transition-transform duration-500 w-full flex justify-center mt-3 md:mt-0"
-                    )}
-                    style={
-                      typeof window !== "undefined" && window.innerWidth < 768
-                        ? {
-                          transform: `   translateY(${translateY}px) scale(${scale})`,
-                          transformOrigin: "top center",
-                        }
-                        : undefined
-                    }
-                  >
-
-
-                    <FaceCard
-                      user={{
-                        ...selectedFriend,
-                        age: calculateAge(selectedFriend.dateOfBirth),
-                        city: selectedFriend.preferredCity || selectedFriend.city,
-                      }}
-                    />
-                  </div>
+              <div className="flex w-full flex-col items-center pt-4 pb-4 scrollbar-none z-20">
+                <div
+                  className={clsx(
+                    'relative flex w-full max-w-[380px] shrink-0 items-center justify-center',
+                    'origin-top transition-transform duration-500 mt-3 md:mt-0',
+                  )}
+                  style={
+                    typeof window !== "undefined" && window.innerWidth < 768
+                      ? {
+                        transform: `translateY(${translateY}px) scale(${scale})`,
+                        transformOrigin: "top center",
+                      }
+                      : undefined
+                  }
+                >
+                  <FaceCard
+                    user={{
+                      ...selectedFriend,
+                      age: calculateAge(selectedFriend.dateOfBirth),
+                      city: selectedFriend.preferredCity || selectedFriend.city,
+                    }}
+                  />
                 </div>
               </div>
             </div>

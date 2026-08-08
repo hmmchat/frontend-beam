@@ -96,18 +96,10 @@ export default function FacecardEditor({
               </div>
             </div>
 
-            <div className={clsx('col-span-5', 'row-span-2', 'flex', 'justify-center', 'items-center')}>
-              <div className={clsx('relative', 'w-[120px]', 'h-[120px]', 'flex', 'items-center', 'justify-center')}>
-                {/* Glow */}
-
-
-
-                {/* Mobile Outer Rings & Glow Wrapper (Functional Mask) */}
-                <div
-                  className={clsx('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'pointer-events-none')}
-
-                >
-                  {/* Mobile glow SVG — dynamic arc */}
+            <div className={clsx('col-span-5', 'row-span-2', 'flex', 'justify-center', 'items-center', 'overflow-visible')}>
+              <div className={clsx('relative', 'w-[120px]', 'h-[120px]', 'flex', 'items-center', 'justify-center', 'overflow-visible')}>
+                {/* Progress arcs — no mix-blend (that paints a square compositing layer) */}
+                <div className={clsx('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'pointer-events-none', 'overflow-visible')}>
                   {(() => {
                     const pct = Math.min(100, Math.max(0, progress || 0));
                     const r = 49;
@@ -115,21 +107,33 @@ export default function FacecardEditor({
                     const offset = circ * (1 - pct / 100);
                     return (
                       <svg
-                        className={clsx('absolute', 'inset-0')}
-                        width="108"
-                        height="108"
-                        viewBox="0 0 108 108"
+                        className="absolute overflow-visible"
+                        width="120"
+                        height="120"
+                        viewBox="0 0 120 120"
                         fill="none"
-                        style={{ mixBlendMode: 'plus-lighter' }}
+                        style={{ overflow: 'visible' }}
                       >
                         <defs>
-                          <filter id="filter_mobile_progress_glow" x="-30%" y="-30%" width="160%" height="160%">
-                            <feGaussianBlur stdDeviation="5" result="blur" />
+                          <filter
+                            id="filter_mobile_progress_glow"
+                            x="-80"
+                            y="-80"
+                            width="280"
+                            height="280"
+                            filterUnits="userSpaceOnUse"
+                            colorInterpolationFilters="sRGB"
+                          >
+                            <feGaussianBlur stdDeviation="6" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
                           </filter>
                         </defs>
                         <circle
-                          cx="54"
-                          cy="54"
+                          cx="60"
+                          cy="60"
                           r={r}
                           fill="none"
                           stroke="#FFBC2B"
@@ -137,7 +141,7 @@ export default function FacecardEditor({
                           strokeDasharray={circ}
                           strokeDashoffset={offset}
                           strokeLinecap="round"
-                          transform="rotate(-90 54 54)"
+                          transform="rotate(-90 60 60)"
                           filter="url(#filter_mobile_progress_glow)"
                           style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                         />
@@ -145,38 +149,37 @@ export default function FacecardEditor({
                     );
                   })()}
 
-                  {/* Outer rings — dynamic progress arcs (mobile) */}
                   {(() => {
                     const pct = Math.min(100, Math.max(0, progress || 0));
                     const rings = [
-                      { r: 51, stroke: '#4E0093', sw: 2 },
-                      { r: 49, stroke: '#FFBC2B', sw: 2 },
-                      { r: 47, stroke: '#4E0093', sw: 2 },
+                      { r: 51, stroke: '#FFBC2B', sw: 1.5, opacity: 0.55 },
+                      { r: 47, stroke: '#FFBC2B', sw: 1.5, opacity: 0.35 },
                     ];
                     return (
                       <svg
-                        className="absolute"
-                        width="108"
-                        height="108"
-                        viewBox="0 0 108 108"
-                        style={{ mixBlendMode: 'color-dodge' }}
+                        className="absolute overflow-visible"
+                        width="120"
+                        height="120"
+                        viewBox="0 0 120 120"
+                        style={{ overflow: 'visible' }}
                       >
-                        {rings.map(({ r, stroke, sw }, i) => {
+                        {rings.map(({ r, stroke, sw, opacity }, i) => {
                           const circ = 2 * Math.PI * r;
                           const offset = circ * (1 - pct / 100);
                           return (
                             <circle
                               key={i}
-                              cx="54"
-                              cy="54"
+                              cx="60"
+                              cy="60"
                               r={r}
                               fill="none"
                               stroke={stroke}
                               strokeWidth={sw}
+                              strokeOpacity={opacity}
                               strokeDasharray={circ}
                               strokeDashoffset={offset}
                               strokeLinecap="round"
-                              transform="rotate(-90 54 54)"
+                              transform="rotate(-90 60 60)"
                               style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                             />
                           );
@@ -186,15 +189,15 @@ export default function FacecardEditor({
                   })()}
                 </div>
 
-
-
-
-                {/* Main yellow ring with pink glow */}
-                <div className={clsx('w-[88px]', 'h-[88px]', 'rounded-full', 'border-[5px]', 'border-yellow-400', 'flex', 'items-center', 'justify-center', 'shadow-[0_0_20px_rgba(236,72,153,0.8),inset_0_0_12px_rgba(236,72,153,0.6)]')}>
-                  {/* Inner thin ring */}
+                {/* Main yellow ring with soft circular glow (CSS, not blend layers) */}
+                <div
+                  className={clsx(
+                    'relative w-[88px] h-[88px] rounded-full border-[5px] border-yellow-400',
+                    'flex items-center justify-center',
+                    'shadow-[0_0_22px_rgba(255,188,43,0.55),0_0_28px_rgba(236,72,153,0.45),inset_0_0_12px_rgba(236,72,153,0.45)]',
+                  )}
+                >
                   <div className={clsx('absolute', 'w-[75px]', 'h-[75px]', 'rounded-full', 'border-[3px]', 'border-[#FFBC2B]')} />
-
-                  {/* Center text */}
                   <span className={clsx('text-[18px]', 'text-white', 'font-semibold')}>
                     {progress}
                     <span className={clsx('text-sm', 'opacity-60')}>%</span>
@@ -918,43 +921,51 @@ export default function FacecardEditor({
             {/* Right Side Info Col */}
             <div className={clsx('w-full', 'lg:w-[260px]', 'xl:w-[300px]', 'flex', 'flex-col', 'gap-10', 'py-6', 'pr-4')}>
               {/* Progress Area */}
-              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6')}>
-                <div className={clsx('relative', 'w-56', 'h-56', 'flex', 'items-center', 'justify-center')}
-
-                >
-
-
-
-                  {/* Glow SVG — dynamic arc (desktop) */}
+              <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6', 'overflow-visible')}>
+                <div className={clsx('relative', 'w-56', 'h-56', 'flex', 'items-center', 'justify-center', 'overflow-visible')}>
+                  {/* Progress arcs — no mix-blend (avoids square compositing layer) */}
                   {(() => {
                     const pct = Math.min(100, Math.max(0, progress || 0));
-                    const r = 110;
+                    const r = 100;
                     const circ = 2 * Math.PI * r;
                     const offset = circ * (1 - pct / 100);
                     return (
                       <svg
-                        className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
-                        viewBox="0 0 281 281"
+                        className="absolute overflow-visible"
+                        width="224"
+                        height="224"
+                        viewBox="0 0 224 224"
                         fill="none"
-                        style={{ mixBlendMode: 'plus-lighter' }}
-                        preserveAspectRatio="xMidYMid meet"
+                        style={{ overflow: 'visible' }}
                       >
                         <defs>
-                          <filter id="filter_desktop_progress_glow" x="-30%" y="-30%" width="160%" height="160%">
-                            <feGaussianBlur stdDeviation="10.3329" result="blur" />
+                          <filter
+                            id="filter_desktop_progress_glow"
+                            x="-80"
+                            y="-80"
+                            width="384"
+                            height="384"
+                            filterUnits="userSpaceOnUse"
+                            colorInterpolationFilters="sRGB"
+                          >
+                            <feGaussianBlur stdDeviation="10" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
                           </filter>
                         </defs>
                         <circle
-                          cx="140.066"
-                          cy="140.068"
+                          cx="112"
+                          cy="112"
                           r={r}
                           fill="none"
                           stroke="#FFBC2B"
-                          strokeWidth="14"
+                          strokeWidth="12"
                           strokeDasharray={circ}
                           strokeDashoffset={offset}
                           strokeLinecap="round"
-                          transform="rotate(-90 140.066 140.068)"
+                          transform="rotate(-90 112 112)"
                           filter="url(#filter_desktop_progress_glow)"
                           style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                         />
@@ -962,38 +973,37 @@ export default function FacecardEditor({
                     );
                   })()}
 
-                  {/* Outer rings — dynamic progress arcs (desktop) */}
                   {(() => {
                     const pct = Math.min(100, Math.max(0, progress || 0));
                     const rings = [
-                      { r: 94, stroke: '#4E0093', sw: 4 },
-                      { r: 90, stroke: '#FFBC2B', sw: 4 },
-                      { r: 86, stroke: '#4E0093', sw: 4 },
+                      { r: 94, stroke: '#FFBC2B', sw: 3, opacity: 0.5 },
+                      { r: 86, stroke: '#FFBC2B', sw: 3, opacity: 0.3 },
                     ];
                     return (
                       <svg
-                        className="absolute"
-                        width="196"
-                        height="196"
-                        viewBox="0 0 196 196"
-                        style={{ mixBlendMode: 'color-dodge' }}
+                        className="absolute overflow-visible"
+                        width="224"
+                        height="224"
+                        viewBox="0 0 224 224"
+                        style={{ overflow: 'visible' }}
                       >
-                        {rings.map(({ r, stroke, sw }, i) => {
+                        {rings.map(({ r, stroke, sw, opacity }, i) => {
                           const circ = 2 * Math.PI * r;
                           const offset = circ * (1 - pct / 100);
                           return (
                             <circle
                               key={i}
-                              cx="98"
-                              cy="98"
+                              cx="112"
+                              cy="112"
                               r={r}
                               fill="none"
                               stroke={stroke}
                               strokeWidth={sw}
+                              strokeOpacity={opacity}
                               strokeDasharray={circ}
                               strokeDashoffset={offset}
                               strokeLinecap="round"
-                              transform="rotate(-90 98 98)"
+                              transform="rotate(-90 112 112)"
                               style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                             />
                           );
@@ -1002,13 +1012,14 @@ export default function FacecardEditor({
                     );
                   })()}
 
-                  {/* Main yellow ring */}
-                  <div className={clsx('relative', 'w-[160px]', 'h-[160px]', 'rounded-full', 'border-[8px]', 'border-[#FFBC2B]', 'flex', 'items-center', 'justify-center')}>
-
-                    {/* Inner thin ring */}
+                  <div
+                    className={clsx(
+                      'relative w-[160px] h-[160px] rounded-full border-[8px] border-[#FFBC2B]',
+                      'flex items-center justify-center',
+                      'shadow-[0_0_28px_rgba(255,188,43,0.5),0_0_36px_rgba(236,72,153,0.4),inset_0_0_16px_rgba(236,72,153,0.4)]',
+                    )}
+                  >
                     <div className={clsx('absolute', 'w-[140px]', 'h-[140px]', 'rounded-full', 'border-[4px]', 'border-[#FFBC2B]')} />
-
-                    {/* Center text */}
                     <span className={clsx('text-4xl', 'text-white', 'font-semibold')}>
                       {progress}
                       <span className={clsx('text-2xl', 'opacity-60', 'ml-1')}>%</span>

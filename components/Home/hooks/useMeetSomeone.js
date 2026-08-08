@@ -1141,6 +1141,9 @@ export default function useMeetSomeone() {
           callType: 'squad',
           memberIds,
           partner,
+          pullStrangerEnabled: Boolean(data.pullStrangerEnabled),
+          pullStrangerRemainingSec: Number(data.pullStrangerRemainingSec) || 0,
+          pullStrangerEnabledBy: data.pullStrangerEnabledBy || null,
         }),
       );
       if (navigate) {

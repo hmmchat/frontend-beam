@@ -1726,6 +1726,33 @@ export default function useVideoChat() {
       squadQuickInvitePeersPostedRoomIdRef.current = null;
       mediaEstablishGraceUntilRef.current = Date.now() + MEDIA_ESTABLISH_GRACE_MS;
       setRoomInfo(info);
+
+      // Squad auto pull-stranger: mirror today's manual UI/timer when server already enabled it.
+      try {
+        let enabled = Boolean(info?.pullStrangerEnabled);
+        let remaining = Number(info?.pullStrangerRemainingSec) || 0;
+        if ((!enabled || remaining <= 0) && info?.callType === 'squad' && info?.roomId) {
+          const roomDetails = await apiRequest(API.STREAMING.GET_ROOM(info.roomId)).catch(() => null);
+          if (roomDetails?.exists !== false && roomDetails?.pullStrangerEnabled) {
+            enabled = true;
+            remaining = Number(roomDetails.pullStrangerRemainingSec) || 0;
+          }
+        }
+        if (enabled) {
+          if (remaining <= 0) remaining = PULL_STRANGER_WINDOW_SECONDS;
+          setPullStrangerCooldownSec(remaining);
+          suppressAutoResumeUntilRef.current = Date.now() + (remaining * 1000);
+          roomHealthFailureCountRef.current = 0;
+          setRoomHealthDebug({ graceActive: true, graceRemainingSec: remaining, failureCount: 0 });
+          const enabledBy = info?.pullStrangerEnabledBy || null;
+          if (enabledBy && String(enabledBy) === String(uid)) {
+            await enablePullStrangerDiscovery().catch(() => { });
+          }
+        }
+      } catch (err) {
+        console.warn('[Init] Failed to sync auto pull-stranger state:', err);
+      }
+
       if (info.partner) {
         const enrichedPartner = await enrichUserStickerFields(info.partner);
         const pInfo = { id: enrichedPartner.id || '', name: enrichedPartner.username || 'Matched!', age: enrichedPartner.age || '', city: enrichedPartner.city || '', displayPictureUrl: enrichedPartner.displayPictureUrl || '', activeBadgeImageUrl: enrichedPartner.activeBadgeImageUrl || null, activeBadge: enrichedPartner.activeBadge || null };

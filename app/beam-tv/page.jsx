@@ -137,6 +137,7 @@ function BeamTVInner() {
   }, [requestedJoin]);
   const [coins, setCoins] = useState(0);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
+  const [purchaseToast, setPurchaseToast] = useState(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [animGift, setAnimGift] = useState(null);
@@ -2028,7 +2029,26 @@ function BeamTVInner() {
 
                 <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
 
-                <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+                <CoinModal
+                  isOpen={isCoinModalOpen}
+                  onClose={() => setIsCoinModalOpen(false)}
+                  onSuccess={async ({ coinsCredited }) => {
+                    await refreshWallet();
+                    const credited = Number(coinsCredited) || 0;
+                    setPurchaseToast(
+                      credited > 0
+                        ? `Added ${credited.toLocaleString()} coins`
+                        : 'Coins added to your wallet'
+                    );
+                    window.setTimeout(() => setPurchaseToast(null), 3000);
+                  }}
+                />
+                {purchaseToast && (
+                  <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/80 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="font-outfit text-sm font-semibold">{purchaseToast}</span>
+                  </div>
+                )}
                 <GroupMembersModal
                   isOpen={showGroupMembersModal}
                   onClose={() => setShowGroupMembersModal(false)}

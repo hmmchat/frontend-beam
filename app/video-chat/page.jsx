@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import clsx from 'clsx';
 import ProfileGuard from '@/components/auth/ProfileGuard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
@@ -72,10 +73,13 @@ function VideoChatContent() {
     handleDareSync, handleDareResponse, handleCancelDare, handleSendDare,
     openDareOverlay,
     handleSaveCustomDare, handleDeleteCustomDare,
+    refreshWallet,
     // Render helpers
     localVideoProps, getRemoteFriendTileProps, getRemoteTileProfile,
     canKickRemoteUser, shouldShowReportEmojiOnRemoteTile,
   } = useVideoChat();
+
+  const [purchaseToast, setPurchaseToast] = useState(null);
 
   // ---- Derived values ------------------------------------------------------
   const isPullStrangerDisabled = (remoteStreams.length + 1) >= 4 || isEnablingPullStranger || (pullStrangerCooldownSec > 0);
@@ -573,7 +577,26 @@ function VideoChatContent() {
         )}
       </div>
 
-      <CoinModal isOpen={isCoinModalOpen} onClose={() => setIsCoinModalOpen(false)} />
+      <CoinModal
+        isOpen={isCoinModalOpen}
+        onClose={() => setIsCoinModalOpen(false)}
+        onSuccess={async ({ coinsCredited }) => {
+          await refreshWallet();
+          const credited = Number(coinsCredited) || 0;
+          setPurchaseToast(
+            credited > 0
+              ? `Added ${credited.toLocaleString()} coins`
+              : 'Coins added to your wallet'
+          );
+          window.setTimeout(() => setPurchaseToast(null), 3000);
+        }}
+      />
+      {purchaseToast && (
+        <div className={clsx('fixed', 'top-20', 'left-1/2', '-translate-x-1/2', 'z-[200]', 'bg-slate-900/80', 'backdrop-blur-md', 'border', 'border-white/20', 'text-white', 'px-6', 'py-3', 'rounded-full', 'shadow-2xl', 'flex', 'items-center', 'gap-3', 'animate-in', 'fade-in', 'slide-in-from-top-4')}>
+          <div className={clsx('w-2', 'h-2', 'rounded-full', 'bg-green-500', 'animate-pulse')} />
+          <span className={clsx('font-outfit', 'text-sm', 'font-semibold')}>{purchaseToast}</span>
+        </div>
+      )}
     </div>
   );
 }

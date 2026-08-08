@@ -128,8 +128,9 @@ const FaceCard4 = ({
 
   useEffect(() => {
     if (!user) return;
+    if (user.type === "LOCATION" || user.isLocationCard) return;
     const targetUserId = user.userId || user.id || user._id;
-    if (!targetUserId) return;
+    if (!targetUserId || String(targetUserId).startsWith("location:")) return;
 
     const unsub = subscribePresenceRealtime((payload) => {
       if (payload && String(payload.userId) === String(targetUserId)) {
@@ -151,8 +152,10 @@ const FaceCard4 = ({
 
   useEffect(() => {
     if (!user) return;
+    // City face cards use synthetic ids like `location:Delhi` — not real users.
+    if (user.type === "LOCATION" || user.isLocationCard) return;
     const targetUserId = user.userId || user.id || user._id;
-    if (!targetUserId) return;
+    if (!targetUserId || String(targetUserId).startsWith("location:")) return;
 
     const poll = async () => {
       try {

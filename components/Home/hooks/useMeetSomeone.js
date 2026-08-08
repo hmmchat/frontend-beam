@@ -12,6 +12,7 @@ import {
   isDiscoveryActiveElsewhere,
   isDiscoveryLeader,
   exitCallToHome,
+  clearDiscoveryResumeIntent,
 } from '@/lib/discovery-presence';
 import { setPresenceStatusKeepalive } from '@/lib/presence-status';
 import { subscribePresenceRealtime } from '@/lib/presence-realtime';
@@ -117,6 +118,8 @@ export default function useMeetSomeone() {
   /** After Cancel on city handoff: stay on city boxes until the user taps a city. */
   const manualCitySelectOnlyRef = useRef(false);
   const applyAvailableCitiesRef = useRef(null);
+  /** Bumped whenever search is stopped so in-flight enter/fetch/handoff can't re-open matchmaking. */
+  const discoveryEpochRef = useRef(0);
 
   // Mirror some state in refs for event handler closures
   const squadLobbyMicMutedRef = useRef(squadLobbyMicMuted);
@@ -408,6 +411,8 @@ export default function useMeetSomeone() {
       flowLog('fetchCardSilently_start', { currentSid, soloMode });
       const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       if (reqId !== latestSilentFetchIdRef.current) return;
+      // Never reopen matchmaking from a late poll after the user left search.
+      if (!isSearchingRef.current) return;
       if (data?.card || data?.exhausted) {
         setIsSearching(true);
       }
@@ -486,12 +491,54 @@ export default function useMeetSomeone() {
     }
   }, [applyCardResponse]);
 
+  const stopDiscoverySearch = useCallback(
+    (reason = 'stop') => {
+      flowLog('stop_discovery_search', { reason });
+      discoveryEpochRef.current += 1;
+      handoffCancelledRef.current = true;
+      handoffCompletingRef.current = false;
+      manualCitySelectOnlyRef.current = false;
+      if (handoffTimerRef.current) {
+        clearInterval(handoffTimerRef.current);
+        handoffTimerRef.current = null;
+      }
+      if (availableCitiesPollRef.current) {
+        clearInterval(availableCitiesPollRef.current);
+        availableCitiesPollRef.current = null;
+      }
+      if (discoveryPollRef.current) {
+        clearInterval(discoveryPollRef.current);
+        discoveryPollRef.current = null;
+      }
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      if (rescueTimeoutRef.current) {
+        clearTimeout(rescueTimeoutRef.current);
+        rescueTimeoutRef.current = null;
+      }
+      resetHandoffUiState();
+      setWaitingForMatch(false);
+      setWaitingMatchedUser(null);
+      setIsSearching(false);
+      setCurrentCard(null);
+      clearSearchingUrlParam();
+      clearDiscoveryResumeIntent();
+      if (isDiscoveryLeader() || !isDiscoveryActiveElsewhere()) {
+        void exitDiscovery().catch(() => setPresenceStatusKeepalive('ONLINE'));
+      }
+    },
+    [resetHandoffUiState],
+  );
+
   const beginDiscoverySearch = async (sid = null) => {
     if (isDiscoveryActiveElsewhere()) {
       setDiscoveryBlockedByOtherTab(true);
       return;
     }
     const nextSid = sid || sessionId || Date.now().toString();
+    const epoch = ++discoveryEpochRef.current;
     setSessionId(nextSid);
     setIsSearching(true);
     resetHandoffUiState();
@@ -511,7 +558,12 @@ export default function useMeetSomeone() {
       }
       throw err;
     }
+    // User backed out (or search was stopped) while enterDiscovery was in flight.
+    if (discoveryEpochRef.current !== epoch || !isSearchingRef.current) return;
     await fetchCard(nextSid, true);
+    if (discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
+      setCurrentCard(null);
+    }
   };
 
   const handleRaincheck = async () => {
@@ -809,10 +861,11 @@ export default function useMeetSomeone() {
   };
 
   const handleSelectLocation = async (city, { persistPreference = false } = {}) => {
-    if (!city) return;
+    if (!city || !isSearchingRef.current) return;
     setSwiping(true);
     // Explicit box tap — allow leaving city-boxes mode.
     manualCitySelectOnlyRef.current = false;
+    const epoch = discoveryEpochRef.current;
     try {
       const soloMode = mode === 'solo';
       const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
@@ -824,6 +877,8 @@ export default function useMeetSomeone() {
           soloOnly: soloMode,
         }),
       });
+
+      if (!isSearchingRef.current || discoveryEpochRef.current !== epoch) return;
 
       handoffCityRef.current = null;
       handoffCancelledRef.current = false;
@@ -845,8 +900,10 @@ export default function useMeetSomeone() {
       }
     } catch (error) {
       console.error('Error selecting location:', error);
-      setError('Failed to select location. Please try again.');
-      await cancelCityHandoff();
+      if (isSearchingRef.current) {
+        setError('Failed to select location. Please try again.');
+        await cancelCityHandoff();
+      }
     } finally {
       setSwiping(false);
       handoffCompletingRef.current = false;
@@ -893,15 +950,18 @@ export default function useMeetSomeone() {
   const completeCityHandoff = useCallback(async () => {
     if (handoffCancelledRef.current) return;
     if (handoffCompletingRef.current) return;
+    // Back / stop left matchmaking — never reopen search from a leftover countdown.
+    if (!isSearchingRef.current) return;
     const city = handoffCityRef.current;
     if (!city) {
       await cancelCityHandoff();
       return;
     }
+    const epoch = discoveryEpochRef.current;
     handoffCompletingRef.current = true;
     setSwiping(true);
     try {
-      if (handoffCancelledRef.current) return;
+      if (handoffCancelledRef.current || !isSearchingRef.current) return;
       const soloMode = modeRef.current === 'solo';
       const sid = sessionIdRef.current;
       const data = await apiRequest(API.DISCOVERY.SELECT_LOCATION, {
@@ -914,8 +974,14 @@ export default function useMeetSomeone() {
         }),
       });
 
-      // User cancelled while select-location was in flight — abort enter-city
-      if (handoffCancelledRef.current) return;
+      // User cancelled / backed out while select-location was in flight
+      if (
+        handoffCancelledRef.current ||
+        !isSearchingRef.current ||
+        discoveryEpochRef.current !== epoch
+      ) {
+        return;
+      }
 
       const next = data?.success ? data.nextCard : null;
       const isLocation = next && (next.type === 'LOCATION' || data.isLocationCard);
@@ -934,7 +1000,7 @@ export default function useMeetSomeone() {
       }
     } catch (error) {
       console.error('Error completing city handoff:', error);
-      if (!handoffCancelledRef.current) {
+      if (!handoffCancelledRef.current && isSearchingRef.current) {
         setError('Failed to enter city. Please try again.');
         await cancelCityHandoff();
       }
@@ -1451,10 +1517,9 @@ export default function useMeetSomeone() {
       resumeSessionFromUrl || resumePayload?.sessionId || Date.now().toString();
 
     // Only auto-enter matchmaking after an intentional call exit (raincheck / next).
-    // Require URL resume flag or pending raincheck — ignore stale force/resume
-    // localStorage and leftover ?searching=1 (those caused idle homepage → search).
-    const shouldResumeDiscovery =
-      resumeDiscoveryFromUrl || Boolean(pendingRaincheckRaw);
+    // Require ?resumeDiscovery=1 — ignore stale pending/force localStorage and leftover
+    // ?searching=1 (those caused idle homepage → search after back).
+    const shouldResumeDiscovery = resumeDiscoveryFromUrl;
 
     const beginDiscoverySearchOnMount = async (sid) => {
       if (isDiscoveryActiveElsewhere()) {
@@ -1464,6 +1529,7 @@ export default function useMeetSomeone() {
         return;
       }
       const nextSid = sid || Date.now().toString();
+      const epoch = ++discoveryEpochRef.current;
       // Clean resume from call: wipe leftover handoff/boxes/countdown before GET /card
       resetHandoffUiState();
       setWaitingForMatch(false);
@@ -1473,8 +1539,11 @@ export default function useMeetSomeone() {
       setDiscoveryBlockedByOtherTab(false);
       try {
         await enterDiscovery(nextSid);
-        if (aborted) return;
+        if (aborted || discoveryEpochRef.current !== epoch || !isSearchingRef.current) return;
         await fetchCard(nextSid, true);
+        if (aborted || discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
+          setCurrentCard(null);
+        }
       } catch (err) {
         if (String(err?.message || err).includes('another tab')) {
           setDiscoveryBlockedByOtherTab(true);
@@ -1482,14 +1551,6 @@ export default function useMeetSomeone() {
           clearSearchingUrlParam();
         }
       }
-    };
-
-    const clearResumeIntentStorage = () => {
-      localStorage.removeItem('forceDiscoveryResume');
-      localStorage.removeItem('pendingRaincheckResume');
-      localStorage.removeItem('pendingRaincheckNextCard');
-      localStorage.removeItem('resumeDiscoveryOnHome');
-      localStorage.removeItem('stickyDiscoveryResume');
     };
 
     const runMount = async () => {
@@ -1504,14 +1565,9 @@ export default function useMeetSomeone() {
 
       if (leftCallToHome) {
         flowLog('home_idle_online');
-        resetHandoffUiState();
-        setWaitingForMatch(false);
-        setWaitingMatchedUser(null);
+        stopDiscoverySearch('left_call_to_home');
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
         void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
-        setIsSearching(false);
-        setCurrentCard(null);
-        clearResumeIntentStorage();
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('searching');
@@ -1521,7 +1577,7 @@ export default function useMeetSomeone() {
         }
       } else if (shouldResumeDiscovery) {
         flowLog('resume_discovery_from_call', { resumeSessionId });
-        clearResumeIntentStorage();
+        clearDiscoveryResumeIntent();
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('resumeDiscovery');
@@ -1532,13 +1588,7 @@ export default function useMeetSomeone() {
       } else {
         flowLog('home_idle_online');
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
-        if (!isDiscoveryActiveElsewhere() && (isDiscoveryLeader() || !localStorage.getItem('discoveryTabLeader'))) {
-          void exitDiscovery().catch(() => setPresenceStatusKeepalive('ONLINE'));
-        }
-        setIsSearching(false);
-        setCurrentCard(null);
-        clearResumeIntentStorage();
-        clearSearchingUrlParam();
+        stopDiscoverySearch('home_idle_mount');
         if (typeof window !== 'undefined') {
           try {
             const url = new URL(window.location.href);
@@ -1564,13 +1614,9 @@ export default function useMeetSomeone() {
 
     const handlePopState = () => {
       const nextParams = new URLSearchParams(window.location.search);
-      if (nextParams.get('searching') !== '1') {
-        setIsSearching(false);
-        setCurrentCard(null);
-        clearSearchingUrlParam();
-        if (isDiscoveryLeader() || !isDiscoveryActiveElsewhere()) {
-          void exitDiscovery();
-        }
+      // Back to idle homepage — fully stop matchmaking (incl. city handoff countdown).
+      if (nextParams.get('searching') !== '1' && nextParams.get('resumeDiscovery') !== '1') {
+        stopDiscoverySearch('popstate_home');
       }
     };
     window.addEventListener('popstate', handlePopState);

@@ -95,7 +95,7 @@ export default function LocalVideoSection({
             "absolute inset-0 w-full object-cover scale-x-[-1] md:rounded-[60px]",
             roundedClass,
             isGiftModalOpen || isDareOpen
-              ? (isGroupCall ? "h-[37.5vh]" : "md:h-[87vh] h-[45vh]")
+              ? (isGroupCall ? "h-[70%]" : "md:h-[87vh] h-[70%]")
               : "h-full",
           )}
         />
@@ -243,7 +243,7 @@ export default function LocalVideoSection({
                 <button
                   type="button"
                   onClick={toggleCam}
-                  className={clsx('w-[38px]', 'h-[38px]', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
+                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
                 >
                   <img
                     src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
@@ -261,7 +261,7 @@ export default function LocalVideoSection({
                         : "Share screen or window"
                     }
                     className={clsx(
-                      "w-[38px] h-[38px] md:h-12 md:w-12 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
+                      "w-11 h-11 md:h-12 md:w-12 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
                       isScreenSharing
                         ? "border-emerald-400/80 bg-emerald-500/20"
                         : "border-white/40",
@@ -284,7 +284,7 @@ export default function LocalVideoSection({
                     onChatButtonClick ||
                     (() => setShowChatInput(!showChatInput))
                   }
-                  className={clsx('w-[38px]', 'h-[38px]', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
+                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
                 >
                   <img
                     src="/msg.png"
@@ -300,9 +300,6 @@ export default function LocalVideoSection({
 
 
             </div>
-            <BeamTransparentLogo
-              className={clsx("z-10 absolute left-1/2 -translate-x-1/2 bottom-2 md:hidden h-6 w-auto pointer-events-none", hideMobileControlsRow && "hidden")}
-            />
             {/* 2 gift button  */}
             <div className={clsx("gap-2 md:gap-1 ", hideMobileControlsRow ? "hidden md:flex" : "flex", "pointer-events-auto")}>
               <button
@@ -340,8 +337,15 @@ export default function LocalVideoSection({
 
             </div>
 
-
-
+            {/* Center logo — own layer so asymmetric control columns can't shift it */}
+            <div
+              className={clsx(
+                "absolute inset-x-0 bottom-2 z-10 flex justify-center pointer-events-none md:hidden",
+                hideMobileControlsRow && "hidden",
+              )}
+            >
+              <BeamTransparentLogo className="h-6" />
+            </div>
           </div>
         )}
 

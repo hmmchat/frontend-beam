@@ -253,7 +253,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
       onClick={checkoutBusy ? undefined : onClose}
     >
       <div
-        className="relative w-full h-full md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
+        className="relative w-full h-dvh max-h-dvh md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -361,7 +361,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
 
         {/* Sticky footer — outside scroll so Checkout is always visible after selection */}
         {selectedPackage && (
-          <div className="w-full p-4 md:p-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3 border-t border-white/20">
+          <div className="w-full p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6 md:pb-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3 border-t border-white/20">
             <div
               className="absolute inset-0 bg-[#02004A]/90 backdrop-blur-md -z-10"
               style={{

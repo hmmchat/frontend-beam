@@ -642,7 +642,14 @@ export default function MeetSomeoneDesktopRight({
                             </div>
                             {guestId ? (
                               <button
-                                className="absolute -top-[0] -right-1 z-20 w-6 h-6 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden"
+                                type="button"
+                                disabled={squadMemberActionBusyId === guestId}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveSquadMember?.(guestId);
+                                }}
+                                className="absolute -top-[0] -right-1 z-20 min-w-7 min-h-7 w-7 h-7 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden disabled:opacity-50"
+                                aria-label="Remove squad member"
                               >
                                 <span
                                   className="font-bold text-sm mix-blend-difference"

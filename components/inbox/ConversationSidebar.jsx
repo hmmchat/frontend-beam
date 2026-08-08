@@ -62,7 +62,7 @@ export default function ConversationSidebar({
 
   return (
     <div
-      className={`min-h-0 md:w-[40%] w-full md:p-2 md:py-3 p-4
+      className={`min-h-0 flex-1 md:w-[40%] w-full md:p-2 md:py-3 p-4
       ${activeChat ? "hidden md:flex" : "flex"} flex flex-col`}
     >
       <div className="w-full py-2 text-white space-y-4 md:mt-6">
@@ -154,7 +154,7 @@ export default function ConversationSidebar({
         )}
       </div>
 
-      <div className="flex h-screen md:mt-3 mt-1.5 flex-col overflow-hidden md:rounded-[46px] rounded-[30px]  border border-white/50 p-6">
+      <div className="flex flex-1 min-h-0 md:mt-3 mt-1.5 flex-col overflow-hidden md:rounded-[46px] rounded-[30px]  border border-white/50 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {loading ? (
           <InboxSkeleton />
         ) : listLoadError ? (

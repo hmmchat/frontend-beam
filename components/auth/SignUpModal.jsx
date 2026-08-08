@@ -351,21 +351,20 @@ function SignUpModalContent({ isOpen, onClose }) {
       {/* ── Modal card ── */}
       <div
         className="
-    relative overflow-hidden animate-slide-up z-12
-    p-3 rounded-none absolute inset-0 h-screen
-    w-full
-    md:h-auto md:inset-auto
+    relative animate-slide-up z-12
+    p-3 rounded-none absolute inset-0 h-dvh max-h-dvh
+    w-full overflow-y-auto overscroll-contain
+    md:h-auto md:max-h-[90vh] md:inset-auto md:overflow-hidden
     md:p-8 md:rounded-[60px]
     md:border-[2px] md:border-white/20
     md:max-w-[70vw]
   "
-        style={{ maxHeight: "94vh" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="h-full min-h-[700px] sm:rounded-2xl rounded-none flex flex-col">
-          <div className="flex flex-col flex-col h-full text-center md:block">
+        <div className="min-h-full sm:rounded-2xl rounded-none flex flex-col pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex flex-col flex-1 text-center md:block">
             {/* Header */}
-            <div className="pt-12 px-4 flex flex-col items-center text-center md:mb-10">
+            <div className="pt-8 md:pt-12 px-4 flex flex-col items-center text-center md:mb-10">
               <img src="/logo.gif" alt="beam" className="md:w-56 w-44 mx-auto" />
               <p className="text-white md:text-[20px] text-[16px] font-medium -mt-1">
                 Meet someone here <br /> <span className="hidden md:block">immediately after Signing in</span>

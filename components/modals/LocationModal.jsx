@@ -153,7 +153,7 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
       onClick={onClose}
     >
       <div
-        className="relative z-10 w-full max-w-[1000px] h-full md:max-h-[85vh] max-h-[100vh] md:border-2 md:border-white/30 md:rounded-[40px]  md:p-4 p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
+        className="relative z-10 w-full max-w-[1000px] h-dvh max-h-dvh md:h-auto md:max-h-[85vh] md:border-2 md:border-white/30 md:rounded-[40px]  md:p-4 p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -259,13 +259,13 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
         </div>
 
         {/* Footer CTA */}
-        <div className="flex pb-2 pt-2 mt-3 mb-4 justify-end px-10 z-10">
+        <div className="relative flex w-full pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 mt-3 justify-center md:justify-end px-4 md:px-10 z-10">
           <button
             onClick={handleSave}
             disabled={loading || !selectedCity}
-            className="px-12 py-4  w-[90vh] md:w-auto border-[1px] border-b-[3px] border-white/40 rounded-2xl text-white font-bold  hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:bg-white/5"
+            className="px-12 py-4 w-full max-w-sm md:w-auto border-[1px] border-b-[3px] border-white/40 rounded-2xl text-white font-bold  hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:bg-white/5"
           >
-            {loading ? 'Saving...' : 'Start Beaming'}
+            {loading ? 'Saving...' : onStartBeaming ? 'Start Beaming' : 'Save'}
           </button>
         </div>
       </div>

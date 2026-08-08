@@ -12,7 +12,8 @@ export default function EmptyOrbitPanel() {
         'max-w-md',
         'mx-auto',
         'px-6',
-        'py-10',
+        'py-6',
+        'sm:py-10',
         'text-center',
         'space-y-3',
       )}

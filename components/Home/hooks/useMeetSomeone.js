@@ -26,6 +26,16 @@ export default function useMeetSomeone() {
   const pathname = usePathname();
   const flowLog = (...args) => console.log('[RaincheckFlow][home]', ...args);
 
+  const clearSearchingUrlParam = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('searching')) return;
+      url.searchParams.delete('searching');
+      window.history.replaceState({}, '', url.toString());
+    } catch (_) { }
+  };
+
   // ── State ──────────────────────────────────────────────────────────────────
   const [currentCard, setCurrentCard] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -329,7 +339,8 @@ export default function useMeetSomeone() {
         const data = await response.json();
         setMyProfile(data.user);
 
-        if (!data.user.preferredCity || data.user.preferredCity === 'Anywhere') {
+        // Only prompt when city preference is truly unset (Anywhere is valid).
+        if (!String(data.user.preferredCity || '').trim()) {
           setIsLocationModalOpen(true);
         }
       }
@@ -1439,17 +1450,17 @@ export default function useMeetSomeone() {
     const resumeSessionId =
       resumeSessionFromUrl || resumePayload?.sessionId || Date.now().toString();
 
-    const urlSearching = params?.get('searching') === '1';
+    // Only auto-enter matchmaking after an intentional call exit (raincheck / next).
+    // Require URL resume flag or pending raincheck — ignore stale force/resume
+    // localStorage and leftover ?searching=1 (those caused idle homepage → search).
     const shouldResumeDiscovery =
-      resumeDiscoveryFromUrl ||
-      Boolean(pendingRaincheckRaw) ||
-      Boolean(forcedResumeRaw) ||
-      Boolean(resumeOnHomeRaw);
+      resumeDiscoveryFromUrl || Boolean(pendingRaincheckRaw);
 
     const beginDiscoverySearchOnMount = async (sid) => {
       if (isDiscoveryActiveElsewhere()) {
         setDiscoveryBlockedByOtherTab(true);
         setIsSearching(false);
+        clearSearchingUrlParam();
         return;
       }
       const nextSid = sid || Date.now().toString();
@@ -1468,8 +1479,17 @@ export default function useMeetSomeone() {
         if (String(err?.message || err).includes('another tab')) {
           setDiscoveryBlockedByOtherTab(true);
           setIsSearching(false);
+          clearSearchingUrlParam();
         }
       }
+    };
+
+    const clearResumeIntentStorage = () => {
+      localStorage.removeItem('forceDiscoveryResume');
+      localStorage.removeItem('pendingRaincheckResume');
+      localStorage.removeItem('pendingRaincheckNextCard');
+      localStorage.removeItem('resumeDiscoveryOnHome');
+      localStorage.removeItem('stickyDiscoveryResume');
     };
 
     const runMount = async () => {
@@ -1491,11 +1511,7 @@ export default function useMeetSomeone() {
         void exitCallToHome().catch(() => setPresenceStatusKeepalive('ONLINE'));
         setIsSearching(false);
         setCurrentCard(null);
-        localStorage.removeItem('forceDiscoveryResume');
-        localStorage.removeItem('pendingRaincheckResume');
-        localStorage.removeItem('pendingRaincheckNextCard');
-        localStorage.removeItem('resumeDiscoveryOnHome');
-        localStorage.removeItem('stickyDiscoveryResume');
+        clearResumeIntentStorage();
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('searching');
@@ -1505,11 +1521,7 @@ export default function useMeetSomeone() {
         }
       } else if (shouldResumeDiscovery) {
         flowLog('resume_discovery_from_call', { resumeSessionId });
-        localStorage.removeItem('forceDiscoveryResume');
-        localStorage.removeItem('pendingRaincheckResume');
-        localStorage.removeItem('pendingRaincheckNextCard');
-        localStorage.removeItem('resumeDiscoveryOnHome');
-        localStorage.removeItem('stickyDiscoveryResume');
+        clearResumeIntentStorage();
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('resumeDiscovery');
@@ -1517,8 +1529,6 @@ export default function useMeetSomeone() {
           window.history.replaceState({ searching: true }, '', url.toString());
         }
         void beginDiscoverySearchOnMount(resumeSessionId);
-      } else if (urlSearching) {
-        void beginDiscoverySearchOnMount(sessionId || Date.now().toString());
       } else {
         flowLog('home_idle_online');
         setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere());
@@ -1527,11 +1537,16 @@ export default function useMeetSomeone() {
         }
         setIsSearching(false);
         setCurrentCard(null);
-        localStorage.removeItem('forceDiscoveryResume');
-        localStorage.removeItem('pendingRaincheckResume');
-        localStorage.removeItem('pendingRaincheckNextCard');
-        localStorage.removeItem('resumeDiscoveryOnHome');
-        localStorage.removeItem('stickyDiscoveryResume');
+        clearResumeIntentStorage();
+        clearSearchingUrlParam();
+        if (typeof window !== 'undefined') {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('resumeDiscovery');
+            url.searchParams.delete('sessionId');
+            window.history.replaceState({}, '', url.toString());
+          } catch (_) { }
+        }
       }
     };
 
@@ -1552,6 +1567,7 @@ export default function useMeetSomeone() {
       if (nextParams.get('searching') !== '1') {
         setIsSearching(false);
         setCurrentCard(null);
+        clearSearchingUrlParam();
         if (isDiscoveryLeader() || !isDiscoveryActiveElsewhere()) {
           void exitDiscovery();
         }
@@ -1628,6 +1644,7 @@ export default function useMeetSomeone() {
         if (payload.status === 'ONLINE' && isSearchingRef.current) {
           setIsSearching(false);
           setCurrentCard(null);
+          clearSearchingUrlParam();
         }
         if (payload.status === 'MATCHED' && isSearchingRef.current && !waitingForMatchRef.current) {
           void fetchMatchedCardNow();
@@ -1841,6 +1858,7 @@ export default function useMeetSomeone() {
       clearInterval(discoveryPollRef.current);
       clearTimeout(rescueTimeoutRef.current);
       localStorage.removeItem('stickyDiscoveryResume');
+      clearSearchingUrlParam();
       void exitDiscovery();
     } else {
       setIsSearching(false);
@@ -1850,6 +1868,7 @@ export default function useMeetSomeone() {
       clearInterval(pollRef.current);
       clearTimeout(rescueTimeoutRef.current);
       localStorage.removeItem('stickyDiscoveryResume');
+      clearSearchingUrlParam();
       void exitDiscovery();
     }
   }, [mode]);

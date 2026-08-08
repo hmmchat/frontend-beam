@@ -89,14 +89,14 @@ export default function ThreadHeader({
   return (
     <div className={clsx('flex', 'items-center', 'justify-between', 'md:px-6', 'md:p-2', 'md:mt-3',)}>
       <div className="flex items-center justify-between w-full">
-        {/* <button
+        <button
           type="button"
           onClick={() => setActiveChat(null)}
-          className={clsx('md:hidden', 'text-2xl', 'pl-2', 'flex-shrink-0')}
+          className={clsx('md:hidden', 'text-2xl', 'pl-1', 'pr-1', 'flex-shrink-0', 'min-w-11', 'min-h-11', 'flex', 'items-center', 'justify-center')}
+          aria-label="Back to conversations"
         >
           <IoChevronBack />
-        </button> */}
-
+        </button>
 
         <div
           onClick={isSystem ? undefined : onProfileClick}
@@ -105,8 +105,10 @@ export default function ThreadHeader({
             'px-1 py-1',
             'rounded-full',
             'border border-white/30',
-            'pr-5',
-            'w-fit max-w-full transition-all',
+            'pr-3',
+            'min-w-0',
+            'flex-1',
+            'max-w-[55%] md:max-w-full transition-all',
             isSystem ? 'cursor-default' : 'cursor-pointer hover:bg-white/5 active:scale-[0.98]'
           )}
         >
@@ -186,8 +188,7 @@ export default function ThreadHeader({
 
         </div >
 
-        <div className="w-[36%] md:hidden flex justify-start">
-
+        <div className="md:hidden flex justify-start shrink-0">
           {!isSystem &&
             (activeTab === "inbox" || activeTab === "requests") &&
             !activeChat.isFriend &&
@@ -196,12 +197,12 @@ export default function ThreadHeader({
                 type="button"
                 disabled={sendFriendBusy}
                 onClick={() => sendOfflineFriendRequest(otherProfile.id)}
-                className="p-2  pt-2 rounded-full border border-white/40 hover:bg-white/10 active:scale-95 transition-all shrink-0"
+                className="p-2 rounded-full border border-white/40 hover:bg-white/10 active:scale-95 transition-all shrink-0"
+                aria-label="Add friend"
               >
-                <img src="/addfriend2.svg" alt="Add Friend" className="h-8 w-8" />
+                <img src="/addfriend2.svg" alt="Add Friend" className="h-7 w-7" />
               </button>
             )}
-
         </div>
 
 
@@ -229,8 +230,6 @@ export default function ThreadHeader({
                       <img src="/addfriend2.svg" alt="Add Friend" className="h-8 w-8" />
                     </button>
                   )}
-
-                <img src="/logo.gif" alt="Logo" className="w-20 md:hidden  " />
 
                 <button
                   type="button"

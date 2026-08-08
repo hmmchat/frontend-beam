@@ -4,11 +4,13 @@
   --btl-native-h: 203.876px;
   --logo-border: #030222;
   position: relative;
-  display: inline-block;
+  display: block;
+  flex-shrink: 0;
   width: auto;
   aspect-ratio: 794.585 / 203.876;
   overflow: visible;
   line-height: 0;
+  box-sizing: border-box;
 }
 
 .btl__stage {

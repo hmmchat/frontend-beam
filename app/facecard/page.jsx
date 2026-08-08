@@ -1177,7 +1177,7 @@ function FacecardContent() {
 
 
 
-            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-[100vh]', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'w-[960px]', 'scale-[0.95]')}>
+            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-dvh', 'w-full', 'max-w-[100vw]', 'px-3', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'md:w-[960px]', 'md:px-0', 'scale-[0.95]')}>
 
 
               {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
@@ -1253,8 +1253,9 @@ function FacecardContent() {
               {/* Action Buttons: Close, Share, Download */}
               <div className={clsx(
                 'flex', 'items-center', 'justify-center', 'gap-6', 'z-30',
-                'bottom-', 'left-0', 'right-0',
-                'md:relative', 'md:bottom-auto', 'md:left-auto', 'md:right-auto', 'md:mt-2', 'md:mb-[5%]'
+                'absolute', 'bottom-4', 'left-0', 'right-0',
+                'pb-[env(safe-area-inset-bottom)]',
+                'md:relative', 'md:bottom-auto', 'md:left-auto', 'md:right-auto', 'md:mt-2', 'md:mb-[5%]', 'md:pb-0'
               )}>
                 <button
                   onClick={() => setFacecardPreviewOpen(false)}

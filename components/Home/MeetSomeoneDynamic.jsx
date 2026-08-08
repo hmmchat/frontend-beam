@@ -113,7 +113,7 @@ export default function MeetSomeoneDynamic() {
           'font-[family-name:var(--font-otomanopee)]',
         )}
       >
-        <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-screen', 'overflow-hidden')}>
+        <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-full', 'min-h-0', 'overflow-hidden')}>
           {/* MOBILE VIEW (CONDITIONAL) */}
           {!isSearching && (
             <div className={clsx('block', 'md:hidden')}>

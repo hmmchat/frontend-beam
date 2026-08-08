@@ -24,8 +24,14 @@ export default function BeamTransparentLogo({ className = "", alt = "Beam" }) {
     if (!el) return;
 
     const update = () => {
-      const h = el.getBoundingClientRect().height;
-      if (h > 0) setScale(h / NATIVE_H);
+      // Prefer CSS height (h-6/h-8) over bbox — absolute stage children can
+      // collapse width to 0, which breaks left-1/2 -translate-x-1/2 centering.
+      const h = el.clientHeight || el.offsetHeight || el.getBoundingClientRect().height;
+      if (h > 0) {
+        const next = h / NATIVE_H;
+        setScale(next);
+        el.style.width = `${NATIVE_W * next}px`;
+      }
     };
 
     update();
@@ -38,6 +44,7 @@ export default function BeamTransparentLogo({ className = "", alt = "Beam" }) {
     <div
       ref={rootRef}
       className={clsx("btl", className)}
+      style={{ aspectRatio: `${NATIVE_W} / ${NATIVE_H}` }}
       role="img"
       aria-label={alt}
     >

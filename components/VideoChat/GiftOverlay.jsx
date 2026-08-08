@@ -293,7 +293,7 @@ export default function GiftOverlay({
 
       {/* Bottom Bar Mobile */}
       <div className={clsx(
-        "absolute z-50 flex items-center justify-between left-0 right-0 px-5 py-[2.5vh] md:hidden",
+        "absolute z-50 flex items-center justify-between left-0 right-0 px-5 py-[2.5vh] pb-[max(2.5vh,env(safe-area-inset-bottom))] md:hidden",
         mobileBottomBarClassName || "bottom-0"
       )}>
         <div

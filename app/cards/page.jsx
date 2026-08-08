@@ -297,40 +297,24 @@ function OfflineCardsContent() {
   useEffect(() => {
     const updateScale = () => {
       const h = window.innerHeight;
-
       if (h <= 670) {
-        setScale(0.78); // iPhone SE
-        setTranslateY(-45);
+        setScale(0.72);
+        setTranslateY(-20);
       } else if (h <= 740) {
-        setScale(0.85); // XR, 11, 12 mini
-        setTranslateY(-15);
-      }
-
-
-      else {
+        setScale(0.82);
+        setTranslateY(-8);
+      } else if (h <= 820) {
+        setScale(0.92);
+        setTranslateY(0);
+      } else {
         setScale(1);
         setTranslateY(0);
       }
     };
 
     updateScale();
-    window.addEventListener("resize", updateScale);
-
-    return () => window.removeEventListener("resize", updateScale);
-  }, []);
-
-  useEffect(() => {
-    const updateScale = () => {
-      const newScale = Math.max(
-        0.7,
-        Math.min(window.innerHeight / 820, 1)
-      );
-      setScale(newScale);
-    };
-
-    updateScale();
-    window.addEventListener("resize", updateScale);
-    return () => window.removeEventListener("resize", updateScale);
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
   }, []);
 
   // ── render ───────────────────────────────────────────────────────────────

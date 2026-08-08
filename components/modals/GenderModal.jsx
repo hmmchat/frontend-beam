@@ -185,7 +185,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
       onClick={onClose}
     >
       <div
-        className="relative z-10 w-full h-[60vh] md:h-auto mt-auto md:my-auto max-w-[700px] rounded-t-[36px] md:rounded-[36px] bg-purple-950/40 backdrop-blur-xl p-2 animate-in fade-in zoom-in duration-300"
+        className="relative z-10 w-full max-h-[85dvh] h-auto mt-auto md:my-auto max-w-[700px] rounded-t-[36px] md:rounded-[36px] bg-purple-950/40 backdrop-blur-xl p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] animate-in fade-in zoom-in duration-300 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div

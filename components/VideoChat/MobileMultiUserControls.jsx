@@ -20,7 +20,7 @@ export default function MobileMultiUserControls({
         <button
           type="button"
           onClick={toggleCam}
-          className="w-9 h-9 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
         >
           <img
             src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
@@ -38,7 +38,7 @@ export default function MobileMultiUserControls({
                 : "Share screen or window"
             }
             className={clsx(
-              "w-9 h-9 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md",
+              "min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md",
               isScreenSharing
                 ? "border-emerald-400/80 bg-emerald-500/20"
                 : "border-white/40"
@@ -57,7 +57,7 @@ export default function MobileMultiUserControls({
         <button
           type="button"
           onClick={onChatButtonClick}
-          className="w-9 h-9 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
         >
           <img
             src="/msg.png"
@@ -67,10 +67,10 @@ export default function MobileMultiUserControls({
         </button>
       </div>
 
-      {/* Center Logo */}
-      <BeamTransparentLogo
-        className="absolute left-1/2 -translate-x-1/2 bottom-4 h-8 w-auto pointer-events-none z-10"
-      />
+      {/* Center Logo — own layer so justify-between columns can't skew visual center */}
+      <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center pointer-events-none">
+        <BeamTransparentLogo className="h-8" />
+      </div>
 
       {/* Right buttons (Dare + Gift) */}
       <div className="flex gap-1.5 ">

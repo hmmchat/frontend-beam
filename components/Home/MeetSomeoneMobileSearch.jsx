@@ -52,14 +52,18 @@ export default function MeetSomeoneMobileSearch({
   const isFaceCardState = showUserCard;
   const isLocationState = showCityHandoff;
 
+  // Match desktop: keep local cam visible under search / empty / city-pick states.
+  const showBottomVideo = showEmptyOrbit || showCityBoxes || isSearchingState;
+
   const [scale, setScale] = useState(1);
   const [translateY, setTranslateY] = useState(0);
 
   useEffect(() => {
     const updateScale = () => {
       const height = window.innerHeight;
-      const newScale = Math.max(0.75, Math.min(height / 820, 1));
-      const newTranslateY = Math.max(-120, (height - 820) * 0.3) + 40;
+      // Face card (+ buttons) must fit the available phone height without the old +40 push.
+      const newScale = Math.max(0.62, Math.min(height / 860, 1));
+      const newTranslateY = Math.max(-100, Math.min(12, (height - 860) * 0.18));
       setScale(newScale);
       setTranslateY(newTranslateY);
     };
@@ -73,9 +77,7 @@ export default function MeetSomeoneMobileSearch({
       <div
         className={clsx(
           'flex md:hidden w-full relative z-20 items-center justify-center md:pt-14 md:pb-4 md:px-4 overflow-hidden transition-all duration-500',
-          isFaceCardState || isSearchingState || isLocationState || showEmptyOrbit || showCityBoxes
-            ? 'h-full'
-            : 'h-1/2',
+          showBottomVideo ? 'h-1/2' : isFaceCardState || isLocationState ? 'h-full' : 'h-1/2',
         )}
         style={{
           backgroundImage: 'url(/assets/mb.jpg)',
@@ -88,8 +90,8 @@ export default function MeetSomeoneMobileSearch({
           className={clsx('absolute', 'inset-0', 'rounded-[2rem]', 'pointer-events-none', 'z-30')}
         />
 
-        <div className="absolute inset-0 overflow-y-auto overflow-x-hidden w-full h-full flex flex-col items-center pt-4 pb-20 scrollbar-none z-20 rounded-[2rem]">
-          <div className={clsx(' transition-transform duration-500 mb-16 sm:mb-0')}>
+        <div className="absolute inset-0 overflow-y-auto overflow-x-hidden w-full h-full flex flex-col items-center justify-center pt-4 pb-6 scrollbar-none z-20 rounded-[2rem]">
+          <div className={clsx('w-full flex flex-col items-center transition-transform duration-500')}>
             {showEmptyOrbit ? (
               <EmptyOrbitPanel />
             ) : showCityBoxes ? (
@@ -98,7 +100,7 @@ export default function MeetSomeoneMobileSearch({
                 onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
               />
             ) : isSearchingState ? (
-              <div className={clsx('w-full', 'min-h-[280px]', 'h-[50vh]', 'max-h-[420px]')}>
+              <div className={clsx('w-full', 'h-full', 'min-h-[200px]', 'max-h-full')}>
                 <DiscoveryMemeLoader />
               </div>
             ) : showCityHandoff ? (
@@ -218,30 +220,26 @@ export default function MeetSomeoneMobileSearch({
         </div>
       </div>
 
-      {!isFaceCardState &&
-        !isSearchingState &&
-        !isLocationState &&
-        !showEmptyOrbit &&
-        !showCityBoxes && (
-          <div
-            className={clsx(
-              'flex',
-              'md:hidden',
-              'h-1/2',
-              'w-full',
-              'relative',
-              'z-[1]',
-              'min-h-0',
-            )}
-          >
-            <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
-            <LocalVideo
-              showSoloCheckbox={false}
-              isVideoOn={isVideoOn}
-              onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
-            />
-          </div>
-        )}
+      {showBottomVideo && (
+        <div
+          className={clsx(
+            'flex',
+            'md:hidden',
+            'h-1/2',
+            'w-full',
+            'relative',
+            'z-[1]',
+            'min-h-0',
+          )}
+        >
+          <div className={clsx('absolute', 'inset-2', 'pointer-events-none', 'z-10')} />
+          <LocalVideo
+            showSoloCheckbox={false}
+            isVideoOn={isVideoOn}
+            onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
+          />
+        </div>
+      )}
     </>
   );
 }

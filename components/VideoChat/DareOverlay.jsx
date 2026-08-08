@@ -164,7 +164,7 @@ export default function DareOverlay({
       {/* Overlay Container */}
       <div
         onClick={onClose}
-        className="absolute z-50 md:bottom-0 bottom-[0.5%] md:left-[48%] left-1/2 -translate-x-1/2 -translate-y-[34%] flex flex-col items-center md:items-end w-full px-4"
+        className="absolute z-50 md:bottom-0 bottom-[14vh] md:left-[48%] left-1/2 -translate-x-1/2 md:-translate-y-[34%] translate-y-0 flex flex-col items-center md:items-end w-full px-4 pb-[env(safe-area-inset-bottom)] md:pb-0"
       >
         {/* 1st VIEW */}
         {stage === 1 && (
@@ -173,7 +173,7 @@ export default function DareOverlay({
             className="flex flex-col items-center md:items-end w-full max-w-[480px] relative"
           >
             {/* Tabs */}
-            <div className="flex gap-2 md:mr-10 ml-[30%] -mb-[2px] relative z-20">
+            <div className="flex gap-2 justify-center md:justify-end md:mr-10 mx-auto md:mx-0 -mb-[2px] relative z-20">
               <button
                 onClick={(e) => { e.stopPropagation(); handleTabChange("Saved"); }}
                 className={clsx(
@@ -569,7 +569,7 @@ export default function DareOverlay({
 
 
       {/* Bottom Bar Mobile */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center  justify-between w-full right-1 left-1 px-5 py-6 md:hidden bg-[#4E0093]/20 px-8">
+      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:hidden bg-[#4E0093]/20">
         <div
           className="absolute inset-0 z-0 pointer-events-auto "
           style={{

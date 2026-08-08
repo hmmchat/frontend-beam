@@ -370,8 +370,8 @@ const FaceCard = ({
 
       <div
         data-facecard-boundary="true"
-        className="w-[380px] h-[660px] md:h-[673px]   
-                 md:w-[320px] lg:w-[360px] 
+        className="w-[min(380px,100%)] max-w-[calc(100vw-1rem)] h-[660px] md:h-[673px]
+                 md:w-[320px] lg:w-[360px] md:max-w-none
            shrink-0 rounded-[30px] overflow-hidden
                "
       >

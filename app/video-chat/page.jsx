@@ -164,7 +164,7 @@ function VideoChatContent() {
             <>
               <MemeLoader loadingMeme={loadingMeme} />
               <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden')}>
-                <div className={clsx('md:hidden', 'absolute', 'inset-0', 'h-[95%]', 'w-[95%]', 'border', 'border-white/40', 'rounded-3xl', 'md:rounded-[60px]', 'pointer-events-none', 'z-20', 'transition-colors', 'box-border', 'mx-auto', 'my-auto')} />
+                <div className={clsx('md:hidden', 'absolute', 'left-1/2', 'top-1/2', '-translate-x-1/2', '-translate-y-1/2', 'h-[95%]', 'w-[95%]', 'border', 'border-white/40', 'rounded-3xl', 'md:rounded-[60px]', 'pointer-events-none', 'z-20', 'transition-colors', 'box-border')} />
                 <LocalVideoSection {...localVideoProps} hideAllControls={true} />
               </div>
             </>
@@ -398,23 +398,27 @@ function VideoChatContent() {
             OVERLAYS & MODALS
         ================================================================ */}
 
-        {/* Mobile group chat input */}
-        {remoteStreams.length >= 2 && showChatInput && (
-          <div className={clsx('md:hidden', 'absolute', 'inset-x-0', 'bottom-20', 'px-4', 'z-[60]', 'pointer-events-auto')}>
+        {/* Mobile group chat input — sit above controls + home indicator; avoid fixed bottom under keyboard */}
+        {remoteStreams.length >= 2 && showChatInput && !isGiftModalOpen && !isDareOpen && (
+          <div className={clsx('md:hidden', 'absolute', 'inset-x-0', 'bottom-[max(5.5rem,env(safe-area-inset-bottom)+4.5rem)]', 'px-4', 'z-[60]', 'pointer-events-auto')}>
             <form onSubmit={e => { e.preventDefault(); sendChatMessage(e); }} className={clsx('animate-in', 'fade-in', 'slide-in-from-bottom-2', 'duration-200')}>
               <input
                 autoFocus
+                enterKeyHint="send"
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 placeholder="Type a message..."
-                className={clsx('w-[90%]', 'backdrop-blur-[1px]', 'border', 'border-white/20', 'rounded-lg', 'px-2', 'py-2.5', 'text-white', 'text-sm', 'focus:border-white/40', 'outline-none')}
+                className={clsx('w-full', 'bg-black/40', 'backdrop-blur-md', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'outline-none')}
               />
             </form>
           </div>
         )}
 
-        {/* Mobile multi-user controls */}
-        {remoteStreams.length >= 2 && !activeDareProposal && (
+        {/* Mobile multi-user controls — hide under gift/dare so overlays aren't covered */}
+        {remoteStreams.length >= 2 &&
+          !activeDareProposal &&
+          !isGiftModalOpen &&
+          !isDareOpen && (
           <MobileMultiUserControls
             toggleCam={localVideoProps.toggleCam}
             isCamOff={localVideoProps.isCamOff}

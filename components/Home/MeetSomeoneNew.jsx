@@ -305,7 +305,7 @@ export default function MeetSomeoneNew({
             )}
 
             {/* CENTER TOGGLE */}
-            <div className="flex border border-white/50 rounded-full w-[40vw] relative shadow-inner h-[4.5vh] pointer-events-auto z-50 cursor-pointer">
+            <div className="flex border border-white/50 rounded-full w-[40vw] max-w-[180px] min-h-11 h-11 relative shadow-inner pointer-events-auto z-50 cursor-pointer">
               <div
                 className={clsx(
                   "absolute top-0.5 bottom-0.5 w-[calc(50%-4px)] border bg-black/10  border-white/60 rounded-full transition-all duration-500",
@@ -315,7 +315,7 @@ export default function MeetSomeoneNew({
               <button
                 onClick={() => setMode('solo')}
                 className={clsx(
-                  "flex-1 rounded-full text-[10px] z-10 flex items-center justify-center cursor-pointer",
+                  "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
                   mode === 'solo' ? "text-white scale-105" : "text-white/70"
                 )}
               >
@@ -324,7 +324,7 @@ export default function MeetSomeoneNew({
               <button
                 onClick={() => setMode('squad')}
                 className={clsx(
-                  "flex-1 rounded-full text-[10px] z-10 flex items-center justify-center cursor-pointer",
+                  "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
                   mode === 'squad' ? "text-white scale-105" : "text-white/70"
                 )}
               >
@@ -336,7 +336,7 @@ export default function MeetSomeoneNew({
             {mode !== 'squad' && (
               <div className="absolute right-3 w-12 h-12 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
                 <Link href="/cards">
-                  <button className={clsx('h-16', 'w-16', 'rounded-full', 'p-3',)}>
+                  <button type="button" className={clsx('h-12', 'w-12', 'rounded-full', 'p-2')}>
                     <img src="/hugeiconscards.svg" alt="cards" />
                   </button>
                 </Link>
@@ -374,7 +374,7 @@ export default function MeetSomeoneNew({
           {/* LEFT BUTTON (COINS) */}
           <div>
             <button
-              className="h-12 px-5 py-7 flex items-center gap-2 border-[1px] border-b-[3px] border-white/50 rounded-full"
+              className="h-12 min-h-12 px-4 flex items-center gap-2 border-[1px] border-b-[3px] border-white/50 rounded-full"
               onClick={() => setIsCoinModalOpen(true)}
             >
               <img src="/assets/Coin-token.svg" className="w-5 h-5" />
@@ -576,12 +576,6 @@ export default function MeetSomeoneNew({
                 )}
               />
             )}
-
-
-            <span className="border rounded-full h-2 w-2   -right-2  absolute top-2.5   "> </span>
-
-
-
           </button>
 
 
@@ -689,7 +683,14 @@ export default function MeetSomeoneNew({
 
                       {guestId && (
                         <button
-                          className="absolute -top-[1px] -right-1 z-20 w-4 h-4 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden"
+                          type="button"
+                          disabled={squadMemberActionBusyId === guestId}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSquadMember?.(guestId);
+                          }}
+                          className="absolute -top-[1px] -right-1 z-20 min-w-6 min-h-6 w-6 h-6 rounded-full bg-white border border-white/90 flex items-center justify-center overflow-hidden disabled:opacity-50"
+                          aria-label="Remove squad member"
                         >
                           <span
                             className="font-bold text-[10px] mix-blend-difference"
@@ -811,7 +812,13 @@ export default function MeetSomeoneNew({
         }}
         userCoins={coins}
         onCoinsUpdated={(cost) => {
-          setCoins(prev => Math.max(0, prev - cost));
+          // Parent owns wallet when coins are passed in; otherwise update local.
+          if (externalCoins === undefined) {
+            setInternalCoins((prev) => Math.max(0, prev - (Number(cost) || 0)));
+          }
+          if (typeof onWalletRefresh === 'function') {
+            void onWalletRefresh();
+          }
         }}
         onStartBeaming={() => {
           setGenderFilter(localStorage.getItem("genderPreference") || "ALL");
@@ -823,11 +830,6 @@ export default function MeetSomeoneNew({
         onClose={() => {
           setIsLocationModalOpen(false);
           fetchMyProfile();
-        }}
-        onStartBeaming={() => {
-          setIsLocationModalOpen(false);
-          fetchMyProfile();
-          if (onMeetNow) onMeetNow();
         }}
       />
       <CoinModal

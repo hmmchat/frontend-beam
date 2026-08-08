@@ -253,7 +253,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
       onClick={checkoutBusy ? undefined : onClose}
     >
       <div
-        className="relative w-full h-full md:h-auto max-w-[900px] md:max-h-[90vh] min-h-0 bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
+        className="relative w-full h-full md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -275,13 +275,12 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
           <IoCloseOutline size={32} />
         </button>
 
-        {/* min-h-0 lets this shrink so the sticky Checkout footer is never clipped */}
-        <div className="flex-1 min-h-0 overflow-y-auto py-6 px-3 md:p-10 md:pt-10 z-10 flex flex-col">
+        <div className="flex-1 overflow-hidden md:overflow-y-auto py-6 px-3 md:p-10 md:pt-10 scrollbar-hide z-10 flex flex-col">
           <h2 className="md:text-3xl text-2xl ml-2 font-bold text-white mb-6 md:mb-4 md:-mt-2 shrink-0">
             Buy Coins
           </h2>
 
-          <div className="border md:border-0 md:mb-0 rounded-[30px] border-white/30">
+          <div className="border md:border-0 md:mb-0 rounded-[30px] border-white/30 overflow-y-auto md:overflow-visible scrollbar-hide">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-3 py-4 md:px-0 md:py-0">
               {coinPackages.length === 0 && (
                 <div className="col-span-2 md:col-span-3 min-h-[280px] flex items-center justify-center text-center text-white/80 font-outfit text-sm px-6">
@@ -360,9 +359,18 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
 
-        {/* Sticky footer — reserved below the scroll area; never clipped by package grid */}
+        {/* Sticky footer — outside scroll so Checkout is always visible after selection */}
         {selectedPackage && (
-          <div className="w-full p-4 md:px-10 md:py-5 flex items-center justify-between z-30 shrink-0 relative gap-3 border-t border-white/20 bg-[#02004A]/95 backdrop-blur-md">
+          <div className="w-full p-4 md:p-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3 border-t border-white/20">
+            <div
+              className="absolute inset-0 bg-[#02004A]/90 backdrop-blur-md -z-10"
+              style={{
+                backgroundImage: 'url(/assets/mb.jpg)',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+                backgroundPosition: 'bottom',
+              }}
+            />
             {renderCheckoutBar()}
           </div>
         )}

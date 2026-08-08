@@ -62,8 +62,8 @@ export default function ConversationSidebar({
 
   return (
     <div
-      className={`min-h-0 flex-1 md:w-[40%] w-full md:p-2 md:py-3 p-4
-      ${activeChat ? "hidden md:flex" : "flex"} flex flex-col`}
+      className={`min-h-0 flex-1 lg:w-[40%] w-full lg:p-2 lg:py-3 p-4
+      ${activeChat ? "hidden lg:flex" : "flex"} flex flex-col`}
     >
       <div className="w-full py-2 text-white space-y-4 md:mt-6">
 

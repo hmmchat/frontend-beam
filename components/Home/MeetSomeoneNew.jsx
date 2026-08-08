@@ -344,7 +344,36 @@ export default function MeetSomeoneNew({
             )}
           </div>
 
-
+          {/* Meet Now sits in the SVG lower pocket (same coord system as the frame) */}
+          {mode !== 'squad' && (
+            <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 z-40 pointer-events-none w-[92%] max-w-[520px] px-2">
+              <div className="w-full pointer-events-auto flex flex-col items-center">
+                <MeetNowButton
+                  onClick={handleMeetNow}
+                  isVideoOn={isVideoOn}
+                  onVideoClick={onVideoClick}
+                  className="w-[clamp(280px,85%,520px)] aspect-[23/5]"
+                  iconClass="transition-all w-[clamp(25px,6.5vw,36px)] h-[clamp(25px,6.5vw,36px)] md:w-8 md:h-8"
+                  borderClass="border border-b-[3px] md:border-b-[5px] md:border-[1.89px] rounded-[16px] md:rounded-[26px]"
+                />
+                <FilterButtons
+                  onGenderClick={() => setIsGenderModalOpen(true)}
+                  onLocationClick={() => setIsLocationModalOpen(true)}
+                  genderLabel={
+                    genderFilter === "MALE" ? "Male" :
+                      genderFilter === "FEMALE" ? "Female" :
+                        genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
+                  }
+                  locationLabel={
+                    !myProfile?.preferredCity || myProfile.preferredCity === 'ANYWHERE_IN_INDIA'
+                      ? 'Anywhere'
+                      : myProfile.preferredCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+                  }
+                  className="mt-4 pointer-events-auto w-[clamp(260px,70%,520px)]"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {/* 🔥 FULL SCREEN BACKGROUND */}
@@ -464,68 +493,6 @@ export default function MeetSomeoneNew({
 
 
 
-      {/* {only solo tab buttons} */}
-      {mode !== 'squad' && (
-        <div
-          className="
-    absolute
-    bottom-[25%]
-    sm:bottom-[20%]
-    left-1/2
-    -translate-x-1/2
-    z-40
-    pointer-events-none
-    w-full
-    max-w-[520px]
-    px-3
-    sm:px-4
-  "
-        >
-          <div className="w-full pointer-events-auto flex justify-center">
-            <MeetNowButton
-              onClick={handleMeetNow}
-              isVideoOn={isVideoOn}
-              onVideoClick={onVideoClick}
-              className="
-          w-[clamp(300px,85vw,520px)]
-          aspect-[23/5]
-        "
-              iconClass="
-          transition-all
-          w-[clamp(25px,6.5vw,36px)]
-          h-[clamp(25px,6.5vw,36px)]
-          md:w-8
-          md:h-8
-          
-        "
-              borderClass="
-          border
-          border-b-[3px]
-          md:border-b-[5px]
-          md:border-[1.89px]
-          rounded-[16px]
-          md:rounded-[26px]
-        "
-            />
-          </div>
-
-          <FilterButtons
-            onGenderClick={() => setIsGenderModalOpen(true)}
-            onLocationClick={() => setIsLocationModalOpen(true)}
-            genderLabel={
-              genderFilter === "MALE" ? "Male" :
-                genderFilter === "FEMALE" ? "Female" :
-                  genderFilter === "NON_BINARY" ? "Non-binary" : "Both"
-            }
-            locationLabel={
-              !myProfile?.preferredCity || myProfile.preferredCity === 'ANYWHERE_IN_INDIA'
-                ? 'Anywhere'
-                : myProfile.preferredCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
-            }
-            className="mt-6 pointer-events-auto w-[clamp(295px,65vw,520px)]"
-          />
-        </div>
-      )}
 
 
 
@@ -540,7 +507,10 @@ export default function MeetSomeoneNew({
 
 
 
-      <div className="absolute bottom-[1.5%] left-1/2 -translate-x-1/2 z-40 pointer-events-none w-[94%] max-w-sm px-4">
+      <div
+        ref={navbarRef}
+        className="absolute bottom-[1.5%] left-1/2 -translate-x-1/2 z-40 pointer-events-none w-[94%] max-w-sm px-4 pb-[env(safe-area-inset-bottom)]"
+      >
         <div className="pointer-events-auto border border-white/50 rounded-full h-[64px] w-full flex items-center justify-between px-8 ">
           <button
             onClick={() => router.push('/')}

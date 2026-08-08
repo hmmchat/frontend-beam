@@ -1177,7 +1177,7 @@ function FacecardContent() {
 
 
 
-            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-dvh', 'w-full', 'max-w-[100vw]', 'px-3', 'border-0', 'md:border', 'md:border-white/40', 'rounded-[60px]', 'md:w-[960px]', 'md:px-0', 'scale-[0.95]')}>
+            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-dvh', 'w-full', 'max-w-[100vw]', 'px-3', 'border', 'border-white/40', 'rounded-[32px]', 'md:rounded-[60px]', 'md:w-[960px]', 'md:px-0', 'scale-[0.95]')}>
 
 
               {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>

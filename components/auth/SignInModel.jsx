@@ -80,18 +80,18 @@ const correctOTP = "1234"; // Replace with backend verification
     <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="text-center">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-[56px] font-extrabold text-gradient-gold mb-4 tracking-[2px]">
+        <div className="mb-6 md:mb-10">
+          <h1 className="text-[40px] md:text-[56px] font-extrabold text-gradient-gold mb-3 md:mb-4 tracking-[2px]">
             HMM..
           </h1>
-          <p className="text-white text-lg leading-relaxed font-medium">
+          <p className="text-white text-base md:text-lg leading-relaxed font-medium">
             Meet that someone<br />
             immediately after Signing in
           </p>
         </div>
 
         {/* Content based on step */}
-        <div className="min-h-[400px] w-full max-w-[400px] mx-auto flex flex-col justify-center px-4">
+        <div className="min-h-0 md:min-h-[400px] w-full max-w-[400px] mx-auto flex flex-col justify-center px-4 pb-[env(safe-area-inset-bottom)]">
           {step === 'options' && (
             <div className="flex flex-col gap-4 mb-8 w-full">
             <Button

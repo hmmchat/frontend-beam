@@ -81,7 +81,7 @@ export default function ThreadComposer({
 
   return (
     <>
-      <div className={clsx('px-2', 'md:p-4', 'pt-4', 'md:pt-6', 'flex', 'items-center', 'gap-3')}>
+      <div className={clsx('px-2', 'md:p-4', 'pt-4', 'md:pt-6', 'pb-[max(0.75rem,env(safe-area-inset-bottom))]', 'md:pb-4', 'flex', 'items-center', 'gap-3')}>
         <div className={clsx('relative', 'flex-1')}>
           <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center gap-2">
             <button

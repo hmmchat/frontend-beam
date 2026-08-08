@@ -243,7 +243,7 @@ export default function SelectorOverlay({
         )}
 
         {/* Floating Bottom Bar */}
-        <div className="fixed md:bottom-8 bottom-2 left-1/2 -translate-x-1/2 w-full max-w-sm px-6">
+        <div className="fixed md:bottom-8 bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-50">
           <button
             onClick={() => setShowSelector(null)}
             className="w-full md:py-4 py-3 bg-yellow-400 text-black text-xs md:text-base md:rounded-2xl rounded-lg font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all "

@@ -124,10 +124,10 @@ const MyComponent = () => {
   if (!authChecked) {
     return (
       <>
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <HomeSkeletonDesktop />
         </div>
-        <div className="block md:hidden">
+        <div className="block lg:hidden">
           <HomeSkeletonMobile />
         </div>
       </>
@@ -136,10 +136,10 @@ const MyComponent = () => {
 
   return (
     <>
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <DesktopHome />
       </div>
-      <div className="block md:hidden">
+      <div className="block lg:hidden">
         <MobileHome />
       </div>
     </>

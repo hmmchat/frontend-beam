@@ -14,7 +14,7 @@ export default function MobileMultiUserControls({
   onToggleScreenShare
 }) {
   return (
-    <div className="md:hidden absolute inset-x-0 bottom-3 px-4 flex justify-between items-end z-50 pointer-events-auto">
+    <div className="md:hidden absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] px-4 flex justify-between items-end z-50 pointer-events-auto">
       {/* Left buttons (Camera + Message) */}
       <div className="flex gap-1.5 mb-2">
         <button

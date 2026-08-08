@@ -14,12 +14,12 @@ export default function ProfileMobileAccount({
   facecardExportRef
 }) {
   return (
-    <div className="w-full  flex flex-col h-full pb-6  overflow-hidden ">
-      <div className="flex items-center gap-3 ">
+    <div className="w-full flex flex-col h-full min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] overflow-y-auto overflow-x-hidden">
+      <div className="flex items-center gap-3 shrink-0">
         <button
           type="button"
           onClick={onBack}
-          className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center"
+          className="min-w-11 min-h-11 w-11 h-11 border border-white/40 rounded-full flex items-center justify-center"
           aria-label="Back to profile"
         >
           <ArrowLeft size={18} />
@@ -27,7 +27,7 @@ export default function ProfileMobileAccount({
         <p className="text-base">My account</p>
       </div>
       {user ? (
-        <div className="flex justify-center  w-full  ">
+        <div className="flex justify-center w-full min-h-0 flex-1 pb-8">
           <div
             ref={facecardExportRef}
             className="

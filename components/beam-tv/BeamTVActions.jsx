@@ -12,7 +12,7 @@ export default function BeamTVActions({
   isModerator = false
 }) {
   return (
-    <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
+    <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
       {/* Comment Box */}
       <form 
         onSubmit={(e) => {

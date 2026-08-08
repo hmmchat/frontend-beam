@@ -4,7 +4,7 @@ import clsx from 'clsx';
 
 export default function ChatMessagesOverlay({ chatMessages, chatProfilesByUserId, openChatProfileSheet }) {
   return (
-    <div className="absolute bottom-24 left-6 z-40 flex flex-col  max-w-[60%] pointer-events-none">
+    <div className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-auto z-40 flex flex-col max-w-[min(60%,18rem)] max-h-[40dvh] overflow-hidden pointer-events-none">
       {chatMessages.map((m) => (
         <div
           key={m.id}

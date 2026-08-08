@@ -2089,7 +2089,7 @@ export default function Inbox() {
             openRow={openRow}
           />
           <div
-            className={`min-h-0 md:w-[60%] w-full h-full flex flex-col p-2 ${activeChat ? "flex" : "hidden md:flex"}`}
+            className={`min-h-0 lg:w-[60%] w-full h-full flex flex-col p-2 ${activeChat ? "flex" : "hidden lg:flex"}`}
           >
             {activeChat ? (
               <>
@@ -2160,40 +2160,76 @@ export default function Inbox() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAcceptRequest(
-                              activeChat.followRequestId ||
-                              (String(activeChat.conversationId).startsWith(
-                                "follow_",
-                              )
-                                ? String(activeChat.conversationId).replace(
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRejectRequest(
+                                activeChat.followRequestId ||
+                                (String(activeChat.conversationId).startsWith(
                                   "follow_",
-                                  "",
                                 )
-                                : String(activeChat.conversationId).replace(
-                                  "pending_fr_",
-                                  "",
-                                )),
-                            )
-                          }
-                          className={clsx(
-                            "text-[#ffcc00] hover:text-[#ffd633]",
-                            "text-base md:text-lg",
-                            "font-bold",
-                            "underline",
-                            "underline-offset-4",
-                            "decoration-2",
-                            "transition-all",
-                            "active:scale-95",
-                            "px-4",
-                            "py-2",
-                            "shrink-0",
-                          )}
-                        >
-                          Accept
-                        </button>
+                                  ? String(activeChat.conversationId).replace(
+                                    "follow_",
+                                    "",
+                                  )
+                                  : String(activeChat.conversationId).replace(
+                                    "pending_fr_",
+                                    "",
+                                  )),
+                              )
+                            }
+                            className={clsx(
+                              "text-white/70 hover:text-white",
+                              "text-sm md:text-base",
+                              "font-semibold",
+                              "underline",
+                              "underline-offset-4",
+                              "decoration-2",
+                              "transition-all",
+                              "active:scale-95",
+                              "min-h-11",
+                              "px-3",
+                              "py-2",
+                            )}
+                          >
+                            Reject
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleAcceptRequest(
+                                activeChat.followRequestId ||
+                                (String(activeChat.conversationId).startsWith(
+                                  "follow_",
+                                )
+                                  ? String(activeChat.conversationId).replace(
+                                    "follow_",
+                                    "",
+                                  )
+                                  : String(activeChat.conversationId).replace(
+                                    "pending_fr_",
+                                    "",
+                                  )),
+                              )
+                            }
+                            className={clsx(
+                              "text-[#ffcc00] hover:text-[#ffd633]",
+                              "text-base md:text-lg",
+                              "font-bold",
+                              "underline",
+                              "underline-offset-4",
+                              "decoration-2",
+                              "transition-all",
+                              "active:scale-95",
+                              "min-h-11",
+                              "px-3",
+                              "py-2",
+                            )}
+                          >
+                            Accept
+                          </button>
+                        </div>
                       </div>
                     )}
 

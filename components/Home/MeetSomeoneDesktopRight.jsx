@@ -83,12 +83,12 @@ export default function MeetSomeoneDesktopRight({
   setSquadInviteOpen,
 }) {
   return (
-    <div className={clsx('relative w-full h-full overflow-hidden', !isSearching && 'hidden md:block')}>
+    <div className={clsx('relative w-full h-full overflow-hidden', !isSearching && 'hidden lg:block')}>
       {/* 🔲 HUD BORDER FRAME (Desktop Right) */}
       <div
         className={clsx(
           'hidden',
-          'md:block',
+          'lg:block',
           'absolute',
           'inset-6',
           'border-2',

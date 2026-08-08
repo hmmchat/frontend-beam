@@ -106,17 +106,17 @@ export default function MeetSomeoneDynamic() {
       <div
         className={clsx(
           'relative',
-          'md:min-h-screen',
+          'lg:min-h-screen',
           'h-[100dvh]',
           'w-full',
           'overflow-hidden',
           'font-[family-name:var(--font-otomanopee)]',
         )}
       >
-        <main className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'h-full', 'min-h-0', 'overflow-hidden')}>
-          {/* MOBILE VIEW (CONDITIONAL) */}
+        <main className={clsx('grid', 'grid-cols-1', 'lg:grid-cols-2', 'h-full', 'min-h-0', 'overflow-hidden')}>
+          {/* MOBILE / TABLET VIEW (CONDITIONAL) */}
           {!isSearching && (
-            <div className={clsx('block', 'md:hidden')}>
+            <div className={clsx('block', 'lg:hidden')}>
               <MeetSomeoneNew
                 onMeetNow={async () => {
                   await beginDiscoverySearch();

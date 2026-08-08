@@ -7,10 +7,10 @@ import ProfileMobile from "../../components/Mobile/ProfileMobile";
 export default function BeamProfile() {
   return (
     <ProfileGuard>
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <ProfileDesktop />
       </div>
-      <div className="md:hidden block">
+      <div className="lg:hidden block">
         <ProfileMobile />
       </div>
     </ProfileGuard>

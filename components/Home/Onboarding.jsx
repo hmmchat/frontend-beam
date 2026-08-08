@@ -678,17 +678,10 @@ export default function Onboarding() {
 
               {/* Right - Form */}
 
-              <div className=" items-center md:h-[96dvh] h-[100dvh] overflow-hidden   ">
+              <div className="items-center md:h-[96dvh] min-h-0 h-auto md:overflow-hidden overflow-y-auto">
 
-                <div className="flex flex-col items-center md:justify-center h-full  h-dvh overflow-hidden md:min-h-full 'h-screen',  md:border md:border-white/30 md:rounded-[60px]">
-                  <div className=" overflow-hidden
-  w-full
-  sm:max-w-[420px]
-  md:max-w-[520px]
-  rounded-2xl
-  mx-auto
-  compact-on-short
-">
+                <div className="flex flex-col items-center md:justify-center h-auto md:h-full md:min-h-full overflow-visible md:overflow-hidden md:border md:border-white/30 md:rounded-[60px] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                  <div className="overflow-visible md:overflow-hidden w-full sm:max-w-[420px] md:max-w-[520px] rounded-2xl mx-auto compact-on-short">
 
 
 

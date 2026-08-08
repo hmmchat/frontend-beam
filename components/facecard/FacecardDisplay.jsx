@@ -68,7 +68,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
 
   return (
     <div
-      className="flex min-h-screen  w-full flex-col  text-white outfit-font overflow-hidden  "
+      className="flex min-h-[100dvh] w-full flex-col text-white outfit-font overflow-y-auto overflow-x-hidden"
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -133,7 +133,7 @@ export default function FacecardDisplay({ user, age, setView, router }) {
 
             {/* MOBILE BUTTONS */}
 
-            <div className="flex absolute w-full px-6 justify-center gap-4 mx-auto md:hidden bottom-[1vh]  ">
+            <div className="flex absolute w-full px-6 justify-center gap-4 mx-auto md:hidden bottom-[max(1rem,env(safe-area-inset-bottom))]">
 
 
               <button

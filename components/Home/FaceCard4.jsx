@@ -206,14 +206,12 @@ const FaceCard4 = ({
   const hideFacecardAge = Boolean(user.hideFacecardAge);
   const isCityCard = user.type === 'LOCATION' || Boolean(user.isLocationCard) || hideFacecardAge;
   const age = user.age ?? calculateAge(user.dateOfBirth);
-  const rawCity = user.city || user.preferredCity || "Unknown";
+  const rawCity = user.city || user.preferredCity || '';
   const city = isCityCard
     ? ''
-    : (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere')
-      ? 'Anywhere'
-      : rawCity === 'Unknown'
-        ? 'Unknown'
-        : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    : (!rawCity || rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere' || rawCity === 'Unknown')
+      ? (rawCity === 'ANYWHERE_IN_INDIA' || rawCity === 'Anywhere' ? 'Anywhere' : '')
+      : rawCity.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
   const brandLogos = buildBrandLogos(user.brandPreferences, user.brands);
 

@@ -118,7 +118,7 @@ export default function ProfileMobileStickers({
       )}
 
       <div
-        className={`fixed bottom-0 w-full h-[62vh] bg-[#3D0075] rounded-[2.5rem] p-8 transition-transform duration-500 z-50 max-w-[400px] mx-auto ${
+        className={`fixed bottom-0 left-0 right-0 w-full h-[62vh] bg-[#3D0075] rounded-t-[2.5rem] px-8 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] transition-transform duration-500 z-50 max-w-[400px] mx-auto ${
           activeTab === "stickers" ? "translate-y-0" : "translate-y-full"
         }`}
         style={{

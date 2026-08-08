@@ -46,7 +46,7 @@ export default function MeetSomeoneDesktopLeft({
     <div
       className={clsx(
         'hidden',
-        'md:flex',
+        'lg:flex',
         'relative',
         'h-full',
         'min-h-0',
@@ -57,7 +57,6 @@ export default function MeetSomeoneDesktopLeft({
         'bg-gradient-purple-dark',
         'px-6',
         'py-10',
-        'md:py-16',
         'lg:py-8',
       )}
     >
@@ -73,7 +72,7 @@ export default function MeetSomeoneDesktopLeft({
       <div
         className={clsx(
           'hidden',
-          'md:block',
+          'lg:block',
           'absolute',
           'inset-6',
           'border-2',

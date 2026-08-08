@@ -369,7 +369,7 @@ function OfflineCardsContent() {
           className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92vh]', 'rounded-[60px]', 'overflow-hidden', 'md:w-[98vw]', 'w-full', 'md:w-[750px]')}>
+          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border', 'border-white/40', 'h-[92dvh]', 'rounded-[32px]', 'md:rounded-[60px]', 'overflow-hidden', 'md:w-[98vw]', 'w-[min(100%,92vw)]', 'md:w-[750px]', 'mx-auto')}>
 
             {/* Scrollable container for the face card content */}
 
@@ -413,7 +413,7 @@ function OfflineCardsContent() {
               </div>
 
               {/* MOBILE BOTTOM BAR */}
-              <div className={clsx('md:hidden', 'absolute', 'bottom-[2vh]', 'md:bottom-0', 'w-full', 'flex', 'items-center', 'justify-between', 'h-14', 'px-4', 'max-w-[90vw]', 'mx-auto', 'z-30', 'mt-2')}>
+              <div className={clsx('md:hidden', 'absolute', 'bottom-[max(2vh,env(safe-area-inset-bottom))]', 'md:bottom-0', 'w-full', 'flex', 'items-center', 'justify-between', 'h-14', 'px-4', 'max-w-[90vw]', 'mx-auto', 'z-30', 'mt-2')}>
                 {!isGiftModalOpen && (
                   <>
                     <div className={clsx('absolute', 'left-4', 'flex', 'gap-2', 'items-center')}>

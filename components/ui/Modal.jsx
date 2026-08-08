@@ -39,13 +39,13 @@ export default function Modal({
     >
       <div
         className={`
-    relative overflow-hidden animate-slide-up z-12
+    relative overflow-y-auto overscroll-contain animate-slide-up z-12
     
     /* MOBILE */
 
     p-3 rounded-none 
-    ${isBottomSheet ? "w-full rounded-t-[32px]" : "absolute inset-0 h-screen"}
-    ${isBottomSheet ? "" : "md:h-auto"}
+    ${isBottomSheet ? "w-full rounded-t-[32px] max-h-[min(92dvh,100%)] pb-[env(safe-area-inset-bottom)]" : "absolute inset-0 h-[100dvh]"}
+    ${isBottomSheet ? "" : "md:h-auto md:overflow-hidden"}
 
     /* DESKTOP – APPLE GLASS */
     md:w-full md:h-auto

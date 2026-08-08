@@ -162,7 +162,9 @@ export default function LocalVideoSection({
             "scrollbar-hide",
             "pr-2",
             "z-10",
-            showChatInput ? "bottom-38 md:bottom-44" : "bottom-28",
+            showChatInput
+              ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] md:bottom-44"
+              : "bottom-[calc(7rem+env(safe-area-inset-bottom))] md:bottom-28",
             "pointer-events-auto"
           )}
         >
@@ -199,7 +201,7 @@ export default function LocalVideoSection({
         {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
             className={clsx(
-              "absolute md:bottom-[3%] bottom-[4%] left-2 right-2 z-20",
+              "absolute md:bottom-[3%] bottom-[max(4%,calc(env(safe-area-inset-bottom)+0.5rem))] left-2 right-2 z-20",
               "flex items-end justify-center gap-3",
               "pointer-events-none"
             )}

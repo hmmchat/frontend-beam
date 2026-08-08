@@ -357,11 +357,16 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
               ))}
             </div>
           </div>
+
+          {selectedPackage && (
+            <div className="hidden md:flex w-full mt-6 pt-4 items-center justify-between z-20 shrink-0 border-t border-white/20">
+              {renderCheckoutBar()}
+            </div>
+          )}
         </div>
 
-        {/* Sticky footer — outside scroll so Checkout is always visible after selection */}
         {selectedPackage && (
-          <div className="w-full p-4 md:p-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3 border-t border-white/20">
+          <div className="md:hidden w-full p-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3">
             <div
               className="absolute inset-0 bg-[#02004A]/90 backdrop-blur-md -z-10"
               style={{

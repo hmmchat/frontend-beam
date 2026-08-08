@@ -546,6 +546,10 @@ export default function useMeetSomeone() {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('searching', '1');
+      // Solo meet-someone must never keep a stale squad deep-link param.
+      if (modeRef.current === 'solo') {
+        url.searchParams.delete('squad');
+      }
       window.history.pushState({ searching: true }, '', url.toString());
     }
     try {
@@ -1426,14 +1430,36 @@ export default function useMeetSomeone() {
     updateCamStatus();
   }, [isVideoOn]);
 
+  // Deep-link ?squad=1 → enter squad mode, then strip the param so refresh/solo
+  // don't keep forcing squad (and so meet-someone search never becomes ?squad=1&searching=1).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('squad') === '1') {
-      setMode('squad');
-      router.replace('/', { scroll: false });
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('squad') !== '1') return;
+    setMode('squad');
+    url.searchParams.delete('squad');
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(window.history.state, '', next);
+    try {
+      router.replace(next || '/', { scroll: false });
+    } catch {
+      // history already updated
     }
   }, [router]);
+
+  // Keep URL in sync with mode: solo must not retain ?squad=1.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (mode !== 'solo') return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('squad')) return;
+    url.searchParams.delete('squad');
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [mode]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -1584,6 +1610,7 @@ export default function useMeetSomeone() {
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('resumeDiscovery');
+          url.searchParams.delete('squad');
           url.searchParams.set('searching', '1');
           window.history.replaceState({ searching: true }, '', url.toString());
         }

@@ -198,6 +198,8 @@ export default function useVideoChat() {
   const pendingVideoProduceSourceRef = useRef('camera');
   const localScreenStreamRef = useRef(null);
   const localScreenMsProducerRef = useRef(null);
+  /** True while getDisplayMedia picker is open / screen produce is in flight. */
+  const screenShareInFlightRef = useRef(false);
   const producerIdToMetaRef = useRef(new Map());
   const isBroadcastingRef = useRef(false);
   const isCamOffRef = useRef(false);
@@ -266,6 +268,9 @@ export default function useVideoChat() {
       track.onended = () => {
         if (intentionalExitRef.current || autoTransitioningRef.current) return;
         if (typeof document !== 'undefined' && document.hidden) return;
+        // Screen-share picker / active share often ends or interrupts camera tracks;
+        // do not churn producers mid-share (that races produce and can abort the call).
+        if (screenShareInFlightRef.current || localScreenMsProducerRef.current) return;
         void recoverLocalMedia('local-track-ended');
       };
     });
@@ -287,7 +292,8 @@ export default function useVideoChat() {
       } catch {
         producersRef.current.video = await transport.produce({
           track,
-          encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }]
+          encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }],
+          appData: { source: 'camera' },
         });
       }
       return;
@@ -299,6 +305,7 @@ export default function useVideoChat() {
   async function recoverLocalMedia(reason = 'unknown') {
     if (localMediaRecoveryInFlightRef.current) return;
     if (intentionalExitRef.current || autoTransitioningRef.current) return;
+    if (screenShareInFlightRef.current || localScreenMsProducerRef.current) return;
     if (typeof document !== 'undefined' && document.hidden) return;
     if (!navigator.mediaDevices?.getUserMedia) return;
 
@@ -1047,6 +1054,7 @@ export default function useVideoChat() {
 
   // ---- Screen share --------------------------------------------------------
   const stopScreenShare = useCallback(() => {
+    screenShareInFlightRef.current = false;
     const producer = localScreenMsProducerRef.current;
     const rid = roomInfoRef.current?.roomId;
     if (producer && rid) send({ type: 'close-producer', data: { roomId: rid, producerId: producer.id } });
@@ -1054,20 +1062,37 @@ export default function useVideoChat() {
     localScreenMsProducerRef.current = null;
     localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
     localScreenStreamRef.current = null;
+    pendingVideoProduceSourceRef.current = 'camera';
     setIsScreenSharing(false);
   }, []);
 
   const startScreenShare = useCallback(async () => {
-    if (!sendTransportRef.current || !roomInfoRef.current?.roomId) return;
-    if (localScreenMsProducerRef.current) return;
+    if (!sendTransportRef.current || sendTransportRef.current.closed || !roomInfoRef.current?.roomId) return;
+    if (localScreenMsProducerRef.current || screenShareInFlightRef.current) return;
+    screenShareInFlightRef.current = true;
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia(getScreenShareConstraints());
+      // Picker can drop focus/WS; refuse to produce on a dead transport (would error → abort).
+      if (!sendTransportRef.current || sendTransportRef.current.closed) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenShareInFlightRef.current = false;
+        return;
+      }
       localScreenStreamRef.current = screenStream;
       const track = screenStream.getVideoTracks()[0];
-      if (!track) { screenStream.getTracks().forEach(t => t.stop()); localScreenStreamRef.current = null; return; }
+      if (!track) {
+        screenStream.getTracks().forEach(t => t.stop());
+        localScreenStreamRef.current = null;
+        screenShareInFlightRef.current = false;
+        return;
+      }
       track.onended = () => stopScreenShare();
       pendingVideoProduceSourceRef.current = 'screen';
-      const screenProduce = { track, encodings: getScreenShareEncodings(), appData: { source: 'screen' } };
+      const screenProduce = {
+        track,
+        encodings: getScreenShareEncodings(),
+        appData: { source: 'screen' },
+      };
       const screenCodec = pickH264VideoCodec(deviceRef.current);
       if (screenCodec) screenProduce.codec = screenCodec;
       const producer = await sendTransportRef.current.produce(screenProduce);
@@ -1077,7 +1102,11 @@ export default function useVideoChat() {
       console.warn('[WebRTC] Screen share cancelled or failed', e);
       localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
       localScreenStreamRef.current = null;
+      localScreenMsProducerRef.current = null;
       pendingVideoProduceSourceRef.current = 'camera';
+      setIsScreenSharing(false);
+    } finally {
+      screenShareInFlightRef.current = false;
     }
   }, [stopScreenShare]);
 
@@ -1245,11 +1274,15 @@ export default function useVideoChat() {
           const transport = device.createSendTransport({ id, iceParameters, iceCandidates, dtlsParameters });
           sendTransportRef.current = transport;
           transport.on('connect', ({ dtlsParameters: dp }, cb) => { send({ type: 'connect-transport', data: { roomId: info.roomId, transportId: id, dtlsParameters: dp } }); cb(); });
-          transport.on('produce', ({ kind, rtpParameters }, cb) => {
+          transport.on('produce', ({ kind, rtpParameters, appData }, cb) => {
             if (kind === 'video') {
               if (!producersRef.current.videoCbQueue) producersRef.current.videoCbQueue = [];
               producersRef.current.videoCbQueue.push(cb);
-              const src = pendingVideoProduceSourceRef.current || 'camera';
+              // Prefer per-produce appData so camera + screen never cross-tag via a shared ref.
+              const src =
+                appData?.source === 'screen' || pendingVideoProduceSourceRef.current === 'screen'
+                  ? 'screen'
+                  : 'camera';
               send({ type: 'produce', data: { roomId: info.roomId, transportId: id, kind, rtpParameters, source: src } });
             } else {
               producersRef.current.resolve_audio = cb;
@@ -1265,7 +1298,11 @@ export default function useVideoChat() {
                 pendingVideoProduceSourceRef.current = 'camera';
                 try { const videoProducer = await transport.produce(buildCameraVideoProduceOptions(device, vTrack)); producersRef.current.video = videoProducer; }
                 catch (e) {
-                  const fallback = await transport.produce({ track: vTrack, encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }] }).catch(console.error);
+                  const fallback = await transport.produce({
+                    track: vTrack,
+                    encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }],
+                    appData: { source: 'camera' },
+                  }).catch(console.error);
                   if (fallback) producersRef.current.video = fallback;
                 }
               }
@@ -1641,7 +1678,16 @@ export default function useVideoChat() {
           });
           return;
         }
-        if (msg.type === 'error') { console.warn('[WS] Error:', msg.data?.error); if (msg.data?.error?.includes('not found')) handleStaleRoom(); return; }
+        if (msg.type === 'error') {
+          const errText = String(msg.data?.error || '');
+          console.warn('[WS] Error:', errText);
+          // Only abort when the *room* is gone. Transport/producer/participant
+          // "not found" is common during screen-share / reconnect and must not
+          // tear down an active call (was calling handleStaleRoom → home).
+          const isRoomGone = /^Room\s+.+\s+not found/i.test(errText);
+          if (isRoomGone) handleStaleRoom();
+          return;
+        }
         await handleSignal(msg, info, userId);
       };
       ws.onerror = (err) => { console.error('[WebSocket] Error:', err); };

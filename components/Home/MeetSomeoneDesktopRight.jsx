@@ -815,7 +815,8 @@ export default function MeetSomeoneDesktopRight({
                   className="h-20 w-[50%]"
                   iconClass="md:text-xl transition-all md:h-6 md:w-6 "
                   borderClass="md:border-[1.8px] md:border-b-[4.4px] border border-b-[3px] md:rounded-[20px] rounded-[16px]"
-                  isVideoOn
+                  isVideoOn={isVideoOn}
+                  onVideoClick={() => setIsVideoOn(!isVideoOn)}
                 />
               ) : squadHomeInviteMeetSlotActive && quickInviteFriends.length > 0 ? (
                 <SquadQuickInviteStrip

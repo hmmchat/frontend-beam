@@ -13,13 +13,12 @@ import {
   IoVideocam,
   IoVideocamOff,
 } from "react-icons/io5";
-import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
 import KycVerifiedBadge from "../facecard/KycVerifiedBadge";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
 function brandLogoUrl(entry) {
@@ -113,11 +112,17 @@ const FaceCard = ({
   };
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const normalizedPathname = pathname?.replace(/\/$/, "");
   const isCardsPage = normalizedPathname === "/cards";
   const isFacecardPage = normalizedPathname === "/facecard";
   const isCardsOrFacecardPage = isCardsPage || isFacecardPage;
+
+  const handleBackHome = (e) => {
+    e?.stopPropagation();
+    router.push("/");
+  };
 
   // Realtime presence state (mirrors FaceCard4 pattern)
   const [realtimeStatus, setRealtimeStatus] = useState("");
@@ -264,143 +269,32 @@ const FaceCard = ({
 
   return (
     <>
-
-      <div className="absolute left-0 top-[3vh] z-20   flex w-full items-center justify-between px-5 hidden md:flex">
-        <div>
-          <h1 className="font-sigmar text-xl font-extrabold text-[#F2AD00]">
-            {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
-              <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
-            )}
-            {user.username || "User"}
-            <KycVerifiedBadge user={user} />
-            {!hideFacecardAge && (
-              <>
-                {" "}
-                <span
-                  className="text-stroke-yellow"
-
-                >
-                  {age || "—"}
-                </span>
-              </>
-            )}
-          </h1>
-          {showLocationRow ? (
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-              <span className="truncate font-outfit">{city}</span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          {inSquad && (
-            <button
-              type="button"
-              className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
-            >
-              Squad
-            </button>
-          )}
-          {isBroadcasting && (
-            <span
-              className="flex h-6 w-6 items-center justify-center text-white"
-              title="Broadcasting"
-            >
-              <IoRadio className="h-5 w-5" />
-            </span>
-          )}
-          {!isCardsOrFacecardPage && (
-            <span
-              className="flex h-6 w-6 items-center justify-center text-white"
-              title={isVideoOn ? "Video on" : "Video off"}
-            >
-              {isVideoOn ? (
-                <IoVideocam className="h-5 w-5" />
-              ) : (
-                <IoVideocamOff className="h-5 w-5" />
-              )}
-            </span>
-          )}
-
-
-
-
-
-          {showReportUi && <Report layer={reportLayer} />}
-          {!hideMenu && !isFacecardPage && (
-            <div className="relative">
-              <button
-                type="button"
-                className="flex h-6 w-6 items-center justify-center text-white pointer-events-auto"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDropdown(prev => !prev);
-                }}
-              >
-                <IoEllipsisVerticalSharp />
-              </button>
-              {showDropdown && (
-                <div
-                  className="absolute right-0 top-8 z-30 w-32 rounded-xl border border-white/20 bg-black/75 backdrop-blur-md py-1 shadow-2xl font-outfit"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      setShowBlockModal(true);
-                    }}
-                  >
-                    Block User
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      setShowReportModal(true);
-                    }}
-                  >
-                    Report User
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-
-
-
-
       <div
         data-facecard-boundary="true"
         className="w-[min(380px,calc(100vw-2rem))] max-w-[calc(100vw-1rem)] h-[660px] md:h-[673px]
                  md:w-[320px] lg:w-[360px] md:max-w-none
-           shrink-0 rounded-[26px] md:rounded-[30px] border border-white/30 md:border-0
+           shrink-0 rounded-[26px] md:rounded-[30px] border-0
            overflow-hidden"
       >
         <div className={clsx("relative h-full w-full overflow-hidden rounded-[24px] md:rounded-[28px]", className)}>
-          {/* HEADER — now both desktop + mobile headers are INSIDE the relative container so absolute positioning is consistent on EVERY screen size */}
+          {/* Header inside the card so back/name/location clear the chrome frames */}
           {!hideHeader && (
-            <>
-              {/* Desktop header (larger laptops) */}
-
-
-
-
-
-
-
-
-
-
-              {/* Mobile header (phones + very small tablets) */}
-              <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between px-5 md:hidden">
-                <div>
-                  <h1 className="font-sigmar text-xl font-bold text-[#F2AD00]">
+            <div className="absolute left-0 top-3 z-20 flex w-full items-center justify-between px-4 md:top-4 md:px-5">
+              <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
+                {isCardsPage && (
+                  <button
+                    type="button"
+                    onClick={handleBackHome}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/50 pointer-events-auto transition-transform active:scale-95 hover:bg-white/10 md:size-10"
+                    aria-label="Back to homepage"
+                  >
+                    <span className="relative block size-5 overflow-hidden">
+                      <img src="/icons/arrow-back.svg" alt="" className="absolute inset-0 size-full" />
+                    </span>
+                  </button>
+                )}
+                <div className="min-w-0">
+                  <h1 className="font-sigmar text-xl font-bold text-[#F2AD00] md:font-extrabold">
                     {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
                       <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
                     )}
@@ -409,10 +303,7 @@ const FaceCard = ({
                     {!hideFacecardAge && (
                       <>
                         {" "}
-                        <span
-                          className="text-stroke-yellow  text-2xl"
-
-                        >
+                        <span className="text-stroke-yellow text-2xl">
                           {age || "—"}
                         </span>
                       </>
@@ -420,93 +311,93 @@ const FaceCard = ({
                   </h1>
                   {showLocationRow ? (
                     <div className="mt-0.5 flex items-center gap-1 text-xs text-white/80">
-                      <IoLocationOutline className="shrink-0" />
-                      <span className="truncate">{city}</span>
+                      <IoLocationOutline className="shrink-0 md:hidden" />
+                      <span className="truncate font-outfit">{city}</span>
                     </div>
                   ) : null}
                 </div>
+              </div>
 
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {inSquad && (
+              <div className="flex shrink-0 items-center gap-1.5">
+                {inSquad && (
+                  <button
+                    type="button"
+                    className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                  >
+                    Squad
+                  </button>
+                )}
+                {isBroadcasting && (
+                  <span
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                    title="Broadcasting"
+                  >
+                    <IoRadio className="h-5 w-5" />
+                  </span>
+                )}
+                {!isCityCard && !isCardsOrFacecardPage && (
+                  <span
+                    className="flex h-6 w-6 items-center justify-center text-white"
+                    title={isVideoOn ? "Video on" : "Video off"}
+                  >
+                    {isVideoOn ? (
+                      <IoVideocam className="h-5 w-5" />
+                    ) : (
+                      <IoVideocamOff className="h-5 w-5" />
+                    )}
+                  </span>
+                )}
+                {showReportUi && <Report layer={reportLayer} />}
+                {!isCityCard && !hideMenu && !isFacecardPage && (
+                  <div className="relative">
                     <button
                       type="button"
-                      className="rounded-full border border-yellow-300/90 px-2.5 py-1 text-[10px] font-medium text-yellow-300"
+                      className="flex h-6 w-6 items-center justify-center text-white pointer-events-auto"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDropdown(prev => !prev);
+                      }}
                     >
-                      Squad
+                      <IoEllipsisVerticalSharp />
                     </button>
-                  )}
-                  {isBroadcasting && (
-                    <span
-                      className="flex h-6 w-6 items-center justify-center text-white"
-                      title="Broadcasting"
-                    >
-                      <IoRadio className="h-5 w-5" />
-                    </span>
-                  )}
-                  {!isCityCard && !isCardsOrFacecardPage && (
-                    <span
-                      className="flex h-6 w-6 items-center justify-center text-white"
-                      title={isVideoOn ? "Video on" : "Video off"}
-                    >
-                      {isVideoOn ? (
-                        <IoVideocam className="h-5 w-5" />
-                      ) : (
-                        <IoVideocamOff className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                  {showReportUi && <Report layer={reportLayer} />}
-                  {!isCityCard && !hideMenu && !isFacecardPage && (
-                    <div className="relative">
-                      <button
-                        type="button"
-                        className="flex h-6 w-6 items-center justify-center text-white pointer-events-auto"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDropdown(prev => !prev);
-                        }}
+                    {showDropdown && (
+                      <div
+                        className="absolute right-0 top-8 z-30 w-32 rounded-xl border border-white/20 bg-black/75 backdrop-blur-md py-1 shadow-2xl font-outfit"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <IoEllipsisVerticalSharp />
-                      </button>
-                      {showDropdown && (
-                        <div
-                          className="absolute right-0 top-8 z-30 w-32 rounded-xl border border-white/20 bg-black/75 backdrop-blur-md py-1 shadow-2xl font-outfit"
-                          onClick={(e) => e.stopPropagation()}
+                        <button
+                          type="button"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                          onClick={() => {
+                            setShowDropdown(false);
+                            setShowBlockModal(true);
+                          }}
                         >
-                          <button
-                            type="button"
-                            className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
-                            onClick={() => {
-                              setShowDropdown(false);
-                              setShowBlockModal(true);
-                            }}
-                          >
-                            Block User
-                          </button>
-                          <button
-                            type="button"
-                            className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
-                            onClick={() => {
-                              setShowDropdown(false);
-                              setShowReportModal(true);
-                            }}
-                          >
-                            Report User
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                          Block User
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                          onClick={() => {
+                            setShowDropdown(false);
+                            setShowReportModal(true);
+                          }}
+                        >
+                          Report User
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
 
-          {/* Inner chrome — leave room for 1-line (city) or 2-line (user+location) header */}
+          {/* Inner chrome — clear header (+ location) on both mobile and desktop */}
           <div
             className={clsx(
-              'absolute md:bottom-12 bottom-2 left-2 right-2 md:left-[5px] md:right-1 md:top-[1.75rem] rounded-[22px] md:rounded-[26px] border border-white/30',
-              showLocationRow ? 'top-[4.75rem]' : 'top-[3.5rem]',
+              'absolute bottom-2 left-2 right-2 md:bottom-12 md:left-[5px] md:right-1 rounded-[22px] md:rounded-[26px] border border-white/30 overflow-hidden',
+              showLocationRow ? 'top-[4.75rem] md:top-[5.25rem]' : 'top-[3.5rem] md:top-[4rem]',
             )}
           >
             {/* Intent — Figma ~108px tall on phone */}
@@ -519,18 +410,18 @@ const FaceCard = ({
             </div>
 
 
-            <div className="absolute md:bottom-2 bottom-5 right-2 left-1.5 top-[7.85rem] md:top-[7.22rem] flex md:gap-0">
-              {/* LEFT SIDEBAR */}
-              <div className="w-[26%] flex flex-col items-center gap-1.5 md:gap-2 z-20">
+            <div className="absolute bottom-5 md:bottom-2 right-2 left-1.5 top-[7.85rem] md:top-[7.22rem] flex md:gap-0 min-h-0 overflow-hidden">
+              {/* LEFT SIDEBAR — sized to stay inside chrome on desktop */}
+              <div className="w-[26%] h-full min-h-0 flex flex-col items-center justify-between gap-1 md:gap-1 z-20 overflow-hidden pb-0.5">
                 {/* Brands capsule */}
-                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/30 md:px-2 px-[8px] py-2 shadow-inner">
-                  <div className="flex flex-col items-center gap-1">
+                <div className="flex w-fit max-w-[90px] flex-col items-center rounded-full border border-white/30 md:px-1.5 px-[8px] py-2 md:py-1.5 shadow-inner shrink min-h-0">
+                  <div className="flex flex-col items-center gap-1 md:gap-0.5">
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const src = brandLogos[idx];
                       return (
                         <div
                           key={`brand-slot-${idx}`}
-                          className={`flex h-[2.75rem] w-[2.75rem] md:h-[3rem] md:w-[3rem] shrink-0 items-center justify-center overflow-hidden rounded-full border ${src ? "border-black" : "border-white/30"} shadow-inner`}
+                          className={`flex h-[2.75rem] w-[2.75rem] md:h-[2.55rem] md:w-[2.55rem] shrink-0 items-center justify-center overflow-hidden rounded-full border ${src ? "border-black" : "border-white/30"} shadow-inner`}
                         >
                           {src && (
                             <img
@@ -547,18 +438,18 @@ const FaceCard = ({
                 </div>
 
                 {/* Zodiac */}
-                <div className="flex w-[75px] md:w-[72px] shrink-0 flex-col items-center justify-center rounded-[18px] border border-white/30 px-2 py-1.5 shadow-inner min-h-[63px]">
+                <div className="flex w-[75px] md:w-[68px] shrink-0 flex-col items-center justify-center rounded-[18px] border border-white/30 px-2 py-1.5 md:py-1 shadow-inner min-h-[63px] md:min-h-[56px]">
                   {user?.zodiac?.imageUrl ? (
                     <img
                       src={user.zodiac.imageUrl}
                       alt={user.zodiac.name || "Zodiac"}
-                      className="h-[30px] w-[30px] object-contain"
+                      className="h-[30px] w-[30px] md:h-[26px] md:w-[26px] object-contain"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
                     />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center">
+                    <div className="flex h-8 w-8 md:h-7 md:w-7 items-center justify-center">
                       <span className="text-[18px] leading-none text-white/30">+</span>
                     </div>
                   )}
@@ -567,8 +458,8 @@ const FaceCard = ({
                   </span>
                 </div>
 
-                {/* Music — Figma: tall capsule (round top, softer bottom), fixed height so text isn't clipped */}
-                <div className="relative flex h-[111px] w-[75px] md:h-[125px] md:w-[80px] shrink-0 flex-col items-center rounded-t-[60px] rounded-b-[18px] border border-white/30 px-1 pb-1.5 pt-1.5 shadow-inner backdrop-blur-sm overflow-hidden">
+                {/* Music — keep fully inside the chrome frame (desktop was overflowing) */}
+                <div className="relative flex h-[111px] w-[75px] md:h-[108px] md:w-[72px] shrink-0 flex-col items-center rounded-t-[60px] rounded-b-[18px] border border-white/30 px-1 pb-1.5 pt-1.5 shadow-inner backdrop-blur-sm overflow-hidden">
                   {user.musicPreference && (
                     <img
                       src="/musicline.svg"
@@ -576,7 +467,7 @@ const FaceCard = ({
                       className="pointer-events-none absolute left-0.5 top-[42px] z-20 h-[18px] w-auto"
                     />
                   )}
-                  <div className="h-[58px] w-[58px] md:h-[72px] md:w-[72px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
+                  <div className="h-[58px] w-[58px] md:h-[56px] md:w-[56px] shrink-0 overflow-hidden rounded-full border-2 border-white/35 shadow-md">
                     {user.musicPreference ? (
                       <img
                         src={albumArt}
@@ -601,9 +492,6 @@ const FaceCard = ({
                     </div>
                   </div>
                 </div>
-
-
-
               </div>
 
               {/* RIGHT IMAGE */}

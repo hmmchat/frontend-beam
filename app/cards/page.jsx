@@ -45,17 +45,47 @@ function OfflineCardsContent() {
 
 
   const [scale, setScale] = useState(1);
-
-
-
-
   const [translateY, setTranslateY] = useState(0);
+  /** Tinder-style exit: 'left' (X) | 'right' (heart) | null */
+  const [swipeAnim, setSwipeAnim] = useState(null);
+  const [isEntering, setIsEntering] = useState(false);
 
+  const SWIPE_MS = 320;
 
+  const hydrateFriendship = useCallback(async (next) => {
+    setIsAlreadyFriend(false);
+    setConnectSent(false);
+    if (!next?.userId) return;
+    try {
+      const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(next.userId));
+      if (status?.areFriends) {
+        setIsAlreadyFriend(true);
+      } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
+        setConnectSent(true);
+      }
+    } catch {
+      // fail silently — don't block card display
+    }
+  }, []);
+
+  const showCard = useCallback(async (next) => {
+    // Swap card + clear exit anim in one update so the outgoing card never snaps back
+    setCard(next);
+    setExhausted(false);
+    setCurrentImageIndex(0);
+    setIsGiftButtonHidden(false);
+    setSwipeAnim(null);
+    setIsEntering(true);
+    // Next paint: ease from slightly scaled/faded into place (Tinder deck feel)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsEntering(false));
+    });
+    await hydrateFriendship(next);
+  }, [hydrateFriendship]);
 
   // ── fetch next card ──────────────────────────────────────────────────────
-  const fetchCard = useCallback(async () => {
-    setLoading(true);
+  const fetchCard = useCallback(async ({ quiet = false } = {}) => {
+    if (!quiet) setLoading(true);
     setError('');
     setConnectSent(false);
     setCurrentImageIndex(0);
@@ -72,30 +102,18 @@ function OfflineCardsContent() {
       if (data.exhausted || !data.card) {
         setExhausted(true);
         setCard(null);
+        setSwipeAnim(null);
       } else {
-        setCard(data.card);
-        setExhausted(false);
-        // Check if already friends or request already sent
-        setIsAlreadyFriend(false);
-        setConnectSent(false);
-        try {
-          const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(data.card.userId));
-          if (status?.areFriends) {
-            setIsAlreadyFriend(true);
-          } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
-            setConnectSent(true);
-          }
-        } catch {
-          // fail silently — don't block card display
-        }
+        await showCard(data.card);
       }
     } catch (err) {
       console.error('[OfflineCards] fetch error:', err);
       setError('Failed to load card. Please try again.');
+      setSwipeAnim(null);
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
-  }, [sessionId, router]);
+  }, [sessionId, router, showCard]);
 
   useEffect(() => { fetchCard(); }, [fetchCard]);
 
@@ -125,47 +143,83 @@ function OfflineCardsContent() {
     setCurrentImageIndex((prev) => (prev + 1) % allPhotos.length);
   };
 
-  // ── X / pass ─────────────────────────────────────────────────────────────
-  const handlePass = async () => {
-    if (!card || swiping) return;
-    setSwiping(true);
+  // Persist heart/message/gift so these cards are not recycled after exhaustion
+  const markOfflineEngaged = async (engagedUserId) => {
+    if (!engagedUserId) return;
     try {
       const token = localStorage.getItem('accessToken');
-      const data = await apiRequest(API.DISCOVERY.RAINCHECK_OFFLINE, {
+      await apiRequest(API.DISCOVERY.ENGAGE_OFFLINE, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ sessionId, raincheckedUserId: card.userId }),
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: JSON.stringify({ engagedUserId }),
       });
-      if (data.nextCard) {
-        setCard(data.nextCard);
-        setConnectSent(false);
-        setIsAlreadyFriend(false);
-        setCurrentImageIndex(0);
-        // Check friendship for next card
-        try {
-          const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(data.nextCard.userId));
-          if (status?.areFriends) {
-            setIsAlreadyFriend(true);
-          } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
-            setConnectSent(true);
-          }
-        } catch {
-          // fail silently
-        }
+    } catch (err) {
+      console.error('[OfflineCards] engage error:', err);
+    }
+  };
+
+  /** Raincheck current card and return the next card (or null if exhausted). */
+  const fetchNextAfterRaincheck = async (userId) => {
+    const token = localStorage.getItem('accessToken');
+    const data = await apiRequest(API.DISCOVERY.RAINCHECK_OFFLINE, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ sessionId, raincheckedUserId: userId }),
+    });
+    if (data.nextCard) return data.nextCard;
+    // Fallback GET in case raincheck response omitted the next card
+    const url = `${API.DISCOVERY.GET_OFFLINE_CARD}?sessionId=${encodeURIComponent(sessionId)}`;
+    const again = await apiRequest(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (again.exhausted || !again.card) return null;
+    return again.card;
+  };
+
+  /**
+   * Tinder-style fly-off, then swap card.
+   * Exit animation runs in parallel with API work; UI updates only after both finish.
+   */
+  const swipeThen = async (direction, work) => {
+    if (!card || swiping) return;
+    setSwiping(true);
+    setSwipeAnim(direction);
+    try {
+      const [, next] = await Promise.all([
+        new Promise((r) => setTimeout(r, SWIPE_MS)),
+        work(),
+      ]);
+      if (next) {
+        await showCard(next);
       } else {
-        await fetchCard();
+        setSwipeAnim(null);
+        setCard(null);
+        setExhausted(true);
       }
     } catch (err) {
-      console.error('[OfflineCards] raincheck error:', err);
-      await fetchCard();
+      console.error('[OfflineCards] swipe advance error:', err);
+      setSwipeAnim(null);
+      throw err;
     } finally {
       setSwiping(false);
     }
   };
 
+  // ── X / pass — swipe left ────────────────────────────────────────────────
+  const handlePass = async () => {
+    if (!card || swiping) return;
+    const userId = card.userId;
+    try {
+      await swipeThen('left', () => fetchNextAfterRaincheck(userId));
+    } catch {
+      await fetchCard({ quiet: true });
+    }
+  };
+
   // ── message ──────────────────────────────────────────────────────────────
-  const handleMessage = () => {
-    if (!card) return;
+  const handleMessage = async () => {
+    if (!card || swiping) return;
+    await markOfflineEngaged(card.userId);
     const q = new URLSearchParams({
       userId: card.userId,
       username: card.username || 'User',
@@ -175,39 +229,37 @@ function OfflineCardsContent() {
     router.push(`/inbox?${q.toString()}`);
   };
 
-  // ── connect (send friend request / heart) ────────────────────────────────
+  // ── connect (heart) — friend request + engage + swipe right to next ─────
   const handleConnect = async () => {
-    if (!card || connectSent || isAlreadyFriend) return;
+    if (!card || swiping || connectSent || isAlreadyFriend) return;
+    const userId = card.userId;
     const token = localStorage.getItem('accessToken');
 
     try {
-      await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ toUserId: card.userId }),
-      });
-      setConnectSent(true);
-    } catch (err) {
-      const errMsg = (err?.message || '').toLowerCase();
-      const isKnownDupe =
-        errMsg.includes('already sent') ||
-        errMsg.includes('already friends') ||
-        errMsg.includes('already friend') ||
-        errMsg.includes('request already') ||
-        errMsg.includes('already pending') ||
-        errMsg.includes('duplicate');
-
-      if (isKnownDupe) {
-        // Silently mark button as selected — no alert, no error log
-        if (errMsg.includes('already friends') || errMsg.includes('already friend')) {
-          setIsAlreadyFriend(true);
-        } else {
-          setConnectSent(true);
+      await swipeThen('right', async () => {
+        try {
+          await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ toUserId: userId }),
+          });
+        } catch (err) {
+          const errMsg = (err?.message || '').toLowerCase();
+          const isKnownDupe =
+            errMsg.includes('already sent') ||
+            errMsg.includes('already friends') ||
+            errMsg.includes('already friend') ||
+            errMsg.includes('request already') ||
+            errMsg.includes('already pending') ||
+            errMsg.includes('duplicate');
+          if (!isKnownDupe) throw err;
         }
-      } else {
-        console.error('[OfflineCards] connect error:', err);
-        alert(err?.message || 'Failed to send friend request. Please try again.');
-      }
+        await markOfflineEngaged(userId);
+        return fetchNextAfterRaincheck(userId);
+      });
+    } catch (err) {
+      console.error('[OfflineCards] connect error:', err);
+      alert(err?.message || 'Failed to send friend request. Please try again.');
     }
   };
 
@@ -262,6 +314,9 @@ function OfflineCardsContent() {
         }
       }
 
+      // Gift counts as engagement — do not recycle this card after exhaustion
+      await markOfflineEngaged(card.userId);
+
       // Deduct coins locally
       setWalletCoins((prev) => Math.max(0, prev - coinCost));
 
@@ -282,6 +337,7 @@ function OfflineCardsContent() {
 
 
   // ── new session (refresh after exhausted) ───────────────────────────────
+  // New session clears X-only rainchecks; heart/message/gift engagements persist server-side.
   const handleRefresh = () => {
     const newSessionId = makeSessionId();
     setSessionId(newSessionId);
@@ -297,14 +353,20 @@ function OfflineCardsContent() {
   useEffect(() => {
     const updateScale = () => {
       const h = window.innerHeight;
-      if (h <= 670) {
-        setScale(0.72);
-        setTranslateY(-20);
-      } else if (h <= 740) {
-        setScale(0.82);
-        setTranslateY(-8);
-      } else if (h <= 820) {
-        setScale(0.92);
+      // Reserve room for bottom action bar (~64px) + safe area so buttons never kiss the card.
+      const buttonReserve = 96; // action bar + gap + safe-area cushion
+      const available = h - buttonReserve;
+      if (available <= 560) {
+        setScale(0.68);
+        setTranslateY(0);
+      } else if (available <= 620) {
+        setScale(0.76);
+        setTranslateY(0);
+      } else if (available <= 700) {
+        setScale(0.86);
+        setTranslateY(0);
+      } else if (available <= 780) {
+        setScale(0.94);
         setTranslateY(0);
       } else {
         setScale(1);
@@ -353,7 +415,9 @@ function OfflineCardsContent() {
         <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6', 'text-white', 'text-center', 'px-8')}>
           <div className="text-5xl">🃏</div>
           <p className={clsx('text-xl', 'font-bold')}>You've seen everyone!</p>
-          <p className={clsx('text-white/50', 'text-sm')}>Check back later or refresh for new faces.</p>
+          <p className={clsx('text-white/50', 'text-sm')}>
+            Refresh to see people you passed on again. Hearts and messages stay hidden.
+          </p>
           <button
             onClick={handleRefresh}
             className={clsx('px-8', 'py-3', 'rounded-xl', 'border', 'border-white/30', 'text-sm', 'hover:bg-white/10', 'transition')}
@@ -369,57 +433,70 @@ function OfflineCardsContent() {
           className={clsx('relative', 'w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center')}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'border-0', 'md:border', 'md:border-white/40', 'h-[92dvh]', 'rounded-none', 'md:rounded-[60px]', 'overflow-hidden', 'w-full', 'md:w-[750px]', 'mx-auto')}>
-
-            {/* Scrollable container for the face card content */}
-
-
-
-
-
-
-
+          <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'border-0', 'md:border', 'md:border-white/40', 'h-[92dvh]', 'rounded-none', 'md:rounded-[60px]', 'overflow-hidden', 'w-full', 'md:w-[750px]', 'mx-auto')}>
 
             {/*
               FaceCard uses w-[min(380px,100%)]. A shrink-wrap parent makes that
               100% resolve to 0 (thin vertical line). Give the scale shell a real width.
+              Mobile: collapse unused scaled height so the in-flow bottom bar sits under the card.
             */}
-            <div className={clsx('flex', 'w-full', 'flex-col', 'items-center', 'pt-4', 'pb-4', 'scrollbar-none', 'z-20')}>
+            <div className={clsx('flex', 'min-h-0', 'w-full', 'flex-1', 'flex-col', 'items-center', 'justify-center', 'pt-3', 'pb-2', 'md:pb-24', 'scrollbar-none', 'z-20')}>
               <div
                 className={clsx(
                   'relative flex w-full max-w-[380px] shrink-0 items-center justify-center',
-                  'origin-top transition-transform duration-500 mt-3 md:mt-0',
+                  'origin-top mt-1 md:mt-0',
                 )}
                 style={
                   typeof window !== "undefined" && window.innerWidth < 768
                     ? {
                       transform: `translateY(${translateY}px) scale(${scale})`,
                       transformOrigin: "top center",
+                      marginBottom: `${660 * (scale - 1)}px`,
                     }
                     : undefined
                 }
               >
-                <FaceCard
-                  user={{
-                    ...card,
-                    age: age ?? card.age,
-                    city: card.preferredCity || card.city,
+                {/* Tinder-style fly-off / enter layer */}
+                <div
+                  key={card.userId}
+                  className="relative w-full will-change-transform"
+                  style={{
+                    transform: swipeAnim === 'left'
+                      ? 'translateX(-130%) rotate(-18deg)'
+                      : swipeAnim === 'right'
+                        ? 'translateX(130%) rotate(18deg)'
+                        : isEntering
+                          ? 'translateX(0) rotate(0deg) scale(0.94)'
+                          : 'translateX(0) rotate(0deg) scale(1)',
+                    opacity: swipeAnim ? 0 : isEntering ? 0.55 : 1,
+                    transition: swipeAnim
+                      ? `transform ${SWIPE_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${SWIPE_MS}ms ease-out`
+                      : 'transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 280ms ease-out',
+                    pointerEvents: swiping ? 'none' : 'auto',
                   }}
-                  currentIndex={currentImageIndex}
-                  onIndexChange={setCurrentImageIndex}
-                  className="md:[@media(max-height:1200px)]:mt-[1vh]   md:[@media(max-height:1200px)]:scale-[0.90]
+                >
+                  <FaceCard
+                    user={{
+                      ...card,
+                      age: age ?? card.age,
+                      city: card.preferredCity || card.city,
+                    }}
+                    currentIndex={currentImageIndex}
+                    onIndexChange={setCurrentImageIndex}
+                    className="md:[@media(max-height:1200px)]:mt-[1vh] md:[@media(max-height:1200px)]:scale-[0.90]
       md:[@media(max-height:1000px)]:scale-[0.85]
-      md:[@media(max-height:800px)]:scale-[0.81] md:[@media(max-height:800px)]:mt-[-3vh]
-      md:[@media(max-height:700px)]:scale-[0.77] md:[@media(max-height:700px)]:mt-[-5vh]"
-                  onBlockOrReportSuccess={handlePass}
-                />
+      md:[@media(max-height:800px)]:scale-[0.78] md:[@media(max-height:800px)]:mt-0
+      md:[@media(max-height:700px)]:scale-[0.72] md:[@media(max-height:700px)]:mt-0"
+                    onBlockOrReportSuccess={handlePass}
+                  />
+                </div>
               </div>
 
-              {/* MOBILE BOTTOM BAR */}
-              <div className={clsx('md:hidden', 'absolute', 'bottom-[max(2vh,env(safe-area-inset-bottom))]', 'md:bottom-0', 'w-full', 'flex', 'items-center', 'justify-between', 'h-14', 'px-4', 'max-w-[90vw]', 'mx-auto', 'z-30', 'mt-2')}>
+              {/* MOBILE BOTTOM BAR — in-flow so it stays below the card with a gap */}
+              <div className={clsx('md:hidden', 'relative', 'w-full', 'flex', 'shrink-0', 'items-center', 'justify-between', 'h-16', 'px-4', 'max-w-[90vw]', 'mx-auto', 'z-30', 'mt-3', 'mb-[max(0.75rem,env(safe-area-inset-bottom))]')}>
                 {!isGiftModalOpen && (
                   <>
-                    <div className={clsx('absolute', 'left-4', 'flex', 'gap-2', 'items-center')}>
+                    <div className={clsx('flex', 'gap-2', 'items-center')}>
                       <button
                         type="button"
                         onClick={handlePass}
@@ -440,7 +517,7 @@ function OfflineCardsContent() {
                       <button
                         type="button"
                         onClick={handleConnect}
-                        disabled={connectSent || isAlreadyFriend}
+                        disabled={swiping || connectSent || isAlreadyFriend}
                         className={clsx(
                           "w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors",
                           isAlreadyFriend
@@ -459,7 +536,7 @@ function OfflineCardsContent() {
                       </button>
                     </div>
                     {!isGiftButtonHidden && (
-                      <div className={clsx('absolute', 'right-4', 'flex', 'items-center')}>
+                      <div className={clsx('ml-auto', 'flex', 'items-center')}>
                         <button
                           type="button"
                           onClick={() => {
@@ -511,7 +588,7 @@ function OfflineCardsContent() {
 
 
             {/* ── DESKTOP BOTTOM BAR ── */}
-            <div className={clsx('absolute', 'bottom-8', 'w-full', 'z-50', 'hidden', 'md:flex', 'items-center', 'h-16',)}>
+            <div className={clsx('absolute', 'bottom-6', 'w-full', 'z-50', 'hidden', 'md:flex', 'items-center', 'h-16')}>
               {!isGiftModalOpen && (
                 <>
                   {/* Left group: X · Message · Heart */}
@@ -538,7 +615,7 @@ function OfflineCardsContent() {
                     <button
                       type="button"
                       onClick={handleConnect}
-                      disabled={connectSent || isAlreadyFriend}
+                      disabled={swiping || connectSent || isAlreadyFriend}
                       className={clsx(
                         'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-colors',
                         isAlreadyFriend

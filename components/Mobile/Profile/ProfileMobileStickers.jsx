@@ -113,7 +113,7 @@ export default function ProfileMobileStickers({
       {activeTab === "stickers" && (
         <div
           onClick={() => setActiveTab("main")}
-          className="fixed inset-0 z-40 animate-in fade-in duration-300 "
+          className="fixed inset-0 z-40 animate-in fade-in duration-300 bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35"
         />
       )}
 

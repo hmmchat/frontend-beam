@@ -1,3 +1,4 @@
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 'use client';
 
 export default function RandomnessModal({
@@ -17,8 +18,9 @@ export default function RandomnessModal({
   if (!isOpen) return null;
 
  return (
-  <div className="absolute inset-0 z-50 flex items-center font-otomanopee justify-center p-6" onClick={onClose}>
-    <div className="w-full max-w-md space-y-1 animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
+  <div className="absolute inset-0 z-50 flex items-center font-otomanopee justify-center p-6">
+    <OverlayBackdrop onClick={onClose} />
+    <div className="relative z-10 w-full max-w-md space-y-1 animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
       
     <div className="relative overflow-hidden border border-white/70 w-[70%] md:w-[80%] mx-auto border border-white/20 rounded-full py-6 text-center">
   <div

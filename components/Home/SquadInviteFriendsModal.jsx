@@ -1,5 +1,6 @@
 'use client';
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import clsx from 'clsx';
@@ -124,19 +125,11 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center md:p-6">
-
-
-      <button
-        type="button"
-        className="absolute inset-0 "
-        aria-label="Close"
-        onClick={onClose}
-      />
-
+      <OverlayBackdrop onClick={onClose} />
 
       <div
         className={clsx(
-          'relative w-full max-w-xl border border-white/25 md:rounded-[2rem] rounded-t-[2rem]',
+          'relative z-10 w-full max-w-xl border border-white/25 md:rounded-[2rem] rounded-t-[2rem]',
           ' max-h-[90dvh] flex flex-col text-white font-sans overflow-hidden'
         )}
       >

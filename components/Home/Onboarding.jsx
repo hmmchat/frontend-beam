@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -867,10 +868,10 @@ export default function Onboarding() {
 
 
                                   {showGenderModal && (
-                                    <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-72  ">
-
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-72">
+                                      <OverlayBackdrop onClick={() => setShowGenderModal(false)} />
                                       <div
-                                        className="w-[90%] max-w-xs text-white rounded-[2rem] p-6  relative overflow-hidden "
+                                        className="relative z-10 w-[90%] max-w-xs text-white rounded-[2rem] p-6 overflow-hidden "
                                         style={{
                                           backgroundImage: "url('/assets/mb.jpg')",
                                           backgroundSize: "cover",
@@ -967,10 +968,10 @@ export default function Onboarding() {
 
 
                                 {showCityModal && (
-                                  <div className="fixed inset-0 z-50 flex items-center  justify-center md:justify-end md:pr-40 md:pb-14   ">
-
+                                  <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:pr-40 md:pb-14">
+                                    <OverlayBackdrop onClick={() => setShowCityModal(false)} />
                                     <div
-                                      className="w-[90%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 relative overflow-hidden"
+                                      className="relative z-10 w-[90%] max-w-sm text-white rounded-[2rem] p-6 border border-white/20 overflow-hidden"
                                       style={{
                                         backgroundImage: "url('/assets/mb.jpg')",
                                         backgroundSize: "cover",

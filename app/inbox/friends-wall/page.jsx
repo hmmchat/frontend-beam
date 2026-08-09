@@ -387,11 +387,11 @@ function FriendWallContent() {
       {/* Facecard Preview Modal */}
       {isPreviewOpen && selectedFriend && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden"
+          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35"
           onClick={() => setIsPreviewOpen(false)}
         >
           <div
-            className="relative w-full h-full flex flex-col items-center justify-center"
+            className="relative z-10 w-full h-full flex flex-col items-center justify-center"
             style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             onClick={(e) => e.stopPropagation()}
           >

@@ -71,7 +71,7 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
   return (
     <>
       <style>{KEYFRAMES}</style>
-      <div className="fixed inset-0 z-[60]" />
+      <div className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35" />
 
       <div className="absolute z-[65] md:bottom-8 bottom-[6vh] left-1/2 -translate-x-1/2 md:-translate-x-0 sm:translate-y-0 w-full md:left-1/4 flex flex-col items-center px-4 pointer-events-none">
 

@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
@@ -336,17 +337,8 @@ function SignUpModalContent({ isOpen, onClose }) {
     /* ── Fullscreen backdrop overlay ── */
     <div
       className="fixed inset-0 z-[50] md:p-5 md:animate-fade-in flex items-center justify-center"
-      onClick={handleClose}
     >
-      {/* ── Background image / colour layer ── */}
-      <div
-        className="absolute inset-0 bg-[#02004A] -z-50 pointer-events-none"
-        style={{
-          backgroundImage: "url(/assets/mb.jpg)",
-          backgroundRepeat: "repeat",
-          backgroundSize: "cover",
-        }}
-      />
+      <OverlayBackdrop onClick={handleClose} />
 
       {/* ── Modal card ── */}
       <div

@@ -1,5 +1,6 @@
 'use client';
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useState, useEffect, useCallback } from 'react';
 import { IoSearchOutline } from 'react-icons/io5';
 import { IoMdArrowBack } from "react-icons/io";
@@ -149,9 +150,9 @@ export default function LocationModal({ isOpen, onClose, onStartBeaming }) {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center md:p-6 "
-      onClick={onClose}
+      className="fixed inset-0 z-[110] flex items-center justify-center md:p-6"
     >
+      <OverlayBackdrop onClick={onClose} />
       <div
         className="relative z-10 w-full max-w-[1000px] h-dvh max-h-dvh md:h-auto md:max-h-[85vh] md:border-2 md:border-white/30 md:rounded-[40px]  md:p-4 p-2 animate-in fade-in zoom-in duration-300 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}

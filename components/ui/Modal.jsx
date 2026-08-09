@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useEffect } from "react";
 
 export default function Modal({
@@ -35,11 +36,12 @@ export default function Modal({
           ? "flex items-end justify-center"
           : "flex items-center justify-center"
       }`}
-      onClick={onClose}
     >
+      <OverlayBackdrop onClick={onClose} />
       <div
         className={`
     relative overflow-y-auto overscroll-contain animate-slide-up z-12
+    bg-[#02004A]/80 backdrop-blur-xl
     
     /* MOBILE */
 
@@ -62,6 +64,9 @@ export default function Modal({
     ${className}
   `}
         style={{
+          backgroundImage: "url(/assets/mb.jpg)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "cover",
           maxWidth: isBottomSheet ? "100%" : maxWidth,
           maxHeight,
           ...customPositionStyles,
@@ -70,14 +75,6 @@ export default function Modal({
       >
         {children}
       </div>
-      <div
-        className="absolute inset-0 bg-[#02004A] -z-50 pointer-events-none"
-        style={{
-          backgroundImage: "url(/assets/mb.jpg)",
-          backgroundRepeat: "repeat",
-          backgroundSize: "cover",
-        }}
-      ></div>
     </div>
   );
 }

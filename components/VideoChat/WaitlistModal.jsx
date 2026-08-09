@@ -1,5 +1,6 @@
 'use client';
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import FaceCard from '../Home/FaceCard';
 
 export default function WaitlistModal({
@@ -16,11 +17,9 @@ export default function WaitlistModal({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-[55] flex items-center justify-center p-4" onClick={onClose}>
-
-
-
-      <div className="relative overflow-hidden w-full md:h-[50vh] h-[40vh] max-w-2xl bg-gradient-to-b from-[#7015cc]/55 via-[#5e10b8]/52 to-[#4b0e9d]/50 border border-white/20 rounded-[2.2rem] px-5 py-6 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="absolute inset-0 z-[55] flex items-center justify-center p-4">
+      <OverlayBackdrop onClick={onClose} />
+      <div className="relative z-10 overflow-hidden w-full md:h-[50vh] h-[40vh] max-w-2xl bg-gradient-to-b from-[#7015cc]/55 via-[#5e10b8]/52 to-[#4b0e9d]/50 border border-white/20 rounded-[2.2rem] px-5 py-6 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
 
         <div
           className="absolute inset-0 bg-[#02004A] -z-50 pointer-events-none"

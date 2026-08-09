@@ -1,5 +1,6 @@
 'use client';
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useState } from 'react';
 import clsx from 'clsx';
 import ReportUserModal from '@/components/modals/ReportUserModal';
@@ -22,13 +23,10 @@ export default function GroupMembersModal({
   return (
     <div
       className="absolute inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in"
-      onClick={onClose}
     >
-      {/* Semi-transparent backdrop overlay */}
-
-
+      <OverlayBackdrop onClick={onClose} />
       <div
-        className="relative border border-white/10 rounded-[1.5rem] w-full max-w-sm overflow-hidden  animate-in zoom-in-95 duration-200 "
+        className="relative z-10 border border-white/10 rounded-[1.5rem] w-full max-w-sm overflow-hidden  animate-in zoom-in-95 duration-200 "
         onClick={(e) => e.stopPropagation()}
       >
 

@@ -523,23 +523,27 @@ const FaceCard4 = ({
                   </div>
                 </div>
 
-                {/* Zodiac */}
-                <div className={clsx('flex', 'w-[75px]', 'shrink-0', 'flex-col', 'items-center', 'rounded-[15.2px]', 'border', 'border-white/45', 'px-2', 'py-2', 'shadow-inner')}>
+                {/* Zodiac — Figma 10945:43264: 75×63, icon 30, Outfit Regular 10px */}
+                <div className={clsx('flex', 'h-[63px]', 'w-[75px]', 'shrink-0', 'flex-col', 'items-center', 'justify-center', 'gap-0.5', 'rounded-[18px]', 'border', 'border-white/30', 'p-2', 'shadow-inner', 'overflow-hidden')}>
                   {user?.zodiac?.imageUrl ? (
-                    <img
-                      src={user.zodiac.imageUrl}
-                      alt={user.zodiac.name || "Zodiac"}
-                      className={clsx('h-8', 'w-10', 'object-contain')}
-                    />
+                    <span className={clsx('relative', 'block', 'size-[30px]', 'shrink-0', 'overflow-hidden')}>
+                      <img
+                        src={user.zodiac.imageUrl}
+                        alt={user.zodiac.name || "Zodiac"}
+                        className={clsx('absolute', 'inset-0', 'size-full', 'object-contain')}
+                      />
+                    </span>
                   ) : (
-                    <div className={clsx('flex', 'h-10', 'w-10', 'items-center', 'justify-center')}>
-                      <span className={clsx('text-[20px]', 'leading-none', 'text-white/30')}>
+                    <div className={clsx('flex', 'size-[30px]', 'shrink-0', 'items-center', 'justify-center')}>
+                      <span className={clsx('text-[18px]', 'leading-none', 'text-white/30')}>
                         +
                       </span>
                     </div>
                   )}
-                  <span className={clsx('mt-1', 'w-full', 'break-words', 'text-center', 'text-[7px]', 'font-semibold', 'uppercase', 'leading-tight', 'tracking-wide', 'text-white/75')}>
-                    {user?.zodiac?.name}
+                  <span className={clsx('w-full', 'truncate', 'text-center', 'font-outfit', 'text-[10px]', 'font-normal', 'leading-normal', 'text-white', 'normal-case')}>
+                    {(user?.zodiac?.name || '')
+                      .toLowerCase()
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
                   </span>
                 </div>
 

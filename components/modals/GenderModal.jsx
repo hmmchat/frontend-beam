@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useState, useEffect } from "react";
 import Button from "../ui/Button";
 import { API, apiRequest } from "@/lib/api";
@@ -15,6 +16,9 @@ const defaultFilters = [
   { gender: "FEMALE", label: "Female", cost: FEMALE_COST },
   { gender: "NON_BINARY", label: "Non-binary", cost: NON_BINARY_COST }
 ];
+
+/** Paid gender filters are temporarily unavailable — only "All" is selectable. */
+const GENDER_FILTERS_COMING_SOON = true;
 
 export default function GenderModal({ isOpen, onClose, userCoins: externalUserCoins, onCoinsUpdated, onStartBeaming }) {
   useBackToClose(isOpen, onClose);
@@ -96,6 +100,13 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         setFilters(fallbackFilters);
       }
 
+      if (GENDER_FILTERS_COMING_SOON) {
+        setActivePack(null);
+        setSelectedGender("ALL");
+        setInitialGender("ALL");
+        return;
+      }
+
       const currentPreference = data?.currentPreference;
       if (currentPreference?.genders?.length > 0 && currentPreference.screensRemaining > 0) {
         const packGender = currentPreference.genders[0];
@@ -126,9 +137,14 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
       ];
       setFilters(fallbackFilters);
       setActivePack(null);
-      const savedPreference = localStorage.getItem("genderPreference") || "ALL";
-      setSelectedGender(savedPreference);
-      setInitialGender(savedPreference);
+      if (GENDER_FILTERS_COMING_SOON) {
+        setSelectedGender("ALL");
+        setInitialGender("ALL");
+      } else {
+        const savedPreference = localStorage.getItem("genderPreference") || "ALL";
+        setSelectedGender(savedPreference);
+        setInitialGender(savedPreference);
+      }
     }
   };
 
@@ -136,6 +152,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
 
   const isGenderDisabled = (filter) => {
     if (filter.gender === "ALL") return false;
+    if (GENDER_FILTERS_COMING_SOON) return true;
     if (hasRemainingPackViews) return false;
     return userCoins < filter.cost;
   };
@@ -149,23 +166,24 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
   const handleApply = async () => {
     setLoading(true);
     setErrorMessage("");
+    const genderToApply = GENDER_FILTERS_COMING_SOON ? "ALL" : selectedGender;
     try {
       await apiRequest(API.DISCOVERY.APPLY_GENDER_FILTER, {
         method: "POST",
         body: JSON.stringify({
-          genders: selectedGender === "ALL" ? ["ALL"] : [selectedGender],
+          genders: genderToApply === "ALL" ? ["ALL"] : [genderToApply],
         }),
       });
 
-      if (selectedGender !== initialGender && !(hasRemainingPackViews && selectedGender !== "ALL")) {
-        const targetFilter = filters.find(f => f.gender === selectedGender);
+      if (genderToApply !== initialGender && !(hasRemainingPackViews && genderToApply !== "ALL")) {
+        const targetFilter = filters.find(f => f.gender === genderToApply);
         const cost = targetFilter ? targetFilter.cost : 0;
         if (cost > 0 && onCoinsUpdated) {
           onCoinsUpdated(cost);
         }
       }
 
-      localStorage.setItem("genderPreference", selectedGender);
+      localStorage.setItem("genderPreference", genderToApply);
       onClose();
       // Trigger discovery flow after applying filter
       if (onStartBeaming) onStartBeaming();
@@ -181,9 +199,9 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6 border border-white/30"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6"
     >
+      <OverlayBackdrop onClick={onClose} />
       <div
         className="relative z-10 w-full max-h-[85dvh] h-auto mt-auto md:my-auto max-w-[700px] rounded-t-[36px] md:rounded-[36px] bg-purple-950/40 backdrop-blur-xl p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] animate-in fade-in zoom-in duration-300 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -200,7 +218,7 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
         <div className="relative font-[family-name:var(--font-otomanopee)] flex flex-col justify-center p-2 max-w-[650px] mx-auto ">
           <div className="relative z-10 md:px-8 py-10 border-2 border-white/30 rounded-[36px] items-center justify-center ">
             <div className="md:max-w-[340px] w-full mx-auto px-3 md:px-0">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
 
                   <h2 className="text-lg ml-2 sm:text-xl font-bold text-white tracking-wide">
@@ -211,6 +229,19 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                 {/* Coins display */}
 
               </div>
+
+              {GENDER_FILTERS_COMING_SOON && (
+                <div className="mb-5 ml-2 flex items-start gap-2.5 pr-2">
+                  <img
+                    src="/assets/Vector.svg"
+                    alt=""
+                    className="mt-0.5 h-4 w-4 shrink-0 opacity-90"
+                  />
+                  <p className="text-left text-[12px] leading-snug text-white/75 font-outfit">
+                    This feature will be coming up soon.
+                  </p>
+                </div>
+              )}
 
               {/* Cards Grid */}
               {errorMessage && (
@@ -265,16 +296,18 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                         <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
                           {hasPackViews ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
                         </div>
-                        <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
-                          {!hasPackViews && (
-                            <img
-                              src="/assets/Coin-token.svg"
-                              alt=""
-                              className="md:w-4 md:h-4 w-5 h-5"
-                            />
-                          )}
-                          <span className="font-bold">{getGenderCostLabel(filter)}</span>
-                        </div>
+                        {!GENDER_FILTERS_COMING_SOON && (
+                          <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
+                            {!hasPackViews && (
+                              <img
+                                src="/assets/Coin-token.svg"
+                                alt=""
+                                className="md:w-4 md:h-4 w-5 h-5"
+                              />
+                            )}
+                            <span className="font-bold">{getGenderCostLabel(filter)}</span>
+                          </div>
+                        )}
                       </button>
                     );
                   })}

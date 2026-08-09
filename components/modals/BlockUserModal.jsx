@@ -1,5 +1,6 @@
 'use client';
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import React, { useState } from 'react';
 import clsx from 'clsx';
 
@@ -21,11 +22,11 @@ export default function BlockUserModal({
         'pointer-events-auto z-50 flex items-center justify-center p-6 font-otomanopee',
         isAbsolute ? 'absolute inset-0 top-14 md:top-0' : 'absolute inset-0'
       )}
-      onClick={() => !isBlocking && onClose()}
     >
+      <OverlayBackdrop onClick={() => !isBlocking && onClose()} />
       <div
         className={clsx(
-          'w-full max-w-[320px] space-y-1 animate-in fade-in zoom-in duration-300'
+          'relative z-10 w-full max-w-[320px] space-y-1 animate-in fade-in zoom-in duration-300'
         )}
         onClick={(e) => e.stopPropagation()}
       >

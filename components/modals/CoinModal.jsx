@@ -1,3 +1,4 @@
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useState, useEffect, useCallback } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
@@ -250,10 +251,10 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
   return (
     <div
       className="fixed inset-0 z-[150] flex items-center justify-center p-0 md:p-6"
-      onClick={checkoutBusy ? undefined : onClose}
     >
+      <OverlayBackdrop onClick={checkoutBusy ? undefined : onClose} />
       <div
-        className="relative w-full h-dvh max-h-dvh md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
+        className="relative z-10 w-full h-dvh max-h-dvh md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div

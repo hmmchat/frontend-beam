@@ -159,7 +159,7 @@ export default function DareOverlay({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35" onClick={onClose} />
 
       {/* Overlay Container */}
       <div

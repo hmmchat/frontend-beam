@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 
@@ -40,12 +41,12 @@ export default function GiftSuccessPopup({ isOpen, onClose, gift, recipientName 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <OverlayBackdrop
+        onClick={handleClose}
         className={clsx(
-          "absolute inset-0  transition-opacity duration-300",
+          "transition-opacity duration-300",
           animateIn ? "opacity-100" : "opacity-0"
         )}
-        onClick={handleClose}
       />
 
       {/* Modal Container */}

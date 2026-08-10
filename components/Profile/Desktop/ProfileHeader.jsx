@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 const FACECARD_EDITOR_FROM_PROFILE = "/facecard?view=editor&from=profile";
 
@@ -28,7 +29,7 @@ export default function ProfileHeader({
       </button>
 
 
-      <img src="/logo.gif" alt="beam" className="h-12 w-28 object-contain" />
+      <BeamColourLogo alt="beam" className="w-[140px]" />
 
       <div className="flex items-center gap-1">
         {icons.map((src, i) => {

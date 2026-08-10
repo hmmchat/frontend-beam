@@ -1,8 +1,9 @@
 "use client";
 
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
+
 /**
  * Animated BEAM logo bubble; optional MOD caption under the mark.
- * Logo uses object-contain so the full wordmark fits inside the circle.
  */
 export default function SystemAvatar({ line, size = 48, className = "" }) {
   const px = typeof size === "number" ? `${size}px` : size;
@@ -15,13 +16,12 @@ export default function SystemAvatar({ line, size = 48, className = "" }) {
       title={isMod ? "BEAM MOD" : "BEAM"}
     >
       <div className="absolute inset-0 overflow-hidden rounded-full border border-yellow-400/50 bg-black">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.gif"
-          alt={isMod ? "BEAM MOD" : "BEAM"}
-          className="absolute inset-0 h-full w-full object-contain object-center p-[12%]"
-          draggable={false}
-        />
+        <div className="absolute inset-0 flex items-center justify-center p-[14%]">
+          <BeamColourLogo
+            alt={isMod ? "BEAM MOD" : "BEAM"}
+            className="w-full"
+          />
+        </div>
       </div>
       {isMod && (
         <span

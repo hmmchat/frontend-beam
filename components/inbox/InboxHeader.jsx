@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { FaArrowLeftLong } from "react-icons/fa6";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function InboxHeader({
   walletCoins,
@@ -38,7 +39,7 @@ export default function InboxHeader({
           {walletCoins != null && <span>{walletCoins} coins</span>}
           <span className="text-white/50 font-normal">1st msg ~{firstMessageCost} coins</span>
         </div> */}
-        <img src="/logo.gif" alt="Logo" className="w-24 md:w-32" />
+        <BeamColourLogo alt="Logo" className="w-24 md:w-32" />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import QRCodeStyling from "qr-code-styling";
 import { API, apiRequest } from "@/lib/api";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 /**
  * QR matrix density is driven by encoded byte length. Strip non-essential query
@@ -128,11 +129,9 @@ function MinimalStyledReferralQr({ encodeData }) {
         ref={hostRef}
         className="h-full w-full [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
       />
-      <img
-        src="/logo.gif"
+      <BeamColourLogo
         alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[24px] w-auto -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[94px] -translate-x-1/2 -translate-y-1/2"
       />
     </div>
   );

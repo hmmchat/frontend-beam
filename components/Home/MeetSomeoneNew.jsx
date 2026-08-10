@@ -249,12 +249,17 @@ export default function MeetSomeoneNew({
     ">
 
 
+      {/* Decorative frame + Solo/Squad — hide while overview is open (match MobileHome) */}
       <div
-        className="absolute inset-0 z-40 mt-3  flex items-center justify-center pointer-events-none "
+        className={clsx(
+          'absolute inset-0 z-40 mt-3 flex items-center justify-center pointer-events-none transition-opacity duration-300',
+          isInfoOpen && 'opacity-0 pointer-events-none',
+        )}
         style={{ bottom: navbarHeight }}
+        aria-hidden={isInfoOpen || undefined}
       >
         <div className="relative w-[95%] h-full max-w-md">
-          {mode !== 'squad' && (
+          {mode !== 'squad' && !isInfoOpen && (
             <svg
               viewBox="0 0 380 681"
               className="w-full h-full"
@@ -273,7 +278,7 @@ export default function MeetSomeoneNew({
 
 
           {/* {only sqad tab svg border stuff} */}
-          {mode === 'squad' && (
+          {mode === 'squad' && !isInfoOpen && (
             <svg
               viewBox="0 0 380 681"
               className="w-full h-full"
@@ -292,62 +297,73 @@ export default function MeetSomeoneNew({
 
 
           {/* TOGGLE ROW */}
-          <div className="absolute top-[49.35%] left-1/2 -translate-x-1/2 w-full flex items-center justify-center -translate-y-1/2 pointer-events-none z-50">
-            {/* LEFT BUTTON */}
-            {mode !== 'squad' && (
-              <div className="absolute left-3 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
-                <Link href="/beam-tv">
-                  <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
-                    <img src="/tvfame.png" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')} />
-                    <img src="/beamtv.png" className={clsx('absolute', 'inset-0', 'm-auto', 'w-[24px]', 'h-[24px]', 'object-contain', 'ml-1', 'mt-3')} />
-                  </button>
-                </Link>
-              </div>
-            )}
+          {!isInfoOpen && (
+            <div className="absolute top-[49.35%] left-1/2 -translate-x-1/2 w-full flex items-center justify-center -translate-y-1/2 pointer-events-none z-50">
+              {/* LEFT BUTTON */}
+              {mode !== 'squad' && (
+                <div className="absolute left-3 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
+                  <Link href="/beam-tv">
+                    <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
+                      <img src="/tvfame.png" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')} />
+                      <img src="/beamtv.png" className={clsx('absolute', 'inset-0', 'm-auto', 'w-[24px]', 'h-[24px]', 'object-contain', 'ml-1', 'mt-3')} />
+                    </button>
+                  </Link>
+                </div>
+              )}
 
-            {/* CENTER TOGGLE */}
-            <div className="flex border border-white/50 rounded-full w-[40vw] max-w-[180px] min-h-11 h-11 relative shadow-inner pointer-events-auto z-50 cursor-pointer">
-              <div
-                className={clsx(
-                  "absolute top-0.5 bottom-0.5 w-[calc(50%-4px)] border bg-black/10  border-white/60 rounded-full transition-all duration-500",
-                  mode === 'solo' ? "left-0.5" : "left-[calc(50%+2px)]"
-                )}
-              />
-              <button
-                onClick={() => setMode('solo')}
-                className={clsx(
-                  "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
-                  mode === 'solo' ? "text-white scale-105" : "text-white/70"
-                )}
-              >
-                Solo
-              </button>
-              <button
-                onClick={() => setMode('squad')}
-                className={clsx(
-                  "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
-                  mode === 'squad' ? "text-white scale-105" : "text-white/70"
-                )}
-              >
-                Squad
-              </button>
+              {/* CENTER TOGGLE */}
+              <div className="flex border border-white/50 rounded-full w-[40vw] max-w-[180px] min-h-11 h-11 relative shadow-inner pointer-events-auto z-50 cursor-pointer">
+                <div
+                  className={clsx(
+                    "absolute top-0.5 bottom-0.5 w-[calc(50%-4px)] border bg-black/10  border-white/60 rounded-full transition-all duration-500",
+                    mode === 'solo' ? "left-0.5" : "left-[calc(50%+2px)]"
+                  )}
+                />
+                <button
+                  onClick={() => setMode('solo')}
+                  className={clsx(
+                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
+                    mode === 'solo' ? "text-white scale-105" : "text-white/70"
+                  )}
+                >
+                  Solo
+                </button>
+                <button
+                  onClick={() => setMode('squad')}
+                  className={clsx(
+                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
+                    mode === 'squad' ? "text-white scale-105" : "text-white/70"
+                  )}
+                >
+                  Squad
+                </button>
+              </div>
+
+              {/* RIGHT BUTTON */}
+              {mode !== 'squad' && (
+                <div className="absolute right-3 w-12 h-12 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
+                  <Link href="/cards">
+                    <button type="button" className={clsx('h-12', 'w-12', 'rounded-full', 'p-2')}>
+                      <img src="/hugeiconscards.svg" alt="cards" />
+                    </button>
+                  </Link>
+                </div>
+              )}
             </div>
-
-            {/* RIGHT BUTTON */}
-            {mode !== 'squad' && (
-              <div className="absolute right-3 w-12 h-12 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
-                <Link href="/cards">
-                  <button type="button" className={clsx('h-12', 'w-12', 'rounded-full', 'p-2')}>
-                    <img src="/hugeiconscards.svg" alt="cards" />
-                  </button>
-                </Link>
-              </div>
-            )}
-          </div>
+          )}
 
 
         </div>
       </div>
+
+      {/* Info overview — root-level overlay so it fills the card like MobileHome / lander */}
+      {isInfoOpen && (
+        <AppOverviewPanel
+          className="absolute z-[60] left-1/2 -translate-x-1/2 w-[95%] max-w-md top-20"
+          style={{ bottom: Math.max(navbarHeight + 12, 88) }}
+          onClose={() => setIsInfoOpen(false)}
+        />
+      )}
       {/* 🔥 FULL SCREEN BACKGROUND */}
       <div
         className="absolute inset-0 opacity-70 mix-blend-hard-light"
@@ -388,8 +404,8 @@ export default function MeetSomeoneNew({
 
 
 
-          {/* RIGHT BUTTONS */}
-          <div className='absolute right-8 z-50 flex gap-2 items-center'>
+          {/* RIGHT BUTTONS — above overview panel */}
+          <div className='absolute right-8 z-[70] flex gap-2 items-center'>
 
             <AppOverviewToggle
               isOpen={isInfoOpen}
@@ -398,11 +414,13 @@ export default function MeetSomeoneNew({
               iconClassName="h-[24px] w-[24px]"
             />
 
-            <button
-              onClick={toggleFullscreen}
-              className='group h-14 w-14 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] items-center justify-center flex'>
-              <img src="/icon1.svg" alt="Prompt" className={clsx('h-[24px]', 'w-[24px]', 'transition-transform', 'duration-300', 'group-hover:scale-110')} />
-            </button>
+            {!isInfoOpen && (
+              <button
+                onClick={toggleFullscreen}
+                className='group h-14 w-14 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] items-center justify-center flex'>
+                <img src="/icon1.svg" alt="Prompt" className={clsx('h-[24px]', 'w-[24px]', 'transition-transform', 'duration-300', 'group-hover:scale-110')} />
+              </button>
+            )}
 
 
 
@@ -415,13 +433,6 @@ export default function MeetSomeoneNew({
 
         {/* Main Content Area */}
         <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-1">
-
-          {isInfoOpen && (
-            <AppOverviewPanel
-              className="absolute top-4 z-50 inset-x-0 bottom-4"
-              onClose={() => setIsInfoOpen(false)}
-            />
-          )}
 
           <MeetLogo
             activeCount={activeUsers}
@@ -635,7 +646,7 @@ export default function MeetSomeoneNew({
 
 
 
-      {mode === 'squad' ? (
+      {mode === 'squad' && !isInfoOpen ? (
         <div className={`flex flex-col items-center w-full absolute ${canSquadMeet ? 'bottom-[15vh]' : 'bottom-[14vh]'}`}>
 
           {squadProductMessage && (

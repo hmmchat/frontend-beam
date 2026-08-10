@@ -91,7 +91,7 @@ async function renderWallImage(node) {
     header.style.justifyContent = "center";
     header.style.marginBottom = "24px";
     const logo = document.createElement("img");
-    logo.src = "/logo.gif";
+    logo.src = "/logo.png";
     logo.alt = "Beam";
     logo.style.width = "155px";
     logo.style.height = "55px";

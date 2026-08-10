@@ -11,6 +11,7 @@ import clsx from 'clsx';
 
 import { IoIosInformationCircleOutline, IoMdClose } from "react-icons/io";
 import MeetNowButton from "@/components/ui/MeetNowButton";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function Home(
 
@@ -82,8 +83,8 @@ export default function Home(
                 <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl pointer-events-none" />
 
                 <div className="flex flex-col items-center justify-center shrink-0 mb-4">
-                  <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="w-[129px]" />
-                  <p className="text-white text-[12px] font-[family-name:var(--font-otomanopee)] text-center">
+                  <BeamColourLogo alt="beam" className="w-[129px] mx-auto" />
+                  <p className="text-white text-[12px] font-[family-name:var(--font-otomanopee)] text-center -mt-3">
                     Meet Someone here
                   </p>
                 </div>

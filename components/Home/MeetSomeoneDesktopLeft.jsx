@@ -7,6 +7,7 @@ import CityBoxesPanel from './CityBoxesPanel';
 import EmptyOrbitPanel from './EmptyOrbitPanel';
 import DiscoveryMemeLoader from './DiscoveryMemeLoader';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function MeetSomeoneDesktopLeft({
   isSearching,
@@ -260,12 +261,14 @@ export default function MeetSomeoneDesktopLeft({
             )}
           >
             <div className={clsx('z-10', 'text-center', 'max-w-lg', 'p-2')}>
-              <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className={clsx('md:w-60', 'mx-auto', 'w-44')} />
+              <BeamColourLogo alt="beam" className={clsx('md:w-[230px]', 'mx-auto', 'w-44')} />
               <p
                 className={clsx(
                   'text-white',
                   'text-[21px]',
-                  '-mt-2',
+                  'md:text-[24px]',
+                  '-mt-3',
+                  'md:-mt-6',
                   'font-[family-name:var(--font-otomanopee)]',
                 )}
               >
@@ -275,7 +278,8 @@ export default function MeetSomeoneDesktopLeft({
                 className={clsx(
                   'inline-flex',
                   'gap-1',
-                  'mt-5',
+                  'mt-4',
+                  'md:mt-6',
                   'font-[family-name:var(--font-otomanopee)]',
                 )}
               >

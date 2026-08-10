@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { IoIosInformationCircleOutline, IoMdClose } from 'react-icons/io';
 import clsx from 'clsx';
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 const TOGGLE_ATTR = 'data-app-overview-toggle';
 
@@ -44,6 +45,7 @@ export function AppOverviewToggle({
 
 export function AppOverviewPanel({
   className,
+  style,
   contentMaxWidthClass = 'max-w-[287px]',
   onClose,
 }) {
@@ -74,6 +76,7 @@ export function AppOverviewPanel({
   return (
     <div
       ref={panelRef}
+      style={style}
       className={clsx(
         'z-50 bg-black/10 backdrop-blur-xs flex flex-col items-center pt-[70px] pb-6 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2.25rem] border border-[1px] border-white/70',
         className,
@@ -84,14 +87,8 @@ export function AppOverviewPanel({
       <div className="absolute right-0 top-[26%] h-[158px] w-[13px] border-[1px] border-white/70 border-r-0 rounded-l-xl pointer-events-none" />
 
       <div className="flex flex-col items-center justify-center shrink-0 mb-4">
-        <img
-          src="/logo.gif"
-          alt="beam"
-          fetchPriority="high"
-          decoding="async"
-          className="w-[129px]"
-        />
-        <p className="text-white text-[12px] font-[family-name:var(--font-otomanopee)] text-center">
+        <BeamColourLogo alt="beam" className="w-[129px] mx-auto" />
+        <p className="text-white text-[12px] font-[family-name:var(--font-otomanopee)] text-center -mt-3">
           Meet Someone here
         </p>
       </div>

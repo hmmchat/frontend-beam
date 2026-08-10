@@ -5,6 +5,7 @@ import { FaBan, FaUserMinus } from "react-icons/fa6";
 import { TiUserAdd } from "react-icons/ti";
 import clsx from 'clsx';
 import SystemAvatar from "./SystemAvatar";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 import {
   getSystemLine,
   isSystemNotificationThread,
@@ -274,7 +275,7 @@ export default function ThreadHeader({
         )}
         {isSystem && (
           <div className="pr-1 flex items-center">
-            <img src="/logo.gif" alt="Logo" className="w-20 md:hidden" />
+            <BeamColourLogo alt="Logo" className="w-20 md:hidden" />
           </div>
         )}
       </div>

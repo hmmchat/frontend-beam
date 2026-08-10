@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function MemeLoader({ loadingMeme, showFrame = true }) {
   return (
@@ -44,10 +45,9 @@ export default function MemeLoader({ loadingMeme, showFrame = true }) {
         )}
       >
         {/* Beam Logo */}
-        <img
-          src="/logo.gif"
+        <BeamColourLogo
           alt="Beam Logo"
-          className="h-8 md:h-16 md:w-40 md:mb-2 object-contain"
+          className="w-[100px] md:w-[200px] mb-0 md:mb-2"
         />
 
         {/* Meme API text */}

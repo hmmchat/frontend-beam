@@ -11,6 +11,7 @@ import ProfileGuard from "@/components/auth/ProfileGuard";
 import HistorySkeleton from "@/components/history/HistorySkeleton";
 import { MdOutlineLocationOn } from "react-icons/md";
 import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function History() {
   return (
@@ -178,7 +179,7 @@ function HistoryContent() {
           </div>
 
           <div>
-            <img src="/logo.gif" alt="Logo" className="w-24 md:w-32" />
+            <BeamColourLogo alt="Logo" className="w-24 md:w-32" />
           </div>
         </div>
 

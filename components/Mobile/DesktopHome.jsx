@@ -11,6 +11,7 @@ import { API, apiRequest } from "@/lib/api";
 import Link from "next/link";
 import MeetNowButton from "@/components/ui/MeetNowButton";
 import clsx from 'clsx';
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 export default function DesktopHome() {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isGenderModalOpen, setIsGenderModalOpen] = useState(false);
@@ -57,13 +58,13 @@ export default function DesktopHome() {
 
           <div className={clsx('rounded-[60px]', 'border-2', 'border-white/30', 'z-10', 'w-full', 'h-[96vh]', 'justify-center', 'items-center', 'flex')}>
             <div className={clsx('z-10', 'text-center', 'max-w-lg')}>
-              <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className={clsx('md:w-[230px]', 'mx-auto', 'w-44', 'sm:w-5')} />
+              <BeamColourLogo alt="beam" className={clsx('md:w-[230px]', 'mx-auto', 'w-44')} />
 
-              <p className={clsx('text-white', 'text-[20px]', 'md:text-[20px]', 'font-otomanopee', '-mt-2')}>
+              <p className={clsx('text-white', 'text-[20px]', 'md:text-[24px]', 'font-otomanopee', '-mt-3', 'md:-mt-6')}>
                 Meet someone here
               </p>
 
-              <div className={clsx('inline-flex', 'gap-2', 'mt-3')}>
+              <div className={clsx('inline-flex', 'gap-2', 'mt-4', 'md:mt-6')}>
                 <div
                   onClick={() => setIsVideoOn(!isVideoOn)}
                   className={clsx('flex', 'items-center', 'gap-2', 'mt-2', 'cursor-pointer', 'select-none')}
@@ -106,8 +107,8 @@ export default function DesktopHome() {
               <div className={clsx('absolute', 'right-0', 'top-[26%]', 'h-[158px]', 'w-[13px]', 'border-[1px]', 'border-white/70', 'border-r-0', 'rounded-l-xl', 'pointer-events-none')} />
 
               <div className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'shrink-0', 'mb-4')}>
-                <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className={clsx('w-[129px]')} />
-                <p className={clsx('text-white', 'text-[12px]', 'font-[family-name:var(--font-otomanopee)]', 'text-center')}>
+                <BeamColourLogo alt="beam" className="w-[129px] mx-auto" />
+                <p className={clsx('text-white', 'text-[12px]', 'font-[family-name:var(--font-otomanopee)]', 'text-center', '-mt-3')}>
                   Meet Someone here
                 </p>
               </div>

@@ -6,9 +6,10 @@
   position: relative;
   display: block;
   flex-shrink: 0;
-  width: auto;
+  /* width comes from Tailwind classes — do not set width:auto here */
+  max-width: 100%;
   aspect-ratio: 794.585 / 203.876;
-  overflow: visible;
+  overflow: hidden;
   line-height: 0;
   box-sizing: border-box;
 }

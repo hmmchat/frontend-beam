@@ -18,6 +18,7 @@ import {
   setPostOnboardingRedirectPath,
 } from "@/lib/squad-invite-link";
 import useBackToClose from "@/lib/use-back-to-close";
+import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 function SignUpModalContent({ isOpen, onClose }) {
   useBackToClose(isOpen, onClose);
@@ -357,8 +358,8 @@ function SignUpModalContent({ isOpen, onClose }) {
           <div className="flex flex-col flex-1 text-center md:block">
             {/* Header */}
             <div className="pt-8 md:pt-12 px-4 flex flex-col items-center text-center md:mb-10">
-              <img src="/logo.gif" alt="beam" className="md:w-56 w-44 mx-auto" />
-              <p className="text-white md:text-[20px] text-[16px] font-medium -mt-1">
+              <BeamColourLogo alt="beam" className="md:w-56 w-44 mx-auto" />
+              <p className="text-white md:text-[20px] text-[16px] font-medium -mt-3 md:-mt-5">
                 Meet someone here <br /> <span className="hidden md:block">immediately after Signing in</span>
               </p>
             </div>

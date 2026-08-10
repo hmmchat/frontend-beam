@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import FilterButtons from '@/components/ui/FilterButtons';
 import { IoTimeOutline, IoLogoSnapchat, IoLogoInstagram, IoLogoWhatsapp, IoCopyOutline } from 'react-icons/io5';
 import { API, apiRequest } from '@/lib/api';
+import BeamColourLogo from '@/components/ui/BeamColourLogo';
 
 export default function MeetSomeone() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -74,7 +75,7 @@ export default function MeetSomeone() {
                     </div>
 
                     <div className="z-10 text-center max-w-lg">
-                        <img src="/logo.gif" alt="beam" fetchPriority="high" decoding="async" className="md:w-64 mx-auto w-44" />
+                        <BeamColourLogo alt="beam" className="md:w-64 mx-auto w-44" />
                         <p className="text-white text-2xl mt-4">Meet someone,</p>
                         <p className="text-white text-2xl">Only god knows who</p>
                     </div>

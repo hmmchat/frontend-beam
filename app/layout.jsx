@@ -37,15 +37,6 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="preload"
-          href="/logo.gif"
-          as="image"
-          type="image/gif"
-          fetchPriority="high"
-        />
-      </head>
       <body
         className={`${otomanopeeOne.variable} ${outfit.variable} ${sigmar.variable}`}
       >

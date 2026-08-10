@@ -2433,22 +2433,9 @@ export default function useMeetSomeone() {
           } catch (_) {
             /* keep empty */
           }
-          // Someone appeared elsewhere — hop straight into the top city when there's only one.
-          if (cities.length === 1) {
-            const top = cities[0];
-            enterCityHandoff({
-              type: 'LOCATION',
-              city: top.city,
-              availableCount: top.availableCount,
-              faceCardImageUrl: top.faceCardImageUrl,
-              intent: top.intent,
-              label: top.label,
-              brands: top.brands || [],
-              musicPreference: top.musicPreference || null,
-              isLocationCard: true,
-            });
-            return;
-          }
+          // Do NOT invent LOCATION from available-cities alone. Auto handoff must
+          // come from GET_CARD so the backend can keep it one-sided (visitor hops,
+          // host stays — e.g. Delhi sees Bangalore; Bangalore waits in empty orbit).
           if (cities.length > 1) {
             enterCityBoxes(cities);
           }

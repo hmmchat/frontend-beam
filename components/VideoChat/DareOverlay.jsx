@@ -66,9 +66,9 @@ export default function DareOverlay({
   );
   const isBookmarked = !!matchedSavedDare;
 
-  const ITEMS_PER_PAGE = 4;
+  const ITEMS_PER_PAGE = 8;
   const [giftPageIndex, setGiftPageIndex] = useState(0);
-  const totalPages = Math.ceil(giftItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(giftItems.length / ITEMS_PER_PAGE));
 
   useEffect(() => {
     setGiftPageIndex(0);
@@ -388,8 +388,8 @@ export default function DareOverlay({
                   </div>
 
 
-                  {/* Gift Row */}
-                  <div className="flex md:gap-3 gap-[7px] overflow-hidden justify-start w-full">
+                  {/* Gift grid: 2 rows × 4 columns */}
+                  <div className="grid grid-cols-4 md:gap-3 gap-[7px] w-full">
                     {giftItems.slice(giftPageIndex * ITEMS_PER_PAGE, (giftPageIndex + 1) * ITEMS_PER_PAGE).map((gift) => (
                       <div
                         key={gift.id}
@@ -397,7 +397,7 @@ export default function DareOverlay({
                           onSelectGift(gift.id);
                         }}
                         className={clsx(
-                          "md:min-w-[85px] min-w-[23.3%]  md:rounded-2xl rounded-[11px] md:p-3 py-2 p flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
+                          "md:rounded-2xl rounded-[11px] md:p-3 py-2 px-1 flex flex-col items-center justify-center cursor-pointer border-[1px] border-b-[3px] transition",
                           selectedGiftId === gift.id
                             ? "border-yellow-500 border-2 bg-white/10"
                             : "border-white/60",
@@ -405,7 +405,11 @@ export default function DareOverlay({
                       >
                         <div className="md:text-3xl text-2xl flex items-center justify-center">
                           {gift.imageUrl ? (
-                            <img src={gift.imageUrl} className="w-8 h-9 md:w-10 md:h-10 object-contain" alt={gift.name} />
+                            <img
+                              src={gift.imageUrl}
+                              className="w-8 h-8 md:w-10 md:h-10 object-contain"
+                              alt={gift.name}
+                            />
                           ) : (
                             gift.img
                           )}
@@ -513,7 +517,11 @@ export default function DareOverlay({
                 <div className="w-16 h-16 rounded-full border border-white/30 flex items-center justify-center shrink-0 ">
                   <div className="text-3xl filter drop-shadow-md">
                     {selectedGift?.imageUrl ? (
-                      <img src={selectedGift.imageUrl} className="w-10 h-10 object-contain" alt={selectedGift.name} />
+                      <img
+                        src={selectedGift.imageUrl}
+                        className="w-10 h-10 object-contain"
+                        alt={selectedGift.name}
+                      />
                     ) : (
                       selectedGift?.img || "🎁"
                     )}

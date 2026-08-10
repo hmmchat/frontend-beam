@@ -165,7 +165,11 @@ export default function GiftOverlay({
               >
                 <div className="md:text-4xl text-xl">
                   {gift.imageUrl ? (
-                    <img src={gift.imageUrl} className="w-10 h-10 object-contain" alt={gift.name} />
+                    <img
+                      src={gift.imageUrl}
+                      className="w-10 h-10 object-contain"
+                      alt={gift.name}
+                    />
                   ) : (
                     gift.img
                   )}

@@ -15,6 +15,7 @@ export default function StickersTab({ user, setUser }) {
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedBadgeId, setSelectedBadgeId] = useState(null);
+  const [diamonds, setDiamonds] = useState(0);
 
   const userId = user?.id || user?.userId;
 
@@ -41,6 +42,21 @@ export default function StickersTab({ user, setUser }) {
       }
     };
     loadStickers();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    apiRequest(API.WALLET.GET_BALANCE)
+      .then((res) => {
+        if (!cancelled) setDiamonds(Number(res?.diamonds) || 0);
+      })
+      .catch(() => {
+        if (!cancelled) setDiamonds(0);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   const stickersPerPage = 20;
@@ -115,12 +131,27 @@ export default function StickersTab({ user, setUser }) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden px-2">
-      <div className="flex-shrink-0 mb-6">
-        <p className="text-white font-semibold text-xl">Your Stickers</p>
-        <p className="text-xs text-white/60 mt-1 leading-tight">
-          Apply a sticker next to your profile photo. <br />
-          Stickers expire {stickerExpiryDays} day{stickerExpiryDays === 1 ? "" : "s"} after you receive them
-        </p>
+      <div className="flex-shrink-0 mb-6 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-xl">Your Stickers</p>
+          <p className="text-xs text-white/60 mt-1 leading-tight">
+            Apply a sticker next to your profile photo. <br />
+            Stickers expire {stickerExpiryDays} day{stickerExpiryDays === 1 ? "" : "s"} after you receive them
+          </p>
+        </div>
+        <div
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white"
+          title="Your diamonds"
+        >
+          <Image
+            src="/gift/dimond.png"
+            alt=""
+            width={16}
+            height={14}
+            className="object-contain"
+          />
+          <span>{diamonds}</span>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col items-start justify-start overflow-y-auto pb-8 w-full">
@@ -133,37 +164,31 @@ export default function StickersTab({ user, setUser }) {
             <p className="text-white/60 text-sm">No stickers received yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-5 gap-3 place-items-center w-full">
+          <div className="grid grid-cols-5 gap-x-3 gap-y-4 place-items-center w-full pt-3 px-1">
             {currentBadges.map((badge) => {
               const isSelected = selectedBadgeId === badge.id;
-              const src = badge.imageUrl;
 
               return (
                 <div
                   key={badge.id}
                   onClick={() => handleSelectSticker(badge.id)}
                   title={badge.expiryLabel || badge.giftName || badge.giftId}
-                  className="cursor-pointer transition-all active:scale-95 hover:scale-105"
+                  className="cursor-pointer transition-all active:scale-95"
                 >
                   <div
-                    className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all ${isSelected
-                        ? "border-[#FACC15] scale-110"
-                        : "border-white/50 hover:border-white border-[1px]"
-                      }`}
+                    className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+                      isSelected
+                        ? "border-[3px] border-[#FACC15]"
+                        : "border border-white/50 hover:border-white"
+                    }`}
                   >
-                    {src ? (
-                      <Image
-                        src={src}
-                        alt={badge.giftName || `Sticker`}
-                        width={65}
-                        height={65}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-3xl leading-none" aria-hidden>
-                        {badge.giftEmoji || "🎁"}
-                      </span>
-                    )}
+                    <Image
+                      src={badge.imageUrl}
+                      alt={badge.giftName || "Sticker"}
+                      width={65}
+                      height={65}
+                      className="object-contain"
+                    />
                   </div>
                 </div>
               );

@@ -16,6 +16,7 @@ export default function ProfileMobileStickers({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState(null);
+  const [diamonds, setDiamonds] = useState(0);
 
   const userId = user?.id || user?.userId;
 
@@ -41,6 +42,10 @@ export default function ProfileMobileStickers({
         }
       };
       loadStickers();
+
+      apiRequest(API.WALLET.GET_BALANCE)
+        .then((res) => setDiamonds(Number(res?.diamonds) || 0))
+        .catch(() => setDiamonds(0));
     }
   }, [activeTab, userId]);
 
@@ -130,17 +135,32 @@ export default function ProfileMobileStickers({
           backgroundSize: "cover",
         }}
       >
-        <div className="text-left mb-4">
-          <p className="text-md font-semibold">Your Stickers</p>
-          <p className="text-xs text-white/70 font-outfit mt-1 leading-snug">
-            Apply a sticker next to your profile photo.
-            <br />
-            Stickers expire {stickerExpiryDays} day{stickerExpiryDays === 1 ? "" : "s"} after you receive them
-          </p>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0 text-left">
+            <p className="text-md font-semibold">Your Stickers</p>
+            <p className="text-xs text-white/70 font-outfit mt-1 leading-snug">
+              Apply a sticker next to your profile photo.
+              <br />
+              Stickers expire {stickerExpiryDays} day{stickerExpiryDays === 1 ? "" : "s"} after you receive them
+            </p>
+          </div>
+          <div
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white"
+            title="Your diamonds"
+          >
+            <Image
+              src="/gift/dimond.png"
+              alt=""
+              width={16}
+              height={14}
+              className="object-contain"
+            />
+            <span>{diamonds}</span>
+          </div>
         </div>
 
         <div className=" ">
-          <div className="grid grid-cols-4 gap-5 mb-6 max-h-[30vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-4 gap-x-5 gap-y-6 mb-6 max-h-[30vh] overflow-y-auto pt-2 pr-1">
             {loading ? (
               <p className="col-span-4 text-center text-sm text-white/60 py-8">Loading stickers...</p>
             ) : badges.length === 0 ? (
@@ -156,23 +176,17 @@ export default function ProfileMobileStickers({
                     title={badge.expiryLabel || badge.giftName || badge.giftId}
                     className={`relative flex h-20 w-20 items-center justify-center rounded-full aspect-square cursor-pointer transition-all duration-200 ${
                       isSelected
-                        ? "border-[3px] border-yellow-400 border-b-4"
+                        ? "border-[3px] border-yellow-400"
                         : "border border-white/50"
                     }`}
                   >
-                    {badge.imageUrl ? (
-                      <Image
-                        src={badge.imageUrl}
-                        width={50}
-                        height={50}
-                        alt={badge.giftName || ""}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-3xl leading-none" aria-hidden>
-                        {badge.giftEmoji || "🎁"}
-                      </span>
-                    )}
+                    <Image
+                      src={badge.imageUrl}
+                      width={50}
+                      height={50}
+                      alt={badge.giftName || ""}
+                      className="object-contain"
+                    />
                   </div>
                 );
               })

@@ -339,12 +339,31 @@ export default function MeetSomeoneNew({
                 </button>
               </div>
 
-              {/* RIGHT BUTTON */}
+              {/* RIGHT BUTTON — same pocket fit as beam TV (left) */}
               {mode !== 'squad' && (
-                <div className="absolute right-3 w-12 h-12 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
+                <div className="absolute right-3 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
                   <Link href="/cards">
-                    <button type="button" className={clsx('h-12', 'w-12', 'rounded-full', 'p-2')}>
-                      <img src="/hugeiconscards.svg" alt="cards" />
+                    <button
+                      type="button"
+                      className={clsx(
+                        'relative',
+                        'h-10',
+                        'w-10',
+                        'flex',
+                        'items-center',
+                        'justify-center',
+                        'hover:scale-110',
+                        'active:scale-95',
+                        'transition-all',
+                        'duration-300',
+                      )}
+                    >
+                      {/* Scale glyph to fill the notch like tvfame does on the left */}
+                      <img
+                        src="/hugeiconscards.svg"
+                        alt="cards"
+                        className={clsx('w-[42px]', 'h-[42px]', 'max-w-none', 'object-contain', '-m-[1px]')}
+                      />
                     </button>
                   </Link>
                 </div>

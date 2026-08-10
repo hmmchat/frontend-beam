@@ -185,12 +185,16 @@ function OfflineCardsContent() {
   /**
    * Tinder-style fly-off, then swap card.
    * Exit animation runs in parallel with API work; UI updates only after both finish.
+   * `preDelayMs` keeps the current card visible (e.g. green heart ack) before fly-off.
    */
-  const swipeThen = async (direction, work) => {
+  const swipeThen = async (direction, work, { preDelayMs = 0 } = {}) => {
     if (!card || swiping) return;
     setSwiping(true);
-    setSwipeAnim(direction);
     try {
+      if (preDelayMs > 0) {
+        await new Promise((r) => setTimeout(r, preDelayMs));
+      }
+      setSwipeAnim(direction);
       const [, next] = await Promise.all([
         new Promise((r) => setTimeout(r, SWIPE_MS)),
         work(),
@@ -236,36 +240,48 @@ function OfflineCardsContent() {
     await markOfflineEngaged(card.userId);
   };
 
-  // ── connect (heart) — friend request + engage + swipe right to next ─────
+  // ── connect (heart) — green ack, then friend request + swipe to next ────
+  const HEART_GREEN_MS = 380;
+
   const handleConnect = async () => {
     if (!card || swiping || connectSent || isAlreadyFriend) return;
     const userId = card.userId;
     const token = localStorage.getItem('accessToken');
 
+    // Show green heart immediately (previous behavior), then advance.
+    setConnectSent(true);
     try {
-      await swipeThen('right', async () => {
-        try {
-          await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ toUserId: userId }),
-          });
-        } catch (err) {
-          const errMsg = (err?.message || '').toLowerCase();
-          const isKnownDupe =
-            errMsg.includes('already sent') ||
-            errMsg.includes('already friends') ||
-            errMsg.includes('already friend') ||
-            errMsg.includes('request already') ||
-            errMsg.includes('already pending') ||
-            errMsg.includes('duplicate');
-          if (!isKnownDupe) throw err;
-        }
-        await markOfflineEngaged(userId);
-        return fetchNextAfterRaincheck(userId);
-      });
+      await swipeThen(
+        'right',
+        async () => {
+          try {
+            await apiRequest(API.FRIENDS.SEND_FRIEND_REQUEST, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ toUserId: userId }),
+            });
+          } catch (err) {
+            const errMsg = (err?.message || '').toLowerCase();
+            const isKnownDupe =
+              errMsg.includes('already sent') ||
+              errMsg.includes('already friends') ||
+              errMsg.includes('already friend') ||
+              errMsg.includes('request already') ||
+              errMsg.includes('already pending') ||
+              errMsg.includes('duplicate');
+            if (!isKnownDupe) throw err;
+            if (errMsg.includes('already friends') || errMsg.includes('already friend')) {
+              setIsAlreadyFriend(true);
+            }
+          }
+          await markOfflineEngaged(userId);
+          return fetchNextAfterRaincheck(userId);
+        },
+        { preDelayMs: HEART_GREEN_MS },
+      );
     } catch (err) {
       console.error('[OfflineCards] connect error:', err);
+      setConnectSent(false);
       alert(err?.message || 'Failed to send friend request. Please try again.');
     }
   };
@@ -526,11 +542,11 @@ function OfflineCardsContent() {
                         onClick={handleConnect}
                         disabled={swiping || connectSent || isAlreadyFriend}
                         className={clsx(
-                          "w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-colors",
+                          "w-12 h-12 border border-b-4 rounded-full grid place-items-center transition-all duration-300",
                           isAlreadyFriend
                             ? "border-pink-400/60 bg-pink-500/20 cursor-default"
                             : connectSent
-                              ? "border-green-400/60 bg-green-500/20 cursor-default"
+                              ? "border-green-400/60 bg-green-500/20 cursor-default scale-110"
                               : "border-white/40 hover:bg-white/10 active:scale-95"
                         )}
                         title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
@@ -538,7 +554,7 @@ function OfflineCardsContent() {
                         <img
                           src="/history/heart.svg"
                           alt="heart"
-                          className={clsx("w-6 h-6", (connectSent || isAlreadyFriend) && "opacity-60")}
+                          className={clsx("w-6 h-6 transition-transform duration-300", connectSent && "scale-110", (connectSent || isAlreadyFriend) && "opacity-90")}
                         />
                       </button>
                     </div>
@@ -624,11 +640,11 @@ function OfflineCardsContent() {
                       onClick={handleConnect}
                       disabled={swiping || connectSent || isAlreadyFriend}
                       className={clsx(
-                        'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-colors',
+                        'w-14 h-14 border border-b-4 rounded-full grid place-items-center transition-all duration-300',
                         isAlreadyFriend
                           ? 'border-pink-400/60 bg-pink-500/20 cursor-default'
                           : connectSent
-                            ? 'border-green-400/60 bg-green-500/20 cursor-default'
+                            ? 'border-green-400/60 bg-green-500/20 cursor-default scale-110'
                             : 'border-white/40 hover:bg-white/10 active:scale-95'
                       )}
                       title={isAlreadyFriend ? 'Already friends' : connectSent ? 'Friend request sent' : 'Send friend request'}
@@ -637,7 +653,7 @@ function OfflineCardsContent() {
                       <img
                         src="/history/heart.svg"
                         alt="heart"
-                        className={clsx('w-8 h-8', (connectSent || isAlreadyFriend) && 'opacity-60')}
+                        className={clsx('w-8 h-8 transition-transform duration-300', connectSent && 'scale-110', (connectSent || isAlreadyFriend) && 'opacity-90')}
                       />
                     </button>
                   </div>

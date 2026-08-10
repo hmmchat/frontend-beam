@@ -45,7 +45,7 @@ function VideoChatContent() {
     isEnablingPullStranger, pullStrangerCooldownSec,
     callRoles,
     icebreaker, showIcebreaker, chatMessages, chatInput, setChatInput,
-    showChatInput, setShowChatInput, coins,
+    showChatInput, setShowChatInput, coins, diamondToCoinRate,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, isSendingDare,
@@ -470,6 +470,7 @@ function VideoChatContent() {
           onSelectGift={gift => setSelectedGiftId(gift.id)}
           selectedGiftId={selectedGiftId}
           coins={coins}
+          diamondToCoinRate={diamondToCoinRate}
           participants={remoteStreams.map(s => ({ userId: s.userId, ...getRemoteTileProfile(s) }))}
           onSendGift={handleSendGift}
         />
@@ -485,6 +486,7 @@ function VideoChatContent() {
           onSendDare={handleSendDare}
           isSendingDare={isSendingDare}
           coins={coins}
+          diamondToCoinRate={diamondToCoinRate}
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
           recipientName={remoteStreams.length > 0 ? (remoteStreams[0].name || 'Stranger') : 'Stranger'}
           randomDares={randomDares}

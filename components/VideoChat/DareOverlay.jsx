@@ -8,6 +8,7 @@ import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
 import SyncedMarqueeText from "./SyncedMarqueeText";
 import PressableActionButton from "./PressableActionButton";
+import { diamondsToCoinPrice } from "@/lib/diamondRate";
 
 // Animated typing dots shown while the user is typing/changing the dare
 function TypingDots() {
@@ -49,7 +50,8 @@ export default function DareOverlay({
   savedDares = [],
   onSaveCustomDare,
   onDeleteCustomDare,
-  giftItems = []
+  giftItems = [],
+  diamondToCoinRate,
 }) {
   const [dareTab, setDareTab] = useState("Random");
   const [dareIndex, setDareIndex] = useState(0);
@@ -176,7 +178,10 @@ export default function DareOverlay({
     setDareIndex(0);
   };
 
-  const currentPrice = selectedGift ? selectedGift.price : 0;
+  // Prefer prop/backend rate; fall back to module cache from catalog/balance.
+  const currentPrice = selectedGift
+    ? diamondsToCoinPrice(selectedGift.diamonds, diamondToCoinRate)
+    : 0;
   const hasSufficientCoins = coins >= currentPrice;
 
   return (

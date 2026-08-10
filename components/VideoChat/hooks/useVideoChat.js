@@ -19,6 +19,12 @@ import {
 } from '@/lib/discovery-presence';
 import { enrichUserStickerFields } from '@/lib/stickers';
 import {
+  diamondsToCoinPrice,
+  getDiamondToCoinRate,
+  mapCatalogGift,
+  setDiamondToCoinRate,
+} from '@/lib/diamondRate';
+import {
   isMobileRuntime,
   getCameraConstraints,
   getPreferredConsumerLayers,
@@ -138,6 +144,20 @@ export default function useVideoChat() {
   const [randomDares, setRandomDares] = useState([]);
   const [savedDares, setSavedDares] = useState([]);
   const [giftItems, setGiftItems] = useState([]);
+  const [diamondToCoinRate, setDiamondToCoinRateState] = useState(getDiamondToCoinRate);
+
+  const applyDiamondToCoinRate = useCallback((rate) => {
+    const n = Number(rate);
+    if (!Number.isFinite(n) || n <= 0) return;
+    setDiamondToCoinRate(n);
+    setDiamondToCoinRateState(n);
+    setGiftItems((prev) =>
+      prev.map((g) => ({
+        ...g,
+        price: diamondsToCoinPrice(g.diamonds, n),
+      }))
+    );
+  }, []);
   const [isRolling, setIsRolling] = useState(false);
   const [isBroken, setIsBroken] = useState(false);
   const [waitlist, setWaitlist] = useState([]);
@@ -425,9 +445,12 @@ export default function useVideoChat() {
       if (res) {
         setCoins(typeof res.balance === 'number' ? res.balance : 0);
         setDiamonds(Number(res.diamonds) || 0);
+        if (res.diamondToCoinRate != null) {
+          applyDiamondToCoinRate(res.diamondToCoinRate);
+        }
       }
     } catch { }
-  }, []);
+  }, [applyDiamondToCoinRate]);
 
   useEffect(() => { refreshWallet(); }, [refreshWallet]);
 
@@ -481,13 +504,13 @@ export default function useVideoChat() {
     try {
       const data = await apiRequest(API.FRIENDS.GET_GIFT_CATALOG);
       if (data?.gifts) {
-        setGiftItems(data.gifts.map((g, idx) => {
-          const diamondsVal = g.diamonds ?? g.coins ?? 0;
-          return { id: g.giftId || idx, name: g.name, price: diamondsVal * 100, diamonds: diamondsVal, img: g.emoji || '🎁', imageUrl: g.imageUrl };
-        }));
+        if (data.diamondToCoinRate != null) {
+          applyDiamondToCoinRate(data.diamondToCoinRate);
+        }
+        setGiftItems(data.gifts.map((g, idx) => mapCatalogGift(g, idx, data.diamondToCoinRate)));
       }
     } catch (err) { console.error('Failed to load gifts', err); }
-  }, []);
+  }, [applyDiamondToCoinRate]);
 
   useEffect(() => { fetchGiftItems(); }, [fetchGiftItems]);
 
@@ -2237,7 +2260,7 @@ export default function useVideoChat() {
     if (isSendingDareRef.current) return;
 
     const giftAmount = Number(giftObj.diamonds) || 0;
-    const neededCoins = giftAmount * 100;
+    const neededCoins = diamondsToCoinPrice(giftAmount, diamondToCoinRate);
     if (coins < neededCoins) {
       alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
       return;
@@ -2309,7 +2332,7 @@ export default function useVideoChat() {
       isSendingDareRef.current = false;
       setIsSendingDare(false);
     }
-  }, [coins, selectedGiftId, refreshWallet, giftItems]);
+  }, [coins, selectedGiftId, refreshWallet, giftItems, diamondToCoinRate]);
 
   const openDareOverlay = () => {
     const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
@@ -2377,7 +2400,7 @@ export default function useVideoChat() {
     isEnablingPullStranger, pullStrangerCooldownSec,
     roomSummoningUserId, callRoles, roomHealthDebug,
     icebreaker, showIcebreaker, chatMessages, chatInput, setChatInput,
-    showChatInput, setShowChatInput, coins, diamonds,
+    showChatInput, setShowChatInput, coins, diamonds, diamondToCoinRate,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,

@@ -6,6 +6,12 @@ import GiftAnimation from "./GiftAnimation";
 import { FaAngleRight } from "react-icons/fa6";
 import { FaAngleLeft } from "react-icons/fa6";
 import { API, apiRequest } from "@/lib/api";
+import {
+  diamondsToCoinPrice,
+  getDiamondToCoinRate,
+  mapCatalogGift,
+  setDiamondToCoinRate,
+} from "@/lib/diamondRate";
 
 export default function GiftOverlay({
   isOpen,
@@ -14,6 +20,7 @@ export default function GiftOverlay({
   onSelectGift,
   selectedGiftId,
   coins,
+  diamondToCoinRate: diamondToCoinRateProp,
   onSendGift,
   className,
   desktopBottomBarClassName,
@@ -26,6 +33,7 @@ export default function GiftOverlay({
   const [page, setPage] = useState(0);
   const [selectedTargetUserId, setSelectedTargetUserId] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const [catalogRate, setCatalogRate] = useState(getDiamondToCoinRate);
 
   useEffect(() => {
     if (isOpen && participants && participants.length > 0) {
@@ -46,17 +54,13 @@ export default function GiftOverlay({
       apiRequest(API.FRIENDS.GET_GIFT_CATALOG)
         .then(data => {
           if (data && data.gifts) {
-            const formatted = data.gifts.map((g, idx) => {
-              const diamondsVal = g.diamonds ?? g.coins ?? 0;
-              return {
-                id: g.giftId || idx,
-                name: g.name,
-                price: diamondsVal * 100,
-                diamonds: diamondsVal,
-                img: g.emoji || "🎁",
-                imageUrl: g.imageUrl
-              };
-            });
+            if (data.diamondToCoinRate != null) {
+              setDiamondToCoinRate(data.diamondToCoinRate);
+              setCatalogRate(Number(data.diamondToCoinRate));
+            }
+            const formatted = data.gifts.map((g, idx) =>
+              mapCatalogGift(g, idx, data.diamondToCoinRate)
+            );
             setGiftItems(formatted);
             // Auto-select first gift if nothing is selected yet
             if (!selectedGiftId && formatted.length > 0) {
@@ -92,7 +96,10 @@ export default function GiftOverlay({
   if (!isOpen) return null;
 
   const selectedGift = giftItems.find((g) => g.id === selectedGiftId);
-  const currentPrice = selectedGift ? selectedGift.price : 0;
+  const rate = diamondToCoinRateProp ?? catalogRate;
+  const currentPrice = selectedGift
+    ? diamondsToCoinPrice(selectedGift.diamonds, rate)
+    : 0;
   const hasSufficientCoins = coins >= currentPrice;
 
   const handleSend = () => {

@@ -1,9 +1,11 @@
 'use client';
+import { useState } from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { IoMic, IoMicOff, IoVolumeHigh, IoVolumeMute } from 'react-icons/io5';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import FilterButtons from '@/components/ui/FilterButtons';
+import { AppOverviewToggle, AppOverviewPanel } from '@/components/ui/AppOverviewInfo';
 import LocalVideo from './LocalVideo';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import MeetSomeoneMobileSearch from './MeetSomeoneMobileSearch';
@@ -82,6 +84,8 @@ export default function MeetSomeoneDesktopRight({
   handleQuickSquadCancelInvite,
   setSquadInviteOpen,
 }) {
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+
   return (
     <div className={clsx('relative w-full h-full overflow-hidden', !isSearching && 'hidden lg:block')}>
       {/* 🔲 HUD BORDER FRAME (Desktop Right) */}
@@ -307,37 +311,16 @@ export default function MeetSomeoneDesktopRight({
           'z-50',
           'flex',
           'gap-2',
+          'items-center',
           isSearching && 'hidden',
         )}
       >
-        <div>
-          <button
-            className={clsx(
-              'group',
-              'md:h-[55px]',
-              'md:w-[55px]',
-              'h-10',
-              'w-10',
-              'rounded-full',
-              'border-[1px]',
-              'border-b-[3px]',
-              'border-white/60',
-              'shadow-md',
-              'transition-all',
-              'duration-300',
-              'hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]',
-              'items-center',
-              'justify-center',
-              'flex',
-            )}
-          >
-            <img
-              src="/crown.svg"
-              alt="crown"
-              className={clsx('h-6', 'w-6', 'transition-transform', 'duration-300', 'group-hover:scale-110')}
-            />
-          </button>
-        </div>
+        <AppOverviewToggle
+          isOpen={isInfoOpen}
+          onToggle={() => setIsInfoOpen((prev) => !prev)}
+          className="md:h-[55px] md:w-[55px] h-10 w-10"
+          iconClassName="h-6 w-6"
+        />
 
         <div>
           <button
@@ -369,6 +352,14 @@ export default function MeetSomeoneDesktopRight({
           </button>
         </div>
       </div>
+
+      {isInfoOpen && !isSearching && (
+        <AppOverviewPanel
+          className="absolute top-24 z-50 inset-x-26 bottom-38 pt-[70px]"
+          contentMaxWidthClass="max-w-[320px]"
+          onClose={() => setIsInfoOpen(false)}
+        />
+      )}
 
       {/* ── SOLO VIEW ─────────────────────────────────────────────────────── */}
       {mode === 'solo' ? (

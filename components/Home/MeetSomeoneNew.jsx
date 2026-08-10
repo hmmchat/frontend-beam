@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoVideocam, IoNavigate, IoTimeOutline, IoChatbubbleOutline, IoPersonOutline, IoHomeOutline, IoLayersOutline, IoMic, IoMicOff, IoVolumeHigh, IoVolumeMute } from 'react-icons/io5';
-import { FaCrown, FaMobileAlt } from 'react-icons/fa';
 import { API, apiRequest } from '@/lib/api';
 import {
   getNotificationBadgeCount,
@@ -20,6 +19,7 @@ import LocationModal from '@/components/modals/LocationModal';
 import CoinModal from '@/components/modals/CoinModal';
 import MeetNowButton from '@/components/ui/MeetNowButton';
 import OverlayLayer from '@/components/ui/OverlayLayer';
+import { AppOverviewToggle, AppOverviewPanel } from '@/components/ui/AppOverviewInfo';
 import Link from 'next/link';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
@@ -76,6 +76,7 @@ export default function MeetSomeoneNew({
   const [internalUnreadCount, setInternalUnreadCount] = useState(0);
   const [overlay, setOverlay] = useState({ open: false, url: '', title: '' });
   const [isSquadInviteOpen, setIsSquadInviteOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [genderFilter, setGenderFilter] = useState("ALL");
 
   useEffect(() => {
@@ -388,15 +389,14 @@ export default function MeetSomeoneNew({
 
 
           {/* RIGHT BUTTONS */}
-          <div className='absolute     right-8 z-50 flex gap-2'>
+          <div className='absolute right-8 z-50 flex gap-2 items-center'>
 
-            <Link href="/beam-tv">
-              <button className='group h-14 w-14 rounded-full border-[1px] border-b-[3px] border-white/60 shadow-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] items-center justify-center flex'>
-                <img src="/crown.svg" alt="crown" className={clsx('h-[24px]', 'w-[24px]', 'transition-transform', 'duration-300', 'group-hover:scale-110')} />
-              </button>
-            </Link>
-
-
+            <AppOverviewToggle
+              isOpen={isInfoOpen}
+              onToggle={() => setIsInfoOpen((prev) => !prev)}
+              className="h-14 w-14"
+              iconClassName="h-[24px] w-[24px]"
+            />
 
             <button
               onClick={toggleFullscreen}
@@ -416,9 +416,16 @@ export default function MeetSomeoneNew({
         {/* Main Content Area */}
         <div className="relative   z-10 flex-1 w-full max-w-xl mx-auto px-3 flex flex-col items-center justify-center gap-1">
 
+          {isInfoOpen && (
+            <AppOverviewPanel
+              className="absolute top-4 z-50 inset-x-0 bottom-4"
+              onClose={() => setIsInfoOpen(false)}
+            />
+          )}
+
           <MeetLogo
             activeCount={activeUsers}
-            className="mt-[8%] "
+            className={clsx('mt-[8%]', isInfoOpen && 'opacity-0 pointer-events-none')}
           />
 
           {/* Mic/Audio Controls */}
@@ -481,19 +488,10 @@ export default function MeetSomeoneNew({
       {/* {only solo tab buttons} */}
       {mode !== 'squad' && (
         <div
-          className="
-    absolute
-    bottom-[25%]
-    sm:bottom-[20%]
-    left-1/2
-    -translate-x-1/2
-    z-40
-    pointer-events-none
-    w-full
-    max-w-[520px]
-    px-3
-    sm:px-4
-  "
+          className={clsx(
+            'absolute bottom-[25%] sm:bottom-[20%] left-1/2 -translate-x-1/2 z-40 pointer-events-none w-full max-w-[520px] px-3 sm:px-4 transition-opacity duration-300',
+            isInfoOpen && 'opacity-0 pointer-events-none',
+          )}
         >
           <div className="w-full pointer-events-auto flex justify-center">
             <MeetNowButton

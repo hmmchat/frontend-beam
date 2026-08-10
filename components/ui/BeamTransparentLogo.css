@@ -2,14 +2,22 @@
 .btl {
   --btl-native-w: 794.585px;
   --btl-native-h: 203.876px;
+  /* Room for feMorphology dilate (10) + hard shadow (dx/dy 15) outside the glyph */
+  --btl-pad: 28px;
+  --btl-stage-w: calc(var(--btl-native-w) + var(--btl-pad) * 2);
+  --btl-stage-h: calc(var(--btl-native-h) + var(--btl-pad) * 2);
   --logo-border: #030222;
   position: relative;
   display: block;
   flex-shrink: 0;
-  /* width comes from Tailwind classes — do not set width:auto here */
+  /* width comes from JS / Tailwind — do not set width:auto here */
   max-width: 100%;
-  aspect-ratio: 794.585 / 203.876;
-  overflow: hidden;
+  aspect-ratio: 850.585 / 259.876; /* native + 2×28 pad */
+  /*
+    Outline/shadow paint outside the glyph bbox. Keep visible so the left of
+    "b" and right of "m" aren't clipped (same class of bug as colour logo).
+  */
+  overflow: visible;
   line-height: 0;
   box-sizing: border-box;
 }
@@ -18,21 +26,25 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: var(--btl-native-w);
-  height: var(--btl-native-h);
+  width: var(--btl-stage-w);
+  height: var(--btl-stage-h);
   transform-origin: top left;
   pointer-events: none;
 }
 
 .btl__logo {
   position: relative;
-  width: var(--btl-native-w);
-  height: var(--btl-native-h);
+  width: var(--btl-stage-w);
+  height: var(--btl-stage-h);
 }
 
 .btl__beam-clip {
   position: absolute;
-  inset: 0;
+  /* Offset beam clip into the padded stage so it stays aligned with letters */
+  left: var(--btl-pad);
+  top: var(--btl-pad);
+  width: var(--btl-native-w);
+  height: var(--btl-native-h);
   z-index: 1;
   overflow: hidden;
   pointer-events: none;

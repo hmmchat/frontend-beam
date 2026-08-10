@@ -8,6 +8,8 @@ const DEFAULT_DELAY_MS = 220;
 /**
  * Circular dare/gift launcher that plays a press animation, then fires `onPress`
  * after a short delay so the click feels readable on touch devices.
+ *
+ * Pass `iconSrc` for image buttons, or `children` for custom content (e.g. SEND DARE).
  */
 export default function PressableActionButton({
   onPress,
@@ -18,6 +20,8 @@ export default function PressableActionButton({
   iconClassName,
   alt = "",
   disabled = false,
+  showCircle = true,
+  children,
   "aria-label": ariaLabel,
 }) {
   const [pressed, setPressed] = useState(false);
@@ -71,25 +75,38 @@ export default function PressableActionButton({
       )}
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
-      <img
-        src="/circle.png"
-        alt=""
-        aria-hidden
-        className={clsx(
-          "absolute inset-0 w-full h-full rounded-full transition-transform duration-200 ease-out",
-          pressed && "rotate-180",
-          circleClassName,
-        )}
-      />
-      <img
-        src={iconSrc}
-        alt={alt}
-        className={clsx(
-          "relative transition-transform duration-150 ease-out",
-          pressed ? "scale-[0.8]" : "scale-100",
-          iconClassName,
-        )}
-      />
+      {showCircle && (
+        <img
+          src="/circle.png"
+          alt=""
+          aria-hidden
+          className={clsx(
+            "absolute inset-0 w-full h-full rounded-full transition-transform duration-200 ease-out",
+            pressed && "rotate-180",
+            circleClassName,
+          )}
+        />
+      )}
+      {children != null ? (
+        <div
+          className={clsx(
+            "relative transition-transform duration-150 ease-out",
+            pressed ? "scale-[0.8]" : "scale-100",
+          )}
+        >
+          {children}
+        </div>
+      ) : (
+        <img
+          src={iconSrc}
+          alt={alt}
+          className={clsx(
+            "relative transition-transform duration-150 ease-out",
+            pressed ? "scale-[0.8]" : "scale-100",
+            iconClassName,
+          )}
+        />
+      )}
     </button>
   );
 }

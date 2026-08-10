@@ -43,16 +43,15 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
     setIsTyping(false);
   }, [proposal?.senderId]);
 
-  // Show dots briefly, then reveal text — marquee phase still uses shared marqueeStartAt
+  // Show typing dots briefly, but keep dare text mounted so marquee can run immediately.
   useEffect(() => {
     if (!isOpen || proposal?.dareText === undefined) return;
 
-    setLiveText("");
+    setLiveText(proposal.dareText || "");
     setIsTyping(true);
 
     const timer = setTimeout(() => {
       setIsTyping(false);
-      setLiveText(proposal.dareText);
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -60,7 +59,7 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
 
   if (!isOpen || !proposal) return null;
 
-  const displayText = liveText;
+  const displayText = liveText || proposal.dareText || "";
 
   return (
     <>
@@ -95,21 +94,27 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
               {proposal.senderName || "Someone"} is Daring you to
             </p>
 
-            {/* Dare bubble — marquees when long, synced with sender */}
-            <div className="flex items-center w-[80%] mx-auto overflow-hidden px-4 py-1.5 border border-white/60 rounded-full text-white text-xs font-otomanopee box-border">
-              {isTyping ? (
+            {/* Dare bubble — marquees from the start for long dares */}
+            <div className="flex items-center w-[80%] mx-auto overflow-hidden px-4 py-1.5 border border-white/60 rounded-full text-white text-xs font-otomanopee box-border min-w-0">
+              {displayText ? (
+                <div className="relative flex-1 min-w-0 w-full">
+                  <SyncedMarqueeText
+                    text={displayText}
+                    marqueeStartAt={proposal.marqueeStartAt}
+                    startFromBeginning
+                    className="w-full min-w-0"
+                    textClassName="font-otomanopee text-xs"
+                  />
+                  {isTyping && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-[#4E0093]/80 rounded-full">
+                      <TypingDots />
+                    </span>
+                  )}
+                </div>
+              ) : (
                 <span className="inline-flex items-center justify-center w-full">
                   <TypingDots />
                 </span>
-              ) : displayText ? (
-                <SyncedMarqueeText
-                  text={displayText}
-                  marqueeStartAt={proposal.marqueeStartAt}
-                  className="flex-1 min-w-0 w-full"
-                  textClassName="font-otomanopee text-xs"
-                />
-              ) : (
-                <span className="opacity-40 w-full text-center">...</span>
               )}
             </div>
           </div>

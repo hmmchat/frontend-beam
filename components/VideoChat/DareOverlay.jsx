@@ -7,6 +7,7 @@ import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "r
 import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
 import SyncedMarqueeText from "./SyncedMarqueeText";
+import PressableActionButton from "./PressableActionButton";
 
 // Animated typing dots shown while the user is typing/changing the dare
 function TypingDots() {
@@ -56,7 +57,9 @@ export default function DareOverlay({
   const [dareText, setDareText] = useState("");
   const [marqueeStartAt, setMarqueeStartAt] = useState(() => Date.now());
   const [isTyping, setIsTyping] = useState(false);
+  const [isEditingDare, setIsEditingDare] = useState(false);
   const typingTimerRef = useRef(null);
+  const dareInputRef = useRef(null);
 
   const matchedSavedDare = savedDares.find(
     (d) => d.text?.trim().toLowerCase() === dareText?.trim().toLowerCase()
@@ -91,6 +94,7 @@ export default function DareOverlay({
   useEffect(() => {
     if (activeDare) {
       setDareText(activeDare.text || "");
+      setIsEditingDare(false);
       // Show typing animation when navigating to a new dare
       setIsTyping(true);
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
@@ -99,6 +103,12 @@ export default function DareOverlay({
       setDareText("");
     }
   }, [activeDare]);
+
+  useEffect(() => {
+    if (isEditingDare) {
+      dareInputRef.current?.focus();
+    }
+  }, [isEditingDare]);
 
   const handleDareTextChange = useCallback((e) => {
     setDareText(e.target.value);
@@ -286,14 +296,46 @@ export default function DareOverlay({
 
 
 
-                  <div className="text-center w-full relative z-20">
-                    <input
-                      type="text"
-                      value={dareText}
-                      onChange={handleDareTextChange}
-                      placeholder="Type a custom dare..."
-                      className=" font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm  text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
-                    />
+                  <div className="text-center w-full relative z-20 flex justify-center">
+                    {isEditingDare ? (
+                      <input
+                        ref={dareInputRef}
+                        type="text"
+                        value={dareText}
+                        onChange={handleDareTextChange}
+                        onBlur={() => setIsEditingDare(false)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            setIsEditingDare(false);
+                          }
+                        }}
+                        placeholder="Type a custom dare..."
+                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsEditingDare(true);
+                        }}
+                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] max-w-[85%] rounded-full text-sm text-center bg-transparent text-white overflow-hidden min-w-0"
+                        aria-label="Edit dare text"
+                      >
+                        {dareText?.trim() ? (
+                          <SyncedMarqueeText
+                            text={dareText}
+                            marqueeStartAt={marqueeStartAt}
+                            startFromBeginning
+                            className="w-full min-w-0"
+                            textClassName="font-otomanopee text-sm"
+                          />
+                        ) : (
+                          <span className="text-white/50">Type a custom dare...</span>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   <FaChevronRight
@@ -436,10 +478,11 @@ export default function DareOverlay({
                 <p className="text-[11px] text-white/90 font-medium mb-2">
                   {recipientName} is ready to
                 </p>
-                <div className="flex items-center justify-center px-4 w-[80%] max-w-full mx-auto py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm overflow-hidden box-border">
+                <div className="flex items-center justify-center px-4 w-[80%] max-w-full mx-auto py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm overflow-hidden box-border min-w-0">
                   <SyncedMarqueeText
                     text={dareText || "Do a dare"}
                     marqueeStartAt={marqueeStartAt}
+                    startFromBeginning
                     className="flex-1 min-w-0 w-full"
                     textClassName="font-otomanopee"
                   />
@@ -523,49 +566,36 @@ export default function DareOverlay({
 
         {/* Send Dare Button */}
         <div className="relative z-10 pointer-events-auto">
-          <button
-            type="button"
+          <PressableActionButton
+            onPress={() => onSendDare?.()}
             disabled={
               dareAcceptanceStatus !== "accepted" ||
               !hasSufficientCoins ||
               !selectedGift ||
               isSendingDare
             }
-            onClick={() => onSendDare && onSendDare()}
-            className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto active:scale-95 transition-transform"
+            showCircle={
+              dareAcceptanceStatus === "accepted" &&
+              hasSufficientCoins &&
+              !!selectedGift &&
+              !isSendingDare
+            }
+            className={clsx(
+              "w-18 h-18 !opacity-100",
+              dareAcceptanceStatus !== "accepted" ||
+                !hasSufficientCoins ||
+                !selectedGift ||
+                isSendingDare
+                ? "bg-[#606060]"
+                : "bg-red-900",
+            )}
+            aria-label="Send dare"
           >
-            <div className="absolute inset-0 rounded-full flex items-center justify-center">
-              <div
-                className={clsx(
-                  "relative aspect-square w-18 h-18 flex border-2 border-b-4 rounded-full items-center justify-center transition-transform group-active:border-b-2",
-                  dareAcceptanceStatus !== "accepted" ||
-                    !hasSufficientCoins ||
-                    !selectedGift ||
-                    isSendingDare
-                    ? "bg-[#606060] border-[#13133b]"
-                    : "border-[#13133b] bg-red-900"
-                )}
-              >
-                {dareAcceptanceStatus === "accepted" &&
-                  hasSufficientCoins &&
-                  selectedGift &&
-                  !isSendingDare && (
-                    <img
-                      src="/circle.png"
-                      className="absolute inset-0 w-full h-full rounded-full transition-none group-active:rotate-180"
-                      alt=""
-                    />
-                  )}
-
-                <p
-                  className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee transition-none group-active:scale-80"
-                >
-                  SEND <br />
-                  DARE
-                </p>
-              </div>
-            </div>
-          </button>
+            <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee text-center">
+              SEND <br />
+              DARE
+            </p>
+          </PressableActionButton>
         </div>
       </div>
 
@@ -630,92 +660,36 @@ export default function DareOverlay({
 
 
 
-            <button
-              type="button"
+            <PressableActionButton
+              onPress={() => onSendDare?.()}
               disabled={
                 dareAcceptanceStatus !== "accepted" ||
                 !hasSufficientCoins ||
                 !selectedGift ||
                 isSendingDare
               }
-              onClick={() => onSendDare && onSendDare()}
-              className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto active:scale-95 transition-transform"
-            >
-              <div className="absolute inset-0 rounded-full flex items-center justify-center">
-                <div
-                  className={clsx(
-                    "relative aspect-square w-18 h-18 flex border-2 border-b-4 rounded-full items-center justify-center transition-transform group-active:border-b-2",
-                    dareAcceptanceStatus !== "accepted" ||
-                      !hasSufficientCoins ||
-                      !selectedGift ||
-                      isSendingDare
-                      ? "bg-[#606060] border-[#13133b]"
-                      : "border-[#13133b] bg-red-900"
-                  )}
-                >
-                  {dareAcceptanceStatus === "accepted" &&
-                    hasSufficientCoins &&
-                    selectedGift &&
-                    !isSendingDare && (
-                      <img
-                        src="/circle.png"
-                        className="absolute inset-0 w-full h-full rounded-full transition-none group-active:rotate-180"
-                        alt=""
-                      />
-                    )}
-
-                  <p
-                    className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee transition-none group-active:scale-80"
-                  >
-                    SEND <br />
-                    DARE
-                  </p>
-                </div>
-              </div>
-            </button>
-
-
-
-
-
-
-
-
-
-
-
-            {/* <button
-              type="button"
-              disabled={
-                dareAcceptanceStatus !== "accepted" ||
-                !hasSufficientCoins ||
-                !selectedGift
+              showCircle={
+                dareAcceptanceStatus === "accepted" &&
+                hasSufficientCoins &&
+                !!selectedGift &&
+                !isSendingDare
               }
-              onClick={() => onSendDare && onSendDare()}
               className={clsx(
-                "group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto transition-all",
-                (dareAcceptanceStatus !== "accepted" || !hasSufficientCoins || !selectedGift)
-                  ? "opacity-40 grayscale"
-                  : "hover:scale-105 active:scale-95"
+                "z-10 w-18 h-18 mb-3 !opacity-100",
+                dareAcceptanceStatus !== "accepted" ||
+                  !hasSufficientCoins ||
+                  !selectedGift ||
+                  isSendingDare
+                  ? "bg-[#606060]"
+                  : "bg-red-900",
               )}
+              aria-label="Send dare"
             >
-              <div
-                className=
-                "absolute inset-0 rounded-full flex items-center justify-center "
-
-              >
-                <div
-                  className="relative aspect-square md:w-14 md:h-14 w-18 h-18 flex border-2 border-b-4 rounded-full border-[#13133b]   items-center justify-center transition-transform hover:scale-105 active:scale-95"
-                >
-                  <img
-                    src="/circle.png"
-                    className="absolute inset-0 w-full h-full bg-red-900 rounded-full group-active:rotate-180"
-                    alt=""
-                  />
-                  <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80"> SEND <br />DARE</p>
-                </div>
-              </div>
-            </button> */}
+              <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee text-center">
+                SEND <br />
+                DARE
+              </p>
+            </PressableActionButton>
           </>
         )}
       </div>

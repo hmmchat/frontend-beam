@@ -283,20 +283,22 @@ export default function DareOverlay({
                 </div>
 
                 <p className="text-xs opacity-80 text-center mb-2 -mt-2">Dare {recipientName} to:</p>
-                {/* Top Section */}
-                <div className="flex items-center justify-between md:mb-4 mb-2">
-
-
-
-                  <FaChevronLeft
+                {/* Top Section — Figma 10945:41332 circular prev/next */}
+                <div className="flex items-center justify-between gap-2 md:mb-4 mb-2">
+                  <button
+                    type="button"
                     onClick={handlePrevDare}
-                    style={{ stroke: "white", strokeWidth: 30 }}
-                    className="text-white text-xl border-2 border-white rounded-full  w-9 h-8 p-1.5  flex items-center justify-center cursor-pointer transition-all active:scale-90"
-                  />
+                    className="shrink-0 size-9 cursor-pointer transition-all active:scale-90"
+                    aria-label="Previous dare"
+                  >
+                    <img
+                      src="/icons/dare-chevron-left.svg"
+                      alt=""
+                      className="block size-full"
+                    />
+                  </button>
 
-
-
-                  <div className="text-center w-full relative z-20 flex justify-center">
+                  <div className="relative z-20 flex min-w-0 flex-1 justify-center">
                     {isEditingDare ? (
                       <input
                         ref={dareInputRef}
@@ -311,7 +313,7 @@ export default function DareOverlay({
                           }
                         }}
                         placeholder="Type a custom dare..."
-                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] mx-auto rounded-full text-sm text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
+                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border border-white w-full max-w-[214px] mx-auto rounded-full text-xs text-center bg-transparent text-white placeholder-white/50 focus:outline-none focus:border-white transition-colors"
                       />
                     ) : (
                       <button
@@ -320,7 +322,7 @@ export default function DareOverlay({
                           e.stopPropagation();
                           setIsEditingDare(true);
                         }}
-                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border-2 border-white/80 w-[85%] max-w-[85%] rounded-full text-sm text-center bg-transparent text-white overflow-hidden min-w-0"
+                        className="font-otomanopee md:px-4 px-2 md:py-2 py-1 border border-white w-full max-w-[214px] rounded-full text-xs text-center bg-transparent text-white overflow-hidden min-w-0"
                         aria-label="Edit dare text"
                       >
                         {dareText?.trim() ? (
@@ -329,7 +331,7 @@ export default function DareOverlay({
                             marqueeStartAt={marqueeStartAt}
                             startFromBeginning
                             className="w-full min-w-0"
-                            textClassName="font-otomanopee text-sm"
+                            textClassName="font-otomanopee text-xs"
                           />
                         ) : (
                           <span className="text-white/50">Type a custom dare...</span>
@@ -338,11 +340,18 @@ export default function DareOverlay({
                     )}
                   </div>
 
-                  <FaChevronRight
+                  <button
+                    type="button"
                     onClick={handleNextDare}
-                    style={{ stroke: "white", strokeWidth: 30 }}
-                    className="text-white text-xl border-2 border-white rounded-full w-9 h-8 p-1.5 flex items-center justify-center cursor-pointer transition-all active:scale-90"
-                  />
+                    className="shrink-0 size-9 cursor-pointer transition-all active:scale-90"
+                    aria-label="Next dare"
+                  >
+                    <img
+                      src="/icons/dare-chevron-right.svg"
+                      alt=""
+                      className="block size-full"
+                    />
+                  </button>
                 </div>
 
                 {/* Visibility note */}

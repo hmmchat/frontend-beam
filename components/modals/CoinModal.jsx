@@ -5,25 +5,48 @@ import { API, apiRequest } from '@/lib/api';
 import useBackToClose from '@/lib/use-back-to-close';
 import { loadRazorpay } from '@/lib/load-razorpay';
 
-const coinPackageImages = {
+const coinPackageImagesById = {
   coin_pack_100: '/Coins/coin1.png',
-  coin_pack_200: '/Coins/coin2.png',
-  coin_pack_700: '/Coins/coin3.png',
-  coin_pack_450: '/Coins/coin4.png',
+  coin_pack_220: '/Coins/coin2.png',
+  coin_pack_1700: '/Coins/coin3.png',
+  coin_pack_1200: '/Coins/coin4.png',
   coin_pack_2500: '/Coins/coin5.png',
   coin_pack_12600: '/Coins/coin6.png',
   coin_pack_25500: '/Coins/coin7.png',
   coin_pack_33000: '/Coins/coin9.png',
   coin_pack_53000: '/Coins/coin9.png',
+  // Legacy ids (pre-Figma catalogue) — keep icons if an older API still returns them
+  coin_pack_200: '/Coins/coin2.png',
+  coin_pack_700: '/Coins/coin3.png',
+  coin_pack_450: '/Coins/coin4.png',
 };
+
+const coinPackageImagesByOrder = [
+  '/Coins/coin1.png',
+  '/Coins/coin2.png',
+  '/Coins/coin3.png',
+  '/Coins/coin4.png',
+  '/Coins/coin5.png',
+  '/Coins/coin6.png',
+  '/Coins/coin7.png',
+  '/Coins/coin9.png',
+  '/Coins/coin9.png',
+];
 
 const toNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const resolvePackageImage = (id, sortOrder, index) => {
+  if (id && coinPackageImagesById[id]) return coinPackageImagesById[id];
+  const orderIndex = Math.max(0, (sortOrder || index + 1) - 1);
+  return coinPackageImagesByOrder[orderIndex] || coinPackageImagesByOrder[0];
+};
+
 const normalizeCoinPackage = (pkg, index) => {
   const id = pkg.id || `coin_pack_${pkg.coins || index}`;
+  const sortOrder = toNumber(pkg.sortOrder || index + 1);
   return {
     id,
     coins: toNumber(pkg.coins),
@@ -33,8 +56,9 @@ const normalizeCoinPackage = (pkg, index) => {
     originalPrice: pkg.originalPrice == null ? undefined : toNumber(pkg.originalPrice),
     discount: pkg.discount,
     popular: Boolean(pkg.popular),
-    sortOrder: toNumber(pkg.sortOrder || index + 1),
-    img: coinPackageImages[id],
+    mostValue: Boolean(pkg.mostValue),
+    sortOrder,
+    img: resolvePackageImage(id, sortOrder, index),
   };
 };
 
@@ -299,7 +323,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
                   }}
                   className={`relative group cursor-pointer rounded-[20px] border-2 transition-all duration-300 hover:scale-[1.03] p-4 md:py-6 flex flex-col items-center justify-center gap-1
   ${
-    selectedPackage?.id === pkg.id
+    selectedPackage?.id === pkg.id || pkg.popular || pkg.mostValue
       ? 'border-yellow-500'
       : 'border-white/40'
   }
@@ -307,9 +331,9 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
   hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]
                     `}
                 >
-                  {pkg.popular && (
+                  {(pkg.popular || pkg.mostValue) && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FFD700] text-[#300569] text-[10px] font-bold px-4 py-1.5 rounded-full whitespace-nowrap z-10">
-                      Most Popular
+                      {pkg.mostValue ? 'Most Value' : 'Most Popular'}
                     </div>
                   )}
 

@@ -4,6 +4,8 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { GiftAnimationGroup } from "./GiftAnimation";
 import BeamTransparentLogo from "@/components/ui/BeamTransparentLogo";
+import SyncedMarqueeText from "./SyncedMarqueeText";
+import PressableActionButton from "./PressableActionButton";
 
 export default function LocalVideoSection({
   localVideoRef,
@@ -36,6 +38,7 @@ export default function LocalVideoSection({
   forceDismiss,
   isGroupCall = false,
   activeLocalDareText,
+  activeLocalDareMarqueeStartAt,
   activeLocalGiftLabel,
   giftAnimationActive = false,
   roundedClass = "",
@@ -111,9 +114,14 @@ export default function LocalVideoSection({
         </div>
 
         {activeLocalDareText && (
-          <div className={clsx('hidden', 'md:block', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
-            <span className="opacity-90">Your Dare: </span>
-            <span className="font-bold">{activeLocalDareText}</span>
+          <div className={clsx('flex', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'w-[80%]', 'max-w-[80%]', 'px-4', 'md:px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'items-center', 'gap-1', 'overflow-hidden', 'box-border')}>
+            <span className="opacity-90 shrink-0">Your Dare: </span>
+            <SyncedMarqueeText
+              text={activeLocalDareText}
+              marqueeStartAt={activeLocalDareMarqueeStartAt}
+              className="flex-1 min-w-0"
+              textClassName="font-bold"
+            />
           </div>
         )}
         {!activeLocalDareText && activeLocalGiftLabel && (
@@ -302,41 +310,26 @@ export default function LocalVideoSection({
 
 
             </div>
-            {/* 2 gift button  */}
+            {/* Dare + Gift launchers */}
             <div className={clsx("gap-2 md:gap-1 ", hideMobileControlsRow ? "hidden md:flex" : "flex", "pointer-events-auto")}>
-              <button
-                type="button"
-                onClick={() => setIsDareOpen(true)}
-                className={clsx('relative', 'md:w-14', 'md:h-14', 'w-12', 'h-12', 'flex', 'border-2', 'border-b-4', 'rounded-full', 'border-[#13133b]', 'items-center', 'justify-center', 'transition-transform', 'hover:scale-105', 'active:scale-95')}
-              >
-                <img
-                  src="/circle.png"
-                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-red-900', 'rounded-full')}
-                  alt=""
-                />
-                <img
-                  src="/dare1.png"
-                  className={clsx('relative', 'w-7', 'h-auto', 'md:w-8')}
-                  alt="DARE"
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsGiftModalOpen(true)}
-                className={clsx('relative', 'md:w-14', 'md:h-14', 'w-12', 'h-12', 'flex', 'items-center', 'border-2', 'border-b-4', 'rounded-full', 'border-[#13133b]', 'justify-center', 'transition-transform', 'hover:scale-105', 'active:scale-95')}
-              >
-                <img
-                  src="/circle.png"
-                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-full', 'bg-pink-800')}
-                  alt=""
-                />
-                <img
-                  src="/giftboc.png"
-                  className={clsx('relative', 'w-7', 'h-7', 'object-contain')}
-                  alt="GIFT"
-                />
-              </button>
-
+              <PressableActionButton
+                onPress={() => setIsDareOpen(true)}
+                className="md:w-14 md:h-14 w-12 h-12"
+                circleClassName="bg-red-900"
+                iconSrc="/dare1.png"
+                iconClassName="w-7 h-auto md:w-8"
+                alt="DARE"
+                aria-label="Open dare"
+              />
+              <PressableActionButton
+                onPress={() => setIsGiftModalOpen(true)}
+                className="md:w-14 md:h-14 w-12 h-12"
+                circleClassName="bg-pink-800"
+                iconSrc="/giftboc.png"
+                iconClassName="w-7 h-7 object-contain"
+                alt="GIFT"
+                aria-label="Open gift"
+              />
             </div>
 
             {/* Center logo — own layer so asymmetric control columns can't shift it */}

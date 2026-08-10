@@ -1079,13 +1079,18 @@ function BeamTVInner() {
     const roomId = currentBroadcast?.roomId;
     if (!gift || !senderId || !targetId || !roomId) return;
 
+    const coinCost = Number(gift.price) || 0;
+    const diamondAmount = Number(gift.diamonds) || 0;
+    if (coins < coinCost) {
+      setEngagementMsg(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+      return;
+    }
+
+    // Close immediately so the sheet can't be used for double-sends while the gift flies.
+    setIsGiftModalOpen(false);
+    setSelectedGiftId(null);
+
     try {
-      const coinCost = Number(gift.price) || 0;
-      const diamondAmount = Number(gift.diamonds) || 0;
-      if (coins < coinCost) {
-        setEngagementMsg(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
-        return;
-      }
       await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
         method: 'POST',
         body: JSON.stringify({ diamondAmount }),
@@ -1131,8 +1136,6 @@ function BeamTVInner() {
       console.error('Failed to send gift:', err);
       setEngagementMsg(err.message || 'Failed to send gift');
     }
-    setIsGiftModalOpen(false);
-    setSelectedGiftId(null);
   }, [coins, giftParticipants, currentBroadcast, refreshWallet, send]);
 
   // If user closes tab / navigates away while waitlisted, cancel request so waitlist count stays accurate.

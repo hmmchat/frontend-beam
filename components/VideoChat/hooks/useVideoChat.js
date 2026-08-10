@@ -129,6 +129,7 @@ export default function useVideoChat() {
   const [isDareOpen, setIsDareOpen] = useState(false);
   const [isSendingDare, setIsSendingDare] = useState(false);
   const isSendingDareRef = useRef(false);
+  const isSendingGiftRef = useRef(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [activeRemoteGifts, setActiveRemoteGifts] = useState([]);
   const [activeLocalGifts, setActiveLocalGifts] = useState([]);
@@ -1517,7 +1518,17 @@ export default function useVideoChat() {
               setIsDareOpen(false); setSelectedGiftId(null); setDareAcceptanceStatus('idle');
               const senderStream = remotes.find(s => String(s.userId) === String(controlParsed.senderId));
               const displayName = senderStream?.name || controlParsed.senderName || 'Someone';
-              setActiveDareProposal({ dareText: controlParsed.dareText, giftId: controlParsed.giftId, giftImg: controlParsed.giftImg, giftPrice: controlParsed.giftPrice, senderId: controlParsed.senderId, senderName: displayName === 'You' ? 'Someone' : displayName });
+              setActiveDareProposal({
+                dareText: controlParsed.dareText,
+                marqueeStartAt: typeof controlParsed.marqueeStartAt === 'number'
+                  ? controlParsed.marqueeStartAt
+                  : Date.now(),
+                giftId: controlParsed.giftId,
+                giftImg: controlParsed.giftImg,
+                giftPrice: controlParsed.giftPrice,
+                senderId: controlParsed.senderId,
+                senderName: displayName === 'You' ? 'Someone' : displayName,
+              });
             }
           } else if (controlParsed.isDareResponse) {
             if (String(controlParsed.targetUserId) === String(myId)) setDareAcceptanceStatus(controlParsed.accepted ? 'accepted' : 'rejected');
@@ -1564,8 +1575,16 @@ export default function useVideoChat() {
             let isProcessed = false;
             if (messageId) { if (processedGiftIdsRef.current.has(messageId)) isProcessed = true; else processedGiftIdsRef.current.add(messageId); }
             if (!isProcessed) {
-              const { gift, targetUserId, senderId, isDare, dareText } = controlParsed;
-              const giftObj = { ...gift, messageId, targetUserId, senderId, isDare, dareText };
+              const { gift, targetUserId, senderId, isDare, dareText, marqueeStartAt } = controlParsed;
+              const giftObj = {
+                ...gift,
+                messageId,
+                targetUserId,
+                senderId,
+                isDare,
+                dareText,
+                marqueeStartAt: typeof marqueeStartAt === 'number' ? marqueeStartAt : undefined,
+              };
               if (String(targetUserId) === String(myId)) {
                 setActiveLocalGifts(prev => [...prev, { ...giftObj, isDismissed: false }]);
               } else {
@@ -2103,14 +2122,21 @@ export default function useVideoChat() {
     const targetId = targetUserId || remoteStreamsRef.current[0]?.userId;
     const roomId = roomInfoRef.current?.roomId;
     if (!gift || !senderId || !targetId || !roomId) return;
+    if (isSendingGiftRef.current) return;
+
+    const coinCost = Number(gift.price) || 0;
+    const diamondAmount = Number(gift.diamonds) || 0;
+    if (coins < coinCost) {
+      alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+      return;
+    }
+
+    isSendingGiftRef.current = true;
+    // Close immediately so the flying sticker isn't covered and double-sends aren't possible.
+    setIsGiftModalOpen(false);
+    setSelectedGiftId(null);
 
     try {
-      const coinCost = Number(gift.price) || 0;
-      const diamondAmount = Number(gift.diamonds) || 0;
-      if (coins < coinCost) {
-        alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
-        return;
-      }
       await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
         method: 'POST',
         body: JSON.stringify({ diamondAmount }),
@@ -2148,16 +2174,39 @@ export default function useVideoChat() {
     } catch (err) {
       console.error('Failed to send gift:', err);
       alert(err.message || 'Failed to send gift');
+    } finally {
+      isSendingGiftRef.current = false;
     }
-    setIsGiftModalOpen(false);
-    setSelectedGiftId(null);
   }, [coins, refreshWallet]);
 
   // ---- Dare callbacks ------------------------------------------------------
   const handleDareSync = useCallback((syncData) => {
-    currentDareRef.current = { id: syncData.dareId, text: syncData.dareText };
+    const marqueeStartAt = typeof syncData.marqueeStartAt === 'number'
+      ? syncData.marqueeStartAt
+      : Date.now();
+    currentDareRef.current = {
+      id: syncData.dareId,
+      text: syncData.dareText,
+      marqueeStartAt,
+    };
     if (!roomInfo?.roomId || !remoteStreams[0]?.userId) return;
-    send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: JSON.stringify({ isDareSync: true, dareText: syncData.dareText, giftId: syncData.gift?.id, giftImg: syncData.gift?.imageUrl || syncData.gift?.img, giftPrice: syncData.gift?.diamonds, targetUserId: remoteStreams[0].userId, senderId: userIdRef.current, senderName: localUserInfo?.name || 'Someone' }) } });
+    send({
+      type: 'chat-message',
+      data: {
+        roomId: roomInfo.roomId,
+        message: JSON.stringify({
+          isDareSync: true,
+          dareText: syncData.dareText,
+          marqueeStartAt,
+          giftId: syncData.gift?.id,
+          giftImg: syncData.gift?.imageUrl || syncData.gift?.img,
+          giftPrice: syncData.gift?.diamonds,
+          targetUserId: remoteStreams[0].userId,
+          senderId: userIdRef.current,
+          senderName: localUserInfo?.name || 'Someone',
+        }),
+      },
+    });
   }, [roomInfo, remoteStreams, localUserInfo]);
 
   const handleDareResponse = useCallback((accepted) => {
@@ -2186,22 +2235,28 @@ export default function useVideoChat() {
     if (!giftObj) return;
 
     if (isSendingDareRef.current) return;
+
+    const giftAmount = Number(giftObj.diamonds) || 0;
+    const neededCoins = giftAmount * 100;
+    if (coins < neededCoins) {
+      alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
+      return;
+    }
+
     isSendingDareRef.current = true;
     setIsSendingDare(true);
+    // Close immediately so the flying sticker isn't covered and double-sends aren't possible.
+    setIsDareOpen(false);
+    setSelectedGiftId(null);
+    setDareAcceptanceStatus('idle');
 
     try {
-      const giftAmount = Number(giftObj.diamonds) || 0;
       const activeDareId = currentDareRef.current?.id || 'dare-1';
       // Custom dares use a random dare id on backend (dare-1 fallback)
       const backendDareId = (activeDareId && !activeDareId.startsWith('custom-') && activeDareId.startsWith('dare-'))
         ? activeDareId
         : 'dare-1';
 
-      const neededCoins = giftAmount * 100;
-      if (coins < neededCoins) {
-        alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
-        return;
-      }
       await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
         method: 'POST',
         body: JSON.stringify({ diamondAmount: giftAmount })
@@ -2227,6 +2282,12 @@ export default function useVideoChat() {
       }
       await refreshWallet();
       const msgId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+      // Fresh clock so every participant starts reading the banner together.
+      const marqueeStartAt = Date.now();
+      currentDareRef.current = {
+        ...(currentDareRef.current || {}),
+        marqueeStartAt,
+      };
       send({
         type: 'chat-message',
         data: {
@@ -2235,6 +2296,7 @@ export default function useVideoChat() {
             isGift: true, isDare: true, messageId: msgId,
             gift: { name: giftObj.name, img: giftObj.img, imageUrl: giftObj.imageUrl, price: giftObj.price, diamonds: giftObj.diamonds },
             dareText: currentDareRef.current?.text || 'Do a dare',
+            marqueeStartAt,
             targetUserId: targetId,
             senderId,
           })
@@ -2244,9 +2306,6 @@ export default function useVideoChat() {
       console.error('Failed to send dare:', err);
       alert(err.message || 'Failed to send dare');
     } finally {
-      setIsDareOpen(false);
-      setSelectedGiftId(null);
-      setDareAcceptanceStatus('idle');
       isSendingDareRef.current = false;
       setIsSendingDare(false);
     }

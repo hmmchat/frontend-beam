@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import PressableActionButton from '@/components/VideoChat/PressableActionButton';
 
 export default function BeamTVActions({
   viewerChatInput,
@@ -61,23 +62,15 @@ export default function BeamTVActions({
       </div>
 
       {/* Gift Button */}
-      <button
-        type="button"
-        onClick={onGiftClick}
-        className={clsx('w-12 h-12 md:w-14 md:h-14 flex items-center justify-center active:scale-95 transition-transform relative group rounded-full shrink-0')}
+      <PressableActionButton
+        onPress={onGiftClick}
+        className="w-12 h-12 md:w-14 md:h-14 shrink-0"
+        circleClassName="bg-pink-800"
+        iconSrc="/giftboc.png"
+        iconClassName="w-6 h-6 object-contain"
+        alt="gift"
         aria-label="Send gift"
-      >
-        <img
-          src="/circle.png"
-          alt=""
-          className="absolute inset-0 w-full h-full bg-pink-700 rounded-full object-contain group-hover:scale-105 transition-transform opacity-100"
-        />
-        <img
-          src="/giftboc.png"
-          alt="gift"
-          className="relative w-6 h-6 object-contain group-hover:rotate-12 transition-transform"
-        />
-      </button>
+      />
     </div>
   );
 }

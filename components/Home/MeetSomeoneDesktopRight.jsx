@@ -27,6 +27,7 @@ export default function MeetSomeoneDesktopRight({
   activeMeetingCount,
   genderFilter,
   discoveryBlockedByOtherTab,
+  matchPendingInOtherTab,
   overlay,
   setOverlay,
   isVideoOn,
@@ -408,7 +409,9 @@ export default function MeetSomeoneDesktopRight({
               />
               {discoveryBlockedByOtherTab ? (
                 <p className="text-sm text-white/80 max-w-xs px-4">
-                  Discovery is active in another tab. Close that tab or continue there to search.
+                  {matchPendingInOtherTab
+                    ? 'You matched — switch to your other tab to see them and Meet rn.'
+                    : 'Discovery is active in another tab. Close that tab or continue there to search.'}
                 </p>
               ) : null}
             </>

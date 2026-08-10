@@ -8,6 +8,7 @@ import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 import FaceCard from '@/components/Home/FaceCard';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
+import PressableActionButton from '@/components/VideoChat/PressableActionButton';
 import OfflineHotlineDmOverlay from '@/components/cards/OfflineHotlineDmOverlay';
 import clsx from 'clsx';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
@@ -289,18 +290,23 @@ function OfflineCardsContent() {
   // ── send gift ────────────────────────────────────────────────────────────
   const handleSendGift = async (gift) => {
     if (!card || !gift) return;
+
+    const coinCost = Number(gift.price) || 0;
+    const diamondAmount = Number(gift.diamonds) || 0;
+
+    // Check coin balance
+    if (walletCoins < coinCost) {
+      alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins} coins.`);
+      setIsGiftButtonHidden(true);
+      setIsGiftModalOpen(false);
+      return;
+    }
+
+    // Close immediately so the sheet can't be used for double-sends while the gift flies.
+    setIsGiftModalOpen(false);
+    setSelectedGift(null);
+
     try {
-      const coinCost = Number(gift.price) || 0;
-      const diamondAmount = Number(gift.diamonds) || 0;
-
-      // Check coin balance
-      if (walletCoins < coinCost) {
-        alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins} coins.`);
-        setIsGiftButtonHidden(true);
-        setIsGiftModalOpen(false);
-        return;
-      }
-
       // 1. Purchase diamonds with coins first (so existing diamonds are not deducted)
       await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
         method: "POST",
@@ -343,13 +349,9 @@ function OfflineCardsContent() {
       // Deduct coins locally
       setWalletCoins((prev) => Math.max(0, prev - coinCost));
 
-      // Close modal and reset selection
-      setIsGiftModalOpen(false);
-
       // Store sent gift and open success popup
       setSuccessGift(gift);
       setShowSuccessPopup(true);
-      setSelectedGift(null);
     } catch (err) {
       console.error('[OfflineCards] gift error:', err);
       alert(err.message || 'Failed to send gift. Please try again.');
@@ -560,9 +562,8 @@ function OfflineCardsContent() {
                     </div>
                     {!isGiftButtonHidden && (
                       <div className={clsx('ml-auto', 'flex', 'items-center')}>
-                        <button
-                          type="button"
-                          onClick={() => {
+                        <PressableActionButton
+                          onPress={() => {
                             if (isGiftModalOpen && selectedGift) {
                               const hasSufficientCoins = walletCoins >= (selectedGift.price || 0);
                               if (hasSufficientCoins) {
@@ -576,20 +577,13 @@ function OfflineCardsContent() {
                               setIsGiftModalOpen(!isGiftModalOpen);
                             }
                           }}
-                          className={clsx('w-14 h-14 flex items-center justify-center border-2  border-[#13133b] border-b-4 border-2 active:scale-95 transition-transform relative group rounded-full')}
+                          className="w-14 h-14"
+                          circleClassName="bg-pink-800"
+                          iconSrc="/giftboc.png"
+                          iconClassName="w-6 h-6 object-contain"
+                          alt="gift"
                           aria-label="Send gift"
-                        >
-                          <img
-                            src="/circle.png"
-                            alt=""
-                            className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-pink-700', 'rounded-full', 'object-contain', 'group-hover:scale-105', 'transition-transform', 'opacity-100')}
-                          />
-                          <img
-                            src="/giftboc.png"
-                            alt="gift"
-                            className={clsx('relative', 'w-6', 'h-6', 'object-contain', 'group-hover:rotate-12', 'transition-transform')}
-                          />
-                        </button>
+                        />
                       </div>
                     )}
                   </>
@@ -683,9 +677,8 @@ function OfflineCardsContent() {
               {/* Right group: Gift */}
               {!isGiftButtonHidden && (!isGiftModalOpen || !selectedGift || walletCoins >= (selectedGift.price || 0)) && (
                 <div className={clsx('absolute', 'right-12', 'flex', 'items-center')}>
-                  <button
-                    type="button"
-                    onClick={() => {
+                  <PressableActionButton
+                    onPress={() => {
                       if (isGiftModalOpen && selectedGift) {
                         const hasSufficientCoins = walletCoins >= (selectedGift.price || 0);
                         if (hasSufficientCoins) {
@@ -699,20 +692,13 @@ function OfflineCardsContent() {
                         setIsGiftModalOpen(!isGiftModalOpen);
                       }
                     }}
-                    className={clsx('w-16 h-16 flex items-center justify-center border-3 border-b-6 border-[#13133b] rounded-full active:scale-95 transition-transform relative group')}
+                    className="w-16 h-16 border-3 border-b-6"
+                    circleClassName="bg-pink-800"
+                    iconSrc="/giftboc.png"
+                    iconClassName="w-8 h-8 object-contain"
+                    alt="gift"
                     aria-label="Send gift"
-                  >
-                    <img
-                      src="/circle.png"
-                      alt=""
-                      className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-full', 'object-contain', 'transition-none', 'rounded-full', 'bg-pink-800', 'group-active:rotate-180')}
-                    />
-                    <img
-                      src="/giftboc.png"
-                      alt="gift"
-                      className={clsx('relative', 'w-8', 'h-8', 'transition-none', 'group-active:scale-80')}
-                    />
-                  </button>
+                  />
                 </div>
               )}
             </div>

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IoSendSharp } from "react-icons/io5";
 import GiftOverlay from "@/components/VideoChat/GiftOverlay";
+import PressableActionButton from "@/components/VideoChat/PressableActionButton";
 import clsx from 'clsx';
 import { FaRegFaceSmile, FaRegImages } from "react-icons/fa6";
 import EmojiPicker from "./EmojiPicker";
@@ -155,22 +156,15 @@ export default function ThreadComposer({
         </div>
 
         {/* Gift button */}
-        <button
-          type="button"
-          onClick={() => setIsGiftModalOpen(true)}
-          className={clsx('w-12', 'h-12', 'md:w-16', 'md:h-16', 'flex', 'items-center', 'justify-center', 'active:scale-95', 'transition-transform', 'relative', 'group')}
-        >
-          <img
-            src="/circle.png"
-            alt="button-bg"
-            className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-pink-700', 'rounded-full', 'object-contain', 'group-hover:scale-105', 'transition-transform', 'opacity-100')}
-          />
-          <img
-            src="/giftboc.png"
-            alt="gift-icon"
-            className={clsx('relative', 'w-6', 'h-6', 'md:w-8', 'md:h-8', 'object-contain', 'group-hover:rotate-12', 'transition-transform')}
-          />
-        </button>
+        <PressableActionButton
+          onPress={() => setIsGiftModalOpen(true)}
+          className="w-12 h-12 md:w-16 md:h-16"
+          circleClassName="bg-pink-800"
+          iconSrc="/giftboc.png"
+          iconClassName="w-6 h-6 md:w-8 md:h-8 object-contain"
+          alt="gift"
+          aria-label="Open gift"
+        />
       </div>
 
       {/* Gift Overlay — same component as video-chat and /cards */}

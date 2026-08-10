@@ -16,7 +16,10 @@ import {
 } from '@/lib/discovery-presence';
 import { setPresenceStatusKeepalive } from '@/lib/presence-status';
 import { subscribePresenceRealtime } from '@/lib/presence-realtime';
-import { subscribeTabCoordinator } from '@/lib/tab-coordinator';
+import {
+  subscribeTabCoordinator,
+  broadcastDiscoveryMatchedHint,
+} from '@/lib/tab-coordinator';
 import { getFacecardPhotos, buildDiscoveryCityFaceCardUser } from '@/lib/facecard-utils';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 import { useNotifications } from './useNotifications';
@@ -82,6 +85,8 @@ export default function useMeetSomeone() {
     return true;
   });
   const [discoveryBlockedByOtherTab, setDiscoveryBlockedByOtherTab] = useState(false);
+  /** Non-leader tab saw discovery:matched — face card lives on the leader tab. */
+  const [matchPendingInOtherTab, setMatchPendingInOtherTab] = useState(false);
   const [isDiscoveryUserFetching, setIsDiscoveryUserFetching] = useState(false);
   /** user | cityHandoff | cityBoxes | emptyOrbit */
   const [deckPhase, setDeckPhase] = useState('user');
@@ -447,8 +452,12 @@ export default function useMeetSomeone() {
           applyCardResponse(data, { silent: true });
         }
       } else if (phase === 'cityBoxes' || manualCitySelectOnlyRef.current) {
-        // User cancelled auto-switch — stay on boxes; never auto LOCATION / USER.
-        // (City entry only via box tap → select-location.)
+        // Cancelled auto city-switch: never auto LOCATION, but mutual USER face
+        // cards must still surface immediately (realtime reciprocity).
+        if (card && !isLocation) {
+          manualCitySelectOnlyRef.current = false;
+          applyCardResponse(data, { silent: true });
+        }
       } else if (phase === 'emptyOrbit') {
         // Recover as soon as someone is showable — USER or next-city LOCATION.
         if (card && !isLocation) {
@@ -476,16 +485,14 @@ export default function useMeetSomeone() {
     }
   };
 
-  /** Immediate card pull when a mutual match is pushed over WS — no phase gating delay. */
+  /**
+   * Immediate USER face-card pull when a mutual match is pushed / recovered.
+   * Allowed from emptyOrbit / cityBoxes / handoff — LOCATION still ignored so
+   * Cancel-on-city-boxes does not auto-start another city handoff.
+   */
   const fetchMatchedCardNow = useCallback(async () => {
     if (waitingForMatchRef.current || isEnteringCallRef.current) return;
-    // Cancelled auto-switch: don't yank them off city boxes into a face card.
-    if (
-      manualCitySelectOnlyRef.current ||
-      deckPhaseRef.current === 'cityBoxes'
-    ) {
-      return;
-    }
+    if (!isSearchingRef.current) return;
     const sid = sessionIdRef.current;
     if (!sid) return;
     try {
@@ -496,6 +503,7 @@ export default function useMeetSomeone() {
       if (card && !isLocation) {
         handoffCancelledRef.current = true;
         handoffCompletingRef.current = false;
+        manualCitySelectOnlyRef.current = false;
         if (handoffTimerRef.current) {
           clearInterval(handoffTimerRef.current);
           handoffTimerRef.current = null;
@@ -842,8 +850,10 @@ export default function useMeetSomeone() {
             return;
           }
           try {
-            // 1) Mutual accept room first — both-accepted deletes active_matches,
-            // so match-status goes false; that is NOT a raincheck.
+            // CRITICAL ORDER — do not invert:
+            // 1) MY_ROOM / streaming room (mutual accept may clear active_matches)
+            // 2) MATCH_STATUS (false + no room => raincheck / timeout cleanup)
+            // Treating "no match" as raincheck before checking room regresses Meet rn.
             const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
             const nextRoomId = assigned?.roomId || null;
             if (assigned?.hasRoom && nextRoomId && nextRoomId !== baselineRoomId) {
@@ -851,19 +861,52 @@ export default function useMeetSomeone() {
               return;
             }
 
-            // 2) Still waiting on peer Meet rn — keep face card.
+            // Streaming backup if discovery Redis assign lagged (FE CREATE_ROOM path).
+            try {
+              const streamRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+              const streamRoomId = streamRoom?.roomId || null;
+              if (
+                streamRoom?.exists &&
+                streamRoomId &&
+                streamRoomId !== baselineRoomId
+              ) {
+                await enterCallWithRoom(
+                  streamRoomId,
+                  streamRoom.sessionId || streamRoomId,
+                );
+                return;
+              }
+            } catch (_) {
+              /* match-status path below */
+            }
+
+            // Still waiting on peer Meet rn — keep face card.
+            // match-status also reports hasRoom / pendingAcceptance so room-create
+            // races do not look like rainchecks.
             let stillMatchedWithPartner = true;
             try {
               const matchStatus = await apiRequest(API.DISCOVERY.MATCH_STATUS);
+              if (
+                matchStatus?.hasRoom &&
+                matchStatus.roomId &&
+                matchStatus.roomId !== baselineRoomId
+              ) {
+                await enterCallWithRoom(
+                  matchStatus.roomId,
+                  matchStatus.sessionId || matchStatus.roomId,
+                );
+                return;
+              }
               stillMatchedWithPartner =
                 Boolean(matchStatus?.matched) &&
                 (!matchStatus.partnerId || matchStatus.partnerId === partnerId);
             } catch (_) {
+              // Network blip: stay on waiting UI; do not treat as raincheck.
               stillMatchedWithPartner = true;
             }
 
             if (!stillMatchedWithPartner) {
-              // No match and no room → peer rainchecked / match cancelled.
+              // No match, no room, no pending acceptance → peer rainchecked / timed out.
               await leaveWaitForMatchmaking();
               return;
             }
@@ -973,7 +1016,7 @@ export default function useMeetSomeone() {
         const isLocation = next.type === 'LOCATION' || data.isLocationCard;
         if (isLocation) {
           // Prefer boxes/empty over chaining another handoff from a box tap failure path
-          await cancelCityHandoff();
+          await abortCityHandoff({ manualOnly: false });
         } else {
           setDeckPhase('user');
           deckPhaseRef.current = 'user';
@@ -982,13 +1025,13 @@ export default function useMeetSomeone() {
           void fetchCardSilently(sessionId, soloMode);
         }
       } else {
-        await cancelCityHandoff();
+        await abortCityHandoff({ manualOnly: false });
       }
     } catch (error) {
       console.error('Error selecting location:', error);
       if (isSearchingRef.current) {
         setError('Failed to select location. Please try again.');
-        await cancelCityHandoff();
+        await abortCityHandoff({ manualOnly: false });
       }
     } finally {
       setSwiping(false);
@@ -996,12 +1039,17 @@ export default function useMeetSomeone() {
     }
   };
 
-  const cancelCityHandoff = useCallback(async () => {
-    // Cancel always wins over a late countdown complete
+  /**
+   * Leave city handoff UI.
+   * - manualOnly=true  → user Cancel: stay on boxes; no auto LOCATION until they tap
+   * - manualOnly=false → system abort (peer hopped / empty next card): allow auto
+   *   LOCATION / USER recovery so Bangalore↔Delhi alone can still connect
+   */
+  const abortCityHandoff = useCallback(async ({ manualOnly = false } = {}) => {
+    // Abort always wins over a late countdown complete
     handoffCancelledRef.current = true;
     handoffCompletingRef.current = false;
-    // Stay on city boxes until the user explicitly taps a city — no auto-switch back.
-    manualCitySelectOnlyRef.current = true;
+    manualCitySelectOnlyRef.current = Boolean(manualOnly);
     if (handoffTimerRef.current) {
       clearInterval(handoffTimerRef.current);
       handoffTimerRef.current = null;
@@ -1024,7 +1072,16 @@ export default function useMeetSomeone() {
         // A newer handoff may have started; don't clobber it
         return;
       }
-      enterCityBoxes(data?.cities || []);
+      const cities = Array.isArray(data?.cities) ? data.cities : [];
+      if (manualOnly) {
+        // Explicit Cancel — boxes only; no auto LOCATION until they tap a city.
+        enterCityBoxes(cities);
+        return;
+      }
+      // System abort (peer hopped / city emptied / next card missing): go to empty
+      // orbit so polling can auto-recover LOCATION or the mutual USER card.
+      manualCitySelectOnlyRef.current = false;
+      enterEmptyOrbit();
     } catch (err) {
       console.error('Error loading available cities:', err);
       if (handoffCancelledRef.current) {
@@ -1033,6 +1090,10 @@ export default function useMeetSomeone() {
     }
   }, [applyUiConfigFromResponse, enterCityBoxes, enterEmptyOrbit, sessionId]);
 
+  const cancelCityHandoff = useCallback(async () => {
+    await abortCityHandoff({ manualOnly: true });
+  }, [abortCityHandoff]);
+
   const completeCityHandoff = useCallback(async () => {
     if (handoffCancelledRef.current) return;
     if (handoffCompletingRef.current) return;
@@ -1040,7 +1101,7 @@ export default function useMeetSomeone() {
     if (!isSearchingRef.current) return;
     const city = handoffCityRef.current;
     if (!city) {
-      await cancelCityHandoff();
+      await abortCityHandoff({ manualOnly: false });
       return;
     }
     const epoch = discoveryEpochRef.current;
@@ -1081,20 +1142,20 @@ export default function useMeetSomeone() {
         setIsSearching(true);
         void fetchCardSilently(sid, soloMode);
       } else {
-        // No user card (failure, empty, or another LOCATION) → never stuck on dead handoff
-        await cancelCityHandoff();
+        // No user card (failure, empty, or another LOCATION) → recover, don't lock boxes
+        await abortCityHandoff({ manualOnly: false });
       }
     } catch (error) {
       console.error('Error completing city handoff:', error);
       if (!handoffCancelledRef.current && isSearchingRef.current) {
         setError('Failed to enter city. Please try again.');
-        await cancelCityHandoff();
+        await abortCityHandoff({ manualOnly: false });
       }
     } finally {
       setSwiping(false);
       handoffCompletingRef.current = false;
     }
-  }, [cancelCityHandoff]);
+  }, [abortCityHandoff]);
 
   const handleNextImage = (e) => {
     e?.stopPropagation();
@@ -1799,8 +1860,22 @@ export default function useMeetSomeone() {
   }, [myProfile?.id]);
 
   useEffect(() => {
-    const syncTabDiscoveryState = () => {
-      setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere() && !isDiscoveryLeader());
+    const syncTabDiscoveryState = (msg) => {
+      const blocked = isDiscoveryActiveElsewhere() && !isDiscoveryLeader();
+      setDiscoveryBlockedByOtherTab(blocked);
+      if (!blocked) setMatchPendingInOtherTab(false);
+
+      // Non-leader received WS match — pull the face card on the searching leader now.
+      if (
+        msg?.type === 'discovery:matched-hint' &&
+        isDiscoveryLeader() &&
+        isSearchingRef.current &&
+        !waitingForMatchRef.current
+      ) {
+        const matchedId = msg.partnerId;
+        if (matchedId && excludedPartnerIdsRef.current.has(matchedId)) return;
+        void fetchMatchedCardNow();
+      }
     };
 
     const rematchAfterPeerRaincheck = (partnerId, { mirrorRaincheck = true } = {}) => {
@@ -1829,12 +1904,18 @@ export default function useMeetSomeone() {
     const unsubTab = subscribeTabCoordinator(syncTabDiscoveryState);
     const unsubPresence = subscribePresenceRealtime((payload) => {
       if (payload?.eventType === 'discovery:matched') {
-        // Peer already has our face card — show theirs immediately (any deck phase).
+        const matchedId = payload.partnerId;
+        if (matchedId && excludedPartnerIdsRef.current.has(matchedId)) {
+          return;
+        }
+        // Blocked / non-leader: never get-card here (session ownership). Nudge leader.
+        if (isDiscoveryActiveElsewhere() && !isDiscoveryLeader()) {
+          setMatchPendingInOtherTab(true);
+          broadcastDiscoveryMatchedHint(matchedId);
+          return;
+        }
+        // Searching leader (any deck phase) — show mutual face card immediately.
         if (isSearchingRef.current && !waitingForMatchRef.current) {
-          const matchedId = payload.partnerId;
-          if (matchedId && excludedPartnerIdsRef.current.has(matchedId)) {
-            return;
-          }
           void fetchMatchedCardNow();
         }
         return;
@@ -1906,13 +1987,28 @@ export default function useMeetSomeone() {
           clearSearchingUrlParam();
         }
         if (payload.status === 'MATCHED' && isSearchingRef.current && !waitingForMatchRef.current) {
+          if (isDiscoveryActiveElsewhere() && !isDiscoveryLeader()) {
+            setMatchPendingInOtherTab(true);
+            broadcastDiscoveryMatchedHint(null);
+            return;
+          }
           void fetchMatchedCardNow();
         }
       }
     });
     const onPresenceChanged = () => void fetchMyProfile();
+    // Recover missed discovery:matched while tab was backgrounded / city boxes / empty.
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined' || document.hidden) return;
+      if (!isSearchingRef.current || waitingForMatchRef.current || isEnteringCallRef.current) {
+        return;
+      }
+      if (isDiscoveryActiveElsewhere() && !isDiscoveryLeader()) return;
+      void fetchMatchedCardNow();
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener('presence:changed', onPresenceChanged);
+      document.addEventListener('visibilitychange', onVisibilityChange);
     }
     syncTabDiscoveryState();
     return () => {
@@ -1920,6 +2016,7 @@ export default function useMeetSomeone() {
       unsubPresence();
       if (typeof window !== 'undefined') {
         window.removeEventListener('presence:changed', onPresenceChanged);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
       }
     };
   }, [
@@ -2292,9 +2389,10 @@ export default function useMeetSomeone() {
                 return;
               }
             } catch (_) {
-              /* fall through to cancel */
+              /* fall through to abort */
             }
-            await cancelCityHandoff();
+            // Peer left / city emptied — allow auto recovery (don't lock to manual boxes).
+            await abortCityHandoff({ manualOnly: false });
           }
           return;
         }
@@ -2377,6 +2475,7 @@ export default function useMeetSomeone() {
     availableCitiesPollMs,
     applyCardResponse,
     applyUiConfigFromResponse,
+    abortCityHandoff,
     cancelCityHandoff,
     enterCityBoxes,
     enterCityHandoff,
@@ -2445,6 +2544,7 @@ export default function useMeetSomeone() {
     isVideoOn,
     setIsVideoOn,
     discoveryBlockedByOtherTab,
+    matchPendingInOtherTab,
     isDiscoveryUserFetching,
     deckPhase,
     availableCities,

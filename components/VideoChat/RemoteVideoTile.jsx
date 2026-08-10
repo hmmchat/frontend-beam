@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { GiftAnimationGroup } from './GiftAnimation';
 import ReportUserModal from '@/components/modals/ReportUserModal';
+import SyncedMarqueeText from './SyncedMarqueeText';
 
 export default function RemoteVideoTile({
   userId,
@@ -53,6 +54,7 @@ export default function RemoteVideoTile({
   activeBadge,
   showParticipantNextButton = false,
   activeRemoteDareText,
+  activeRemoteDareMarqueeStartAt,
   activeGiftLabel,
   activeLocalGiftLabel,
   giftAnimationActive = false,
@@ -180,9 +182,14 @@ export default function RemoteVideoTile({
       style={{ transform: 'translateZ(0)' }}
     >
       {activeRemoteDareText && (
-        <div className={clsx('absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
-          <span className="opacity-90">{name || "Stranger"}&apos;s Dare: </span>
-          <span className="font-bold">{activeRemoteDareText}</span>
+        <div className={clsx('absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'w-[80%]', 'max-w-[80%]', 'px-4', 'md:px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'flex', 'items-center', 'gap-1', 'overflow-hidden', 'box-border')}>
+          <span className="opacity-90 shrink-0">{name || "Stranger"}&apos;s Dare: </span>
+          <SyncedMarqueeText
+            text={activeRemoteDareText}
+            marqueeStartAt={activeRemoteDareMarqueeStartAt}
+            className="flex-1 min-w-0"
+            textClassName="font-bold"
+          />
         </div>
       )}
       {!activeRemoteDareText && activeGiftLabel && (

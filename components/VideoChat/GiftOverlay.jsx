@@ -25,6 +25,7 @@ export default function GiftOverlay({
   const [animGift, setAnimGift] = useState(null);
   const [page, setPage] = useState(0);
   const [selectedTargetUserId, setSelectedTargetUserId] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (isOpen && participants && participants.length > 0) {
@@ -33,6 +34,10 @@ export default function GiftOverlay({
       }
     }
   }, [isOpen, participants, selectedTargetUserId]);
+
+  useEffect(() => {
+    if (isOpen) setIsSending(false);
+  }, [isOpen]);
   const itemsPerPage = 8;
   const [rotated, setRotated] = useState(false);
 
@@ -91,12 +96,15 @@ export default function GiftOverlay({
   const hasSufficientCoins = coins >= currentPrice;
 
   const handleSend = () => {
-    if (selectedGift) {
-      if (typeof onSendGift === 'function') {
-        onSendGift(selectedGift, selectedTargetUserId);
-      } else {
-        setAnimGift(selectedGift);
-      }
+    if (!selectedGift || isSending) return;
+    setIsSending(true);
+    // Close as soon as the send starts so the flying sticker is visible
+    // and the user can't queue multiple gifts from an open sheet.
+    if (typeof onClose === "function") onClose();
+    if (typeof onSendGift === "function") {
+      onSendGift(selectedGift, selectedTargetUserId);
+    } else {
+      setAnimGift(selectedGift);
     }
   };
 
@@ -269,20 +277,20 @@ export default function GiftOverlay({
               <button
                 onClick={handleSend}
                 className={clsx(
-                  "group relative z-10 flex items-center justify-center w-16 h-16 active:scale-95 transition-transform flex-shrink-0",
-                  !selectedGift && "opacity-50"
+                  "group relative z-10 flex items-center justify-center w-16 h-16 border-2 border-b-4 border-[#13133b] rounded-full active:scale-95 active:border-b-2 transition-transform flex-shrink-0",
+                  (!selectedGift || isSending) && "opacity-50"
                 )}
-                disabled={!selectedGift}
+                disabled={!selectedGift || isSending}
               >
                 <img
                   src="/circle.png"
-                  className="absolute inset-0 block w-full h-full rounded-full bg-pink-800 group-active:rotate-180"
+                  className="absolute inset-0 block w-full h-full rounded-full bg-pink-800 transition-none group-active:rotate-180"
                   alt=""
                 />
 
                 <img
                   src="/giftboc.png"
-                  className="relative object-contain w-9 h-9  transition-none group-active:scale-80"
+                  className="relative object-contain w-9 h-9 transition-none group-active:scale-80"
                   alt="GIFT"
                 />
               </button>
@@ -335,11 +343,11 @@ export default function GiftOverlay({
 
             <button
               type="button"
-              disabled={!selectedGift}
+              disabled={!selectedGift || isSending}
               onClick={handleSend}
               className={clsx(
-                "group relative z-10 flex items-center justify-center w-16 h-16",
-                !selectedGift && "opacity-50"
+                "group relative z-10 flex items-center justify-center w-16 h-16 border-2 border-b-4 border-[#13133b] rounded-full active:scale-95 active:border-b-2 transition-transform",
+                (!selectedGift || isSending) && "opacity-50"
               )}
             >
               <img

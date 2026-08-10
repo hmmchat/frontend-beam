@@ -3,6 +3,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import BeamTransparentLogo from '@/components/ui/BeamTransparentLogo';
+import PressableActionButton from './PressableActionButton';
 
 export default function MobileMultiUserControls({
   toggleCam,
@@ -73,39 +74,25 @@ export default function MobileMultiUserControls({
       </div>
 
       {/* Right buttons (Dare + Gift) */}
-      <div className="flex gap-1.5 ">
-        <button
-          type="button"
-          onClick={() => setIsDareOpen(true)}
-          className="relative w-12 h-12 flex items-center border-2 border-b-4 rounded-full border-[#13133b] justify-center transition-transform hover:scale-105 active:scale-95"
-        >
-          <img
-            src="/circle.png"
-            className="absolute inset-0 w-full h-full bg-red-900 rounded-full"
-            alt=""
-          />
-          <img
-            src="/dare1.png"
-            className="relative w-7 h-auto"
-            alt="DARE"
-          />
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsGiftModalOpen(true)}
-          className="relative w-12 h-12 border-2 border-b-4 rounded-full border-[#13133b] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-        >
-          <img
-            src="/circle.png"
-            className="absolute inset-0 w-full h-full rounded-full bg-pink-800"
-            alt=""
-          />
-          <img
-            src="/giftboc.png"
-            className="relative w-6 h-6 object-contain"
-            alt="GIFT"
-          />
-        </button>
+      <div className="flex gap-1.5">
+        <PressableActionButton
+          onPress={() => setIsDareOpen(true)}
+          className="w-12 h-12"
+          circleClassName="bg-red-900"
+          iconSrc="/dare1.png"
+          iconClassName="w-7 h-auto"
+          alt="DARE"
+          aria-label="Open dare"
+        />
+        <PressableActionButton
+          onPress={() => setIsGiftModalOpen(true)}
+          className="w-12 h-12"
+          circleClassName="bg-pink-800"
+          iconSrc="/giftboc.png"
+          iconClassName="w-6 h-6 object-contain"
+          alt="GIFT"
+          aria-label="Open gift"
+        />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
 import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
+import SyncedMarqueeText from "./SyncedMarqueeText";
 
 // Animated typing dots shown while the user is typing/changing the dare
 function TypingDots() {
@@ -53,6 +54,7 @@ export default function DareOverlay({
   const [dareIndex, setDareIndex] = useState(0);
   const [stage, setStage] = useState(1);
   const [dareText, setDareText] = useState("");
+  const [marqueeStartAt, setMarqueeStartAt] = useState(() => Date.now());
   const [isTyping, setIsTyping] = useState(false);
   const typingTimerRef = useRef(null);
 
@@ -117,15 +119,26 @@ export default function DareOverlay({
 
   const selectedGift = giftItems.find((g) => g.id === selectedGiftId);
 
+  // Keep peers' marquee phase locked: new copy gets a fresh shared clock, gift-only
+  // updates reuse the current clock so the scroll doesn't jump mid-read.
+  const prevDareTextRef = useRef(dareText);
   useEffect(() => {
-    if (isOpen && onDareSync && activeDare) {
-      onDareSync({
-        dareId: activeDare.id,
-        dareText: dareText,
-        gift: selectedGift,
-      });
+    if (!isOpen || !onDareSync || !(activeDare || dareText)) return;
+
+    let startAt = marqueeStartAt;
+    if (prevDareTextRef.current !== dareText) {
+      startAt = Date.now();
+      prevDareTextRef.current = dareText;
+      setMarqueeStartAt(startAt);
     }
-  }, [dareText, selectedGift, isOpen, onDareSync, activeDare]);
+
+    onDareSync({
+      dareId: activeDare?.id,
+      dareText,
+      marqueeStartAt: startAt,
+      gift: selectedGift,
+    });
+  }, [dareText, selectedGift, isOpen, onDareSync, activeDare, marqueeStartAt]);
 
   // Transition to stage 2 when accepted
   useEffect(() => {
@@ -423,8 +436,13 @@ export default function DareOverlay({
                 <p className="text-[11px] text-white/90 font-medium mb-2">
                   {recipientName} is ready to
                 </p>
-                <div className="inline-block px-8 w-[80%] py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm whitespace-nowrap">
-                  {dareText || "Do a dare"}
+                <div className="flex items-center justify-center px-4 w-[80%] max-w-full mx-auto py-1.5 border border-white/60 rounded-full text-white md:text-md text-sm overflow-hidden box-border">
+                  <SyncedMarqueeText
+                    text={dareText || "Do a dare"}
+                    marqueeStartAt={marqueeStartAt}
+                    className="flex-1 min-w-0 w-full"
+                    textClassName="font-otomanopee"
+                  />
                 </div>
               </div>
 
@@ -514,18 +532,18 @@ export default function DareOverlay({
               isSendingDare
             }
             onClick={() => onSendDare && onSendDare()}
-            className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
+            className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto active:scale-95 transition-transform"
           >
             <div className="absolute inset-0 rounded-full flex items-center justify-center">
               <div
                 className={clsx(
-                  "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
+                  "relative aspect-square w-18 h-18 flex border-2 border-b-4 rounded-full items-center justify-center transition-transform group-active:border-b-2",
                   dareAcceptanceStatus !== "accepted" ||
                     !hasSufficientCoins ||
                     !selectedGift ||
                     isSendingDare
-                    ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
-                    : "border-[#13133b] bg-red-900 "
+                    ? "bg-[#606060] border-[#13133b]"
+                    : "border-[#13133b] bg-red-900"
                 )}
               >
                 {dareAcceptanceStatus === "accepted" &&
@@ -534,20 +552,13 @@ export default function DareOverlay({
                   !isSendingDare && (
                     <img
                       src="/circle.png"
-                      className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
+                      className="absolute inset-0 w-full h-full rounded-full transition-none group-active:rotate-180"
                       alt=""
                     />
                   )}
 
                 <p
-                  className={clsx(
-                    "relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80 ",
-                    dareAcceptanceStatus === "accepted" &&
-                    hasSufficientCoins &&
-                    selectedGift &&
-                    !isSendingDare &&
-                    "group-active:scale-80"
-                  )}
+                  className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee transition-none group-active:scale-80"
                 >
                   SEND <br />
                   DARE
@@ -628,18 +639,18 @@ export default function DareOverlay({
                 isSendingDare
               }
               onClick={() => onSendDare && onSendDare()}
-              className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto"
+              className="group relative z-10 flex items-center justify-center w-14 h-14 pointer-events-auto active:scale-95 transition-transform"
             >
               <div className="absolute inset-0 rounded-full flex items-center justify-center">
                 <div
                   className={clsx(
-                    "relative aspect-square w-18 h-18 flex border-2  border-b-4 rounded-full items-center justify-center transition-transform",
+                    "relative aspect-square w-18 h-18 flex border-2 border-b-4 rounded-full items-center justify-center transition-transform group-active:border-b-2",
                     dareAcceptanceStatus !== "accepted" ||
                       !hasSufficientCoins ||
                       !selectedGift ||
                       isSendingDare
-                      ? "bg-[#606060] border-[#13133b] border-2  border-b-4   "
-                      : "border-[#13133b] bg-red-900 "
+                      ? "bg-[#606060] border-[#13133b]"
+                      : "border-[#13133b] bg-red-900"
                   )}
                 >
                   {dareAcceptanceStatus === "accepted" &&
@@ -648,21 +659,13 @@ export default function DareOverlay({
                     !isSendingDare && (
                       <img
                         src="/circle.png"
-                        className="absolute inset-0 w-full h-full rounded-full group-active:rotate-180"
+                        className="absolute inset-0 w-full h-full rounded-full transition-none group-active:rotate-180"
                         alt=""
                       />
                     )}
 
-
                   <p
-                    className={clsx(
-                      "relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee group-active:scale-80 ",
-                      dareAcceptanceStatus === "accepted" &&
-                      hasSufficientCoins &&
-                      selectedGift &&
-                      !isSendingDare &&
-                      "group-active:scale-80"
-                    )}
+                    className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee transition-none group-active:scale-80"
                   >
                     SEND <br />
                     DARE

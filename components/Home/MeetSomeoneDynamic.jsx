@@ -68,6 +68,7 @@ export default function MeetSomeoneDynamic() {
     isVideoOn,
     setIsVideoOn,
     discoveryBlockedByOtherTab,
+    matchPendingInOtherTab,
     deckPhase,
     availableCities,
     handoffSecondsLeft,
@@ -205,6 +206,7 @@ export default function MeetSomeoneDynamic() {
             activeMeetingCount={activeMeetingCount}
             genderFilter={genderFilter}
             discoveryBlockedByOtherTab={discoveryBlockedByOtherTab}
+            matchPendingInOtherTab={matchPendingInOtherTab}
             overlay={overlay}
             setOverlay={setOverlay}
             isVideoOn={isVideoOn}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { FaRegBookmark, FaRegQuestionCircle } from "react-icons/fa";
+import SyncedMarqueeText from "./SyncedMarqueeText";
 
 const KEYFRAMES = `
   @keyframes typingBounce {
@@ -34,7 +35,6 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
   const [hasAccepted, setHasAccepted] = useState(false);
   const [liveText, setLiveText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef(null);
 
   // Reset when sender changes
   useEffect(() => {
@@ -43,26 +43,20 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
     setIsTyping(false);
   }, [proposal?.senderId]);
 
-  // Show dots for 1s, then reveal text
+  // Show dots briefly, then reveal text — marquee phase still uses shared marqueeStartAt
   useEffect(() => {
     if (!isOpen || proposal?.dareText === undefined) return;
 
-    setLiveText("");      // hide text initially
-    setIsTyping(true);    // show dots
+    setLiveText("");
+    setIsTyping(true);
 
     const timer = setTimeout(() => {
-      setIsTyping(false);           // hide dots
-      setLiveText(proposal.dareText); // show text
+      setIsTyping(false);
+      setLiveText(proposal.dareText);
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [proposal?.dareText, isOpen]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    }
-  }, [liveText]);
 
   if (!isOpen || !proposal) return null;
 
@@ -101,20 +95,22 @@ export default function DareProposalOverlay({ proposal, onAccept, onReject, isOp
               {proposal.senderName || "Someone"} is Daring you to
             </p>
 
-            {/* Dare bubble — scrollable */}
-            <div
-              ref={scrollRef}
-              className="dare-scroll w-[80%] mx-auto overflow-x-auto overflow-y-hidden px-4 py-1.5 border border-white/60 rounded-full text-white text-xs font-otomanopee text-center"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              <style>{`.dare-scroll::-webkit-scrollbar{display:none}`}</style>
-              <span className="whitespace-nowrap inline-flex items-center justify-center gap-1">
-                {isTyping ? (
+            {/* Dare bubble — marquees when long, synced with sender */}
+            <div className="flex items-center w-[80%] mx-auto overflow-hidden px-4 py-1.5 border border-white/60 rounded-full text-white text-xs font-otomanopee box-border">
+              {isTyping ? (
+                <span className="inline-flex items-center justify-center w-full">
                   <TypingDots />
-                ) : (
-                  displayText || <span className="opacity-40">...</span>
-                )}
-              </span>
+                </span>
+              ) : displayText ? (
+                <SyncedMarqueeText
+                  text={displayText}
+                  marqueeStartAt={proposal.marqueeStartAt}
+                  className="flex-1 min-w-0 w-full"
+                  textClassName="font-otomanopee text-xs"
+                />
+              ) : (
+                <span className="opacity-40 w-full text-center">...</span>
+              )}
             </div>
           </div>
 

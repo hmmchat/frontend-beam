@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API, apiRequest } from "@/lib/api";
 import { calculateProgress } from "@/lib/facecard-utils";
+import CompletionMeter from "@/components/facecard/CompletionMeter";
 import {
   INDIA_STATES,
   isValidIndiaPhone,
@@ -54,105 +55,6 @@ function Field({ label, children }) {
   );
 }
 
-/** FacecardEditor-style ring, filled by % complete. */
-function FacecardProgressRing({ percent }) {
-  const clamped = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
-  const size = 160;
-  const stroke = 8;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - clamped / 100);
-
-  return (
-    <div className="relative flex h-56 w-56 items-center justify-center">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 281 281"
-          fill="none"
-          className="h-full w-full max-h-[281px] max-w-[281px]"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden
-        >
-          <g
-            filter="url(#filter_mysterybox_progress_glow)"
-            style={{ mixBlendMode: "plus-lighter" }}
-          >
-            <path
-              d="M259.468 140.068C259.468 206.012 206.01 259.47 140.066 259.47C74.1221 259.47 20.6641 206.012 20.6641 140.068C20.6641 74.1241 74.1221 20.666 140.066 20.666C206.01 20.666 259.468 74.1241 259.468 140.068ZM35.0042 140.068C35.0042 198.092 82.0419 245.13 140.066 245.13C198.09 245.13 245.128 198.092 245.128 140.068C245.128 82.0439 198.09 35.0061 140.066 35.0061C82.0419 35.0061 35.0042 82.0439 35.0042 140.068Z"
-              fill="#FFBC2B"
-            />
-          </g>
-          <defs>
-            <filter
-              id="filter_mysterybox_progress_glow"
-              x="-0.00164413"
-              y="0.00030899"
-              width="280.136"
-              height="280.136"
-              filterUnits="userSpaceOnUse"
-              colorInterpolationFilters="sRGB"
-            >
-              <feFlood floodOpacity="0" result="BackgroundImageFix" />
-              <feBlend
-                mode="normal"
-                in="SourceGraphic"
-                in2="BackgroundImageFix"
-                result="shape"
-              />
-              <feGaussianBlur
-                stdDeviation="10.3329"
-                result="effect1_foregroundBlur_mysterybox"
-              />
-            </filter>
-          </defs>
-        </svg>
-      </div>
-
-      <div className="absolute h-[190px] w-[190px] rounded-full border-[4px] border-[#4E0093] mix-blend-color-dodge" />
-      <div className="absolute h-[182px] w-[182px] rounded-full border-[4px] border-[#FFBC2B]/35 mix-blend-color-dodge" />
-      <div className="absolute h-[174px] w-[174px] rounded-full border-[4px] border-[#4E0093] mix-blend-color-dodge" />
-
-      <div className="relative flex h-[160px] w-[160px] items-center justify-center">
-        <svg
-          width={size}
-          height={size}
-          viewBox={`0 0 ${size} ${size}`}
-          className="absolute inset-0 -rotate-90"
-          aria-hidden
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,188,43,0.22)"
-            strokeWidth={stroke}
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#FFBC2B"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-[stroke-dashoffset] duration-700 ease-out"
-          />
-        </svg>
-
-        <div className="absolute h-[140px] w-[140px] rounded-full border-[4px] border-[#FFBC2B]/70" />
-        <span className="relative z-10 text-4xl font-semibold text-white">
-          {clamped}
-          <span className="ml-1 text-2xl opacity-60">%</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function FacecardLockedGate({ progress, onBack }) {
   const router = useRouter();
 
@@ -165,7 +67,16 @@ function FacecardLockedGate({ progress, onBack }) {
           Mystery Beam Box
         </p>
 
-        <FacecardProgressRing percent={progress} />
+        <CompletionMeter
+          percent={progress}
+          size="mobile"
+          className="md:hidden"
+        />
+        <CompletionMeter
+          percent={progress}
+          size="desktop"
+          className="hidden md:flex"
+        />
 
         <button
           type="button"

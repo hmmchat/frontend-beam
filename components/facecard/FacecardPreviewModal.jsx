@@ -60,7 +60,7 @@ export default function FacecardPreviewModal({ userId, isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden cursor-pointer bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden cursor-pointer bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20"
       onClick={onClose}
     >
       {loading ? (

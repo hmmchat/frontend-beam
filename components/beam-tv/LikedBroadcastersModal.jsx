@@ -2,7 +2,7 @@
 
 export default function LikedBroadcastersModal({ likedBroadcasters, onClose, onSelectBroadcaster }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20" onClick={onClose}>
       <div className="w-full max-w-lg border border-white/20 rounded-[2.5rem] p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
         <div
           className="absolute rounded-[40px] inset-0"

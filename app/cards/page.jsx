@@ -8,6 +8,7 @@ import { calculateAge, getFacecardPhotos } from '@/lib/facecard-utils';
 import FaceCard from '@/components/Home/FaceCard';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
+import OfflineHotlineDmOverlay from '@/components/cards/OfflineHotlineDmOverlay';
 import clsx from 'clsx';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 
@@ -42,6 +43,7 @@ function OfflineCardsContent() {
   const [successGift, setSuccessGift] = useState(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [isGiftButtonHidden, setIsGiftButtonHidden] = useState(false);
+  const [isHotlineDmOpen, setIsHotlineDmOpen] = useState(false);
 
 
   const [scale, setScale] = useState(1);
@@ -74,6 +76,7 @@ function OfflineCardsContent() {
     setExhausted(false);
     setCurrentImageIndex(0);
     setIsGiftButtonHidden(false);
+    setIsHotlineDmOpen(false);
     setSwipeAnim(null);
     setIsEntering(true);
     // Next paint: ease from slightly scaled/faded into place (Tinder deck feel)
@@ -117,16 +120,19 @@ function OfflineCardsContent() {
 
   useEffect(() => { fetchCard(); }, [fetchCard]);
 
+  const refreshWallet = useCallback(async () => {
+    try {
+      const b = await apiRequest(API.WALLET.GET_BALANCE);
+      setWalletCoins(typeof b?.balance === 'number' ? b.balance : 0);
+    } catch {
+      setWalletCoins(0);
+    }
+  }, []);
+
   // ── load wallet balance ──────────────────────────────────────────────────
   useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        const b = await apiRequest(API.WALLET.GET_BALANCE);
-        setWalletCoins(typeof b?.balance === 'number' ? b.balance : 0);
-      } catch { setWalletCoins(0); }
-    };
-    loadWallet();
-  }, []);
+    refreshWallet();
+  }, [refreshWallet]);
 
   // ── photo navigation ─────────────────────────────────────────────────────
   const allPhotos = getFacecardPhotos(card);
@@ -216,17 +222,18 @@ function OfflineCardsContent() {
     }
   };
 
-  // ── message ──────────────────────────────────────────────────────────────
-  const handleMessage = async () => {
+  // ── message — Hotline DM overlay (stay on offline cards) ─────────────────
+  const handleMessage = () => {
     if (!card || swiping) return;
+    setIsGiftModalOpen(false);
+    setSelectedGift(null);
+    setIsHotlineDmOpen(true);
+  };
+
+  const handleHotlineDmSent = async () => {
+    if (!card?.userId) return;
+    setConnectSent(true);
     await markOfflineEngaged(card.userId);
-    const q = new URLSearchParams({
-      userId: card.userId,
-      username: card.username || 'User',
-      friend: '0',
-    });
-    if (card.displayPictureUrl) q.set('photo', card.displayPictureUrl);
-    router.push(`/inbox?${q.toString()}`);
   };
 
   // ── connect (heart) — friend request + engage + swipe right to next ─────
@@ -717,6 +724,16 @@ function OfflineCardsContent() {
               }}
               gift={successGift}
               recipientName={card?.name}
+            />
+
+            <OfflineHotlineDmOverlay
+              open={isHotlineDmOpen}
+              onClose={() => setIsHotlineDmOpen(false)}
+              toUserId={card?.userId}
+              isAlreadyFriend={isAlreadyFriend}
+              walletCoins={walletCoins}
+              onCoinsUpdated={refreshWallet}
+              onSent={handleHotlineDmSent}
             />
 
           </div>

@@ -104,7 +104,7 @@ export default function GiftOverlay({
     <>
       {/* Animation Layer */}
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
-      <div className="fixed inset-0 z-20 bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35" onClick={onClose} />
+      <div className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20" onClick={onClose} />
       {/* Main UI */}
       <div className={clsx(
         "absolute z-30 flex flex-col items-end w-full px-4",

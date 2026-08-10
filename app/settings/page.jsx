@@ -68,7 +68,7 @@ function DeleteAccountModal({ open, onClose, onConfirm, confirming }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35 p-4 sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20 p-4 sm:p-6"
       onClick={onClose}
       role="presentation"
     >

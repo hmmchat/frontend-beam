@@ -9,8 +9,8 @@ export default function OverlayBackdrop({ onClick, className = "" }) {
       role="presentation"
       onClick={onClick}
       className={[
-        "absolute inset-0 z-0 bg-black/45 backdrop-blur-md",
-        "supports-[backdrop-filter]:bg-black/35",
+        "absolute inset-0 z-0 bg-black/30 backdrop-blur-sm",
+        "supports-[backdrop-filter]:bg-black/20",
         className,
       ].join(" ")}
     />
@@ -19,4 +19,4 @@ export default function OverlayBackdrop({ onClick, className = "" }) {
 
 /** Shared class for roots that want the blur on the same element (simple cases). */
 export const OVERLAY_SCRIM_CLASS =
-  "bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35";
+  "bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20";

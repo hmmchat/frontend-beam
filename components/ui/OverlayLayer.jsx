@@ -24,7 +24,7 @@ export default function OverlayLayer({ open, title, url, onClose, showChrome = t
 
   return (
     <div className="fixed inset-0 z-[200]">
-      <div className="absolute inset-0 bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35" onClick={onClose} role="presentation" />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20" onClick={onClose} role="presentation" />
       <div className="absolute inset-0 p-3 md:p-6 flex items-stretch justify-center">
         <div
           className="relative w-full max-w-6xl h-full rounded-[32px] overflow-hidden border border-white/10 bg-black/25 backdrop-blur-xl"

@@ -293,9 +293,11 @@ export default function GenderModal({ isOpen, onClose, userCoins: externalUserCo
                         <div className="text-white font-semibold text-[11px] sm:text-xs line-clamp-1 px-1">
                           {filter.label}
                         </div>
-                        <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
-                          {hasPackViews ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
-                        </div>
+                        {!isDisabled && (
+                          <div className="text-white/60 font-outfit text-[10px] sm:text-[10px] mb-1">
+                            {hasPackViews ? `${activePack.screensRemaining} views remaining` : `${screensPerPurchase}+ Matches`}
+                          </div>
+                        )}
                         {!GENDER_FILTERS_COMING_SOON && (
                           <div className="flex justify-center gap-1 mt-2 text-white text-[14px] sm:text-xs">
                             {!hasPackViews && (

@@ -387,7 +387,7 @@ function FriendWallContent() {
       {/* Facecard Preview Modal */}
       {isPreviewOpen && selectedFriend && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35"
+          className="fixed inset-0 z-[200] flex items-center justify-center md:p-4 overflow-hidden bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20"
           onClick={() => setIsPreviewOpen(false)}
         >
           <div

@@ -103,6 +103,11 @@ export default function useMeetSomeone() {
   const squadVideoRoomNavKeyRef = useRef('');
   const isSearchingRef = useRef(false);
   const waitingForMatchRef = useRef(false);
+  const waitingMatchedUserRef = useRef(null);
+  const currentCardRef = useRef(null);
+  const raincheckRematchInFlightRef = useRef(false);
+  /** Partners we must never re-show after a raincheck (this session). */
+  const excludedPartnerIdsRef = useRef(new Set());
   const sessionIdRef = useRef(null);
   const modeRef = useRef('solo');
   const myUserIdRef = useRef(null);
@@ -273,8 +278,18 @@ export default function useMeetSomeone() {
 
   const applyCardResponse = useCallback(
     (data, { silent = false } = {}) => {
+      // Meet rn wait must keep the peer face card until both accept (or cancel).
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
+
       const card = data?.card || null;
       const exhausted = Boolean(data?.exhausted);
+      const nextId = card?.userId || card?._id || card?.id || null;
+      // Never flash a partner we just rainchecked / were rainchecked by.
+      if (nextId && excludedPartnerIdsRef.current.has(nextId)) {
+        enterEmptyOrbit();
+        return;
+      }
+
       const isLocation =
         card && (card.type === 'LOCATION' || data?.isLocationCard || card.isLocationCard);
 
@@ -292,7 +307,6 @@ export default function useMeetSomeone() {
       setDeckPhase('user');
       deckPhaseRef.current = 'user';
       setCurrentCard((prev) => {
-        const nextId = card?.userId || card?._id || card?.id;
         const prevId = prev?.userId || prev?._id || prev?.id;
         if (silent && nextId === prevId && prevId) {
           return { ...prev, ...card };
@@ -387,6 +401,8 @@ export default function useMeetSomeone() {
       const soloMode = isSolo !== null ? isSolo : mode === 'solo';
       const data = await apiRequest(API.DISCOVERY.GET_CARD(currentSid, soloMode));
       console.log('Got Card:', data);
+      // Meet rn wait must keep the pinned peer card (same guard as silent fetch).
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
       applyCardResponse(data);
       setSessionId(data.sessionId || currentSid || Date.now().toString());
       if (soloMode) {
@@ -397,6 +413,7 @@ export default function useMeetSomeone() {
       setError('Failed to load card. Please check your connection.');
     } finally {
       setLoading(false);
+      setTimeout(() => setIsResumeLoading(false), 300);
     }
   };
 
@@ -405,6 +422,7 @@ export default function useMeetSomeone() {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
 
       const currentSid = sid || Date.now().toString();
       const soloMode = isSolo !== null ? isSolo : mode === 'solo';
@@ -413,6 +431,8 @@ export default function useMeetSomeone() {
       if (reqId !== latestSilentFetchIdRef.current) return;
       // Never reopen matchmaking from a late poll after the user left search.
       if (!isSearchingRef.current) return;
+      // Late response after Meet rn wait started — keep the waiting face card.
+      if (waitingForMatchRef.current || isEnteringCallRef.current) return;
       if (data?.card || data?.exhausted) {
         setIsSearching(true);
       }
@@ -522,6 +542,7 @@ export default function useMeetSomeone() {
       setWaitingForMatch(false);
       setWaitingMatchedUser(null);
       setIsSearching(false);
+      setIsResumeLoading(false);
       setCurrentCard(null);
       clearSearchingUrlParam();
       clearDiscoveryResumeIntent();
@@ -541,6 +562,10 @@ export default function useMeetSomeone() {
     const epoch = ++discoveryEpochRef.current;
     setSessionId(nextSid);
     setIsSearching(true);
+    // Same meme loader as video-call connect while we look for a face card.
+    setIsResumeLoading(true);
+    setCurrentCard(null);
+    excludedPartnerIdsRef.current = new Set();
     resetHandoffUiState();
     setDiscoveryBlockedByOtherTab(false);
     if (typeof window !== 'undefined') {
@@ -558,49 +583,112 @@ export default function useMeetSomeone() {
       if (String(err?.message || err).includes('another tab')) {
         setDiscoveryBlockedByOtherTab(true);
         setIsSearching(false);
+        setIsResumeLoading(false);
         return;
       }
+      setIsResumeLoading(false);
       throw err;
     }
     // User backed out (or search was stopped) while enterDiscovery was in flight.
-    if (discoveryEpochRef.current !== epoch || !isSearchingRef.current) return;
+    if (discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
+      setIsResumeLoading(false);
+      return;
+    }
     await fetchCard(nextSid, true);
     if (discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
       setCurrentCard(null);
+      setIsResumeLoading(false);
     }
   };
 
+  const clearWaitingState = useCallback(() => {
+    clearInterval(pollRef.current);
+    clearTimeout(rescueTimeoutRef.current);
+    pollRef.current = null;
+    waitingForMatchRef.current = false;
+    setWaitingForMatch(false);
+    setWaitingMatchedUser(null);
+  }, []);
+
+  /**
+   * Instantly leave face-card / waiting UI into matchmaking loader.
+   * Optionally POSTs raincheck and applies nextCard — never re-shows excludedId.
+   */
+  const enterMatchmakingAfterRaincheck = async (
+    excludedId,
+    { postRaincheck = false } = {},
+  ) => {
+    if (excludedId) {
+      excludedPartnerIdsRef.current.add(excludedId);
+    }
+    clearWaitingState();
+    setCurrentCard(null);
+    setWaitingMatchedUser(null);
+    setIsResumeLoading(true);
+    setIsSearching(true);
+    setDeckPhase('user');
+    deckPhaseRef.current = 'user';
+
+    let nextCard = null;
+    if (postRaincheck && excludedId && sessionIdRef.current) {
+      try {
+        const res = await apiRequest(API.DISCOVERY.RAINCHECK, {
+          method: 'POST',
+          body: JSON.stringify({
+            sessionId: sessionIdRef.current,
+            raincheckedUserId: excludedId,
+          }),
+        });
+        nextCard = res?.nextCard || null;
+      } catch (error) {
+        console.error('Error rainchecking:', error);
+      }
+    }
+
+    const nextId = nextCard?.userId || nextCard?._id || nextCard?.id || null;
+    if (
+      nextCard &&
+      nextId &&
+      !excludedPartnerIdsRef.current.has(nextId) &&
+      nextCard.type !== 'LOCATION' &&
+      !nextCard.isLocationCard
+    ) {
+      applyCardResponse({ card: nextCard, exhausted: false });
+      setTimeout(() => setIsResumeLoading(false), 300);
+    } else {
+      await fetchCardSilently(sessionIdRef.current, modeRef.current === 'solo');
+    }
+  };
+
+  const enterMatchmakingAfterRaincheckRef = useRef(enterMatchmakingAfterRaincheck);
+  enterMatchmakingAfterRaincheckRef.current = enterMatchmakingAfterRaincheck;
+
   const handleRaincheck = async () => {
-    if (!currentCard || swiping) return;
+    const partner = waitingMatchedUser || currentCard;
+    if (!partner || swiping) return;
 
     // Raincheck is only for real user face cards
-    if (currentCard.type === 'LOCATION' || currentCard.isLocationCard) {
+    if (partner.type === 'LOCATION' || partner.isLocationCard) {
       return;
     }
 
+    if (raincheckRematchInFlightRef.current) return;
+    raincheckRematchInFlightRef.current = true;
     setSwiping(true);
-    setIsResumeLoading(true);
-    setCurrentCard(null);
     try {
-      await apiRequest(API.DISCOVERY.RAINCHECK, {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId: sessionId,
-          raincheckedUserId: currentCard.userId,
-        }),
+      await enterMatchmakingAfterRaincheckRef.current(partner.userId, {
+        postRaincheck: true,
       });
-      await fetchCardSilently(sessionId, mode === 'solo');
-    } catch (error) {
-      console.error('Error rainchecking:', error);
-      setError('Failed to skip. Please try again.');
     } finally {
       setSwiping(false);
-      setTimeout(() => setIsResumeLoading(false), 500);
+      window.setTimeout(() => {
+        raincheckRematchInFlightRef.current = false;
+      }, 1500);
     }
   };
 
   const handleProceed = async () => {
-    if (!currentCard || swiping || waitingForMatch) return;
+    if (!currentCard || swiping || waitingForMatch || waitingForMatchRef.current) return;
 
     // Meet rn only enters a call for real user cards — never opens a city deck
     if (currentCard.type === 'LOCATION' || currentCard.isLocationCard) {
@@ -614,116 +702,216 @@ export default function useMeetSomeone() {
 
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userId = payload.sub || payload.uid || payload.id;
+      const partnerCard = currentCard;
 
-      let pullStrangerHandled = false;
-      try {
-        let roomInfo = await apiRequest(API.STREAMING.GET_PULL_STRANGER_ROOM(currentCard.userId));
-        if ((!roomInfo?.exists || !roomInfo?.roomId) && currentCard.status === 'IN_SQUAD_AVAILABLE') {
-          roomInfo = await apiRequest(API.STREAMING.GET_USER_ROOM(currentCard.userId));
-        }
-
-        if (roomInfo?.exists && roomInfo?.roomId) {
-          console.log('[PullStranger] Target user room:', roomInfo.roomId);
-
-          const joinData = await apiRequest(API.STREAMING.JOIN_VIA_PULL_STRANGER(roomInfo.roomId), {
-            method: 'POST',
-            body: JSON.stringify({
-              joiningUserId: userId,
-              targetUserId: currentCard.userId,
-            }),
-          });
-
-          if (joinData?.roomId) {
-            localStorage.setItem(
-              'currentRoom',
-              JSON.stringify({
-                roomId: joinData.roomId,
-                sessionId: joinData.sessionId || roomInfo.roomId,
-                partner: {
-                  id: currentCard.userId,
-                  username: currentCard.username,
-                  age: currentCard.age,
-                  city: currentCard.city,
-                  displayPictureUrl: currentCard.displayPictureUrl,
-                },
-              }),
-            );
-            isEnteringCallRef.current = true;
-            await enterCall();
-            router.push('/video-chat');
-            return;
+      // Pull-stranger join is only for live squad hosts — never for mutual MATCHED face cards.
+      if (partnerCard.status === 'IN_SQUAD_AVAILABLE') {
+        try {
+          let roomInfo = await apiRequest(API.STREAMING.GET_PULL_STRANGER_ROOM(partnerCard.userId));
+          if (!roomInfo?.exists || !roomInfo?.roomId) {
+            roomInfo = await apiRequest(API.STREAMING.GET_USER_ROOM(partnerCard.userId));
           }
-        }
-      } catch (err) {
-        if (currentCard.status === 'IN_SQUAD_AVAILABLE') {
-          pullStrangerHandled = true;
+
+          if (roomInfo?.exists && roomInfo?.roomId) {
+            console.log('[PullStranger] Target user room:', roomInfo.roomId);
+
+            const joinData = await apiRequest(API.STREAMING.JOIN_VIA_PULL_STRANGER(roomInfo.roomId), {
+              method: 'POST',
+              body: JSON.stringify({
+                joiningUserId: userId,
+                targetUserId: partnerCard.userId,
+              }),
+            });
+
+            if (joinData?.roomId) {
+              localStorage.setItem(
+                'currentRoom',
+                JSON.stringify({
+                  roomId: joinData.roomId,
+                  sessionId: joinData.sessionId || roomInfo.roomId,
+                  partner: {
+                    id: partnerCard.userId,
+                    username: partnerCard.username,
+                    age: partnerCard.age,
+                    city: partnerCard.city,
+                    displayPictureUrl: partnerCard.displayPictureUrl,
+                  },
+                }),
+              );
+              isEnteringCallRef.current = true;
+              await enterCall();
+              router.push('/video-chat');
+              return;
+            }
+          }
+        } catch (err) {
           console.warn('[PullStranger] Direct join failed:', err);
           setError('Could not join this squad right now. Please fetch next card.');
           return;
         }
-      }
-
-      if (currentCard.status === 'IN_SQUAD_AVAILABLE' || pullStrangerHandled) {
         return;
       }
 
       const data = await apiRequest(API.DISCOVERY.PROCEED, {
         method: 'POST',
         body: JSON.stringify({
-          matchedUserId: currentCard.userId,
+          matchedUserId: partnerCard.userId,
         }),
       });
 
       console.log('Proceed Result:', data);
 
-      if (data.roomId) {
+      const enterCallWithRoom = async (roomId, roomSessionId) => {
+        if (!roomId || isEnteringCallRef.current) return;
         clearInterval(pollRef.current);
+        clearTimeout(rescueTimeoutRef.current);
         localStorage.setItem(
           'currentRoom',
           JSON.stringify({
-            roomId: data.roomId,
-            sessionId: data.sessionId,
+            roomId,
+            sessionId: roomSessionId || roomId,
             partner: {
-              id: currentCard.userId,
-              username: currentCard.username,
-              age: currentCard.age,
-              city: currentCard.city,
-              displayPictureUrl: currentCard.displayPictureUrl,
+              id: partnerCard.userId,
+              username: partnerCard.username,
+              age: partnerCard.age,
+              city: partnerCard.city,
+              displayPictureUrl: partnerCard.displayPictureUrl,
             },
           }),
         );
         isEnteringCallRef.current = true;
+        waitingForMatchRef.current = false;
+        setWaitingForMatch(false);
+        setWaitingMatchedUser(null);
         await enterCall();
         router.push('/video-chat');
-      } else if (data.success && !data.waiting && !data.roomId) {
+      };
+
+      // Both already accepted — room ready from discovery.
+      if (data.roomId) {
+        await enterCallWithRoom(data.roomId, data.sessionId);
+        return;
+      }
+
+      // First accepter: stay on the same face card with waiting UI until peer also Meet rns.
+      if (data.waiting) {
+        waitingForMatchRef.current = true;
+        setWaitingForMatch(true);
+        setWaitingMatchedUser(partnerCard);
+        setCurrentCard(partnerCard);
+        setDeckPhase('user');
+        deckPhaseRef.current = 'user';
+
+        let emptyPollCount = 0;
+        // Align with backend MATCH_ACCEPTANCE_TIMEOUT_SECONDS (~30s): ~30 × 1s
+        const MAX_POLL_TICKS = 30;
+        const POLL_MS = 1000;
+        const partnerId = partnerCard.userId;
+
+        // Any room already in Redis is from a prior call — ignore until mutual accept
+        // overwrites it with a new roomId (or until it clears and a fresh one appears).
+        let baselineRoomId = null;
+        try {
+          const existing = await apiRequest(API.DISCOVERY.MY_ROOM);
+          baselineRoomId = existing?.roomId || null;
+        } catch (_) {
+          baselineRoomId = null;
+        }
+
+        const leaveWaitForMatchmaking = async () => {
+          if (!waitingForMatchRef.current) return;
+          clearInterval(pollRef.current);
+          clearTimeout(rescueTimeoutRef.current);
+          if (raincheckRematchInFlightRef.current || isEnteringCallRef.current) return;
+          raincheckRematchInFlightRef.current = true;
+          try {
+            // Peer rainchecked (or match broke) — mirror raincheck + matchmaking UI now.
+            await enterMatchmakingAfterRaincheckRef.current(partnerId, {
+              postRaincheck: true,
+            });
+          } finally {
+            window.setTimeout(() => {
+              raincheckRematchInFlightRef.current = false;
+            }, 1500);
+          }
+        };
+
+        const pollWaitingTick = async () => {
+          if (!waitingForMatchRef.current || isEnteringCallRef.current) {
+            clearInterval(pollRef.current);
+            return;
+          }
+          try {
+            // 1) Mutual accept room first — both-accepted deletes active_matches,
+            // so match-status goes false; that is NOT a raincheck.
+            const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
+            const nextRoomId = assigned?.roomId || null;
+            if (assigned?.hasRoom && nextRoomId && nextRoomId !== baselineRoomId) {
+              await enterCallWithRoom(nextRoomId, assigned.sessionId);
+              return;
+            }
+
+            // 2) Still waiting on peer Meet rn — keep face card.
+            let stillMatchedWithPartner = true;
+            try {
+              const matchStatus = await apiRequest(API.DISCOVERY.MATCH_STATUS);
+              stillMatchedWithPartner =
+                Boolean(matchStatus?.matched) &&
+                (!matchStatus.partnerId || matchStatus.partnerId === partnerId);
+            } catch (_) {
+              stillMatchedWithPartner = true;
+            }
+
+            if (!stillMatchedWithPartner) {
+              // No match and no room → peer rainchecked / match cancelled.
+              await leaveWaitForMatchmaking();
+              return;
+            }
+
+            emptyPollCount++;
+            if (emptyPollCount >= MAX_POLL_TICKS) {
+              clearInterval(pollRef.current);
+              clearTimeout(rescueTimeoutRef.current);
+              waitingForMatchRef.current = false;
+              setWaitingForMatch(false);
+              setWaitingMatchedUser(null);
+              setError('The other person did not join in time. Finding someone new...');
+              setTimeout(() => setError(''), 3000);
+              await fetchCard(sessionId);
+            }
+          } catch {
+            emptyPollCount++;
+            if (emptyPollCount >= MAX_POLL_TICKS) {
+              clearInterval(pollRef.current);
+              waitingForMatchRef.current = false;
+              setWaitingForMatch(false);
+              setWaitingMatchedUser(null);
+              await fetchCard(sessionId);
+            }
+          }
+        };
+
+        // Immediate first tick, then poll.
+        void pollWaitingTick().finally(() => {
+          if (!waitingForMatchRef.current || isEnteringCallRef.current) return;
+          pollRef.current = setInterval(pollWaitingTick, POLL_MS);
+        });
+        return;
+      }
+
+      // Both accepted but discovery room create failed — frontend fallback.
+      if (data.success && !data.waiting && !data.roomId) {
         console.log('Both accepted, but backend room creation failed. Creating room via frontend...');
         try {
           const roomData = await apiRequest(API.STREAMING.CREATE_ROOM, {
             method: 'POST',
             body: JSON.stringify({
-              userIds: [userId, currentCard.userId],
+              userIds: [userId, partnerCard.userId],
               callType: 'matched',
             }),
           });
           if (roomData && roomData.roomId) {
-            clearInterval(pollRef.current);
-            localStorage.setItem(
-              'currentRoom',
-              JSON.stringify({
-                roomId: roomData.roomId,
-                sessionId: roomData.sessionId || sessionId,
-                partner: {
-                  id: currentCard.userId,
-                  username: currentCard.username,
-                  age: currentCard.age,
-                  city: currentCard.city,
-                  displayPictureUrl: currentCard.displayPictureUrl,
-                },
-              }),
-            );
-            isEnteringCallRef.current = true;
-            await enterCall();
-            router.push('/video-chat');
+            await enterCallWithRoom(roomData.roomId, roomData.sessionId || sessionId);
             return;
           }
         } catch (roomErr) {
@@ -733,121 +921,18 @@ export default function useMeetSomeone() {
             try {
               const existingRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
               if (existingRoom?.exists && existingRoom?.roomId) {
-                clearInterval(pollRef.current);
-                localStorage.setItem(
-                  'currentRoom',
-                  JSON.stringify({
-                    roomId: existingRoom.roomId,
-                    sessionId: existingRoom.sessionId || sessionId,
-                    partner: {
-                      id: currentCard.userId,
-                      username: currentCard.username,
-                      age: currentCard.age,
-                      city: currentCard.city,
-                      displayPictureUrl: currentCard.displayPictureUrl,
-                    },
-                  }),
-                );
-                isEnteringCallRef.current = true;
-                await enterCall();
-                router.push('/video-chat');
+                await enterCallWithRoom(existingRoom.roomId, existingRoom.sessionId || sessionId);
                 return;
               }
             } catch (_) { }
           }
 
           setError('Match found, but video servers are currently unreachable. Please try again.');
+          return;
         }
-      } else if (data.waiting) {
-        setWaitingForMatch(true);
-        setWaitingMatchedUser(currentCard);
-
-        let emptyPollCount = 0;
-        // Align with backend MATCH_ACCEPTANCE_TIMEOUT_SECONDS (~30s): 15 × 2s
-        const MAX_POLL_TICKS = 15;
-        const POLL_MS = 2000;
-
-        const enterMatchedRoom = async (roomId, roomSessionId) => {
-          if (!roomId || isEnteringCallRef.current) return;
-          clearInterval(pollRef.current);
-          clearTimeout(rescueTimeoutRef.current);
-          localStorage.setItem(
-            'currentRoom',
-            JSON.stringify({
-              roomId,
-              sessionId: roomSessionId || roomId,
-              partner: {
-                id: currentCard.userId,
-                username: currentCard.username,
-                age: currentCard.age,
-                city: currentCard.city,
-                displayPictureUrl: currentCard.displayPictureUrl,
-              },
-            }),
-          );
-          isEnteringCallRef.current = true;
-          await enterCall();
-          router.push('/video-chat');
-        };
-
-        const startPollingRoom = () => {
-          pollRef.current = setInterval(async () => {
-            try {
-              // 1) Discovery Redis assignment (source of truth after mutual accept)
-              try {
-                const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
-                if (assigned?.hasRoom && assigned?.roomId) {
-                  await enterMatchedRoom(assigned.roomId, assigned.sessionId);
-                  return;
-                }
-              } catch (_) {
-                /* fall through to streaming lookup */
-              }
-
-              // 2) Streaming participant room (backup)
-              const streamData = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
-              if (streamData?.exists && streamData?.roomId) {
-                await enterMatchedRoom(streamData.roomId, streamData.sessionId || streamData.roomId);
-                return;
-              }
-
-              emptyPollCount++;
-              if (emptyPollCount >= MAX_POLL_TICKS) {
-                clearInterval(pollRef.current);
-                clearTimeout(rescueTimeoutRef.current);
-                setWaitingForMatch(false);
-                setWaitingMatchedUser(null);
-                setError('The other person did not join in time. Finding someone new...');
-                setTimeout(() => setError(''), 3000);
-                // Resume discovery cleanly — do not leave zombie waiting UI
-                await fetchCard(sessionId);
-              }
-            } catch {
-              emptyPollCount++;
-              if (emptyPollCount >= MAX_POLL_TICKS) {
-                clearInterval(pollRef.current);
-                setWaitingForMatch(false);
-                setWaitingMatchedUser(null);
-                await fetchCard(sessionId);
-              }
-            }
-          }, POLL_MS);
-        };
-
-        // Immediate first check (don't wait for first interval)
-        (async () => {
-          try {
-            const assigned = await apiRequest(API.DISCOVERY.MY_ROOM);
-            if (assigned?.hasRoom && assigned?.roomId) {
-              await enterMatchedRoom(assigned.roomId, assigned.sessionId);
-              return;
-            }
-          } catch (_) { }
-          startPollingRoom();
-        })();
-      } else {
-        await fetchCard(sessionId);
       }
+
+      await fetchCard(sessionId);
     } catch (error) {
       console.error('Error proceeding:', error);
       setError('Failed to connect. Please try again.');
@@ -856,12 +941,9 @@ export default function useMeetSomeone() {
     }
   };
 
-  const handleCancelWaiting = () => {
-    clearInterval(pollRef.current);
-    clearTimeout(rescueTimeoutRef.current);
-    setWaitingForMatch(false);
-    setWaitingMatchedUser(null);
-    fetchCard(sessionId);
+  // X on "Waiting for response" = raincheck the peer so both leave this match.
+  const handleCancelWaiting = async () => {
+    await handleRaincheck();
   };
 
   const handleSelectLocation = async (city, { persistPreference = false } = {}) => {
@@ -1565,15 +1647,22 @@ export default function useMeetSomeone() {
       setWaitingMatchedUser(null);
       setSessionId(nextSid);
       setIsSearching(true);
+      setIsResumeLoading(true);
+      setCurrentCard(null);
       setDiscoveryBlockedByOtherTab(false);
       try {
         await enterDiscovery(nextSid);
-        if (aborted || discoveryEpochRef.current !== epoch || !isSearchingRef.current) return;
+        if (aborted || discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
+          setIsResumeLoading(false);
+          return;
+        }
         await fetchCard(nextSid, true);
         if (aborted || discoveryEpochRef.current !== epoch || !isSearchingRef.current) {
           setCurrentCard(null);
+          setIsResumeLoading(false);
         }
       } catch (err) {
+        setIsResumeLoading(false);
         if (String(err?.message || err).includes('another tab')) {
           setDiscoveryBlockedByOtherTab(true);
           setIsSearching(false);
@@ -1690,6 +1779,14 @@ export default function useMeetSomeone() {
   }, [waitingForMatch]);
 
   useEffect(() => {
+    waitingMatchedUserRef.current = waitingMatchedUser;
+  }, [waitingMatchedUser]);
+
+  useEffect(() => {
+    currentCardRef.current = currentCard;
+  }, [currentCard]);
+
+  useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
 
@@ -1705,12 +1802,61 @@ export default function useMeetSomeone() {
     const syncTabDiscoveryState = () => {
       setDiscoveryBlockedByOtherTab(isDiscoveryActiveElsewhere() && !isDiscoveryLeader());
     };
+
+    const rematchAfterPeerRaincheck = (partnerId, { mirrorRaincheck = true } = {}) => {
+      if (raincheckRematchInFlightRef.current) return;
+      raincheckRematchInFlightRef.current = true;
+
+      const excludedId =
+        partnerId ||
+        waitingMatchedUserRef.current?.userId ||
+        currentCardRef.current?.userId ||
+        null;
+
+      void (async () => {
+        try {
+          await enterMatchmakingAfterRaincheckRef.current(excludedId, {
+            postRaincheck: mirrorRaincheck,
+          });
+        } finally {
+          window.setTimeout(() => {
+            raincheckRematchInFlightRef.current = false;
+          }, 1500);
+        }
+      })();
+    };
+
     const unsubTab = subscribeTabCoordinator(syncTabDiscoveryState);
     const unsubPresence = subscribePresenceRealtime((payload) => {
       if (payload?.eventType === 'discovery:matched') {
         // Peer already has our face card — show theirs immediately (any deck phase).
-        if (isSearchingRef.current) {
+        if (isSearchingRef.current && !waitingForMatchRef.current) {
+          const matchedId = payload.partnerId;
+          if (matchedId && excludedPartnerIdsRef.current.has(matchedId)) {
+            return;
+          }
           void fetchMatchedCardNow();
+        }
+        return;
+      }
+      if (payload?.eventType === 'discovery:rainchecked') {
+        const partnerId = payload.partnerId;
+        const waitingPartnerId = waitingMatchedUserRef.current?.userId;
+        const shownPartnerId = currentCardRef.current?.userId;
+        // Waiting for Meet rn response — peer rainchecked; leave wait and rematch.
+        if (waitingForMatchRef.current) {
+          rematchAfterPeerRaincheck(partnerId || waitingPartnerId, {
+            mirrorRaincheck: true,
+          });
+          return;
+        }
+        // Still on that mutual face card — drop it and find someone new.
+        if (
+          isSearchingRef.current &&
+          partnerId &&
+          (partnerId === shownPartnerId || partnerId === waitingPartnerId)
+        ) {
+          rematchAfterPeerRaincheck(partnerId, { mirrorRaincheck: true });
         }
         return;
       }
@@ -1738,6 +1884,22 @@ export default function useMeetSomeone() {
       if (!payload?.userId) return;
       if (payload.userId === myUserIdRef.current) {
         void fetchMyProfile();
+        // While waiting: IN_SQUAD means peer also Meet rn'd — room poll will join.
+        // AVAILABLE/ONLINE means peer rainchecked — leave waiting into matchmaking.
+        if (
+          waitingForMatchRef.current &&
+          payload.status &&
+          payload.status !== 'MATCHED'
+        ) {
+          if (payload.status === 'IN_SQUAD') {
+            return;
+          }
+          rematchAfterPeerRaincheck(
+            waitingMatchedUserRef.current?.userId || currentCardRef.current?.userId,
+            { mirrorRaincheck: true },
+          );
+          return;
+        }
         if (payload.status === 'ONLINE' && isSearchingRef.current) {
           setIsSearching(false);
           setCurrentCard(null);
@@ -1766,6 +1928,7 @@ export default function useMeetSomeone() {
     applySquadEnterResponse,
     cleanupSquadLobbyBackgroundAudio,
     refreshSquadLobby,
+    clearWaitingState,
   ]);
 
   useEffect(() => {

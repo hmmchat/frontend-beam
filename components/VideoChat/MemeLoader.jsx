@@ -5,7 +5,18 @@ import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 export default function MemeLoader({ loadingMeme, showFrame = true }) {
   return (
-    <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden')}>
+    <div
+      className={clsx(
+        'flex-1',
+        'h-full',
+        'w-full',
+        'min-h-0',
+        'min-w-0',
+        'relative',
+        'md:rounded-[60px]',
+        'overflow-hidden',
+      )}
+    >
       {showFrame ? (
         <div
           className="

@@ -57,6 +57,7 @@ export default function MeetSomeoneDynamic() {
     isCoinModalOpen,
     setIsCoinModalOpen,
     waitingForMatch,
+    waitingMatchedUser,
     waitingMessage,
     activeMeetingCount,
     overlay,
@@ -100,6 +101,12 @@ export default function MeetSomeoneDynamic() {
     handleQuickSquadInvite,
     handleQuickSquadCancelInvite,
   } = state;
+
+  // While waiting for peer Meet rn, always render the pinned partner face card.
+  const faceCard =
+    waitingForMatch && waitingMatchedUser ? waitingMatchedUser : currentCard;
+  const faceDeckPhase =
+    waitingForMatch && waitingMatchedUser ? 'user' : deckPhase;
 
   return (
     <>
@@ -160,7 +167,7 @@ export default function MeetSomeoneDynamic() {
           {/* LEFT SIDE (DESKTOP) */}
           <MeetSomeoneDesktopLeft
             isSearching={isSearching}
-            currentCard={currentCard}
+            currentCard={faceCard}
             isResumeLoading={isResumeLoading}
             discoveryCityFaceUser={discoveryCityFaceUser}
             currentImageIndex={currentImageIndex}
@@ -175,7 +182,7 @@ export default function MeetSomeoneDynamic() {
             handleCancelWaiting={handleCancelWaiting}
             setIsSearching={setIsSearching}
             setCurrentCard={setCurrentCard}
-            deckPhase={deckPhase}
+            deckPhase={faceDeckPhase}
             availableCities={availableCities}
             handoffSecondsLeft={handoffSecondsLeft}
             handoffCountdownSeconds={handoffCountdownSeconds}
@@ -186,7 +193,7 @@ export default function MeetSomeoneDynamic() {
           {/* RIGHT SIDE (DESKTOP + MOBILE SEARCHING) */}
           <MeetSomeoneDesktopRight
             isSearching={isSearching}
-            currentCard={currentCard}
+            currentCard={faceCard}
             isResumeLoading={isResumeLoading}
             mode={mode}
             setMode={setMode}
@@ -218,7 +225,7 @@ export default function MeetSomeoneDynamic() {
             toggleFullscreen={toggleFullscreen}
             setIsGenderModalOpen={setIsGenderModalOpen}
             setIsLocationModalOpen={setIsLocationModalOpen}
-            deckPhase={deckPhase}
+            deckPhase={faceDeckPhase}
             availableCities={availableCities}
             handoffSecondsLeft={handoffSecondsLeft}
             handoffCountdownSeconds={handoffCountdownSeconds}

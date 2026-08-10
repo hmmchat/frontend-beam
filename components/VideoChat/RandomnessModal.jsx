@@ -1,5 +1,6 @@
-import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 'use client';
+
+import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 
 export default function RandomnessModal({
   isOpen,

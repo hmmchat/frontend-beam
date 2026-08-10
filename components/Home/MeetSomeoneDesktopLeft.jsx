@@ -42,6 +42,10 @@ export default function MeetSomeoneDesktopLeft({
     currentCard &&
     currentCard.type !== 'LOCATION' &&
     !currentCard.isLocationCard;
+  // Same wait UI as video-call init / phone matchmaking (Figma 10945:36928).
+  const showMatchmakingLoader =
+    isResumeLoading ||
+    (!showEmptyOrbit && !showCityBoxes && !showCityHandoff && !showUserCard);
 
   return (
     <div
@@ -100,9 +104,7 @@ export default function MeetSomeoneDesktopLeft({
             'p-2',
           )}
         >
-          {isResumeLoading && !showEmptyOrbit && !showCityBoxes && !showCityHandoff && !showUserCard ? (
-            <DiscoveryMemeLoader />
-          ) : showEmptyOrbit ? (
+          {showEmptyOrbit ? (
             <EmptyOrbitPanel />
           ) : showCityBoxes ? (
             <CityBoxesPanel
@@ -234,9 +236,9 @@ export default function MeetSomeoneDesktopLeft({
                 </div>
               </div>
             </div>
-          ) : (
-            <DiscoveryMemeLoader />
-          )}
+          ) : showMatchmakingLoader ? (
+            <DiscoveryMemeLoader className="self-stretch" />
+          ) : null}
         </div>
       ) : (
         <div

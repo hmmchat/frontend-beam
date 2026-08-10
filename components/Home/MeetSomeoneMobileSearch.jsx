@@ -181,8 +181,8 @@ export default function MeetSomeoneMobileSearch({
               onSelectCity={(city) => handleSelectLocation?.(city, { persistPreference: false })}
             />
           ) : isSearchingState ? (
-            <div className="h-full max-h-full min-h-[160px] w-full">
-              <DiscoveryMemeLoader />
+            <div className="relative h-full max-h-full min-h-[160px] w-full min-w-0">
+              <DiscoveryMemeLoader className="absolute inset-0" />
             </div>
           ) : null}
         </div>

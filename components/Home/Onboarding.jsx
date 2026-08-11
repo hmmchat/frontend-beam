@@ -36,6 +36,8 @@ function normalizeDisplayNameWhitespace(s) {
 }
 
 const DISPLAY_NAME_MAX_LEN = 50;
+/** Matches @hmm/common PREFERRED_CITY_ANYWHERE_IN_INDIA / discovery city catalog value. */
+const ANYWHERE_IN_INDIA = "ANYWHERE_IN_INDIA";
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = [
@@ -52,7 +54,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(ANYWHERE_IN_INDIA);
   const [name, setName] = useState("");
   const handleNameChange = (val) => {
     setName(val);
@@ -75,7 +77,7 @@ export default function Onboarding() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOverlayMode, setIsOverlayMode] = useState(false);
   const [showCityModal, setShowCityModal] = useState(false);
-  const [tempCity, setTempCity] = useState(city || "Anywhere");
+  const [tempCity, setTempCity] = useState(ANYWHERE_IN_INDIA);
 
 
   const [showGenderModal, setShowGenderModal] = useState(false);
@@ -397,7 +399,7 @@ export default function Onboarding() {
     }
 
     if (!gender && !preferNotToSay) e.gender = "Select gender";
-    if (!city || city === "Anywhere" || city === "ANYWHERE_IN_INDIA") e.city = "Please select a city";
+    if (!city) e.city = "Please select a city";
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -450,13 +452,17 @@ export default function Onboarding() {
 
       const backendGender = preferNotToSay ? 'PREFER_NOT_TO_SAY' : (genderMap[gender] || 'PREFER_NOT_TO_SAY');
 
+      // Display name may be shared (e.g. "John"); identity uniqueness is the user id.
+      const preferredCity =
+        !city || city === "Anywhere" ? ANYWHERE_IN_INDIA : city;
+
       const profileData = {
         username: normalizeDisplayNameWhitespace(name).trim(),
         dateOfBirth: dobDate.toISOString(),
         gender: backendGender,
         displayPictureUrl,
         intent: prompt.trim() || undefined,
-        preferredCity: city
+        preferredCity
       };
 
       // If editing, skip the create profile step entirely and only update intent/photos
@@ -489,26 +495,23 @@ export default function Onboarding() {
             );
           } else if (errorMessage.toLowerCase().includes('already exists')) {
             console.warn('Profile already exists, proceeding with updates...');
-          } else if (errorMessage.toLowerCase().includes('unique constraint') && errorMessage.toLowerCase().includes('username')) {
-            setStep(1); // Go back to step 1 to fix the username
-            throw new Error('This username is already taken. Please try another one.');
           } else {
             throw new Error(errorMessage || 'Profile creation failed');
           }
         }
       }
 
-      // 2.5 Save City Preference
+      // 2.5 Save City Preference (including Anywhere in India)
       const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      if (city && city !== "Anywhere" && city !== "ANYWHERE_IN_INDIA" && accessToken) {
+      if (preferredCity && accessToken) {
         await apiRequest(API.USERS.UPDATE_PREFERRED_CITY, {
           method: 'PATCH',
-          body: JSON.stringify({ city })  // user-service expects { city }, not { preferredCity }
+          body: JSON.stringify({ city: preferredCity })  // user-service expects { city }, not { preferredCity }
         });
         // Also update discovery service location preference (same city, different store)
         await apiRequest(API.DISCOVERY.UPDATE_LOCATION_PREFERENCE, {
           method: 'PATCH',
-          body: JSON.stringify({ city })
+          body: JSON.stringify({ city: preferredCity })
         }).catch(() => { }); // non-critical
       }
 
@@ -806,7 +809,7 @@ export default function Onboarding() {
                                 <p className="text-white/50 text-sm text-center font-outfit mt-3">
                                   Upload your niceeee pictures
                                 </p>
-                                {apiError && !apiError.includes('username') && (
+                                {apiError && (
                                   <div className="px-2 sm:px-3 max-w-md mx-auto">
                                     <ErrorAlert message={apiError} className="mt-3" />
                                   </div>
@@ -828,7 +831,6 @@ export default function Onboarding() {
                                   placeholder="Your name"
                                 />
                                 {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
-                                {apiError && apiError.includes('username') && <div className="text-xs text-rose-400 mt-1">{apiError}</div>}
                               </div>
 
                               {/* 4️⃣ DOB inputs */}
@@ -979,14 +981,19 @@ export default function Onboarding() {
                                   </label>
 
                                   <div
-                                    onClick={() => setShowCityModal(true)}
+                                    onClick={() => {
+                                      setTempCity(city || ANYWHERE_IN_INDIA);
+                                      setSearchQuery("");
+                                      setShowCityModal(true);
+                                    }}
                                     className="w-full border border-white/40 border-b-[3px] 
   rounded-[1rem] px-5 py-3 md:py-5 text-white text-lg 
   flex justify-between items-center cursor-pointer gap-2"
                                   >
                                     <span className="truncate min-w-0">{
-                                      city === 'ANYWHERE_IN_INDIA' ? 'Anywhere in India' :
-                                        (cities.find(c => c.value === city)?.name || city || "Anywhere")
+                                      city === ANYWHERE_IN_INDIA || city === "Anywhere"
+                                        ? "Anywhere in India"
+                                        : (cities.find(c => c.value === city)?.name || city || "Anywhere in India")
                                     }</span>
                                     <span className="shrink-0">▼</span>
                                   </div>
@@ -1028,13 +1035,26 @@ export default function Onboarding() {
 
                                         {/* List */}
                                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                          {/* Always offer national feed; catalog may also include it — avoid duplicates below */}
+                                          {(!searchQuery || "anywhere in india".includes(searchQuery.toLowerCase())) && (
+                                            <div
+                                              onClick={() => setTempCity(ANYWHERE_IN_INDIA)}
+                                              className="flex justify-between items-center border-b border-white/20 pb-3 cursor-pointer hover:bg-white/5 transition-colors px-2"
+                                            >
+                                              <span>Anywhere in India</span>
+                                              <div className={`w-5 h-5 rounded-full border-2 transition-all
+                ${tempCity === ANYWHERE_IN_INDIA || tempCity === "Anywhere" ? "border-white bg-white" : "border-white/50"}
+              `}></div>
+                                            </div>
+                                          )}
+
                                           {searchLoading && <div className="text-white/50 text-center py-4">Searching...</div>}
 
-                                          {!searchLoading && cities.length === 0 && (
+                                          {!searchLoading && cities.filter((c) => c.value !== ANYWHERE_IN_INDIA).length === 0 && (
                                             <div className="text-white/50 text-center py-4 italic">No cities found</div>
                                           )}
 
-                                          {!searchLoading && cities.map((c) => (
+                                          {!searchLoading && cities.filter((c) => c.value !== ANYWHERE_IN_INDIA).map((c) => (
                                             <div
                                               key={c.id || c.value}
                                               onClick={() => setTempCity(c.value)}
@@ -1053,7 +1073,7 @@ export default function Onboarding() {
                                         <div className="flex justify-end mt-6">
                                           <button
                                             onClick={() => {
-                                              setCity(tempCity);
+                                              setCity(tempCity || ANYWHERE_IN_INDIA);
                                               setShowCityModal(false);
                                             }}
                                             className="border border-white/40 px-6 py-2 rounded-full"
@@ -1227,7 +1247,7 @@ export default function Onboarding() {
                     {/* Bottom actions */}
                     <div className="mt-8  md:mt-0 md:pt-8   mb-4 w-[90%]  mx-auto flex flex-col items-center">
 
-                      {apiError && !apiError.includes('username') && (
+                      {apiError && (
                         <ErrorAlert message={apiError} className="mt-0 mb-4 w-full" />
                       )}
 

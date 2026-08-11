@@ -4,11 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import clsx from "clsx";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { FaRegBookmark, FaBookmark, FaRegTrashAlt, FaRegQuestionCircle } from "react-icons/fa";
-import { IoWarningOutline } from "react-icons/io5";
 import { IoEyeOutline } from "react-icons/io5";
 import SyncedMarqueeText from "./SyncedMarqueeText";
 import PressableActionButton from "./PressableActionButton";
 import { diamondsToCoinPrice } from "@/lib/diamondRate";
+import InsufficientBalanceBar from "@/components/ui/InsufficientBalanceBar";
 
 // Animated typing dots shown while the user is typing/changing the dare
 function TypingDots() {
@@ -187,12 +187,13 @@ export default function DareOverlay({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20" onClick={onClose} />
+      {/* Transparent click-catcher — no dim/blur so the video call stays clear */}
+      <div className="fixed inset-0 z-40 bg-transparent" onClick={onClose} />
 
-      {/* Overlay Container */}
+      {/* Overlay Container — mobile: sit above 115px dock + ~12px gap (Figma 10945:40657) */}
       <div
         onClick={onClose}
-        className="absolute z-50 md:bottom-0 bottom-[14vh] md:left-[48%] left-1/2 -translate-x-1/2 md:-translate-y-[34%] translate-y-0 flex flex-col items-center md:items-end w-full px-4 pb-[env(safe-area-inset-bottom)] md:pb-0"
+        className="absolute z-50 md:bottom-0 bottom-[127px] md:left-[48%] left-1/2 -translate-x-1/2 md:-translate-y-[34%] translate-y-0 flex flex-col items-center md:items-end w-full px-4 md:pb-0"
       >
         {/* 1st VIEW */}
         {stage === 1 && (
@@ -548,139 +549,104 @@ export default function DareOverlay({
         )}
       </div>
 
-      {/* Bottom Bar */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute hidden  md:flex bottom-6 md:left-[53%] right-10 z-50 flex justify-between items-center ">
-        {/* Background */}
-
-
-        {/* Left Section */}
-        <div className="relative z-10 flex-1 pointer-events-auto">
-          {!hasSufficientCoins ? (
-            <div className="flex flex-col gap-1 items-start">
-              <div className="text-[11px] sm:text-sm text-white">
-                Insufficient balance
-              </div>
-
-              <button
-                onClick={onOpenCoinModal}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-all border border-white/40 border-b-2 rounded-lg sm:rounded-xl bg-black/40 hover:bg-white/10 active:scale-95"
-              >
-                Buy Coins
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <div className="text-[11px] sm:text-sm text-white font-medium">
-                Spend coins:
-              </div>
-
-              <div className="flex items-center gap-1 text-base sm:text-lg font-semibold text-white">
-                <img
-                  src="/Coins/coin10.png"
-                  className="w-4 h-4 sm:w-5 sm:h-5 rounded-full"
-                  alt=""
-                />
-                {currentPrice}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Send Dare Button */}
-        <div className="relative z-10 pointer-events-auto">
-          <PressableActionButton
-            onPress={() => onSendDare?.()}
-            disabled={
-              dareAcceptanceStatus !== "accepted" ||
-              !hasSufficientCoins ||
-              !selectedGift ||
-              isSendingDare
-            }
-            showCircle={
-              dareAcceptanceStatus === "accepted" &&
-              hasSufficientCoins &&
-              !!selectedGift &&
-              !isSendingDare
-            }
-            className={clsx(
-              "w-18 h-18 !opacity-100",
-              dareAcceptanceStatus !== "accepted" ||
-                !hasSufficientCoins ||
-                !selectedGift ||
-                isSendingDare
-                ? "bg-[#606060]"
-                : "bg-red-900",
-            )}
-            aria-label="Send dare"
-          >
-            <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee text-center">
-              SEND <br />
-              DARE
-            </p>
-          </PressableActionButton>
-        </div>
-      </div>
-
-
-
-
-
-
-
-
-
-
-
-      {/* Bottom Bar Mobile */}
-      <div onClick={(e) => e.stopPropagation()} className="absolute bottom-0 z-50 flex items-center justify-between w-full right-1 left-1 px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:hidden bg-[#4E0093]/20">
-        <div
-          className="absolute inset-0 z-0 pointer-events-auto "
-          style={{
-            backgroundImage: "url(/assets/mb.jpg)",
-            backgroundSize: "cover",
-            opacity: 0.8,
-          }}
-        />
-
+      {/* Bottom Bar Desktop */}
+      <div onClick={(e) => e.stopPropagation()} className={clsx(
+        "absolute hidden md:flex md:left-[53%] right-10 z-50 flex justify-between items-center",
+        hasSufficientCoins ? "bottom-6" : "bottom-2",
+      )}>
         {!hasSufficientCoins ? (
-          <>
-
-            <div className="z-10 mb-3">
-              <div className="z-10 text-[10px]  text-white flex items-center gap-1">
-                <IoWarningOutline className="text-yellow-500 text-[10px]" />   Insufficient balance
-              </div>
-              <p className="text-[12px] text-white font-outfit">Spend coins:<span className="font-otomanopee text-[12px] flex mt-1 gap-1 "><img src="/Coins/coin10.png" className="w-4 rounded-full  " alt="" /> {currentPrice}</span> </p>
-            </div>
-
-
-            <button
-              onClick={onOpenCoinModal}
-              className="z-10 px-6 py-4 mb-3 font-otomanopee text-white transition-all border border-white/50 border-b-[4px] rounded-xl bg-[#0A032D]/20 hover:bg-white/10 active:scale-95 pointer-events-auto text-sm"
-            >
-              Buy Coins
-            </button>
-          </>
+          <InsufficientBalanceBar
+            variant="desktop"
+            spendAmount={currentPrice}
+            onBuyCoins={onOpenCoinModal}
+          />
         ) : (
           <>
-            <div className="z-10 flex items-center gap-2 text-sm text-white">
-              <span>Spend Coin:</span>
+            <div className="relative z-10 flex-1 pointer-events-auto">
+              <div className="flex flex-col gap-1">
+                <div className="text-[11px] sm:text-sm text-white font-medium">
+                  Spend coins:
+                </div>
+                <div className="flex items-center gap-1 text-base sm:text-lg font-semibold text-white">
+                  <img
+                    src="/Coins/coin10.png"
+                    className="w-4 h-4 sm:w-5 sm:h-5 rounded-full"
+                    alt=""
+                  />
+                  {currentPrice}
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10 pointer-events-auto">
+              <PressableActionButton
+                onPress={() => onSendDare?.()}
+                disabled={
+                  dareAcceptanceStatus !== "accepted" ||
+                  !selectedGift ||
+                  isSendingDare
+                }
+                showCircle={
+                  dareAcceptanceStatus === "accepted" &&
+                  !!selectedGift &&
+                  !isSendingDare
+                }
+                className={clsx(
+                  "w-18 h-18 !opacity-100",
+                  dareAcceptanceStatus !== "accepted" ||
+                    !selectedGift ||
+                    isSendingDare
+                    ? "bg-[#606060]"
+                    : "bg-red-900",
+                )}
+                aria-label="Send dare"
+              >
+                <p className="relative text-white rotate-[-12deg] text-[16px] leading-[14px] tracking-tighter font-otomanopee text-center">
+                  SEND <br />
+                  DARE
+                </p>
+              </PressableActionButton>
+            </div>
+          </>
+        )}
+      </div>
 
-              <span className="flex items-center justify-center gap-1 font-semibold">
+      {/* Bottom Bar Mobile — Figma 10945:40657 purple dock (~115px) */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-0 left-0 right-0 z-50 flex h-[115px] items-center justify-between px-8 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
+      >
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[rgba(78,0,147,0.8)]" />
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: "url(/popupbg.png)",
+              backgroundSize: "cover",
+              backgroundPosition: "top left",
+            }}
+          />
+        </div>
+
+        {!hasSufficientCoins ? (
+          <InsufficientBalanceBar
+            className="relative z-10"
+            variant="mobile"
+            spendAmount={currentPrice}
+            onBuyCoins={onOpenCoinModal}
+          />
+        ) : (
+          <>
+            <div className="relative z-10 flex flex-col gap-1 text-white">
+              <span className="font-outfit text-[12px]">Spend coins:</span>
+              <span className="flex items-center gap-1 font-otomanopee text-[12px]">
                 <img
                   src="/Coins/coin10.png"
-                  className="w-4 rounded-full"
+                  className="h-4 w-[15px] rounded-full"
                   alt=""
                 />
                 {currentPrice}
               </span>
             </div>
-
-
-
-
-
-
-
 
             <PressableActionButton
               onPress={() => onSendDare?.()}
@@ -697,7 +663,7 @@ export default function DareOverlay({
                 !isSendingDare
               }
               className={clsx(
-                "z-10 w-18 h-18 mb-3 !opacity-100",
+                "relative z-10 w-18 h-18 shrink-0 !opacity-100",
                 dareAcceptanceStatus !== "accepted" ||
                   !hasSufficientCoins ||
                   !selectedGift ||

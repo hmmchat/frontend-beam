@@ -24,6 +24,7 @@ import {
   mapCatalogGift,
   setDiamondToCoinRate,
 } from '@/lib/diamondRate';
+import { isInsufficientBalanceError } from '@/lib/walletErrors';
 import {
   isMobileRuntime,
   getCameraConstraints,
@@ -2149,8 +2150,10 @@ export default function useVideoChat() {
 
     const coinCost = Number(gift.price) || 0;
     const diamondAmount = Number(gift.diamonds) || 0;
+    // Client pre-check — GiftOverlay already shows insufficient UI; keep picker open.
     if (coins < coinCost) {
-      alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+      setSelectedGiftId(gift.id);
+      setIsGiftModalOpen(true);
       return;
     }
 
@@ -2196,7 +2199,13 @@ export default function useVideoChat() {
       });
     } catch (err) {
       console.error('Failed to send gift:', err);
-      alert(err.message || 'Failed to send gift');
+      if (isInsufficientBalanceError(err)) {
+        await refreshWallet();
+        setSelectedGiftId(gift.id);
+        setIsGiftModalOpen(true);
+      } else {
+        alert(err.message || 'Failed to send gift');
+      }
     } finally {
       isSendingGiftRef.current = false;
     }
@@ -2261,8 +2270,9 @@ export default function useVideoChat() {
 
     const giftAmount = Number(giftObj.diamonds) || 0;
     const neededCoins = diamondsToCoinPrice(giftAmount, diamondToCoinRate);
+    // Client pre-check — DareOverlay already shows insufficient UI; keep picker open.
     if (coins < neededCoins) {
-      alert(`Insufficient balance. Dare costs 🪙 ${neededCoins} coins. You have 🪙 ${coins} coins.`);
+      setIsDareOpen(true);
       return;
     }
 
@@ -2327,7 +2337,13 @@ export default function useVideoChat() {
       });
     } catch (err) {
       console.error('Failed to send dare:', err);
-      alert(err.message || 'Failed to send dare');
+      if (isInsufficientBalanceError(err)) {
+        await refreshWallet();
+        setSelectedGiftId(giftObj.id);
+        setIsDareOpen(true);
+      } else {
+        alert(err.message || 'Failed to send dare');
+      }
     } finally {
       isSendingDareRef.current = false;
       setIsSendingDare(false);

@@ -42,6 +42,7 @@ export default function GiftSuccessPopup({ isOpen, onClose, gift, recipientName 
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Backdrop */}
       <OverlayBackdrop
+        blur={false}
         onClick={handleClose}
         className={clsx(
           "transition-opacity duration-300",

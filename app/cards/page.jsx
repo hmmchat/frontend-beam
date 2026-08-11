@@ -10,6 +10,8 @@ import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftSuccessPopup from '@/components/VideoChat/GiftSuccessPopup';
 import PressableActionButton from '@/components/VideoChat/PressableActionButton';
 import OfflineHotlineDmOverlay from '@/components/cards/OfflineHotlineDmOverlay';
+import CoinModal from '@/components/modals/CoinModal';
+import { isInsufficientBalanceError } from '@/lib/walletErrors';
 import clsx from 'clsx';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 
@@ -45,6 +47,8 @@ function OfflineCardsContent() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [isGiftButtonHidden, setIsGiftButtonHidden] = useState(false);
   const [isHotlineDmOpen, setIsHotlineDmOpen] = useState(false);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
+  const [purchaseToast, setPurchaseToast] = useState(null);
 
 
   const [scale, setScale] = useState(1);
@@ -294,11 +298,10 @@ function OfflineCardsContent() {
     const coinCost = Number(gift.price) || 0;
     const diamondAmount = Number(gift.diamonds) || 0;
 
-    // Check coin balance
+    // Client pre-check — GiftOverlay shows insufficient UI; keep picker open.
     if (walletCoins < coinCost) {
-      alert(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins} coins.`);
-      setIsGiftButtonHidden(true);
-      setIsGiftModalOpen(false);
+      setSelectedGift(gift);
+      setIsGiftModalOpen(true);
       return;
     }
 
@@ -354,7 +357,13 @@ function OfflineCardsContent() {
       setShowSuccessPopup(true);
     } catch (err) {
       console.error('[OfflineCards] gift error:', err);
-      alert(err.message || 'Failed to send gift. Please try again.');
+      if (isInsufficientBalanceError(err)) {
+        await refreshWallet();
+        setSelectedGift(gift);
+        setIsGiftModalOpen(true);
+      } else {
+        alert(err.message || 'Failed to send gift. Please try again.');
+      }
     }
   };
 
@@ -569,9 +578,8 @@ function OfflineCardsContent() {
                               if (hasSufficientCoins) {
                                 handleSendGift(selectedGift);
                               } else {
-                                alert(`Insufficient balance. Gift costs 🪙 ${selectedGift.price || 0} coins. You have 🪙 ${walletCoins} coins.`);
-                                setIsGiftButtonHidden(true);
-                                setIsGiftModalOpen(false);
+                                // Keep overlay open — footer shows Buy Coins
+                                setIsGiftModalOpen(true);
                               }
                             } else {
                               setIsGiftModalOpen(!isGiftModalOpen);
@@ -674,20 +682,13 @@ function OfflineCardsContent() {
                 </>
               )}
 
-              {/* Right group: Gift */}
+              {/* Right group: Gift — hide external send when insufficient (footer Buy Coins takes over) */}
               {!isGiftButtonHidden && (!isGiftModalOpen || !selectedGift || walletCoins >= (selectedGift.price || 0)) && (
                 <div className={clsx('absolute', 'right-12', 'flex', 'items-center')}>
                   <PressableActionButton
                     onPress={() => {
                       if (isGiftModalOpen && selectedGift) {
-                        const hasSufficientCoins = walletCoins >= (selectedGift.price || 0);
-                        if (hasSufficientCoins) {
-                          handleSendGift(selectedGift);
-                        } else {
-                          alert(`Insufficient balance. Gift costs 🪙 ${selectedGift.price || 0} coins. You have 🪙 ${walletCoins} coins.`);
-                          setIsGiftButtonHidden(true);
-                          setIsGiftModalOpen(false);
-                        }
+                        handleSendGift(selectedGift);
                       } else {
                         setIsGiftModalOpen(!isGiftModalOpen);
                       }
@@ -707,7 +708,7 @@ function OfflineCardsContent() {
             <GiftOverlay
               isOpen={isGiftModalOpen}
               onClose={() => { setIsGiftModalOpen(false); setSelectedGift(null); }}
-              onOpenCoinModal={() => { }}
+              onOpenCoinModal={() => setIsCoinModalOpen(true)}
               onSelectGift={(gift) => setSelectedGift(gift)}
               selectedGiftId={selectedGift?.id || null}
               coins={walletCoins}
@@ -737,6 +738,31 @@ function OfflineCardsContent() {
               onCoinsUpdated={refreshWallet}
               onSent={handleHotlineDmSent}
             />
+
+            <CoinModal
+              isOpen={isCoinModalOpen}
+              onClose={() => setIsCoinModalOpen(false)}
+              onSuccess={async ({ coinsCredited }) => {
+                await refreshWallet();
+                const credited = Number(coinsCredited) || 0;
+                setPurchaseToast(
+                  credited > 0
+                    ? `Added ${credited.toLocaleString()} coins`
+                    : 'Coins added to your wallet'
+                );
+                window.setTimeout(() => setPurchaseToast(null), 3000);
+              }}
+              onFailure={(message) => {
+                setPurchaseToast(message || 'Payment failed');
+                window.setTimeout(() => setPurchaseToast(null), 3000);
+              }}
+            />
+            {purchaseToast && (
+              <div className={clsx('fixed', 'top-20', 'left-1/2', '-translate-x-1/2', 'z-[200]', 'bg-slate-900/80', 'backdrop-blur-md', 'border', 'border-white/20', 'text-white', 'px-6', 'py-3', 'rounded-full', 'shadow-2xl', 'flex', 'items-center', 'gap-3', 'animate-in', 'fade-in', 'slide-in-from-top-4')}>
+                <div className={clsx('w-2', 'h-2', 'rounded-full', 'bg-green-500', 'animate-pulse')} />
+                <span className={clsx('font-outfit', 'text-sm', 'font-semibold')}>{purchaseToast}</span>
+              </div>
+            )}
 
           </div>
         </div>

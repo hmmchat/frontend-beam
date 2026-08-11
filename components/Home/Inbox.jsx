@@ -18,6 +18,8 @@ import ThreadMessages from "../inbox/ThreadMessages";
 import ThreadComposer from "../inbox/ThreadComposer";
 import GiftSuccessPopup from "@/components/VideoChat/GiftSuccessPopup";
 import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
+import CoinModal from "@/components/modals/CoinModal";
+import { isInsufficientBalanceError } from "@/lib/walletErrors";
 import clsx from "clsx";
 import { FaUserPlus } from "react-icons/fa6";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
@@ -291,6 +293,8 @@ export default function Inbox() {
 
   const [walletCoins, setWalletCoins] = useState(null);
   const [walletDiamonds, setWalletDiamonds] = useState(0);
+  const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
+  const [purchaseToast, setPurchaseToast] = useState(null);
   const [firstMessageCost, setFirstMessageCost] = useState(
     DEFAULT_FIRST_MSG_COST,
   );
@@ -1653,7 +1657,7 @@ export default function Inbox() {
         const giftAmount = Number(resolvedGift.diamonds) || 0;
         const coinCost = Number(resolvedGift.price) || 0;
         if (walletCoins === null || walletCoins < coinCost) {
-          throw new Error(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${walletCoins || 0} coins.`);
+          throw new Error("Insufficient balance");
         }
         // Call purchase endpoint
         await apiRequest(API.WALLET.PURCHASE_DIAMONDS, {
@@ -1704,10 +1708,15 @@ export default function Inbox() {
       await loadThreadMessages(activeChat, { quiet: true });
       await loadLists({ quiet: true });
     } catch (e) {
-      setThreadProductMessage({
-        variant: "error",
-        text: e.message || "Failed to send",
-      });
+      if (resolvedGift && isInsufficientBalanceError(e)) {
+        await refreshWallet();
+        setIsGiftModalOpen(true);
+      } else {
+        setThreadProductMessage({
+          variant: "error",
+          text: e.message || "Failed to send",
+        });
+      }
     } finally {
       setSending(false);
     }
@@ -2353,11 +2362,39 @@ export default function Inbox() {
                     firstMessageCost={firstMessageCost}
                     isGiftModalOpen={isGiftModalOpen}
                     setIsGiftModalOpen={setIsGiftModalOpen}
+                    onOpenCoinModal={() => setIsCoinModalOpen(true)}
                     sendMessage={sendMessage}
                     emitTyping={emitTyping}
                     typingTimerRef={typingTimerRef}
                     conversationId={activeChat?.conversationId}
                   />
+                )}
+
+                <CoinModal
+                  isOpen={isCoinModalOpen}
+                  onClose={() => setIsCoinModalOpen(false)}
+                  onSuccess={async ({ coinsCredited }) => {
+                    await refreshWallet();
+                    const credited = Number(coinsCredited) || 0;
+                    setPurchaseToast(
+                      credited > 0
+                        ? `Added ${credited.toLocaleString()} coins`
+                        : "Coins added to your wallet",
+                    );
+                    window.setTimeout(() => setPurchaseToast(null), 3000);
+                  }}
+                  onFailure={(message) => {
+                    setPurchaseToast(message || "Payment failed");
+                    window.setTimeout(() => setPurchaseToast(null), 3000);
+                  }}
+                />
+                {purchaseToast && (
+                  <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/80 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="font-outfit text-sm font-semibold">
+                      {purchaseToast}
+                    </span>
+                  </div>
                 )}
 
 

@@ -82,7 +82,7 @@ const checkoutButtonClassName = `
   disabled:active:scale-100
 `;
 
-export default function CoinModal({ isOpen, onClose, onSuccess }) {
+export default function CoinModal({ isOpen, onClose, onSuccess, onFailure }) {
   useBackToClose(isOpen, onClose);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [coinPackages, setCoinPackages] = useState([]);
@@ -232,16 +232,21 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
         rzp.open();
       });
     } catch (error) {
-      if (error?.message === 'PAYMENT_CANCELLED') {
-        setCheckoutError('Payment cancelled');
-      } else {
+      const message =
+        error?.message === 'PAYMENT_CANCELLED'
+          ? 'Payment cancelled'
+          : error?.message || 'Payment failed. Please try again.';
+      if (error?.message !== 'PAYMENT_CANCELLED') {
         console.error('Checkout failed:', error);
-        setCheckoutError(error?.message || 'Payment failed. Please try again.');
       }
+      setCheckoutError(message);
+      onFailure?.(message);
+      // Return to the underlying insufficient-balance gift/dare UI
+      onClose?.();
     } finally {
       setCheckoutBusy(false);
     }
-  }, [selectedPackage, checkoutBusy, onSuccess, onClose]);
+  }, [selectedPackage, checkoutBusy, onSuccess, onClose, onFailure]);
 
   if (!isOpen) return null;
 
@@ -276,13 +281,13 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
     <div
       className="fixed inset-0 z-[150] flex items-center justify-center p-0 md:p-6"
     >
-      <OverlayBackdrop onClick={checkoutBusy ? undefined : onClose} />
+      <OverlayBackdrop blur={false} onClick={checkoutBusy ? undefined : onClose} />
       <div
-        className="relative z-10 w-full h-dvh max-h-dvh md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 backdrop-blur-xl md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
+        className="relative z-10 w-full h-dvh max-h-dvh md:h-auto max-w-[900px] md:max-h-[90vh] bg-purple-950/40 md:rounded-[40px] rounded-none border-0 md:border-2 border-white/30 overflow-hidden flex flex-col font-[family-name:var(--font-otomanopee)] animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="absolute inset-0 bg-[#02004A]/60 backdrop-blur-md"
+          className="absolute inset-0 bg-[#02004A]/60"
           style={{
             backgroundImage: 'url(/assets/mb.jpg)',
             backgroundRepeat: 'no-repeat',
@@ -388,7 +393,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess }) {
         {selectedPackage && (
           <div className="w-full p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6 md:pb-6 flex items-center justify-between z-20 shrink-0 relative overflow-hidden gap-3 border-t border-white/20">
             <div
-              className="absolute inset-0 bg-[#02004A]/90 backdrop-blur-md -z-10"
+              className="absolute inset-0 bg-[#02004A]/90 -z-10"
               style={{
                 backgroundImage: 'url(/assets/mb.jpg)',
                 backgroundRepeat: 'no-repeat',

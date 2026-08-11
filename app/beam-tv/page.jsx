@@ -22,6 +22,7 @@ import FavouritesPanel from '@/components/beam-tv/FavouritesPanel';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftAnimation from '@/components/VideoChat/GiftAnimation';
 import CoinModal from '@/components/modals/CoinModal';
+import { isInsufficientBalanceError } from '@/lib/walletErrors';
 
 
 // WS URL computation (same safely fallbacks as video-chat)
@@ -1082,7 +1083,8 @@ function BeamTVInner() {
     const coinCost = Number(gift.price) || 0;
     const diamondAmount = Number(gift.diamonds) || 0;
     if (coins < coinCost) {
-      setEngagementMsg(`Insufficient balance. Gift costs 🪙 ${coinCost} coins. You have 🪙 ${coins} coins.`);
+      setSelectedGiftId(gift.id);
+      setIsGiftModalOpen(true);
       return;
     }
 
@@ -1134,7 +1136,13 @@ function BeamTVInner() {
       });
     } catch (err) {
       console.error('Failed to send gift:', err);
-      setEngagementMsg(err.message || 'Failed to send gift');
+      if (isInsufficientBalanceError(err)) {
+        await refreshWallet();
+        setSelectedGiftId(gift.id);
+        setIsGiftModalOpen(true);
+      } else {
+        setEngagementMsg(err.message || 'Failed to send gift');
+      }
     }
   }, [coins, giftParticipants, currentBroadcast, refreshWallet, send]);
 
@@ -2043,6 +2051,10 @@ function BeamTVInner() {
                         ? `Added ${credited.toLocaleString()} coins`
                         : 'Coins added to your wallet'
                     );
+                    window.setTimeout(() => setPurchaseToast(null), 3000);
+                  }}
+                  onFailure={(message) => {
+                    setPurchaseToast(message || 'Payment failed');
                     window.setTimeout(() => setPurchaseToast(null), 3000);
                   }}
                 />

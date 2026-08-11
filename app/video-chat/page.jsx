@@ -599,6 +599,10 @@ function VideoChatContent() {
           );
           window.setTimeout(() => setPurchaseToast(null), 3000);
         }}
+        onFailure={(message) => {
+          setPurchaseToast(message || 'Payment failed');
+          window.setTimeout(() => setPurchaseToast(null), 3000);
+        }}
       />
       {purchaseToast && (
         <div className={clsx('fixed', 'top-20', 'left-1/2', '-translate-x-1/2', 'z-[200]', 'bg-slate-900/80', 'backdrop-blur-md', 'border', 'border-white/20', 'text-white', 'px-6', 'py-3', 'rounded-full', 'shadow-2xl', 'flex', 'items-center', 'gap-3', 'animate-in', 'fade-in', 'slide-in-from-top-4')}>

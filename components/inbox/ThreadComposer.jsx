@@ -17,6 +17,7 @@ export default function ThreadComposer({
   firstMessageCost,
   isGiftModalOpen,
   setIsGiftModalOpen,
+  onOpenCoinModal,
   // giftModalItems and giftsCatalogLoading no longer needed — GiftOverlay fetches its own catalog
   sendMessage,
   emitTyping,
@@ -171,14 +172,17 @@ export default function ThreadComposer({
       <GiftOverlay
         isOpen={isGiftModalOpen}
         onClose={() => { setIsGiftModalOpen(false); setSelectedGiftId(null); }}
-        onOpenCoinModal={() => {}}
+        onOpenCoinModal={onOpenCoinModal}
         onSelectGift={(gift) => setSelectedGiftId(gift.id)}
         selectedGiftId={selectedGiftId}
         coins={walletCoins ?? 0}
-        onSendGift={(gift) => {
-          sendMessage(gift);
-          setIsGiftModalOpen(false);
-          setSelectedGiftId(null);
+        onSendGift={async (gift) => {
+          try {
+            await sendMessage(gift);
+            setSelectedGiftId(null);
+          } catch {
+            // Inbox sendMessage surfaces errors; keep selection for insufficient retry
+          }
         }}
       />
     </>

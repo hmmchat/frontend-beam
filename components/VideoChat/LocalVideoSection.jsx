@@ -84,9 +84,9 @@ export default function LocalVideoSection({
         className={clsx(
           "relative flex-1 min-h-0 min-w-0 transition-all duration-500 md:rounded-[60px] overflow-hidden",
           roundedClass,
-          (isGiftModalOpen || isDareOpen) &&
-          selectedGiftId &&
-          " mb-2",
+          // Gift shrinks video to reveal purple dock; dare keeps full video
+          // and draws its own dock (Figma 10945:40657).
+          isGiftModalOpen && selectedGiftId && " mb-2",
         )}
       >
         <video
@@ -97,9 +97,11 @@ export default function LocalVideoSection({
           className={clsx(
             "absolute inset-0 w-full object-cover scale-x-[-1] md:rounded-[60px]",
             roundedClass,
-            isGiftModalOpen || isDareOpen
+            isGiftModalOpen
               ? (isGroupCall ? "h-[70%]" : "md:h-[87vh] h-[70%]")
-              : "h-full",
+              : isDareOpen
+                ? (isGroupCall ? "h-[70%]" : "md:h-[87vh] h-full")
+                : "h-full",
           )}
         />
 

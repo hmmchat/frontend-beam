@@ -12,6 +12,7 @@ import {
   mapCatalogGift,
   setDiamondToCoinRate,
 } from "@/lib/diamondRate";
+import InsufficientBalanceBar from "@/components/ui/InsufficientBalanceBar";
 
 export default function GiftOverlay({
   isOpen,
@@ -104,6 +105,10 @@ export default function GiftOverlay({
 
   const handleSend = () => {
     if (!selectedGift || isSending) return;
+    if (!hasSufficientCoins) {
+      onOpenCoinModal?.();
+      return;
+    }
     setIsSending(true);
     // Close as soon as the send starts so the flying sticker is visible
     // and the user can't queue multiple gifts from an open sheet.
@@ -119,7 +124,8 @@ export default function GiftOverlay({
     <>
       {/* Animation Layer */}
       <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
-      <div className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm supports-[backdrop-filter]:bg-black/20" onClick={onClose} />
+      {/* Transparent click-catcher — no dim/blur so the background stays clear */}
+      <div className="fixed inset-0 z-20 bg-transparent" onClick={onClose} />
       {/* Main UI */}
       <div className={clsx(
         "absolute z-30 flex flex-col items-end w-full px-4",
@@ -251,34 +257,19 @@ export default function GiftOverlay({
       {/* Bottom Bar Desktop */}
       <div className={clsx(
         "absolute hidden md:flex z-50 justify-between items-center",
-        desktopBottomBarClassName || "bottom-6 md:left-[53%] right-10"
+        desktopBottomBarClassName || "md:left-[53%] right-10",
+        !desktopBottomBarClassName && (hasSufficientCoins ? "bottom-6" : "bottom-2"),
       )}>
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: "url(/assets/mb.jpg)",
-            backgroundSize: "cover",
-            opacity: 0.9,
-          }}
-        />
-
-
-
-
         {!hasSufficientCoins ? (
-          <>
-            <div className="text-white text-sm z-50">Insufficient balance</div>
-            <button
-              onClick={onOpenCoinModal}
-              className="text-xs lg:text-[14px] font-[family-name:var(--font-otomanopee)] text-white/90 bg-[#0A032D]/20 text-white hover:bg-purple-500/20 hover:border-purple-500 hover:-translate-y-0.5 border-white/50 rounded-[1rem] border-[1px] border-b-4 inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-base font-semibold border-2 transition-all duration-300 ease-out relative overflow-hidden"
-            >
-              Buy Coins
-            </button>
-          </>
+          <InsufficientBalanceBar
+            variant="desktop"
+            spendAmount={currentPrice}
+            onBuyCoins={onOpenCoinModal}
+          />
         ) : (
           <>
             <div className="text-white text-sm flex items-center gap-2 z-10">
-              Spend Coin:
+              Spend coins:
               <span className="flex justify-center items-center gap-1 font-semibold">
                 <img src="/Coins/coin10.png" className="w-4 rounded-full" alt="" />
                 {currentPrice}
@@ -315,32 +306,16 @@ export default function GiftOverlay({
         "absolute z-50 flex items-center justify-between left-0 right-0 px-5 py-[2.5vh] pb-[max(2.5vh,env(safe-area-inset-bottom))] md:hidden",
         mobileBottomBarClassName || "bottom-0"
       )}>
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: "url(/assets/mb.jpg)",
-            backgroundSize: "cover",
-            opacity: 0.9,
-          }}
-        />
-
         {!hasSufficientCoins ? (
-          <>
-            <div className="text-[11px] z-10 sm:text-sm text-white">
-              Insufficient balance
-            </div>
-
-            <button
-              onClick={onOpenCoinModal}
-              className="px-5 z-10 sm:px-4 py-3 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-all border border-white/40 border-b-2 rounded-lg sm:rounded-xl bg-[#0A032D]/20 hover:bg-white/10 active:scale-95"
-            >
-              Buy Coins
-            </button>
-          </>
+          <InsufficientBalanceBar
+            variant="mobile"
+            spendAmount={currentPrice}
+            onBuyCoins={onOpenCoinModal}
+          />
         ) : (
           <>
             <div className="z-10 flex items-center gap-2 text-sm text-white">
-              <span>Spend Coin:</span>
+              <span>Spend coins:</span>
 
               <span className="flex items-center justify-center gap-1 font-semibold">
                 <img
@@ -383,4 +358,3 @@ export default function GiftOverlay({
 
   );
 }
-

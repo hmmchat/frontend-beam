@@ -208,6 +208,13 @@ function SettingsContent() {
       clearClientSession();
       router.replace("/");
     } catch (e) {
+      // Stale JWT after dashboard hard-delete: treat as already gone and clear local session.
+      if (e?.status === 401 || e?.status === 404) {
+        setDeleteModalOpen(false);
+        clearClientSession();
+        router.replace("/");
+        return;
+      }
       const msg =
         e?.name === "AbortError"
           ? "That request timed out. Your account may or may not have been deleted—please try signing in again or contact support."

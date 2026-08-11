@@ -743,6 +743,7 @@ function OfflineCardsContent() {
               isAlreadyFriend={isAlreadyFriend}
               walletCoins={walletCoins}
               onCoinsUpdated={refreshWallet}
+              onOpenCoinModal={() => setIsCoinModalOpen(true)}
               onSent={handleHotlineDmSent}
             />
 

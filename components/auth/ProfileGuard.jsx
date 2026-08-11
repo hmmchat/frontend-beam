@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
 
+function clearSession() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  clearPendingReferralCode();
+}
+
 export default function ProfileGuard({ children }) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
@@ -16,6 +22,22 @@ export default function ProfileGuard({ children }) {
       if (!token || token === 'null' || token === 'undefined') {
         router.replace('/');
         return;
+      }
+
+      // Auth account must still exist. Deleted accounts → sign-in, not onboarding.
+      try {
+        await apiRequest(API.AUTH.GET_STATUS);
+      } catch (authErr) {
+        if (
+          authErr.status === 401 ||
+          authErr.status === 403 ||
+          authErr.status === 404
+        ) {
+          clearSession();
+          router.replace('/');
+          return;
+        }
+        // Network blip on status — still try profile; don't send to onboarding blindly.
       }
 
       try {
@@ -31,16 +53,14 @@ export default function ProfileGuard({ children }) {
       } catch (err) {
         console.error('[ProfileGuard] Profile check failed:', err);
 
-        if (err.status === 404 || err.message === 'Incomplete profile') {
-          router.replace('/onboarding');
-        } else if (err.status === 401) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          clearPendingReferralCode();
+        if (err.status === 401 || err.status === 403) {
+          clearSession();
           router.replace('/');
+        } else if (err.status === 404 || err.message === 'Incomplete profile') {
+          // Valid auth, missing profile → onboarding
+          router.replace('/onboarding');
         } else {
           // Network error or unknown — don't redirect, user is still authed
-          // Just show the page; the token is present and not explicitly rejected
           setAuthorized(true);
         }
       }

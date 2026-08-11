@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
+import InsufficientBalanceBar from '@/components/ui/InsufficientBalanceBar';
 import { API, apiRequest } from '@/lib/api';
+import { isInsufficientBalanceError } from '@/lib/walletErrors';
 
 const MAX_CHARS = 250;
 const DEFAULT_DM_COST = 10;
@@ -20,6 +22,7 @@ export default function OfflineHotlineDmOverlay({
   isAlreadyFriend = false,
   walletCoins = 0,
   onCoinsUpdated,
+  onOpenCoinModal,
   onSent,
 }) {
   const [message, setMessage] = useState('');
@@ -66,10 +69,8 @@ export default function OfflineHotlineDmOverlay({
 
   const cost = isAlreadyFriend ? 0 : dmCost;
   const trimmed = message.trim();
-  const canSend =
-    trimmed.length > 0 &&
-    !sending &&
-    (cost === 0 || walletCoins >= cost);
+  const hasSufficientCoins = cost === 0 || walletCoins >= cost;
+  const canSend = trimmed.length > 0 && !sending && hasSufficientCoins;
 
   const authHeaders = () => {
     const token = localStorage.getItem('accessToken');
@@ -107,10 +108,8 @@ export default function OfflineHotlineDmOverlay({
 
   const handleSend = async () => {
     if (!toUserId || !trimmed) return;
-    if (cost > 0 && walletCoins < cost) {
-      setError(`Need ${cost} coins. You have ${walletCoins}.`);
-      return;
-    }
+    // Client pre-check — show Buy Coins footer; keep overlay open.
+    if (!hasSufficientCoins) return;
 
     setSending(true);
     setError('');
@@ -153,6 +152,10 @@ export default function OfflineHotlineDmOverlay({
             return;
           }
         } catch (err) {
+          if (isInsufficientBalanceError(err)) {
+            setError('');
+            return;
+          }
           const msg = (err?.message || '').toLowerCase();
           const isKnown =
             msg.includes('already sent') ||
@@ -183,6 +186,11 @@ export default function OfflineHotlineDmOverlay({
       onClose?.();
     } catch (err) {
       console.error('[HotlineDm] send error:', err);
+      // Keep overlay open; footer swaps to Buy Coins via hasSufficientCoins.
+      if (isInsufficientBalanceError(err)) {
+        setError('');
+        return;
+      }
       setError(err?.message || 'Failed to send DM.');
     } finally {
       setSending(false);
@@ -191,7 +199,7 @@ export default function OfflineHotlineDmOverlay({
 
   return (
     <div className="fixed inset-0 z-[220] flex items-end md:items-center justify-center">
-      <OverlayBackdrop onClick={sending ? undefined : onClose} />
+      <OverlayBackdrop blur={false} onClick={sending ? undefined : onClose} />
 
       <div
         className={clsx(
@@ -208,7 +216,7 @@ export default function OfflineHotlineDmOverlay({
         >
           <div className="absolute inset-0 bg-[rgba(78,0,147,0.88)]" />
           <div
-            className="absolute inset-0 opacity-30 backdrop-blur-[2px]"
+            className="absolute inset-0 opacity-30"
             style={{
               backgroundImage: "url('/assets/mb.jpg')",
               backgroundSize: 'cover',
@@ -254,36 +262,46 @@ export default function OfflineHotlineDmOverlay({
             <p className="px-2 text-center font-outfit text-[11px] text-rose-200">{error}</p>
           ) : null}
 
-          <div className="flex items-center justify-between gap-2 px-2 pt-1">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="font-outfit text-[12px] text-white leading-normal">
-                Spend Coin:
-              </span>
-              <div className="flex items-center gap-1">
-                <img
-                  src="/Coins/coin10.png"
-                  alt=""
-                  className="w-4 h-4 rounded-full object-contain"
-                />
-                <span className="font-[family-name:var(--font-otomanopee)] text-[12px] text-white text-center leading-normal">
-                  {cost}
-                </span>
-              </div>
-            </div>
+          <div className="px-2 pt-1">
+            {!hasSufficientCoins ? (
+              <InsufficientBalanceBar
+                variant="mobile"
+                spendAmount={cost}
+                onBuyCoins={onOpenCoinModal}
+              />
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="font-outfit text-[12px] text-white leading-normal">
+                    Spend coins:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <img
+                      src="/Coins/coin10.png"
+                      alt=""
+                      className="w-4 h-4 rounded-full object-contain"
+                    />
+                    <span className="font-[family-name:var(--font-otomanopee)] text-[12px] text-white text-center leading-normal">
+                      {cost}
+                    </span>
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!canSend}
-              className={clsx(
-                'h-[52px] shrink-0 rounded-[12px] border border-white/50 border-b-[3px]',
-                'px-[30px] font-[family-name:var(--font-otomanopee)] text-[12px] text-white',
-                'transition active:scale-95',
-                canSend ? 'hover:bg-white/10' : 'opacity-40 cursor-not-allowed',
-              )}
-            >
-              {sending ? 'Sending…' : 'Send DM'}
-            </button>
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!canSend}
+                  className={clsx(
+                    'h-[52px] shrink-0 rounded-[12px] border border-white/50 border-b-[3px]',
+                    'px-[30px] font-[family-name:var(--font-otomanopee)] text-[12px] text-white',
+                    'transition active:scale-95',
+                    canSend ? 'hover:bg-white/10' : 'opacity-40 cursor-not-allowed',
+                  )}
+                >
+                  {sending ? 'Sending…' : 'Send DM'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

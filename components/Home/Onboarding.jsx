@@ -142,6 +142,21 @@ export default function Onboarding() {
         const uid = payload.sub || payload.uid;
         setUserId(uid);
 
+        // Auth row must still exist. Deleted accounts → sign-in, never stay on onboarding.
+        const statusCheck = await fetch(API.AUTH.GET_STATUS, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (
+          statusCheck.status === 401 ||
+          statusCheck.status === 403 ||
+          statusCheck.status === 404
+        ) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          router.replace('/');
+          return;
+        }
+
         // Check if profile already exists
         const response = await fetch(API.USERS.GET_USER(uid), {
           headers: {
@@ -448,20 +463,31 @@ export default function Onboarding() {
       if (isEditing) {
         console.warn('Editing existing profile, skipping create call...');
       } else {
-        // 2. Create Profile
+        // 2. Create Profile (Bearer required — rejects leftover JWTs after hard-delete)
+        const accessTokenForCreate =
+          typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         const response = await fetch(API.USERS.CREATE_PROFILE(userId), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(accessTokenForCreate
+              ? { Authorization: `Bearer ${accessTokenForCreate}` }
+              : {}),
           },
           body: JSON.stringify(profileData)
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json().catch(() => ({}));
           const errorMessage = errorData.message || errorData.error || "";
 
-          if (errorMessage.toLowerCase().includes('already exists')) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            throw new Error(
+              errorMessage || 'Your session expired. Please sign in again.'
+            );
+          } else if (errorMessage.toLowerCase().includes('already exists')) {
             console.warn('Profile already exists, proceeding with updates...');
           } else if (errorMessage.toLowerCase().includes('unique constraint') && errorMessage.toLowerCase().includes('username')) {
             setStep(1); // Go back to step 1 to fix the username

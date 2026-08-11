@@ -279,7 +279,7 @@ export default function CoinModal({ isOpen, onClose, onSuccess, onFailure }) {
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center p-0 md:p-6"
+      className="fixed inset-0 z-[250] flex items-center justify-center p-0 md:p-6"
     >
       <OverlayBackdrop blur={false} onClick={checkoutBusy ? undefined : onClose} />
       <div

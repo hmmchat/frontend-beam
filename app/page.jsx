@@ -51,6 +51,27 @@ const MyComponent = () => {
 
     try {
       JSON.parse(atob(token.split(".")[1]));
+
+      // Hard-deleted / closed accounts: clear session and stay on sign-in (not onboarding).
+      try {
+        await apiRequest(API.AUTH.GET_STATUS);
+      } catch (authErr) {
+        if (
+          authErr.status === 401 ||
+          authErr.status === 403 ||
+          authErr.status === 404
+        ) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          clearPendingReferralCode();
+          setIsLoggedIn(false);
+          setProfileComplete(false);
+          setProfileChecked(true);
+          setAuthChecked(true);
+          return;
+        }
+      }
+
       setIsLoggedIn(true);
 
       try {
@@ -66,13 +87,15 @@ const MyComponent = () => {
         }
       } catch (err) {
         console.error("[Home] Profile check failed:", err);
-        if (err.status === 404) {
-          setProfileComplete(false);
-          window.location.href = "/onboarding";
-        } else if (err.status === 401) {
+        if (err.status === 401 || err.status === 403) {
           setIsLoggedIn(false);
           localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
           clearPendingReferralCode();
+        } else if (err.status === 404) {
+          // Auth is valid (status passed) but no profile yet → onboarding
+          setProfileComplete(false);
+          window.location.href = "/onboarding";
         }
       } finally {
         setProfileChecked(true);

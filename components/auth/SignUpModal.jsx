@@ -345,6 +345,7 @@ function SignUpModalContent({ isOpen, onClose }) {
       <div
         className="
     relative animate-slide-up z-12
+    bg-[#4E0093]
     p-3 rounded-none absolute inset-0 h-dvh max-h-dvh
     w-full overflow-y-auto overscroll-contain
     md:h-auto md:max-h-[90vh] md:inset-auto md:overflow-hidden
@@ -354,7 +355,17 @@ function SignUpModalContent({ isOpen, onClose }) {
   "
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="min-h-full sm:rounded-2xl rounded-none flex flex-col pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 opacity-30 md:rounded-[60px]"
+          style={{
+            backgroundImage: "url(/popupbg.png)",
+            backgroundSize: "cover",
+            backgroundPosition: "top left",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+        <div className="relative z-10 min-h-full sm:rounded-2xl rounded-none flex flex-col pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex flex-col flex-1 text-center md:block">
             {/* Header */}
             <div className="pt-8 md:pt-12 px-4 flex flex-col items-center text-center md:mb-10">

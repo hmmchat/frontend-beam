@@ -713,8 +713,15 @@ function OfflineCardsContent() {
               selectedGiftId={selectedGift?.id || null}
               coins={walletCoins}
               onSendGift={handleSendGift}
-              className={clsx('bottom-[16vh]', 'md:bottom-24', 'md:right-4', 'md:left-4', 'md:right-20', 'md:left-auto', 'md:bottom-28', 'md:translate-y-0')}
-              desktopBottomBarClassName="bottom-8 left-40 flex gap-4 px-6 py-3 rounded-2xl  items-center  bg-opacity-0 z-50 w-[63%]"
+              className={clsx(
+                'bottom-[16vh]',
+                // Desktop: clear the insufficient-balance footer without floating too high
+                'md:bottom-36',
+                'md:right-20',
+                'md:left-auto',
+                'md:translate-y-0',
+              )}
+              desktopBottomBarClassName="bottom-8 left-40 flex gap-4 px-6 py-3 rounded-2xl items-center bg-opacity-0 z-50 w-[63%]"
               mobileBottomBarClassName=""
               hideSendButton={true}
             />

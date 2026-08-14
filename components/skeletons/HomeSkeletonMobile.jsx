@@ -47,10 +47,13 @@ export default function HomeSkeletonMobile() {
       </div>
 
       {/* ── Mid: TV | Solo/Squad | Cards ── */}
-      <div className="absolute top-[49%] left-1/2 z-20 flex w-[95%] max-w-md -translate-x-1/2 -translate-y-1/2 items-center justify-center px-3">
-        <Bone className="absolute left-3 h-10 w-10" />
-        <Bone className="h-[4.5vh] w-[40vw] min-h-9 max-w-[11rem]" />
-        <Bone className="absolute right-3 h-12 w-12" />
+      <div className="absolute top-[49.35%] left-1/2 z-20 w-[95%] max-w-md -translate-x-1/2 -translate-y-1/2">
+        <Bone className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2" />
+        <Bone
+          className="mx-auto !rounded-full"
+          style={{ width: 'calc(45.9% - 12px)', height: 'calc(6.75% - 12px)' }}
+        />
+        <Bone className="absolute right-3 top-1/2 h-12 w-12 -translate-y-1/2" />
       </div>
 
       {/* ── Meet Now + filters ── */}

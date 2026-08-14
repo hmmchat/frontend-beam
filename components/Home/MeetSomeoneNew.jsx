@@ -296,12 +296,11 @@ export default function MeetSomeoneNew({
 
 
 
-          {/* TOGGLE ROW */}
+          {/* Side icons sit in the SVG pockets; vertically centered with the Solo/Squad pill. */}
           {!isInfoOpen && (
-            <div className="absolute top-[49.35%] left-1/2 -translate-x-1/2 w-full flex items-center justify-center -translate-y-1/2 pointer-events-none z-50">
-              {/* LEFT BUTTON */}
+            <>
               {mode !== 'squad' && (
-                <div className="absolute left-3 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
+                <div className="absolute left-3 top-[49.35%] -translate-y-1/2 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
                   <Link href="/beam-tv">
                     <button className={clsx('relative', 'h-10', 'w-10', 'l', 'p-3', 'shadow-md', 'hover:border-white', 'hover:scale-110', 'hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]', 'active:scale-95', 'active:border-b-2', 'transition-all', 'duration-300')}>
                       <img src="/tvfame.png" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain')} />
@@ -311,37 +310,8 @@ export default function MeetSomeoneNew({
                 </div>
               )}
 
-              {/* CENTER TOGGLE */}
-              <div className="flex border border-white/50 rounded-full w-[40vw] max-w-[180px] min-h-11 h-11 relative shadow-inner pointer-events-auto z-50 cursor-pointer">
-                <div
-                  className={clsx(
-                    "absolute top-0.5 bottom-0.5 w-[calc(50%-4px)] border bg-black/10  border-white/60 rounded-full transition-all duration-500",
-                    mode === 'solo' ? "left-0.5" : "left-[calc(50%+2px)]"
-                  )}
-                />
-                <button
-                  onClick={() => setMode('solo')}
-                  className={clsx(
-                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
-                    mode === 'solo' ? "text-white scale-105" : "text-white/70"
-                  )}
-                >
-                  Solo
-                </button>
-                <button
-                  onClick={() => setMode('squad')}
-                  className={clsx(
-                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
-                    mode === 'squad' ? "text-white scale-105" : "text-white/70"
-                  )}
-                >
-                  Squad
-                </button>
-              </div>
-
-              {/* RIGHT BUTTON — same pocket fit as beam TV (left) */}
               {mode !== 'squad' && (
-                <div className="absolute right-3 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
+                <div className="absolute right-3 top-[49.35%] -translate-y-1/2 w-9 h-9 flex items-center justify-center text-white pointer-events-auto z-50 cursor-pointer">
                   <Link href="/cards">
                     <button
                       type="button"
@@ -358,7 +328,6 @@ export default function MeetSomeoneNew({
                         'duration-300',
                       )}
                     >
-                      {/* Scale glyph to fill the notch like tvfame does on the left */}
                       <img
                         src="/hugeiconscards.svg"
                         alt="cards"
@@ -368,6 +337,41 @@ export default function MeetSomeoneNew({
                   </Link>
                 </div>
               )}
+            </>
+          )}
+
+          {/* Inner Solo/Squad pill: fill the SVG waist hole, inset equally so borders never kiss */}
+          {!isInfoOpen && (
+            <div
+              className="absolute left-1/2 top-[49.35%] z-50 box-border p-1.5 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
+              style={{ width: '45.9%', height: '6.75%' }}
+            >
+              <div className="relative flex h-full w-full rounded-full border border-white/50 shadow-inner cursor-pointer">
+                <div
+                  className={clsx(
+                    "absolute top-1 bottom-1 w-[calc(50%-8px)] border bg-black/10 border-white/60 rounded-full transition-all duration-500",
+                    mode === 'solo' ? "left-1" : "left-[calc(50%+4px)]"
+                  )}
+                />
+                <button
+                  onClick={() => setMode('solo')}
+                  className={clsx(
+                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
+                    mode === 'solo' ? "text-white" : "text-white/70"
+                  )}
+                >
+                  Solo
+                </button>
+                <button
+                  onClick={() => setMode('squad')}
+                  className={clsx(
+                    "flex-1 rounded-full text-xs z-10 flex items-center justify-center cursor-pointer",
+                    mode === 'squad' ? "text-white" : "text-white/70"
+                  )}
+                >
+                  Squad
+                </button>
+              </div>
             </div>
           )}
 

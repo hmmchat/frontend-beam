@@ -52,6 +52,8 @@ function musicTrackKey(song) {
   );
 }
 
+const SUGGESTION_BATCH_SIZE = 8;
+
 import ProfileGuard from "@/components/auth/ProfileGuard";
 import { IoEllipsisVerticalSharp, IoLocationOutline, IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
 
@@ -87,6 +89,7 @@ function FacecardContent() {
   const [musicResults, setMusicResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchingItems, setIsSearchingItems] = useState(false);
+  const [isLoadingMoreSuggestions, setIsLoadingMoreSuggestions] = useState(false);
   const [facecardPreviewOpen, setFacecardPreviewOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -159,22 +162,23 @@ function FacecardContent() {
     const fetchChoices = async () => {
       try {
         const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-        const limitParam = isMobile ? "?limit=10" : "";
+        const brandLimitParam = isMobile ? "?limit=10" : "";
+        const suggestionLimitParam = `?limit=${SUGGESTION_BATCH_SIZE}`;
         const [intRes, valRes, brRes, zodiacRes] = await Promise.all([
-          fetch(`${API.DISCOVERY.GET_INTERESTS}${limitParam}`),
-          fetch(`${API.DISCOVERY.GET_VALUES}${limitParam}`),
-          fetch(`${API.DISCOVERY.GET_BRANDS}${limitParam}`),
+          fetch(`${API.DISCOVERY.GET_INTERESTS}${suggestionLimitParam}`),
+          fetch(`${API.DISCOVERY.GET_VALUES}${suggestionLimitParam}`),
+          fetch(`${API.DISCOVERY.GET_BRANDS}${brandLimitParam}`),
           fetch(API.USERS.GET_ZODIACS),
         ]);
         if (intRes.ok) {
           const data = (await intRes.json()).interests;
           setMasterInterests(data);
-          setAllInterests(isMobile ? data.slice(0, 10) : data);
+          setAllInterests(data);
         }
         if (valRes.ok) {
           const data = (await valRes.json()).values;
           setMasterValues(data);
-          setAllValues(isMobile ? data.slice(0, 10) : data);
+          setAllValues(data);
         }
         if (brRes.ok) {
           const data = (await brRes.json()).brands;
@@ -279,8 +283,8 @@ function FacecardContent() {
   useEffect(() => {
     if (!showSelector) {
       const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-      if (masterInterests.length > 0) setAllInterests(isMobile ? masterInterests.slice(0, 10) : masterInterests);
-      if (masterValues.length > 0) setAllValues(isMobile ? masterValues.slice(0, 10) : masterValues);
+      if (masterInterests.length > 0) setAllInterests(masterInterests);
+      if (masterValues.length > 0) setAllValues(masterValues);
       if (masterBrands.length > 0) setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
     }
   }, [showSelector, masterInterests, masterValues, masterBrands]);
@@ -394,86 +398,15 @@ function FacecardContent() {
     }
   };
 
-  const levenshtein = (a, b) => {
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
-    const matrix = Array.from({ length: a.length + 1 }, () =>
-      new Array(b.length + 1).fill(0),
-    );
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost,
-        );
-      }
-    }
-    return matrix[a.length][b.length];
-  };
-
-  const fuzzySearch = (query, items) => {
-    if (!query) return items;
-    const lowerQuery = query.toLowerCase();
-
-    return items
-      .map((item) => {
-        const text = item.name.toLowerCase();
-        let score = 0;
-
-        if (text === lowerQuery) score = 100;
-        else if (text.startsWith(lowerQuery)) score = 80;
-        else if (text.includes(lowerQuery)) score = 50;
-
-        let i = 0,
-          j = 0;
-        while (i < lowerQuery.length && j < text.length) {
-          if (lowerQuery[i] === text[j]) i++;
-          j++;
-        }
-        if (i === lowerQuery.length && score < 30) score = 30;
-
-        const prefixMatch = text.substring(0, lowerQuery.length + 2);
-        const dist = levenshtein(lowerQuery, prefixMatch);
-        if (dist <= 2 && score < 40 - dist * 10) score = 40 - dist * 10;
-
-        return { item, score };
-      })
-      .filter((match) => match.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map((match) => match.item);
-  };
-
   const searchItems = async (category, query) => {
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     if (!query) {
       if (category === "brands") setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
-      else if (category === "interests") setAllInterests(isMobile ? masterInterests.slice(0, 10) : masterInterests);
-      else if (category === "values") setAllValues(isMobile ? masterValues.slice(0, 10) : masterValues);
+      else if (category === "interests") setAllInterests(masterInterests);
+      else if (category === "values") setAllValues(masterValues);
       return;
     }
 
-    if (category === "interests" || category === "values") {
-      setIsSearchingItems(true);
-      setTimeout(() => {
-        if (category === "interests") {
-          let results = fuzzySearch(query, masterInterests);
-          if (isMobile) results = results.slice(0, 10);
-          setAllInterests(results);
-        } else {
-          let results = fuzzySearch(query, masterValues);
-          if (isMobile) results = results.slice(0, 10);
-          setAllValues(results);
-        }
-        setIsSearchingItems(false);
-      }, 50);
-      return;
-    }
-
-    if (query.length < 1) return;
     setIsSearchingItems(true);
     try {
       let endpoint;
@@ -482,15 +415,15 @@ function FacecardContent() {
         endpoint = API.DISCOVERY.SEARCH_INTERESTS;
       else if (category === "values") endpoint = API.DISCOVERY.SEARCH_VALUES;
 
-      if (!endpoint) return;
+      if (!endpoint) {
+        setIsSearchingItems(false);
+        return;
+      }
 
-      let fullUrl =
+      const fullUrl =
         typeof endpoint === "function"
           ? endpoint(query)
           : `${endpoint}?q=${encodeURIComponent(query)}`;
-      if (isMobile) {
-        fullUrl = fullUrl.includes("?") ? `${fullUrl}&limit=10` : `${fullUrl}?limit=10`;
-      }
       const response = await fetch(fullUrl);
       if (response.ok) {
         const data = await response.json();
@@ -498,8 +431,6 @@ function FacecardContent() {
         if (category === "brands") list = data.brands || [];
         else if (category === "interests") list = data.interests || [];
         else if (category === "values") list = data.values || [];
-        
-        if (isMobile) list = list.slice(0, 10);
 
         if (category === "brands") setAllBrands(list);
         else if (category === "interests") setAllInterests(list);
@@ -509,6 +440,47 @@ function FacecardContent() {
       console.error(`Error searching ${category}:`, err);
     } finally {
       setIsSearchingItems(false);
+    }
+  };
+
+  const loadMoreSuggestions = async (category) => {
+    if (category !== "interests" && category !== "values") return;
+    if (isLoadingMoreSuggestions) return;
+
+    const current = category === "interests" ? masterInterests : masterValues;
+    const selectedIds =
+      category === "interests"
+        ? (user?.interests || []).map((item) => item.interestId)
+        : (user?.values || []).map((item) => item.valueId);
+    const exclude = [...new Set([...current.map((item) => item.id), ...selectedIds])].filter(Boolean);
+
+    setIsLoadingMoreSuggestions(true);
+    try {
+      const params = new URLSearchParams({ limit: String(SUGGESTION_BATCH_SIZE) });
+      if (exclude.length) params.set("exclude", exclude.join(","));
+      const endpoint =
+        category === "interests" ? API.DISCOVERY.GET_INTERESTS : API.DISCOVERY.GET_VALUES;
+      const response = await fetch(`${endpoint}?${params.toString()}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const next = (category === "interests" ? data.interests : data.values) || [];
+      const existingIds = new Set(current.map((item) => item.id));
+      const unique = next.filter((item) => item?.id && !existingIds.has(item.id));
+      if (unique.length === 0) return;
+
+      const merged = [...current, ...unique];
+      if (category === "interests") {
+        setMasterInterests(merged);
+        setAllInterests(merged);
+      } else {
+        setMasterValues(merged);
+        setAllValues(merged);
+      }
+    } catch (err) {
+      console.error(`Error loading more ${category}:`, err);
+    } finally {
+      setIsLoadingMoreSuggestions(false);
     }
   };
 
@@ -1164,7 +1136,9 @@ function FacecardContent() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         searchItems={searchItems}
+        loadMoreSuggestions={loadMoreSuggestions}
         isSearchingItems={isSearchingItems}
+        isLoadingMoreSuggestions={isLoadingMoreSuggestions}
       />
 
       {facecardPreviewOpen && user && (

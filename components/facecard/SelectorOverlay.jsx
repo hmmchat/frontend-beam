@@ -25,7 +25,9 @@ export default function SelectorOverlay({
   searchQuery,
   setSearchQuery,
   searchItems,
-  isSearchingItems
+  loadMoreSuggestions,
+  isSearchingItems,
+  isLoadingMoreSuggestions
 }) {
   const [localResults, setLocalResults] = React.useState([]);
 
@@ -35,12 +37,15 @@ export default function SelectorOverlay({
 
   if (!showSelector) return null;
 
+  const selectorTitle =
+    showSelector === 'values' ? 'causes' : showSelector;
+
   return (
     <div
-      className="fixed inset-0 z-[100] bg-purple-950 flex flex-col animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[100] bg-purple-950 text-white flex flex-col animate-fade-in overflow-y-auto"
       style={{ backgroundImage: "url('/assets/mb.jpg')", backgroundSize: 'cover', backgroundAttachment: 'fixed' }}
     >
-      <div className="w-full max-w-2xl mx-auto px-6 py-12 flex flex-col gap-10">
+      <div className="w-full max-w-2xl mx-auto px-6 py-12 pb-[calc(7rem+env(safe-area-inset-bottom))] flex flex-col gap-10">
 
         {/* Header Area */}
         <div className="md:space-y-8 space-y-4">
@@ -53,7 +58,7 @@ export default function SelectorOverlay({
               <span className="md:text-2xl text-sm text-white">  <ArrowLeft size={24} /> </span>
             </button>
 
-            <h1 className=" text-xl md:font-extrabold tracking-tight capitalize  md:hidden">{showSelector}</h1>
+            <h1 className=" text-xl md:font-extrabold tracking-tight capitalize  md:hidden">{selectorTitle}</h1>
           </div>
 
 
@@ -179,7 +184,7 @@ export default function SelectorOverlay({
                   searchItems(showSelector, e.target.value);
                 }}
                 placeholder={`Search for your favorite ${showSelector === 'brands' ? 'brands' : showSelector === 'interests' ? 'interests' : 'causes'}...`}
-                className="w-full  border border-white/40 md:rounded-2xl rounded-xl md:px-4 md:py-3 py-3 px-4 text-xs md:text-lg md:font-light focus:outline-none focus:border-yellow-400 transition"
+                className="w-full bg-transparent text-white placeholder:text-white/50 border border-white/40 md:rounded-2xl rounded-xl md:px-4 md:py-3 py-3 px-4 text-base md:text-lg md:font-light focus:outline-none focus:border-yellow-400 transition"
               />
               {isSearchingItems && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -200,43 +205,71 @@ export default function SelectorOverlay({
                     : user?.brandPreferences?.map(b => ({ id: b.brandId, name: b.brand?.name, logoUrl: b.brand?.logoUrl }))
                 ) || [];
 
-                // 2. Build a unified list starting with selected items
+                // 2. Idle: selected items first, then a short suggestion list.
+                //    Search: show API matches from the full catalog (do not cap to the idle 8/10).
                 const selectedIds = new Set(selectedOnes.map(s => s.id));
-                let unifiedList = [
-                  ...selectedOnes,
-                  ...results.filter(item => !selectedIds.has(item.id))
-                ];
+                const isSearching = Boolean(searchQuery?.trim());
+                let unifiedList = isSearching
+                  ? results.filter((item) => item && item.id)
+                  : [
+                      ...selectedOnes,
+                      ...results.filter(item => !selectedIds.has(item.id))
+                    ];
 
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-                if (isMobile) {
+                if (isMobile && !isSearching && showSelector === 'brands') {
                   unifiedList = unifiedList.slice(0, 10);
                 }
 
-                if (unifiedList.length === 0 && !isSearchingItems) {
+                const showSearchForMore =
+                  !isSearching && (showSelector === 'interests' || showSelector === 'values');
+
+                if (unifiedList.length === 0 && !isSearchingItems && !showSearchForMore) {
                   return <p className="text-white/30 text-xs italic py-4">No results found...</p>;
                 }
 
-                return unifiedList.map(item => {
-                  const isSelected = selectedIds.has(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        if (showSelector === 'interests') toggleInterest(item.id, item.name);
-                        else if (showSelector === 'values') toggleValue(item.id, item.name);
-                        else toggleBrand(item.id, item.name, item.logoUrl);
-                      }}
-                      className={`flex items-center gap-2 md:px-6 md:py-3 py-2 px-3 md:rounded-2xl rounded-xl border  border-b-2 transition-all duration-300 transform active:scale-95 ${isSelected
-                        ? 'bg-yellow-400 text-black  md:font-bold '
-                        : ' text-white border-white/40 hover:border-white/40'
-                        }`}
-                    >
-                      {item.logoUrl && <img src={item.logoUrl} alt="" className="w-5 h-5 object-contain" />}
-                      <p className="text-sm font-outfit">{item.name}</p>
-                      <span className="md:text-lg text-xs leading-none">{isSelected ? '✕' : <img width={12} height={12} src="/assets/plus.png" alt="" />}</span>
-                    </button>
-                  );
-                });
+                return (
+                  <>
+                    {unifiedList.map(item => {
+                      const isSelected = selectedIds.has(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            if (showSelector === 'interests') toggleInterest(item.id, item.name);
+                            else if (showSelector === 'values') toggleValue(item.id, item.name);
+                            else toggleBrand(item.id, item.name, item.logoUrl);
+                          }}
+                          className={`flex items-center gap-2 md:px-6 md:py-3 py-2 px-3 md:rounded-2xl rounded-xl border  border-b-2 transition-all duration-300 transform active:scale-95 ${isSelected
+                            ? 'bg-yellow-400 text-black  md:font-bold '
+                            : ' text-white border-white/40 hover:border-white/40'
+                            }`}
+                        >
+                          {item.logoUrl && <img src={item.logoUrl} alt="" className="w-5 h-5 object-contain" />}
+                          <p className="text-sm font-outfit">{item.name}</p>
+                          <span className="md:text-lg text-xs leading-none">{isSelected ? '✕' : <img width={12} height={12} src="/assets/plus.png" alt="" />}</span>
+                        </button>
+                      );
+                    })}
+                    {showSearchForMore && (
+                      <button
+                        type="button"
+                        onClick={() => loadMoreSuggestions && loadMoreSuggestions(showSelector)}
+                        disabled={isLoadingMoreSuggestions}
+                        className="flex items-center gap-2 md:px-6 md:py-3 py-2 px-3 md:rounded-2xl rounded-xl border border-b-2 border-white/40 text-white hover:border-white/40 transition-all duration-300 transform active:scale-95 disabled:opacity-60"
+                      >
+                        <p className="text-sm font-outfit">search for more</p>
+                        <span className="md:text-lg text-xs leading-none">
+                          {isLoadingMoreSuggestions ? (
+                            <span className="inline-block w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <img width={12} height={12} src="/assets/plus.png" alt="" />
+                          )}
+                        </span>
+                      </button>
+                    )}
+                  </>
+                );
               })()}
             </div>
           </div>

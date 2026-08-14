@@ -640,7 +640,11 @@ function FacecardContent() {
     if (photoUploading) return;
     setPhotoError("");
     setActiveSlot(slotIndex);
-    fileInputRef.current?.click();
+    const input = fileInputRef.current;
+    if (!input) return;
+    // Persist slot on the input so iOS photo-picker roundtrips still know which slot.
+    input.dataset.slot = String(slotIndex);
+    input.click();
   };
 
   const handleDeletePhoto = async (photoId) => {
@@ -797,12 +801,19 @@ function FacecardContent() {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
+    const slotFromInput = Number(e.target?.dataset?.slot);
     if (e.target) e.target.value = "";
     if (!file) return;
 
     setPhotoError("");
 
-    if (!PROFILE_PHOTO_ACCEPT_TYPES.includes(file.type)) {
+    const mime = (file.type || "").toLowerCase();
+    const namedOk = /\.(jpe?g|png|webp|gif)$/i.test(file.name || "");
+    if (mime && !PROFILE_PHOTO_ACCEPT_TYPES.includes(mime) && mime !== "image/jpg") {
+      setPhotoError("Please choose a JPEG, PNG, WebP, or GIF image.");
+      return;
+    }
+    if (!mime && !namedOk) {
       setPhotoError("Please choose a JPEG, PNG, WebP, or GIF image.");
       return;
     }
@@ -817,13 +828,14 @@ function FacecardContent() {
       return;
     }
 
-    if (activeSlot === null || activeSlot === undefined) {
+    const slot = Number.isInteger(slotFromInput) ? slotFromInput : activeSlot;
+    if (slot === null || slot === undefined || Number.isNaN(slot)) {
       setPhotoError("Pick a photo slot first.");
       return;
     }
 
     const url = URL.createObjectURL(file);
-    setCropTargetSlot(activeSlot);
+    setCropTargetSlot(slot);
     setCropImageUrl(url);
     setCropModalOpen(true);
   };

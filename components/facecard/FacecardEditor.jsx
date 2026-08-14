@@ -62,6 +62,16 @@ export default function FacecardEditor({
         backgroundPosition: "center",
       }}
     >
+      {/* Single file input — must not live inside `hidden` layouts (iOS ignores those). */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="absolute w-px h-px opacity-0 overflow-hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
       {/* Phone + tablet editor; desktop uses the lg:flex layout below */}
@@ -292,7 +302,7 @@ export default function FacecardEditor({
 
             <div className={clsx('grid', 'grid-cols-3', 'gap-4')}>
               {/* Photo 1 (DP) */}
-              <div className="relative">
+              <div className="relative overflow-visible">
                 <div
                   onClick={() => handleSlotClick(0)}
                   className={clsx('w-full', 'aspect-[2/3]', 'border-2', 'border-white/50', 'rounded-[1rem]', 'overflow-hidden')}
@@ -300,12 +310,23 @@ export default function FacecardEditor({
                   <img
                     src={user?.displayPictureUrl}
                     className={clsx('w-full', 'h-full', 'object-cover')}
+                    alt="Photo 1"
                   />
                 </div>
 
-                <div className={clsx('absolute', '-top-2', '-right-2', 'w-5', 'h-5', 'bg-white', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-black', 'text-[10px]', 'z-[999]', 'shadow-lg')}>
-                  ✎
-                </div>
+                <button
+                  type="button"
+                  aria-label="Edit photo"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSlotClick(0);
+                  }}
+                  className={clsx('absolute', '-top-3', '-right-3', 'z-20', 'flex', 'h-11', 'w-11', 'items-center', 'justify-center')}
+                >
+                  <span className={clsx('flex', 'h-8', 'w-8', 'items-center', 'justify-center', 'rounded-full', 'bg-white', 'text-black', 'text-sm', 'shadow-lg')}>
+                    ✎
+                  </span>
+                </button>
               </div>
 
               {/* Other Slots */}
@@ -445,13 +466,6 @@ export default function FacecardEditor({
             </div>
           </div>
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
         </div>
       </div>
 
@@ -531,7 +545,15 @@ export default function FacecardEditor({
                       </div>
                     )}
 
-                    <button className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg')}>
+                    <button
+                      type="button"
+                      aria-label="Edit photo"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSlotClick(0);
+                      }}
+                      className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg')}
+                    >
                       ✎
                     </button>
                   </div>
@@ -601,14 +623,6 @@ export default function FacecardEditor({
                     )}
                   </div>
 
-                  {/* Hidden File Input */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                  />
                 </div>
 
               </div>

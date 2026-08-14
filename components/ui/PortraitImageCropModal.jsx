@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { FACECARD_PORTRAIT_ASPECT } from "@/lib/facecard-portrait";
@@ -29,6 +30,12 @@ export default function PortraitImageCropModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [mediaReady, setMediaReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -37,16 +44,45 @@ export default function PortraitImageCropModal({
       setCroppedAreaPixels(null);
       setSaving(false);
       setError("");
+      setMediaReady(false);
     }
   }, [open, imageUrl]);
 
   useEffect(() => {
+    if (!open || !imageUrl) {
+      setMediaReady(false);
+      return;
+    }
+    let cancelled = false;
+    setMediaReady(false);
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) setMediaReady(true);
+    };
+    img.onerror = () => {
+      if (!cancelled) {
+        setMediaReady(false);
+        setError("Could not load this photo. Try a JPEG or PNG instead.");
+      }
+    };
+    img.src = imageUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [open, imageUrl]);
+
+  useEffect(() => {
     if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open, onClose]);
 
   const onCropComplete = useCallback((_area, croppedPixels) => {
@@ -54,7 +90,11 @@ export default function PortraitImageCropModal({
   }, []);
 
   const handleSave = async () => {
-    if (!imageUrl || !croppedAreaPixels || busy || saving) return;
+    if (!imageUrl || busy || saving) return;
+    if (!croppedAreaPixels?.width || !croppedAreaPixels?.height) {
+      setError("Could not read the crop area. Wait for the photo to load, then try again.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -71,13 +111,14 @@ export default function PortraitImageCropModal({
     }
   };
 
-  if (!open || !imageUrl) return null;
+  if (!mounted || !open || !imageUrl) return null;
 
   const disabled = busy || saving;
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-black/90 text-white"
+      className="fixed inset-0 z-[200] flex flex-col bg-black/90 text-white"
+      style={{ height: "100dvh", width: "100vw" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="portrait-crop-title"
@@ -96,21 +137,31 @@ export default function PortraitImageCropModal({
         </button>
       </div>
 
-      <div className="relative flex-1 min-h-[200px] w-full">
-        <Cropper
-          image={imageUrl}
-          crop={crop}
-          zoom={zoom}
-          aspect={aspect}
-          onCropChange={setCrop}
-          onZoomChange={setZoom}
-          onCropComplete={onCropComplete}
-          showGrid={false}
-          objectFit="contain"
-        />
+      <div className="relative min-h-0 flex-1 w-full">
+        {mediaReady ? (
+          <Cropper
+            key={imageUrl}
+            image={imageUrl}
+            crop={crop}
+            zoom={zoom}
+            aspect={aspect}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropComplete}
+            showGrid={false}
+            objectFit="contain"
+            style={{
+              containerStyle: { width: "100%", height: "100%" },
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-white/60">
+            {error ? "Photo could not be displayed" : "Loading photo…"}
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4 border-t border-white/15 px-3 sm:px-4 py-3 sm:py-4 shrink-0 safe-area-pb max-w-lg w-full mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4 border-t border-white/15 px-3 sm:px-4 py-3 sm:py-4 shrink-0 max-w-lg w-full mx-auto pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-3">
           <span className="text-xs text-white/60 w-12">Zoom</span>
           <input
@@ -120,7 +171,7 @@ export default function PortraitImageCropModal({
             step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            disabled={disabled}
+            disabled={disabled || !mediaReady}
             className="flex-1 accent-yellow-400"
           />
         </div>
@@ -131,7 +182,7 @@ export default function PortraitImageCropModal({
         <button
           type="button"
           onClick={handleSave}
-          disabled={disabled || !croppedAreaPixels}
+          disabled={disabled || !mediaReady || !croppedAreaPixels?.width}
           className="w-full rounded-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 disabled:opacity-40"
         >
           {saving || busy ? "Saving…" : "Save"}
@@ -139,4 +190,6 @@ export default function PortraitImageCropModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

@@ -126,6 +126,7 @@ export default function useVideoChat() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [showChatInput, setShowChatInput] = useState(false);
+  const [showChatMessages, setShowChatMessages] = useState(false);
   const [coins, setCoins] = useState(0);
   const [diamonds, setDiamonds] = useState(0);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
@@ -1761,6 +1762,7 @@ export default function useVideoChat() {
         else if (pInfo && data.userId === pInfo.id) { name = pInfo.name; displayPictureUrl = pInfo.displayPictureUrl || ''; }
         else { const remote = remotes.find(s => s.userId === data.userId); if (remote) { name = remote.name; displayPictureUrl = remote.displayPictureUrl || ''; } else if (remotes.length > 0) { name = remotes[0].name; displayPictureUrl = remotes[0].displayPictureUrl || ''; } }
         setChatMessages(prev => { if (data.id && prev.some(m => m.id === data.id)) return prev; return [...prev, { id: data.id || Date.now() + Math.random(), userId: data.userId, message: data.message, name, displayPictureUrl }]; });
+        setShowChatMessages(true);
         break;
       }
 
@@ -2231,11 +2233,16 @@ export default function useVideoChat() {
     if (!chatInput.trim() || !roomInfo?.roomId) return;
     send({ type: 'chat-message', data: { roomId: roomInfo.roomId, message: chatInput.trim() } });
     setChatInput('');
+    setShowChatMessages(true);
   };
 
   const handleChatButtonClick = () => {
     if (isBroadcasting) { setBroadcastChatWarning('Warning: this call is live on Beam TV. Chat is visible to viewers.'); setTimeout(() => setBroadcastChatWarning(''), 2800); }
-    setShowChatInput(v => !v);
+    setShowChatMessages((visible) => {
+      const next = !visible;
+      setShowChatInput(next);
+      return next;
+    });
   };
 
   // ---- Gift callbacks ------------------------------------------------------
@@ -2526,7 +2533,7 @@ export default function useVideoChat() {
     localVideoRef, localStreamRef, isCamOff, isScreenSharing,
     onToggleScreenShare: toggleScreenShare,
     chatMessages, chatInput, setChatInput, sendChatMessage, showChatInput, setShowChatInput,
-    onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
+    showChatMessages, onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
     isDareOpen, setIsDareOpen: openDareOverlay, setIsCoinModalOpen, coins, selectedGiftId,
     gift: activeLocalGifts[0] || null, gifts: activeLocalGifts, onGiftAnimationComplete: handleLocalGiftComplete,
     onGiftDismissStart: handleLocalGiftDismissStart,
@@ -2545,7 +2552,7 @@ export default function useVideoChat() {
     isEnablingPullStranger, pullStrangerCooldownSec,
     roomSummoningUserId, callRoles, roomHealthDebug,
     icebreaker, showIcebreaker, chatMessages, chatInput, setChatInput,
-    showChatInput, setShowChatInput, coins, diamonds, diamondToCoinRate,
+    showChatInput, setShowChatInput, showChatMessages, coins, diamonds, diamondToCoinRate,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,

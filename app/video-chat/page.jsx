@@ -436,6 +436,7 @@ function VideoChatContent() {
             toggleCam={localVideoProps.toggleCam}
             isCamOff={localVideoProps.isCamOff}
             onChatButtonClick={localVideoProps.onChatButtonClick || (() => localVideoProps.setShowChatInput(!localVideoProps.showChatInput))}
+            showChatMessages={localVideoProps.showChatMessages}
             setIsDareOpen={localVideoProps.setIsDareOpen}
             setIsGiftModalOpen={localVideoProps.setIsGiftModalOpen}
             isScreenSharing={localVideoProps.isScreenSharing}

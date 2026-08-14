@@ -9,6 +9,7 @@ export default function MobileMultiUserControls({
   toggleCam,
   isCamOff,
   onChatButtonClick,
+  showChatMessages = false,
   setIsDareOpen,
   setIsGiftModalOpen,
   isScreenSharing,
@@ -59,12 +60,19 @@ export default function MobileMultiUserControls({
         <button
           type="button"
           onClick={onChatButtonClick}
-          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 bg-[#0A032D]/20 backdrop-blur-md"
+          aria-label={showChatMessages ? "Hide messages" : "Show messages"}
+          aria-pressed={showChatMessages}
+          className={clsx(
+            "min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all active:scale-95 backdrop-blur-md",
+            showChatMessages
+              ? "border-white/70 bg-[#0A032D]/50 hover:bg-[#0A032D]/60"
+              : "border-white/40 bg-[#0A032D]/20 hover:bg-[#0A032D]/40"
+          )}
         >
           <img
             src="/msg.png"
-            className="w-4 h-4 object-contain"
-            alt="Message"
+            className="w-4 h-4 object-contain pointer-events-none"
+            alt=""
           />
         </button>
       </div>

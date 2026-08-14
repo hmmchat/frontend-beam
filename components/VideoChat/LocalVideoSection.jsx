@@ -20,6 +20,7 @@ export default function LocalVideoSection({
   sendChatMessage,
   showChatInput,
   setShowChatInput,
+  showChatMessages = false,
   onChatButtonClick,
   toggleCam,
   isGiftModalOpen,
@@ -47,15 +48,9 @@ export default function LocalVideoSection({
 
   useEffect(() => {
     const el = chatContainerRef.current;
-    if (!el) return;
-
-    const isNearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-
-    if (isNearBottom) {
-      el.scrollTop = el.scrollHeight;
-    }
-  }, [chatMessages]);
+    if (!el || !showChatMessages) return;
+    el.scrollTop = el.scrollHeight;
+  }, [chatMessages, showChatMessages]);
 
 
   const setLocalVideoEl = useCallback(
@@ -161,6 +156,7 @@ export default function LocalVideoSection({
           </div>
         )}
 
+        {showChatMessages && chatMessages.length > 0 && (
         <div
           ref={chatContainerRef}
           className={clsx(
@@ -211,6 +207,7 @@ export default function LocalVideoSection({
             </div>
           ))}
         </div>
+        )}
 
 
 
@@ -307,12 +304,19 @@ export default function LocalVideoSection({
                     onChatButtonClick ||
                     (() => setShowChatInput(!showChatInput))
                   }
-                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'bg-[#0A032D]/20', 'backdrop-blur-md', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-[#0A032D]/40', 'active:scale-95')}
+                  aria-label={showChatMessages ? "Hide messages" : "Show messages"}
+                  aria-pressed={showChatMessages}
+                  className={clsx(
+                    'w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'flex', 'items-center', 'justify-center', 'transition-all', 'active:scale-95', 'backdrop-blur-md',
+                    showChatMessages
+                      ? 'border-white/70 bg-[#0A032D]/50 hover:bg-[#0A032D]/60'
+                      : 'border-white/40 bg-[#0A032D]/20 hover:bg-[#0A032D]/40',
+                  )}
                 >
                   <img
                     src="/msg.png"
-                    className={clsx('w-[18px]', 'h-[18px]', 'md:w-5', 'md:h-5', 'object-contain')}
-                    alt="Message"
+                    className={clsx('w-[18px]', 'h-[18px]', 'md:w-5', 'md:h-5', 'object-contain', 'pointer-events-none')}
+                    alt=""
                   />
                 </button>
               </div>

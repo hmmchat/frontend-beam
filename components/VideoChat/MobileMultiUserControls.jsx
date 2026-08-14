@@ -15,18 +15,19 @@ export default function MobileMultiUserControls({
   onToggleScreenShare
 }) {
   return (
-    <div className="md:hidden absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] px-4 flex justify-between items-end z-50 pointer-events-auto">
+    <div className="md:hidden absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] px-4 flex items-end gap-2 z-50 pointer-events-none">
       {/* Left buttons (Camera + Message) */}
-      <div className="flex gap-1.5 mb-2">
+      <div className="flex shrink-0 gap-1.5 mb-2 relative z-20 pointer-events-auto">
         <button
           type="button"
           onClick={toggleCam}
-          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          aria-label={isCamOff ? "Turn camera on" : "Turn camera off"}
+          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 bg-[#0A032D]/20 backdrop-blur-md"
         >
           <img
             src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-            className="w-4 h-4 object-contain"
-            alt="Video"
+            className="w-4 h-4 object-contain pointer-events-none"
+            alt=""
           />
         </button>
         {typeof onToggleScreenShare === "function" && (
@@ -39,10 +40,10 @@ export default function MobileMultiUserControls({
                 : "Share screen or window"
             }
             className={clsx(
-              "min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md",
+              "min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 backdrop-blur-md",
               isScreenSharing
                 ? "border-emerald-400/80 bg-emerald-500/20"
-                : "border-white/40"
+                : "border-white/40 bg-[#0A032D]/20"
             )}
           >
             <svg
@@ -58,7 +59,7 @@ export default function MobileMultiUserControls({
         <button
           type="button"
           onClick={onChatButtonClick}
-          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 bg-black/40 backdrop-blur-md"
+          className="min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] border-white/40 flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 bg-[#0A032D]/20 backdrop-blur-md"
         >
           <img
             src="/msg.png"
@@ -68,13 +69,13 @@ export default function MobileMultiUserControls({
         </button>
       </div>
 
-      {/* Center Logo — own layer so justify-between columns can't skew visual center */}
-      <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center pointer-events-none">
-        <BeamTransparentLogo className="h-8" />
+      {/* Center logo — sits in the remaining gap so it cannot overlap side buttons */}
+      <div className="min-w-0 flex-1 flex justify-center items-end overflow-hidden px-1 pointer-events-none self-end mb-2">
+        <BeamTransparentLogo className="h-6 max-w-full" />
       </div>
 
       {/* Right buttons (Dare + Gift) */}
-      <div className="flex gap-1.5">
+      <div className="flex shrink-0 gap-1.5 relative z-20 pointer-events-auto">
         <PressableActionButton
           onPress={() => setIsDareOpen(true)}
           className="w-12 h-12"

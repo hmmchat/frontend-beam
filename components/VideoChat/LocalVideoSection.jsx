@@ -147,10 +147,17 @@ export default function LocalVideoSection({
               "tracking-widest",
               "italic",
               "z-10",
+              "pointer-events-none",
               roundedClass
             )}
           >
             Camera is off
+          </div>
+        )}
+
+        {isScreenSharing && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 rounded-full bg-black/55 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur-md border border-white/30">
+            Sharing screen
           </div>
         )}
 
@@ -211,8 +218,8 @@ export default function LocalVideoSection({
         {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
             className={clsx(
-              "absolute md:bottom-[3%] bottom-[max(4%,calc(env(safe-area-inset-bottom)+0.5rem))] left-2 right-2 z-20",
-              "flex items-end justify-center gap-3",
+              "absolute md:bottom-[3%] bottom-[max(4%,calc(env(safe-area-inset-bottom)+0.5rem))] left-2 right-2 z-30",
+              "flex items-end justify-between md:justify-center gap-2 md:gap-3",
               "pointer-events-none"
             )}
           >
@@ -221,8 +228,9 @@ export default function LocalVideoSection({
                 "flex",
                 "flex-col",
                 "gap-4",
-                "w-full md:w-[75%]",
-                "max-w-[280px] md:max-w-none",
+                "relative",
+                "shrink-0",
+                "w-auto md:w-[75%]",
                 "md:px-4",
                 "pointer-events-auto"
               )}
@@ -230,7 +238,10 @@ export default function LocalVideoSection({
               {showChatInput && (
                 <form
                   onSubmit={sendChatMessage}
-                  className={clsx("animate-in mb-[7%] ml-[2.5%]", hideMobileControlsRow && "hidden md:block")}
+                  className={clsx(
+                    "animate-in mb-[7%] ml-[2.5%] w-[min(280px,70vw)] max-w-[280px]",
+                    hideMobileControlsRow && "hidden md:block",
+                  )}
                 >
                   <input
                     autoFocus
@@ -248,19 +259,19 @@ export default function LocalVideoSection({
               <div
                 className={clsx(
                   "flex items-center flex-nowrap gap-1 sm:gap-1 w-full ",
-                  "overflow-hidden",
                   hideMobileControlsRow ? "hidden md:flex" : "flex"
                 )}
               >
                 <button
                   type="button"
                   onClick={toggleCam}
-                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
+                  aria-label={isCamOff ? "Turn camera on" : "Turn camera off"}
+                  className={clsx('relative z-30 shrink-0 w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'bg-[#0A032D]/20', 'backdrop-blur-md', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-[#0A032D]/40', 'active:scale-95')}
                 >
                   <img
                     src={isCamOff ? "/assets/video-on.svg" : "/assets/video-off.svg"}
-                    className={clsx('w-[18px]', 'h-[18px]', 'md:h-6', 'md:w-6', 'object-contain')}
-                    alt="Video"
+                    className={clsx('w-[18px]', 'h-[18px]', 'md:h-6', 'md:w-6', 'object-contain', 'pointer-events-none')}
+                    alt=""
                   />
                 </button>
                 {typeof onToggleScreenShare === "function" && (
@@ -273,10 +284,10 @@ export default function LocalVideoSection({
                         : "Share screen or window"
                     }
                     className={clsx(
-                      "w-11 h-11 md:h-12 md:w-12 rounded-full  border-b-[3px] border flex items-center justify-center transition-all hover:bg-white/10 active:scale-95",
+                      "w-11 h-11 md:h-12 md:w-12 rounded-full border-b-[3px] border flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 backdrop-blur-md",
                       isScreenSharing
                         ? "border-emerald-400/80 bg-emerald-500/20"
-                        : "border-white/40",
+                        : "border-white/40 bg-[#0A032D]/20",
                     )}
                   >
                     <svg
@@ -296,7 +307,7 @@ export default function LocalVideoSection({
                     onChatButtonClick ||
                     (() => setShowChatInput(!showChatInput))
                   }
-                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-white/10', 'active:scale-95')}
+                  className={clsx('w-11', 'h-11', 'md:h-12', 'md:w-12', 'rounded-full', 'border', 'border-b-[3px]', 'border-white/40', 'bg-[#0A032D]/20', 'backdrop-blur-md', 'flex', 'items-center', 'justify-center', 'transition-all', 'hover:bg-[#0A032D]/40', 'active:scale-95')}
                 >
                   <img
                     src="/msg.png"
@@ -304,16 +315,23 @@ export default function LocalVideoSection({
                     alt="Message"
                   />
                 </button>
-
-                {/* logo */}
-
-
               </div>
 
 
             </div>
+
+            {/* Mobile center logo — in the gap between control clusters so it cannot overlap them */}
+            <div
+              className={clsx(
+                "min-w-0 flex-1 flex justify-center items-end overflow-hidden px-1 pointer-events-none md:hidden",
+                hideMobileControlsRow && "hidden",
+              )}
+            >
+              <BeamTransparentLogo className="h-6 max-w-full" />
+            </div>
+
             {/* Dare + Gift launchers */}
-            <div className={clsx("gap-2 md:gap-1 ", hideMobileControlsRow ? "hidden md:flex" : "flex", "pointer-events-auto")}>
+            <div className={clsx("gap-2 md:gap-1 shrink-0", hideMobileControlsRow ? "hidden md:flex" : "flex", "pointer-events-auto")}>
               <PressableActionButton
                 onPress={() => setIsDareOpen(true)}
                 className="md:w-14 md:h-14 w-12 h-12"
@@ -332,16 +350,6 @@ export default function LocalVideoSection({
                 alt="GIFT"
                 aria-label="Open gift"
               />
-            </div>
-
-            {/* Center logo — own layer so asymmetric control columns can't shift it */}
-            <div
-              className={clsx(
-                "absolute inset-x-0 bottom-2 z-10 flex justify-center pointer-events-none md:hidden",
-                hideMobileControlsRow && "hidden",
-              )}
-            >
-              <BeamTransparentLogo className="h-6" />
             </div>
           </div>
         )}

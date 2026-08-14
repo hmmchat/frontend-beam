@@ -224,7 +224,9 @@ export default function useVideoChat() {
   const screenShareInFlightRef = useRef(false);
   const producerIdToMetaRef = useRef(new Map());
   const isBroadcastingRef = useRef(false);
-  const isCamOffRef = useRef(false);
+  const isCamOffRef = useRef(
+    typeof window !== 'undefined' && localStorage.getItem('isCamOff') === 'true'
+  );
   const isMutedRef = useRef(false);
   const mediaPausedForBackgroundRef = useRef(false);
   const localMediaRecoveryInFlightRef = useRef(false);
@@ -275,6 +277,36 @@ export default function useVideoChat() {
     if (audioTrack) audioTrack.enabled = !isMutedRef.current;
   }
 
+  function applyLocalCameraEnabled(enabled) {
+    const tracks = localStreamRef.current?.getVideoTracks?.() || [];
+    tracks.forEach((track) => {
+      if (track.readyState === 'live') track.enabled = enabled;
+    });
+    const producer = producersRef.current.video;
+    if (!producer || producer.closed) return;
+    try {
+      if (enabled) producer.resume();
+      else producer.pause();
+    } catch { /* ignore */ }
+  }
+
+  function broadcastCamOffState(camOff = isCamOffRef.current) {
+    const roomId = roomInfoRef.current?.roomId;
+    if (!roomId || !userIdRef.current) return;
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+    wsRef.current.send(JSON.stringify({
+      type: 'chat-message',
+      data: {
+        roomId,
+        message: JSON.stringify({
+          isCamOffChanged: true,
+          isCamOff: Boolean(camOff),
+          senderId: userIdRef.current,
+        }),
+      },
+    }));
+  }
+
   function hasInterruptedLocalMedia() {
     const stream = localStreamRef.current;
     if (!stream) return false;
@@ -304,6 +336,7 @@ export default function useVideoChat() {
     const currentProducer = producersRef.current[kind];
     if (currentProducer && !currentProducer.closed && typeof currentProducer.replaceTrack === 'function') {
       await currentProducer.replaceTrack({ track });
+      if (kind === 'video') applyLocalCameraEnabled(!isCamOffRef.current);
       return;
     }
 
@@ -318,6 +351,7 @@ export default function useVideoChat() {
           appData: { source: 'camera' },
         });
       }
+      applyLocalCameraEnabled(!isCamOffRef.current);
       return;
     }
 
@@ -345,6 +379,7 @@ export default function useVideoChat() {
       ]);
 
       localStreamRef.current = nextStream;
+      applyLocalCameraEnabled(!isCamOffRef.current);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = nextStream;
         const playPromise = localVideoRef.current.play?.();
@@ -581,11 +616,16 @@ export default function useVideoChat() {
     myProducerIdsRef.current.clear();
     pendingVideoProduceSourceRef.current = 'camera';
     producerIdToMetaRef.current.clear();
-    localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
-    localScreenStreamRef.current = null;
+    const keepScreenCapture =
+      screenShareInFlightRef.current ||
+      Boolean(localScreenStreamRef.current?.getVideoTracks?.().some((t) => t.readyState === 'live'));
+    if (!keepScreenCapture) {
+      localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
+      localScreenStreamRef.current = null;
+      setIsScreenSharing(false);
+    }
     try { localScreenMsProducerRef.current?.close?.(); } catch { }
     localScreenMsProducerRef.current = null;
-    setIsScreenSharing(false);
     Object.values(consumersRef.current || {}).forEach(c => { try { c?.close?.(); } catch { } });
     Object.values(producersRef.current || {}).forEach(p => { if (p && typeof p.close === 'function') { try { p.close(); } catch { } } });
     try { sendTransportRef.current?.close?.(); } catch { }
@@ -1078,6 +1118,51 @@ export default function useVideoChat() {
   };
 
   // ---- Screen share --------------------------------------------------------
+  const waitForSendTransport = (timeoutMs = 10000) =>
+    new Promise((resolve) => {
+      const started = Date.now();
+      const tick = () => {
+        const transport = sendTransportRef.current;
+        const wsOpen = wsRef.current?.readyState === WebSocket.OPEN;
+        if (transport && !transport.closed && wsOpen && roomInfoRef.current?.roomId) {
+          resolve(transport);
+          return;
+        }
+        if (Date.now() - started >= timeoutMs) {
+          resolve(null);
+          return;
+        }
+        setTimeout(tick, 250);
+      };
+      tick();
+    });
+
+  const produceScreenTrack = async (track) => {
+    const transport = sendTransportRef.current;
+    if (!transport || transport.closed) {
+      throw new Error('Call connection is not ready for screen share.');
+    }
+    pendingVideoProduceSourceRef.current = 'screen';
+    const screenProduce = {
+      track,
+      encodings: getScreenShareEncodings(),
+      appData: { source: 'screen' },
+      stopTracks: false,
+    };
+    const screenCodec = pickH264VideoCodec(deviceRef.current);
+    if (screenCodec) screenProduce.codec = screenCodec;
+    try {
+      return await transport.produce(screenProduce);
+    } catch {
+      pendingVideoProduceSourceRef.current = 'screen';
+      return await transport.produce({
+        track,
+        appData: { source: 'screen' },
+        stopTracks: false,
+      });
+    }
+  };
+
   const stopScreenShare = useCallback(() => {
     screenShareInFlightRef.current = false;
     const producer = localScreenMsProducerRef.current;
@@ -1092,41 +1177,59 @@ export default function useVideoChat() {
   }, []);
 
   const startScreenShare = useCallback(async () => {
-    if (!sendTransportRef.current || sendTransportRef.current.closed || !roomInfoRef.current?.roomId) return;
     if (localScreenMsProducerRef.current || screenShareInFlightRef.current) return;
+    if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') {
+      window.alert('Screen sharing is not supported in this browser. Try Chrome on desktop, or Safari 17+ on iPhone.');
+      return;
+    }
+
     screenShareInFlightRef.current = true;
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia(getScreenShareConstraints());
-      // Picker can drop focus/WS; refuse to produce on a dead transport (would error → abort).
-      if (!sendTransportRef.current || sendTransportRef.current.closed) {
-        screenStream.getTracks().forEach(t => t.stop());
-        screenShareInFlightRef.current = false;
-        return;
+      let screenStream;
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia(getScreenShareConstraints());
+      } catch (firstErr) {
+        if (firstErr?.name === 'NotAllowedError' || firstErr?.name === 'AbortError') throw firstErr;
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       }
-      localScreenStreamRef.current = screenStream;
+
       const track = screenStream.getVideoTracks()[0];
       if (!track) {
-        screenStream.getTracks().forEach(t => t.stop());
-        localScreenStreamRef.current = null;
-        screenShareInFlightRef.current = false;
+        screenStream.getTracks().forEach((t) => t.stop());
+        throw new Error('No screen video track was captured.');
+      }
+      try { track.contentHint = 'detail'; } catch { /* ignore */ }
+      track.onended = () => stopScreenShare();
+      localScreenStreamRef.current = screenStream;
+
+      // The picker backgrounds the tab (especially on mobile) and often drops
+      // the signaling socket. Wait for it to come back before producing.
+      const transport = await waitForSendTransport();
+      if (!transport) {
+        throw new Error('Call connection dropped while picking a screen. Please try again.');
+      }
+      if (localScreenMsProducerRef.current && !localScreenMsProducerRef.current.closed) {
+        setIsScreenSharing(true);
         return;
       }
-      track.onended = () => stopScreenShare();
-      pendingVideoProduceSourceRef.current = 'screen';
-      const screenProduce = {
-        track,
-        encodings: getScreenShareEncodings(),
-        appData: { source: 'screen' },
-      };
-      const screenCodec = pickH264VideoCodec(deviceRef.current);
-      if (screenCodec) screenProduce.codec = screenCodec;
-      const producer = await sendTransportRef.current.produce(screenProduce);
+
+      const producer = await Promise.race([
+        produceScreenTrack(track),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Screen share timed out. Please try again.')), 15000);
+        }),
+      ]);
       localScreenMsProducerRef.current = producer;
       setIsScreenSharing(true);
     } catch (e) {
-      console.warn('[WebRTC] Screen share cancelled or failed', e);
-      localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
+      const cancelled = e?.name === 'NotAllowedError' || e?.name === 'AbortError';
+      if (!cancelled) {
+        console.warn('[WebRTC] Screen share failed', e);
+        window.alert(e?.message || 'Could not share screen. Please try again.');
+      }
+      localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
       localScreenStreamRef.current = null;
+      try { localScreenMsProducerRef.current?.close?.(); } catch { }
       localScreenMsProducerRef.current = null;
       pendingVideoProduceSourceRef.current = 'camera';
       setIsScreenSharing(false);
@@ -1299,7 +1402,12 @@ export default function useVideoChat() {
           const transport = device.createSendTransport({ id, iceParameters, iceCandidates, dtlsParameters });
           sendTransportRef.current = transport;
           transport.on('connect', ({ dtlsParameters: dp }, cb) => { send({ type: 'connect-transport', data: { roomId: info.roomId, transportId: id, dtlsParameters: dp } }); cb(); });
-          transport.on('produce', ({ kind, rtpParameters, appData }, cb) => {
+          transport.on('produce', ({ kind, rtpParameters, appData }, cb, errback) => {
+            const rid = roomInfoRef.current?.roomId || info.roomId;
+            if (wsRef.current?.readyState !== WebSocket.OPEN) {
+              errback?.(new Error('Signaling disconnected'));
+              return;
+            }
             if (kind === 'video') {
               if (!producersRef.current.videoCbQueue) producersRef.current.videoCbQueue = [];
               producersRef.current.videoCbQueue.push(cb);
@@ -1308,10 +1416,10 @@ export default function useVideoChat() {
                 appData?.source === 'screen' || pendingVideoProduceSourceRef.current === 'screen'
                   ? 'screen'
                   : 'camera';
-              send({ type: 'produce', data: { roomId: info.roomId, transportId: id, kind, rtpParameters, source: src } });
+              send({ type: 'produce', data: { roomId: rid, transportId: id, kind, rtpParameters, source: src } });
             } else {
               producersRef.current.resolve_audio = cb;
-              send({ type: 'produce', data: { roomId: info.roomId, transportId: id, kind, rtpParameters } });
+              send({ type: 'produce', data: { roomId: rid, transportId: id, kind, rtpParameters } });
             }
           });
           send({ type: 'create-transport', data: { roomId: info.roomId, producing: false, consuming: true } });
@@ -1330,8 +1438,27 @@ export default function useVideoChat() {
                   }).catch(console.error);
                   if (fallback) producersRef.current.video = fallback;
                 }
+                applyLocalCameraEnabled(!isCamOffRef.current);
+                broadcastCamOffState(isCamOffRef.current);
               }
               if (aTrack) { const audioProducer = await transport.produce({ track: aTrack }).catch(console.error); if (audioProducer) producersRef.current.audio = audioProducer; }
+              const liveScreenTrack = localScreenStreamRef.current?.getVideoTracks?.().find((t) => t.readyState === 'live');
+              // If startScreenShare is still in flight, it will produce after the picker.
+              if (liveScreenTrack && !screenShareInFlightRef.current) {
+                pendingVideoProduceSourceRef.current = 'screen';
+                try {
+                  const screenProducer = await transport.produce({
+                    track: liveScreenTrack,
+                    encodings: getScreenShareEncodings(),
+                    appData: { source: 'screen' },
+                    stopTracks: false,
+                  });
+                  localScreenMsProducerRef.current = screenProducer;
+                  setIsScreenSharing(true);
+                } catch (e) {
+                  console.warn('[WebRTC] Re-publish screen share failed', e);
+                }
+              }
             };
             publish().catch(console.error);
           }
@@ -1343,6 +1470,7 @@ export default function useVideoChat() {
           if (queued.length > 0) queued.forEach(({ producerId, remoteUserId, kind, source }) => consume(producerId, remoteUserId, { kind, source }));
           send({ type: 'get-producers', data: { roomId: info.roomId } });
           scheduleGetProducersRetries(info.roomId);
+          broadcastCamOffState(isCamOffRef.current);
         }
         break;
       }
@@ -1362,6 +1490,7 @@ export default function useVideoChat() {
         scheduleCallRoleRefresh();
         if (!recvTransportRef.current) { pendingProducersRef.current.push({ producerId: data.producerId, remoteUserId: data.userId, kind: data.kind, source: data.source }); return; }
         consume(data.producerId, data.userId, { kind: data.kind, source: data.source });
+        broadcastCamOffState(isCamOffRef.current);
         break;
       }
 
@@ -1524,16 +1653,20 @@ export default function useVideoChat() {
           if (controlParsed.isCamOffChanged !== undefined) {
             const remoteUserId = controlParsed.senderId;
             const camOff = Boolean(controlParsed.isCamOff);
-            setRemoteStreams(prev => prev.map(s => {
-              if (String(s.userId) === String(remoteUserId)) {
-                return {
-                  ...s,
-                  videoEnabled: !camOff,
-                  videoOn: !camOff
-                };
-              }
-              return s;
-            }));
+            setRemoteStreams(prev => {
+              const next = prev.map(s => {
+                if (String(s.userId) === String(remoteUserId)) {
+                  return {
+                    ...s,
+                    videoEnabled: !camOff,
+                    videoOn: !camOff
+                  };
+                }
+                return s;
+              });
+              remoteStreamsRef.current = next;
+              return next;
+            });
             return;
           }
           if (controlParsed.isPeerNextClicked) { handlePeerLeftAutoResume(); return; }
@@ -1920,49 +2053,45 @@ export default function useVideoChat() {
   };
 
   const toggleCam = async () => {
-    const track = localStreamRef.current?.getVideoTracks()[0];
-    if (track) {
-      const nextCamOff = !isCamOff;
-      track.enabled = !nextCamOff;
-      setIsCamOff(nextCamOff);
-
-      // Save to localStorage
+    const nextCamOff = !isCamOffRef.current;
+    isCamOffRef.current = nextCamOff;
+    setIsCamOff(nextCamOff);
+    try {
       localStorage.setItem('isCamOff', String(nextCamOff));
       localStorage.setItem('isVideoOn', String(!nextCamOff));
+    } catch { /* ignore */ }
 
-      // Notify backend via profile PATCH!
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          await fetch(API.USERS.UPDATE_PROFILE, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              videoEnabled: !nextCamOff
-            })
-          });
-        }
-      } catch (err) {
-        console.error('Failed to notify backend about cam toggle:', err);
+    applyLocalCameraEnabled(!nextCamOff);
+
+    if (!nextCamOff) {
+      const live = localStreamRef.current?.getVideoTracks?.().some((t) => t.readyState === 'live');
+      if (!live) {
+        await recoverLocalMedia('toggle-cam-on');
+        applyLocalCameraEnabled(true);
       }
+    }
 
-      // Send WS control message to update the peer
-      if (roomInfoRef.current?.roomId) {
-        send({
-          type: 'chat-message',
-          data: {
-            roomId: roomInfoRef.current.roomId,
-            message: JSON.stringify({
-              isCamOffChanged: true,
-              isCamOff: nextCamOff,
-              senderId: userIdRef.current
-            })
-          }
+    // Tell peers immediately — do not wait on the profile PATCH.
+    broadcastCamOffState(nextCamOff);
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (token) {
+        fetch(API.USERS.UPDATE_PROFILE, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            videoEnabled: !nextCamOff
+          })
+        }).catch((err) => {
+          console.error('Failed to notify backend about cam toggle:', err);
         });
       }
+    } catch (err) {
+      console.error('Failed to notify backend about cam toggle:', err);
     }
   };
 
@@ -2395,7 +2524,7 @@ export default function useVideoChat() {
 
   const localVideoProps = {
     localVideoRef, localStreamRef, isCamOff, isScreenSharing,
-    onToggleScreenShare: status === 'connected' ? toggleScreenShare : undefined,
+    onToggleScreenShare: toggleScreenShare,
     chatMessages, chatInput, setChatInput, sendChatMessage, showChatInput, setShowChatInput,
     onChatButtonClick: handleChatButtonClick, toggleCam, isGiftModalOpen, setIsGiftModalOpen,
     isDareOpen, setIsDareOpen: openDareOverlay, setIsCoinModalOpen, coins, selectedGiftId,

@@ -49,14 +49,19 @@ export default function BeamTransparentLogo({ className = "", alt = "Beam" }) {
     const update = () => {
       // Tailwind h-* is the intended *glyph* height (pre-pad). We expand the
       // box so outline/shadow on left of "b" / right of "m" stay in-bounds.
+      // Also cap to the parent width so the wordmark can sit between controls
+      // on narrow phones instead of overlapping them.
       const glyphH =
         hint ||
         el.clientHeight ||
         el.offsetHeight ||
         el.getBoundingClientRect().height;
-      if (!(glyphH > 0)) return;
+      const parentW = el.parentElement?.clientWidth ?? 0;
+      const scaleH = glyphH > 0 ? glyphH / NATIVE_H : 0;
+      const scaleW = parentW > 0 ? parentW / STAGE_W : scaleH;
+      const next = Math.min(scaleH || scaleW, scaleW || scaleH);
+      if (!(next > 0)) return;
 
-      const next = glyphH / NATIVE_H;
       setScale(next);
       el.style.width = `${STAGE_W * next}px`;
       el.style.height = `${STAGE_H * next}px`;
@@ -65,6 +70,7 @@ export default function BeamTransparentLogo({ className = "", alt = "Beam" }) {
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    if (el.parentElement) ro.observe(el.parentElement);
     return () => ro.disconnect();
   }, [hint]);
 

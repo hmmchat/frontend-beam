@@ -91,16 +91,16 @@ export default function FacecardEditor({
             </div>
 
             {/* Name Box with Brackets */}
-            <div className={clsx('col-span-5', 'flex', 'justify-center')}>
-              <div className={clsx('relative', 'px-6', 'py-1', 'min-w-[140px]', 'h-[42px]')}>
+            <div className={clsx('col-span-5', 'flex', 'justify-center', 'min-w-0')}>
+              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
                 <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
-                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full')}>
-                  <h2 className={clsx('text-[12px]', 'text-white')}>{firstName}</h2>
+                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
+                  <h2 className={clsx('text-[12px]', 'text-white', 'truncate')}>{firstName}</h2>
 
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white')}>
+                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>
                     UserID:{user?.id?.slice(0, 8) || "4heu24sds"}
                   </p>
                 </div>
@@ -111,31 +111,31 @@ export default function FacecardEditor({
               <CompletionMeter percent={progress} size="mobile" />
             </div>
 
-            <div className={clsx('col-span-5', 'mt-1')}>
-              <div className={clsx('relative', 'px-6', 'py-1', 'min-w-[140px]', 'h-[42px]')}>
+            <div className={clsx('col-span-5', 'mt-1', 'min-w-0')}>
+              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
                 <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
 
-                <div className="">
-                  <p className={clsx('text-[10px]', 'uppercase', 'font-outfit', 'text-white')}>
+                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
+                  <p className={clsx('text-[10px]', 'uppercase', 'font-outfit', 'text-white', 'truncate')}>
                     DOB :{" "}
                     {user?.dateOfBirth
                       ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
                       : "22/08/1998"}
                   </p>
-                  <p className={clsx('text-[10px]', 'font-outfit', 'font-thin', 'text-white')}>
+                  <p className={clsx('text-[10px]', 'font-outfit', 'font-thin', 'text-white', 'truncate')}>
                     Zodiac : {zodiac?.name || "Gemini"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className={clsx('col-span-2', 'flex', 'justify-center', 'mt-1')}>
+            <div className={clsx('col-span-2', 'flex', 'justify-center', 'mt-1', 'min-w-0')}>
               <button
                 onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
-                className={clsx('w-12', 'h-12', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-4xl', 'text-white', 'hover:bg-white/5', 'transition')}
+                className={clsx('w-full', 'max-w-12', 'aspect-square', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-4xl', 'text-white', 'hover:bg-white/5', 'transition')}
               >
                 {zodiac?.imageUrl ? (
                   <img
@@ -148,26 +148,26 @@ export default function FacecardEditor({
               </button>
             </div>
 
-            <div className="col-span-5 ">
-              <div className={clsx('relative', 'px-6', 'py-1', 'min-w-[140px]', 'h-[42px]')}>
+            <div className={clsx('col-span-5', 'min-w-0')}>
+              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
                 <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
                 <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
 
-                <div className="">
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white')}>
+                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
+                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>
                     Gender Identity
                   </p>
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white')}>{user?.gender}</p>
+                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>{user?.gender}</p>
                 </div>
               </div>
             </div>
 
             {/* Gender Icon + Facecard Button Column */}
-            <div className={clsx('col-span-2', 'flex', 'flex-col', 'gap-4')}>
+            <div className={clsx('col-span-2', 'flex', 'flex-col', 'gap-4', 'min-w-0')}>
               <div className={clsx('flex', 'justify-center')}>
-                <button className={clsx('w-12', 'h-12', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-xl', 'text-white')}>
+                <button className={clsx('w-full', 'max-w-12', 'aspect-square', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-xl', 'text-white')}>
                   {user?.gender === "MALE"
                     ? "♂"
                     : user?.gender === "FEMALE"

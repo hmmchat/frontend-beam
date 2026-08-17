@@ -644,12 +644,34 @@ export default function useVideoChat() {
     deviceRef.current = null;
   }
 
+  function resetInCallUi() {
+    setShowIcebreaker(false);
+    setIcebreaker('');
+    setIsBroken(false);
+    setIsGiftModalOpen(false);
+    setSelectedGiftId(null);
+    setIsDareOpen(false);
+    setActiveDareProposal(null);
+    setDareAcceptanceStatus('idle');
+    setShowRandomness(false);
+    setIsRolling(false);
+    setShowGroupMembersModal(false);
+    setShowChatMessages(false);
+    setShowChatInput(false);
+    setChatMessages([]);
+    setChatInput('');
+    setActiveRemoteGifts([]);
+    setActiveLocalGifts([]);
+    setBroadcastChatWarning('');
+  }
+
   function cleanup({ stopLocalMedia = true } = {}) {
     mediaPausedForBackgroundRef.current = false;
     wsReconnectAttemptRef.current = 0;
     if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); wsRef.current = null; }
     if (stopLocalMedia) { localStreamRef.current?.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
     teardownMediasoupState({ clearRemoteStreams: true });
+    resetInCallUi();
   }
 
   // ---- Room health watcher -------------------------------------------------

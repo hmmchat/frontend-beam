@@ -82,6 +82,7 @@ function VideoChatContent() {
   const [purchaseToast, setPurchaseToast] = useState(null);
 
   // ---- Derived values ------------------------------------------------------
+  const isInActiveCall = remoteStreams.length > 0 || isBroadcasting;
   const isPullStrangerDisabled = (remoteStreams.length + 1) >= 4 || isEnablingPullStranger || (pullStrangerCooldownSec > 0);
   const isRoomFull = (remoteStreams.length + 1) >= 4;
   const getRemoteGifts = (userId) =>
@@ -446,7 +447,7 @@ function VideoChatContent() {
         )}
 
         {/* Quick actions (icebreaker, randomness, etc.) */}
-        {!(remoteStreams.length === 0 && !isBroadcasting) && (
+        {isInActiveCall && (
           <QuickActions
             callRoles={callRoles}
             toggleRandomness={toggleRandomness}
@@ -465,7 +466,7 @@ function VideoChatContent() {
 
         {/* Gift overlay */}
         <GiftOverlay
-          isOpen={isGiftModalOpen}
+          isOpen={isGiftModalOpen && isInActiveCall}
           onClose={() => { setIsGiftModalOpen(false); setSelectedGiftId(null); }}
           onOpenCoinModal={() => setIsCoinModalOpen(true)}
           onSelectGift={gift => setSelectedGiftId(gift.id)}
@@ -478,7 +479,7 @@ function VideoChatContent() {
 
         {/* Dare overlay */}
         <DareOverlay
-          isOpen={isDareOpen && !activeDareProposal}
+          isOpen={isDareOpen && !activeDareProposal && isInActiveCall}
           onClose={handleCancelDare}
           selectedGiftId={selectedGiftId}
           onSelectGift={giftId => setSelectedGiftId(giftId)}
@@ -499,7 +500,7 @@ function VideoChatContent() {
 
         {/* Dare proposal overlay */}
         <DareProposalOverlay
-          isOpen={!!activeDareProposal}
+          isOpen={!!activeDareProposal && isInActiveCall}
           proposal={activeDareProposal}
           onAccept={() => handleDareResponse(true)}
           onReject={() => handleDareResponse(false)}
@@ -524,10 +525,10 @@ function VideoChatContent() {
         />
 
         {/* Icebreaker toast */}
-        <IcebreakerToast isOpen={showIcebreaker} icebreaker={icebreaker} />
+        <IcebreakerToast isOpen={showIcebreaker && isInActiveCall} icebreaker={icebreaker} />
 
         {/* Broadcast chat warning */}
-        {broadcastChatWarning && (
+        {broadcastChatWarning && isInActiveCall && (
           <div className={clsx('absolute', 'top-40', 'left-1/2', '-translate-x-1/2', 'z-[61]', 'animate-in', 'fade-in', 'slide-in-from-top-2')}>
             <div className={clsx('bg-amber-500/20', 'backdrop-blur-xl', 'px-6', 'py-3', 'rounded-2xl', 'border', 'border-amber-300/35', 'shadow-2xl', 'max-w-xl', 'text-center')}>
               <p className={clsx('text-amber-100', 'text-sm', 'font-black')}>{broadcastChatWarning}</p>
@@ -545,7 +546,7 @@ function VideoChatContent() {
 
         {/* Randomness modal */}
         <RandomnessModal
-          isOpen={showRandomness}
+          isOpen={showRandomness && isInActiveCall}
           onClose={() => setShowRandomness(false)}
           isLocalHost={callRoles.isLocalHost}
           handlePullStranger={handlePullStranger}
@@ -561,7 +562,7 @@ function VideoChatContent() {
 
         {/* Group members modal */}
         <GroupMembersModal
-          isOpen={showGroupMembersModal}
+          isOpen={showGroupMembersModal && isInActiveCall}
           onClose={() => setShowGroupMembersModal(false)}
           remoteStreams={remoteStreams}
           getRemoteTileProfile={getRemoteTileProfile}

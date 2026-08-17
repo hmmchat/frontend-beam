@@ -101,16 +101,18 @@ export default function LocalVideoSection({
         />
 
         <div className="absolute top-2 left-2 right-2 bottom-14 md:top-4 md:left-4 md:right-4 md:bottom-22 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]">
-          <GiftAnimationGroup
-            gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
-            onComplete={onGiftAnimationComplete}
-            onDismissStart={onGiftDismissStart}
-            persistUntilDismissed={true}
-            forceDismiss={forceDismiss}
-          />
+          {!hideAllControls && (
+            <GiftAnimationGroup
+              gifts={Array.isArray(gifts) ? gifts : gift ? [gift] : []}
+              onComplete={onGiftAnimationComplete}
+              onDismissStart={onGiftDismissStart}
+              persistUntilDismissed={true}
+              forceDismiss={forceDismiss}
+            />
+          )}
         </div>
 
-        {activeLocalDareText && (
+        {!hideAllControls && activeLocalDareText && (
           <div className={clsx('flex', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'w-[80%]', 'max-w-[80%]', 'px-4', 'md:px-6', 'py-1.5', 'md:py-2.5', 'bg-[#8A1515]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'items-center', 'gap-1', 'overflow-hidden', 'box-border')}>
             <span className="opacity-90 shrink-0">Your Dare: </span>
             <SyncedMarqueeText
@@ -121,7 +123,7 @@ export default function LocalVideoSection({
             />
           </div>
         )}
-        {!activeLocalDareText && activeLocalGiftLabel && (
+        {!hideAllControls && !activeLocalDareText && activeLocalGiftLabel && (
           <div className={clsx('hidden', 'md:block', 'absolute', 'top-0', 'left-1/2', '-translate-x-1/2', 'z-30', 'px-6', 'py-1.5', 'md:py-2.5', 'bg-[#4E0093]', 'rounded-b-[16px]', 'md:rounded-b-[20px]', 'text-white', 'text-[10px]', 'md:text-xs', 'font-medium', 'shadow-md', 'whitespace-nowrap')}>
             <span>{activeLocalGiftLabel}</span>
           </div>
@@ -150,13 +152,13 @@ export default function LocalVideoSection({
           </div>
         )}
 
-        {isScreenSharing && (
+        {!hideAllControls && isScreenSharing && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 rounded-full bg-black/55 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur-md border border-white/30">
             Sharing screen
           </div>
         )}
 
-        {showChatMessages && chatMessages.length > 0 && (
+        {!hideAllControls && showChatMessages && chatMessages.length > 0 && (
         <div
           ref={chatContainerRef}
           className={clsx(

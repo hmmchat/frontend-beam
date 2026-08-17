@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import BeamTransparentLogo from '@/components/ui/BeamTransparentLogo';
 
 export default function QuickActions({
-  callRoles,
   toggleRandomness,
   handleIcebreaker,
   isDareOpen,
@@ -56,21 +55,19 @@ export default function QuickActions({
       giftAnimationActive && "md:block hidden"
     )}>
 
-      {/* LEFT (Dice) - Only visible to host */}
-      {callRoles.isLocalHost && (
-        <button
-          onClick={() => toggleRandomness?.()}
-          className={clsx('absolute', 'top-0', 'left-4', 'md:left-8', 'bg-[#0A032D]/20', 'w-14', 'h-14', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border', 'border-white/80', 'hover:bg-[#0A032D]/40', 'cursor-pointer', 'transition', 'pointer-events-auto', 'shadow-2xl')}
-        >
-          <img
-            src={isRolling ? diceImages[diceIndex] : '/dice.png'}
-            className={clsx(
-              "w-7 h-7 transition-transform",
-              isRolling && "rotate-180 scale-110"
-            )}
-          />
-        </button>
-      )}
+      {/* LEFT (Dice) — visible to everyone in the call; host-only actions live in the modal */}
+      <button
+        onClick={() => toggleRandomness?.()}
+        className={clsx('absolute', 'top-0', 'left-4', 'md:left-8', 'bg-[#0A032D]/20', 'w-14', 'h-14', 'rounded-full', 'flex', 'items-center', 'justify-center', 'border', 'border-white/80', 'hover:bg-[#0A032D]/40', 'cursor-pointer', 'transition', 'pointer-events-auto', 'shadow-2xl')}
+      >
+        <img
+          src={isRolling ? diceImages[diceIndex] : '/dice.png'}
+          className={clsx(
+            "w-7 h-7 transition-transform",
+            isRolling && "rotate-180 scale-110"
+          )}
+        />
+      </button>
 
 
       <div className="absolute hidden md:flex left-4 right-4 md:left-8 md:right-auto md:w-[44%] top-0 bottom-0 pointer-events-none items-center justify-center overflow-visible">

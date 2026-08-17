@@ -237,7 +237,7 @@ function VideoChatContent() {
               showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[0])}
               showKickParticipant={canKickRemoteUser(remoteStreams[0].userId)}
               onKickParticipant={() => handleKickRemote(remoteStreams[0].userId)}
-              showLeaveNextButton={status === 'connected' && callRoles.isLocalHost}
+              showLeaveNextButton={status === 'connected'}
               leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
               onLeaveOrNext={handleLeaveGroupOrRaincheck}
               isRainchecking={isRainchecking}
@@ -300,10 +300,11 @@ function VideoChatContent() {
 
         ) : (
 
-          /* ---- Grid Layout (4 participants): 2×2 ---- */
+          /* ---- Grid Layout (4 participants): 2×2 — mobile matches 3-person split + Figma frame SVG ---- */
           <>
             <VideoChatMask slots={4} giftAnimationActive={hasActiveGift || hasActiveDare} />
-            <div className={clsx('grid', 'min-h-0', 'min-w-0', 'flex-1', 'grid-cols-2', 'grid-rows-[58.2%]', 'md:grid-rows-2', 'md:gap-2')}>
+            <div className={clsx('flex', 'flex-col', 'min-h-0', 'min-w-0', 'flex-1', 'md:grid', 'md:grid-cols-2', 'md:grid-rows-2', 'md:gap-2')}>
+              <div className={clsx('flex', 'h-[58.2%]', 'min-h-0', 'min-w-0', 'md:contents')}>
               <RemoteVideoTile
                 className={clsx('flex-1', 'rounded-tl-[1.5rem]', 'md:rounded-[60px]')}
                 key={`remote-${remoteStreams[0].userId}`}
@@ -352,9 +353,10 @@ function VideoChatContent() {
                 showReportEmoji={shouldShowReportEmojiOnRemoteTile(remoteStreams[1])}
                 showKickParticipant={canKickRemoteUser(remoteStreams[1].userId)}
                 onKickParticipant={() => handleKickRemote(remoteStreams[1].userId)}
-                showLeaveNextButton={status === 'connected' && callRoles.isLocalHost}
+                showLeaveNextButton={status === 'connected'}
                 leaveIconType={remoteStreams.length > 1 ? 'exit' : 'next'}
                 onLeaveOrNext={handleLeaveGroupOrRaincheck}
+                isRainchecking={isRainchecking}
                 onReportClick={() => setShowGroupMembersModal(true)}
                 borderBottomClass="md:bottom-4"
                 hideNameOnMobile={true}
@@ -367,7 +369,9 @@ function VideoChatContent() {
                 activeRemoteDareText={getRemoteActiveDareText(remoteStreams[1].userId)}
                 activeRemoteDareMarqueeStartAt={getRemoteActiveDareMarqueeStartAt(remoteStreams[1].userId)}
               />
-              <div className={clsx('relative', 'rounded-bl-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'isolate')} style={{ transform: 'translateZ(0)' }}>
+              </div>
+              <div className={clsx('flex', 'min-h-0', 'min-w-0', 'flex-1', 'md:contents')}>
+              <div className={clsx('relative', 'flex-1', 'min-h-0', 'min-w-0', 'rounded-bl-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'isolate')} style={{ transform: 'translateZ(0)' }}>
                 <RemoteVideoTile
                   key={remoteStreams[2] ? `remote-${remoteStreams[2].userId}` : 'summoning-slot-2'}
                   userId={remoteStreams[2]?.userId ?? ''}
@@ -387,7 +391,7 @@ function VideoChatContent() {
                   gifts={getRemoteGifts(remoteStreams[2]?.userId)}
                   onGiftAnimationComplete={handleRemoteGiftComplete}
                   onGiftDismissStart={handleRemoteGiftDismissStart}
-                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-bl-[1.5rem]')}
+                  className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'rounded-bl-[1.5rem]', 'md:rounded-[60px]')}
                   showMinusButton={!!remoteStreams[2] && callRoles.isLocalHost}
                   onMinus={remoteStreams[2] ? () => handleKickRemote(remoteStreams[2].userId) : undefined}
                   activeRemoteDareText={getRemoteActiveDareText(remoteStreams[2]?.userId)}
@@ -401,8 +405,9 @@ function VideoChatContent() {
                   />
                 )}
               </div>
-              <div className={clsx('relative', 'min-h-0', 'min-w-0', 'rounded-br-[1.5rem]', 'md:rounded-[2rem]', 'overflow-hidden', 'bg-gray-950', 'border', 'border-white/5', 'isolate')} style={{ transform: 'translateZ(0)' }}>
+              <div className={clsx('relative', 'flex-1', 'min-h-0', 'min-w-0', 'rounded-br-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'isolate')} style={{ transform: 'translateZ(0)' }}>
                 <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} roundedClass="rounded-br-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalDareMarqueeStartAt={activeLocalDareMarqueeStartAt} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
+              </div>
               </div>
             </div>
           </>
@@ -449,7 +454,6 @@ function VideoChatContent() {
         {/* Quick actions (icebreaker, randomness, etc.) */}
         {isInActiveCall && (
           <QuickActions
-            callRoles={callRoles}
             toggleRandomness={toggleRandomness}
             handleIcebreaker={handleIcebreaker}
             isGiftModalOpen={isGiftModalOpen}

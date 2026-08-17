@@ -2143,7 +2143,7 @@ export default function useVideoChat() {
   // ---- Pull stranger -------------------------------------------------------
   const handlePullStranger = async () => {
     const participantCount = remoteStreams.length + 1;
-    if (!roomInfo?.roomId || !userIdRef.current || participantCount >= 4 || isEnablingPullStranger || pullStrangerCooldownSec > 0) return;
+    if (!callRoles.isLocalHost || !roomInfo?.roomId || !userIdRef.current || participantCount >= 4 || isEnablingPullStranger || pullStrangerCooldownSec > 0) return;
     try {
       setIsEnablingPullStranger(true);
       await apiRequest(API.STREAMING.ENABLE_PULL_STRANGER(roomInfo.roomId), { method: 'POST', body: JSON.stringify({ userId: userIdRef.current }) });
@@ -2170,14 +2170,14 @@ export default function useVideoChat() {
 
   // ---- Beamcast ------------------------------------------------------------
   const handleBeamcast = async () => {
-    if (!roomInfo?.roomId || !userIdRef.current) return;
+    if (!callRoles.isLocalHost || !roomInfo?.roomId || !userIdRef.current) return;
     send({ type: 'start-broadcast', data: { roomId: roomInfo.roomId } });
     try { await enableBeamcastDiscovery(); } catch { }
     setIsBroadcasting(true); setShowRandomness(false);
   };
 
   const handleStopBeamcast = async () => {
-    if (!roomInfo?.roomId || !userIdRef.current) return;
+    if (!callRoles.isLocalHost || !roomInfo?.roomId || !userIdRef.current) return;
     send({ type: 'stop-broadcast', data: { roomId: roomInfo.roomId } });
     try { await disableBeamcastDiscovery(); } catch { }
     setIsBroadcasting(false); setShowRandomness(false);

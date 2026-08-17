@@ -63,25 +63,15 @@ export default function VideoChatMask({
   }
 
   if (slots === 4) {
-    // 2×2 tile outlines — do not reuse the 1:1 dual-pane SVG path.
     return (
-      <div
-        className={`absolute inset-3 bottom-[10.5%] top-[2.25%] md:hidden z-10 pointer-events-none grid grid-cols-2 grid-rows-2 gap-1.5 transition-opacity duration-300 ${giftAnimationActive ? 'opacity-0' : 'opacity-100'}`}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className={`border border-white/35 ${
-              i === 0
-                ? 'rounded-tl-[1.25rem]'
-                : i === 1
-                  ? 'rounded-tr-[1.25rem]'
-                  : i === 2
-                    ? 'rounded-bl-[1.25rem]'
-                    : 'rounded-br-[1.25rem]'
-            }`}
-          />
-        ))}
+      <div className={shellClass}>
+        <img
+          src="/frames/video-chat-4.svg"
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="w-full h-full object-fill"
+        />
       </div>
     );
   }

@@ -17,6 +17,7 @@
   /*
     Outline/shadow paint outside the glyph bbox. Keep visible so the left of
     "b" and right of "m" aren't clipped (same class of bug as colour logo).
+    Callers must not wrap this in overflow-hidden — that re-clips the "m".
   */
   overflow: visible;
   line-height: 0;

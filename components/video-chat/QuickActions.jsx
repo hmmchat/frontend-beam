@@ -73,8 +73,8 @@ export default function QuickActions({
       )}
 
 
-      <div className="absolute hidden md:flex left-4 right-4 md:left-8 md:right-auto md:w-[44%] top-0 bottom-0 pointer-events-none items-center justify-center">
-        <BeamTransparentLogo className="h-8 pointer-events-none z-10" />
+      <div className="absolute hidden md:flex left-4 right-4 md:left-8 md:right-auto md:w-[44%] top-0 bottom-0 pointer-events-none items-center justify-center overflow-visible">
+        <BeamTransparentLogo className="w-full max-h-8 pointer-events-none z-10" />
       </div>
 
 

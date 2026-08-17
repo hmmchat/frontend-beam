@@ -267,6 +267,19 @@
   animation: marquee-left 8s linear infinite;
 }
 
+@keyframes overflow-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-overflow-marquee {
+  animation: overflow-marquee 8s linear infinite;
+}
+
 .age-badge {
   font-size: 18px;
   font-weight: 1200;

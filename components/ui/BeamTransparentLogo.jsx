@@ -12,6 +12,7 @@ const STAGE_W = NATIVE_W + OUTLINE_PAD * 2;
 const STAGE_H = NATIVE_H + OUTLINE_PAD * 2;
 
 const TW_H = {
+  "h-4": 16,
   "h-5": 20,
   "h-6": 24,
   "h-7": 28,
@@ -25,11 +26,21 @@ const LETTER_PATH =
 
 function glyphHeightHint(className) {
   const s = String(className);
-  const arbitrary = s.match(/(?:^|\s)h-\[(\d+(?:\.\d+)?)px\](?:\s|$)/);
+  const arbitrary = s.match(/(?:^|\s)(?:max-h|h)-\[(\d+(?:\.\d+)?)px\](?:\s|$)/);
   if (arbitrary) return Number(arbitrary[1]);
-  const token = s.match(/(?:^|\s)(h-(?:5|6|7|8|10|12))(?:\s|$)/);
+  const token = s.match(/(?:^|\s)(?:max-)?(h-(?:4|5|6|7|8|10|12))(?:\s|$)/);
   if (token) return TW_H[token[1]];
   return null;
+}
+
+/** Parent content box width — clientWidth includes padding, which would clip the "m". */
+function parentContentWidth(el) {
+  const parent = el.parentElement;
+  if (!parent) return 0;
+  const cs = getComputedStyle(parent);
+  const padX =
+    (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  return Math.max(0, parent.clientWidth - padX);
 }
 
 /**
@@ -47,30 +58,51 @@ export default function BeamTransparentLogo({ className = "", alt = "Beam" }) {
     if (!el) return;
 
     const update = () => {
-      // Tailwind h-* is the intended *glyph* height (pre-pad). We expand the
-      // box so outline/shadow on left of "b" / right of "m" stay in-bounds.
-      // Also cap to the parent width so the wordmark can sit between controls
-      // on narrow phones instead of overlapping them.
+      // Tailwind h-* / max-h-* is the intended *glyph* height (pre-pad). We
+      // expand the box so outline/shadow on left of "b" / right of "m" stay
+      // in-bounds, then contain to the parent content width so the wordmark
+      // shrinks between call controls on narrow phones instead of clipping.
       const glyphH =
         hint ||
         el.clientHeight ||
         el.offsetHeight ||
         el.getBoundingClientRect().height;
-      const parentW = el.parentElement?.clientWidth ?? 0;
+      const availableW = parentContentWidth(el);
       const scaleH = glyphH > 0 ? glyphH / NATIVE_H : 0;
-      const scaleW = parentW > 0 ? parentW / STAGE_W : scaleH;
-      const next = Math.min(scaleH || scaleW, scaleW || scaleH);
+      const scaleW = availableW > 0 ? availableW / STAGE_W : 0;
+      let next = [scaleH, scaleW].filter((s) => s > 0).sort((a, b) => a - b)[0];
       if (!(next > 0)) return;
 
-      setScale(next);
-      el.style.width = `${STAGE_W * next}px`;
-      el.style.height = `${STAGE_H * next}px`;
+      const apply = (s) => {
+        const w = STAGE_W * s;
+        const h = STAGE_H * s;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        // Override Tailwind h-* / max-h-* so the padded stage (outline of "m")
+        // isn't clamped smaller than the scaled glyph.
+        el.style.maxWidth = "100%";
+        el.style.maxHeight = `${h}px`;
+      };
+
+      apply(next);
+
+      // max-width: 100% can still clamp the used box smaller than the inline
+      // size — match the inner scale so the "m" isn't clipped.
+      const usedW = el.clientWidth;
+      const targetW = STAGE_W * next;
+      if (usedW > 0 && usedW < targetW - 1) {
+        next = usedW / STAGE_W;
+        apply(next);
+      }
+
+      setScale((prev) => (Math.abs(prev - next) < 0.0001 ? prev : next));
     };
 
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(el);
+    // Observe the parent slot, not the logo itself — our size writes would loop.
     if (el.parentElement) ro.observe(el.parentElement);
+    else ro.observe(el);
     return () => ro.disconnect();
   }, [hint]);
 

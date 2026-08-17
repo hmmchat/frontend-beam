@@ -5,6 +5,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import clsx from 'clsx';
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import CompletionMeter from "@/components/facecard/CompletionMeter";
+import OverflowMarquee from "@/components/ui/OverflowMarquee";
 export default function FacecardEditor({
   className,
 
@@ -77,218 +78,197 @@ export default function FacecardEditor({
       {/* Phone + tablet editor; desktop uses the lg:flex layout below */}
       <div className={clsx('py-4', 'flex', 'items-center', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto')}>
         <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'min-h-[90dvh]', 'flex-col', 'gap-5', 'px-2', 'relative', 'z-10')}>
-          {/* TOP ROW: Close, Name Box, Progress */}
-          <div className={clsx('grid', 'grid-cols-12', 'gap-2', 'items-center', 'px-2', 'mt-2', 'mt-4')}>
-            {/* Close Button */}
-
-            <div className="col-span-2">
+          {/* TOP: text boxes shrink; icon column stays fixed so brackets never overlap */}
+          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(5.5rem,32%)] gap-x-2 gap-y-2 items-center px-2 mt-4">
+            <div className="col-start-1 row-start-1 flex items-center gap-2 min-w-0">
               <button
                 onClick={leaveEditor}
-                className={clsx('w-9', 'h-9', 'rounded-full', 'border', 'border-white/50', 'flex', 'items-center', 'justify-center', 'text-md', 'hover:bg-white/10', 'transition-all', 'active:scale-95')}
+                className="w-9 h-9 shrink-0 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
               >
                 ✕
               </button>
-            </div>
-
-            {/* Name Box with Brackets */}
-            <div className={clsx('col-span-5', 'flex', 'justify-center', 'min-w-0')}>
-              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
-                <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
-                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
-                  <h2 className={clsx('text-[12px]', 'text-white', 'truncate')}>{firstName}</h2>
-
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>
-                    UserID:{user?.id?.slice(0, 8) || "4heu24sds"}
+              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
+                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
+                  <h2 className="text-[12px] text-white min-w-0">
+                    <OverflowMarquee text={firstName} />
+                  </h2>
+                  <p className="text-[10px] font-outfit text-white min-w-0">
+                    <OverflowMarquee text={`UserID:${user?.id?.slice(0, 8) || "4heu24sds"}`} />
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className={clsx('col-span-5', 'row-span-2', 'flex', 'justify-center', 'items-center', 'overflow-visible')}>
+            <div className="col-start-3 row-start-1 row-span-2 flex justify-center items-center min-w-0 overflow-visible">
               <CompletionMeter percent={progress} size="mobile" />
             </div>
 
-            <div className={clsx('col-span-5', 'mt-1', 'min-w-0')}>
-              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
-                <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
-
-                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
-                  <p className={clsx('text-[10px]', 'uppercase', 'font-outfit', 'text-white', 'truncate')}>
-                    DOB :{" "}
-                    {user?.dateOfBirth
-                      ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                      : "22/08/1998"}
+            <div className="col-start-1 row-start-2 min-w-0">
+              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
+                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
+                  <p className="text-[10px] uppercase font-outfit text-white min-w-0">
+                    <OverflowMarquee
+                      text={`DOB : ${
+                        user?.dateOfBirth
+                          ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+                          : "22/08/1998"
+                      }`}
+                    />
                   </p>
-                  <p className={clsx('text-[10px]', 'font-outfit', 'font-thin', 'text-white', 'truncate')}>
-                    Zodiac : {zodiac?.name || "Gemini"}
+                  <p className="text-[10px] font-outfit font-thin text-white min-w-0">
+                    <OverflowMarquee text={`Zodiac : ${zodiac?.name || "Gemini"}`} />
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className={clsx('col-span-2', 'flex', 'justify-center', 'mt-1', 'min-w-0')}>
-              <button
-                onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
-                className={clsx('w-full', 'max-w-12', 'aspect-square', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-4xl', 'text-white', 'hover:bg-white/5', 'transition')}
-              >
-                {zodiac?.imageUrl ? (
-                  <img
-                    src={zodiac.imageUrl}
-                    className={clsx('h-[20px]', 'w-[20px]', 'object-contain', 'brightness-0', 'invert')}
-                  />
-                ) : (
-                  <span className={clsx('opacity-40', 'text-2xl')}>  <img src="/assets/plus.png" alt="" /></span>
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
+              className="col-start-2 row-start-2 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-white hover:bg-white/5 transition"
+            >
+              {zodiac?.imageUrl ? (
+                <img
+                  src={zodiac.imageUrl}
+                  className="h-5 w-5 object-contain brightness-0 invert"
+                  alt=""
+                />
+              ) : (
+                <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-40" />
+              )}
+            </button>
 
-            <div className={clsx('col-span-5', 'min-w-0')}>
-              <div className={clsx('relative', 'w-full', 'min-w-0', 'px-3', 'py-2', 'min-h-[42px]')}>
-                <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t-1', 'border-r-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b-1', 'border-l-1', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b-1', 'border-r-1', 'border-white/50')}></span>
-
-                <div className={clsx('flex', 'flex-col', 'justify-center', 'h-full', 'min-w-0', 'leading-tight')}>
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>
-                    Gender Identity
+            <div className="col-start-1 row-start-3 min-w-0">
+              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
+                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
+                  <p className="text-[10px] font-outfit text-white min-w-0">
+                    <OverflowMarquee text="Gender Identity" />
                   </p>
-                  <p className={clsx('text-[10px]', 'font-outfit', 'text-white', 'truncate')}>{user?.gender}</p>
+                  <p className="text-[10px] font-outfit text-white min-w-0">
+                    <OverflowMarquee text={user?.gender} />
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Gender Icon + Facecard Button Column */}
-            <div className={clsx('col-span-2', 'flex', 'flex-col', 'gap-4', 'min-w-0')}>
-              <div className={clsx('flex', 'justify-center')}>
-                <button className={clsx('w-full', 'max-w-12', 'aspect-square', 'border', 'border-white/40', 'border-b-[3px]', 'rounded-[10.986px]', 'flex', 'items-center', 'justify-center', 'text-xl', 'text-white')}>
-                  {user?.gender === "MALE"
-                    ? "♂"
-                    : user?.gender === "FEMALE"
-                      ? "♀"
-                      : "⚧"}
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              className="col-start-2 row-start-3 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white"
+            >
+              {user?.gender === "MALE"
+                ? "♂"
+                : user?.gender === "FEMALE"
+                  ? "♀"
+                  : "⚧"}
+            </button>
 
-            <div className={clsx('col-span-5', 'px-2', 'flex', 'justify-center', 'items-center')}>
+            <div className="col-start-3 row-start-3 min-w-0 flex justify-center items-center">
               <button
                 onClick={() => onOpenFacecardPreview?.()}
-                className={clsx('w-full', 'py-3.5', 'px-2', 'border', 'border-white/40', 'rounded-2xl', 'flex', 'items-center', 'justify-center', 'gap-2', 'hover:bg-white/10', 'active:scale-95', 'transition-all')}
+                className="w-full min-w-0 py-2.5 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-white/10 active:scale-95 transition-all"
               >
-                <span className="text-xl">
-                  <img src="/eye.svg" alt="" />
-                </span>
-                <span className={clsx('text-xs', 'font-bold', 'tracking-widest', 'text-white')}>
-                  Facecard
+                <img src="/eye.svg" alt="" className="w-4 h-4 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <OverflowMarquee
+                    text="Facecard"
+                    className="text-[10px] sm:text-xs font-bold tracking-widest text-white"
+                  />
                 </span>
               </button>
             </div>
-
           </div>
 
           {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
 
           {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
 
-          {/* Action Rows: Interests, Causes, Brands */}
-          <div className={clsx('flex', 'flex-col', 'gap-3', 'px-2')}>
-            {/* Interests */}
-            <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3')}>
-              {/* LEFT → Label */}
-              <span className={clsx('text-[12px]', 'font-black', 'tracking-wide')}>
-                Interests
-              </span>
-
-              {/* RIGHT → Box + Button */}
-              <div className={clsx('flex', 'items-center', 'gap-3')}>
-                <div
-                  onClick={() => setShowSelector("interests")}
-                  className={clsx('w-48', 'h-12', 'border', 'border-white/40', 'rounded-full', 'px-4', 'flex', 'items-center', 'justify-center', 'text-[11px]', '0', 'meeting', 'now', 'overflow-hidden')}
-                >
-                  {interests.length > 0 ? (
-                    <div key={interestIndex} className={clsx('animate-slide-down', 'font-outfit')}>
-                      {interests[interestIndex]}
-                    </div>
-                  ) : (
-                    "Select"
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowSelector("interests")}
-                  className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'border', 'border-white/60', 'border-b-2', 'rounded-xl', 'text-2xl', 'bg-white/5', 'hover:bg-white/10', 'active:scale-90', 'transition')}
-                >
-                  <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4')} />
-                </button>
-              </div>
+          {/* Action Rows: shared columns so Select / + stay stacked on every width */}
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_2.75rem] gap-x-2 gap-y-3 items-center px-2">
+            <span className="text-[12px] font-black tracking-wide">
+              Interests
+            </span>
+            <div
+              onClick={() => setShowSelector("interests")}
+              className="min-w-0 w-full h-11 sm:h-12 border border-white/40 rounded-full px-3 flex items-center justify-center text-[11px] overflow-hidden"
+            >
+              {interests.length > 0 ? (
+                <OverflowMarquee
+                  key={interestIndex}
+                  text={interests[interestIndex]}
+                  className="animate-slide-down font-outfit text-center"
+                />
+              ) : (
+                "Select"
+              )}
             </div>
+            <button
+              type="button"
+              onClick={() => setShowSelector("interests")}
+              className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center border border-white/60 border-b-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-90 transition"
+            >
+              <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+            </button>
 
-            <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3')}>
-              {/* LEFT → Label */}
-              <span className={clsx('text-[12px]', 'font-black', 'tracking-wide')}>
-                Causes
-              </span>
-
-              {/* RIGHT → Box + Button */}
-              <div className={clsx('flex', 'items-center', 'gap-3')}>
-                <div
-                  onClick={() => setShowSelector("values")}
-                  className={clsx('w-48', 'h-12', 'border', 'border-white/40', 'rounded-full', 'px-4', 'flex', 'items-center', 'justify-center', 'text-[11px]', '0', 'meeting', 'now', 'overflow-hidden')}
-                >
-                  {causes.length > 0 ? (
-                    <div key={causeIndex} className={clsx('animate-slide-down', 'font-outfit')}>
-                      {causes[causeIndex]}
-                    </div>
-                  ) : (
-                    "Select"
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowSelector("values")}
-                  className={clsx('w-12', 'h-12', 'flex', 'items-center', 'justify-center', 'border', 'border-white/60', 'rounded-xl', 'border-b-2', 'text-2xl', 'bg-white/5', 'hover:bg-white/10', 'active:scale-90', 'transition')}
-                >
-                  <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4')} />
-                </button>
-              </div>
+            <span className="text-[12px] font-black tracking-wide">
+              Causes
+            </span>
+            <div
+              onClick={() => setShowSelector("values")}
+              className="min-w-0 w-full h-11 sm:h-12 border border-white/40 rounded-full px-3 flex items-center justify-center text-[11px] overflow-hidden"
+            >
+              {causes.length > 0 ? (
+                <OverflowMarquee
+                  key={causeIndex}
+                  text={causes[causeIndex]}
+                  className="animate-slide-down font-outfit text-center"
+                />
+              ) : (
+                "Select"
+              )}
             </div>
+            <button
+              type="button"
+              onClick={() => setShowSelector("values")}
+              className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center border border-white/60 rounded-xl border-b-2 bg-white/5 hover:bg-white/10 active:scale-90 transition"
+            >
+              <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+            </button>
 
-            {/* Brands */}
-            <div className={clsx('flex', 'items-center', 'justify-between', 'gap-3')}>
-              {/* LEFT → Label */}
-              <span className={clsx('text-[12px]', 'font-black', 'tracking-wide')}>
-                Brands
-              </span>
-
-              {/* RIGHT → Icons */}
-              <div className={clsx('flex', 'gap-2', 'overflow-x-auto', 'scrollbar-hide', 'py-1')}>
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const selection = user?.brandPreferences?.[i];
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => setShowSelector("brands")}
-                      className={`w-11 h-11 shrink-0 border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
-                    >
-                      {selection ? (
-                        <img
-                          src={selection.brand?.logoUrl}
-                          className={clsx('w-10', 'h-10', 'rounded-full', 'object-contain')}
-                        />
-                      ) : (
-                        <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-60')} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            <span className="text-[12px] font-black tracking-wide">
+              Brands
+            </span>
+            <div className="col-span-2 flex gap-2 overflow-x-auto scrollbar-hide py-1 min-w-0">
+              {[0, 1, 2, 3, 4].map((i) => {
+                const selection = user?.brandPreferences?.[i];
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setShowSelector("brands")}
+                    className={`w-11 h-11 shrink-0 border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
+                  >
+                    {selection ? (
+                      <img
+                        src={selection.brand?.logoUrl}
+                        className="w-10 h-10 rounded-full object-contain"
+                      />
+                    ) : (
+                      <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -396,72 +376,50 @@ export default function FacecardEditor({
             ) : null}
           </div>
 
-          <div className={clsx('w-full', 'flex', 'items-center', 'justify-between', 'mb-4', 'px-3')}>
-            {/* LEFT: Album + Info */}
-            <div className={clsx('flex', 'items-center', 'gap-5')}>
-              {/* Album */}
+          <div className="w-full flex items-center gap-2 mb-4 px-3 min-w-0">
+            <div
+              onClick={() => setShowSelector("music")}
+              className="relative shrink-0 active:scale-95 transition"
+            >
               <div
-                onClick={() => setShowSelector("music")}
-                className={clsx('relative', '0', 'meeting', 'now', 'active:scale-95', 'transition')}
+                className={`w-24 h-24 sm:w-30 sm:h-30 rounded-full border border-white/60 border-[2px] flex items-center justify-center ${user?.musicPreference ? "" : "bg-white/5"}`}
               >
                 <div
-                  className={`w-30 h-30 rounded-full border border-white/20 flex items-center justify-center border rounded-full border-white/60 border-[2px] ${user?.musicPreference ? "" : "bg-white/5"}`}
+                  className={`w-[calc(100%-4px)] h-[calc(100%-4px)] rounded-full p-1 overflow-hidden flex items-center justify-center ${user?.musicPreference ? "animate-spin-slow" : ""}`}
                 >
-                  <div
-                    className={`w-29 h-29 rounded-full  p-1 overflow-hidden flex items-center justify-center  ${user?.musicPreference ? "animate-spin-slow" : ""}`}
-                  >
-                    {user?.musicPreference?.albumArtUrl ? (
-                      <img
-                        src={user.musicPreference.albumArtUrl}
-                        className={clsx('w-full', 'h-full', 'rounded-full', 'object-cover', 'border-[2px]', 'border-white/40')}
-                        alt="Album Art"
-                      />
-                    ) : (
-                      <img src="/assets/plus.png" alt="" className={clsx('w-4', 'h-4', 'opacity-60')} />
-                    )}
-                  </div>
-
-
-
-                </div>
-              </div>
-
-              <div className={clsx('relative', 'px-6', 'min-w-[100px]', 'max-w-[120px]', 'py-1', 'flex', 'items-center', 'justify-center', 'overflow-hidden')}>
-                <span className={clsx('absolute', 'top-0', 'left-0', 'w-3', 'h-3', 'border-t', 'border-l', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'top-0', 'right-0', 'w-3', 'h-3', 'border-t', 'border-r', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-3', 'h-3', 'border-b', 'border-l', 'border-white/50')}></span>
-                <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-3', 'h-3', 'border-b', 'border-r', 'border-white/50')}></span>
-                {/* Text */}
-                <div className={clsx('flex', 'flex-col', 'justify-end', 'items-start', 'w-full', 'overflow-hidden')}>
-                  <div className={clsx('w-full', 'overflow-hidden', 'whitespace-nowrap', 'mask-grad')}>
-                    <div className={clsx('inline-block', 'animate-marquee', 'whitespace-nowrap', 'text-white', 'text-[10px]', 'font-outfit', 'leading-tight')}>
-                      <span className="">
-                        {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
-                      </span>
-                      <span className="">
-                        {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className={clsx('w-full', 'overflow-hidden', 'whitespace-nowrap', 'mask-grad', '-mt-2')}>
-                    <div className={clsx('inline-block', 'animate-marquee', 'whitespace-nowrap', 'text-white/60', 'font-outfit', 'text-[10px]')}>
-                      <span className="">
-                        {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
-                      </span>
-                      <span className="">
-                        {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
-                      </span>
-                    </div>
-                  </div>
+                  {user?.musicPreference?.albumArtUrl ? (
+                    <img
+                      src={user.musicPreference.albumArtUrl}
+                      className="w-full h-full rounded-full object-cover border-[2px] border-white/40"
+                      alt="Album Art"
+                    />
+                  ) : (
+                    <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* RIGHT: Dots */}
-            <div className={clsx('grid', 'grid-cols-6', 'gap-1.5', 'opacity-50')}>
+            <div className="relative flex-1 min-w-0 px-4 py-1 flex items-center">
+              <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
+              <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
+              <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
+              <div className="flex flex-col justify-center items-stretch w-full min-w-0 overflow-hidden">
+                <OverflowMarquee
+                  text={user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                  className="text-white text-[10px] font-outfit leading-tight"
+                />
+                <OverflowMarquee
+                  text={user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                  className="text-white/60 font-outfit text-[10px]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-6 gap-1 opacity-50 shrink-0 max-[340px]:hidden">
               {[...Array(48)].map((_, i) => (
-                <div key={i} className={clsx('w-1', 'h-1', 'bg-white', 'rounded-full')}></div>
+                <div key={i} className="w-1 h-1 bg-white rounded-full" />
               ))}
             </div>
           </div>

@@ -324,14 +324,14 @@ export default function LocalVideoSection({
 
             </div>
 
-            {/* Mobile center logo — in the gap between control clusters so it cannot overlap them */}
+            {/* Mobile center logo — shrinks to the gap between control clusters */}
             <div
               className={clsx(
-                "min-w-0 flex-1 flex justify-center items-end overflow-hidden px-1 pointer-events-none md:hidden",
+                "min-w-0 flex-1 flex justify-center items-end overflow-visible pointer-events-none md:hidden",
                 hideMobileControlsRow && "hidden",
               )}
             >
-              <BeamTransparentLogo className="h-6 max-w-full" />
+              <BeamTransparentLogo className="w-full max-h-6" />
             </div>
 
             {/* Dare + Gift launchers */}

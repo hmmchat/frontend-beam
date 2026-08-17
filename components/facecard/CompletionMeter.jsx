@@ -62,10 +62,10 @@ export default function CompletionMeter({
   return (
     <div
       className={clsx(
-        "relative flex items-center justify-center overflow-visible",
+        "relative flex min-w-0 items-center justify-center overflow-visible aspect-square",
         className,
       )}
-      style={{ width: config.box, height: config.box }}
+      style={{ width: config.box, maxWidth: "100%" }}
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
@@ -73,12 +73,12 @@ export default function CompletionMeter({
       aria-label={`${clamped} percent complete`}
     >
       <svg
-        width={config.box}
-        height={config.box}
+        width="100%"
+        height="100%"
         viewBox={`0 0 ${VB} ${VB}`}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="pointer-events-none absolute inset-0 overflow-visible"
+        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
         style={{ overflow: "visible" }}
         aria-hidden
       >

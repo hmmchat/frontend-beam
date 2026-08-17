@@ -77,9 +77,9 @@ export default function MobileMultiUserControls({
         </button>
       </div>
 
-      {/* Center logo — sits in the remaining gap so it cannot overlap side buttons */}
-      <div className="min-w-0 flex-1 flex justify-center items-end overflow-hidden px-1 pointer-events-none self-end mb-2">
-        <BeamTransparentLogo className="h-6 max-w-full" />
+      {/* Center logo — shrinks to the remaining gap so it cannot overlap side buttons */}
+      <div className="min-w-0 flex-1 flex justify-center items-end overflow-visible pointer-events-none self-end mb-2">
+        <BeamTransparentLogo className="w-full max-h-6" />
       </div>
 
       {/* Right buttons (Dare + Gift) */}

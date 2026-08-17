@@ -9,6 +9,7 @@ import {
   getZodiac,
   calculateAge,
 } from "@/lib/facecard-utils";
+import { displayUsername } from "@/lib/username";
 import clsx from 'clsx';
 // Components
 import FacecardDisplay from "@/components/facecard/FacecardDisplay";
@@ -1071,7 +1072,7 @@ function FacecardContent() {
   }
 
   const age = calculateAge(user?.dateOfBirth);
-  const firstName = user?.username?.split(" ")[0] || "User";
+  const firstName = displayUsername(user?.username?.split(" ")[0], "User");
   const city = user?.preferredCity || user?.city || "Unknown";
   return (
     <div className={clsx(

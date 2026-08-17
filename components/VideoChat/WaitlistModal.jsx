@@ -2,6 +2,7 @@
 
 import OverlayBackdrop from '@/components/ui/OverlayBackdrop';
 import FaceCard from '../Home/FaceCard';
+import { displayUsername } from '@/lib/username';
 
 export default function WaitlistModal({
   isOpen,
@@ -72,7 +73,7 @@ export default function WaitlistModal({
                     <img src={u.displayPictureUrl} alt={u.username} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white text-[2rem] leading-none font-black truncate">{u.username}</div>
+                    <div className="text-white text-[2rem] leading-none font-black truncate">{displayUsername(u.username)}</div>
                   </div>
                   <button
                     type="button"

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import FacecardProfile from "../Home/FacecardProfile";
 import { calculateProgress } from "@/lib/facecard-utils";
+import { displayUsername } from "@/lib/username";
 import { toJpeg } from "html-to-image";
 import html2canvas from "html2canvas";
 
@@ -68,7 +69,7 @@ export default function ProfileDesktop({
 
   const age =
     initialAge ?? (user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null);
-  const firstName = initialFirstName ?? user?.username?.split(" ")[0] ?? "User";
+  const firstName = displayUsername(initialFirstName ?? user?.username?.split(" ")[0], "User");
   const zodiac = initialZodiac ?? user?.zodiac;
   const progress =
     user != null

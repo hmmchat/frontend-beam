@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { displayUsername } from '@/lib/username';
 
 export default function ProfileCard({ user, profileCompletion, onPhotoUpload, uploading }) {
   const [imageError, setImageError] = useState(false);
@@ -44,7 +45,7 @@ export default function ProfileCard({ user, profileCompletion, onPhotoUpload, up
 
         {/* Profile Info */}
         <div className="flex-1">
-          <h1 className="text-2xl font-bold mb-1">{user?.username || 'User'}</h1>
+          <h1 className="text-2xl font-bold mb-1">{displayUsername(user?.username)}</h1>
           <p className="text-white/60 text-sm mb-3">
             {age && `${age} years old`} • {user?.gender || 'Not specified'}
           </p>

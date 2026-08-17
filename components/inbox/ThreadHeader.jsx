@@ -6,6 +6,7 @@ import { TiUserAdd } from "react-icons/ti";
 import clsx from 'clsx';
 import SystemAvatar from "./SystemAvatar";
 import BeamColourLogo from "@/components/ui/BeamColourLogo";
+import { displayUsername } from "@/lib/username";
 import {
   getSystemLine,
   isSystemNotificationThread,
@@ -61,7 +62,7 @@ export default function ThreadHeader({
     (activeChat.isBroadcasting || headerUserStatus === "broadcasting");
   const headerName = isSystem
     ? systemThreadDisplayName(systemLine)
-    : otherProfile?.username || "User";
+    : displayUsername(otherProfile?.username);
 
   const openBroadcast = (e, url) => {
     e.preventDefault();

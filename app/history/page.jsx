@@ -12,6 +12,7 @@ import HistorySkeleton from "@/components/history/HistorySkeleton";
 import { MdOutlineLocationOn } from "react-icons/md";
 import FacecardPreviewModal from "@/components/facecard/FacecardPreviewModal";
 import BeamColourLogo from "@/components/ui/BeamColourLogo";
+import { displayUsername } from "@/lib/username";
 
 export default function History() {
   return (
@@ -345,7 +346,7 @@ function HistoryContent() {
                                   }}
                                   className="md:text-[14px] text-[12px] cursor-pointer hover:underline"
                                 >
-                                  <span className="md:mr-[5px]">👦</span>  {participant.username}
+                                  <span className="md:mr-[5px]">👦</span>  {displayUsername(participant.username)}
                                 </div>
 
                                 <div className="md:text-[14px] text-[11px] font-outfit text-white/80 flex items-center gap-1 mt-1">
@@ -369,7 +370,7 @@ function HistoryContent() {
                                   const q = new URLSearchParams({
                                     chat: participant.conversationId || "",
                                     userId: participant.userId,
-                                    username: participant.username || "User",
+                                    username: displayUsername(participant.username),
                                     friend: participant.isFriend ? "1" : "0",
                                   });
                                   if (typeof participant.displayPictureUrl === "string" && participant.displayPictureUrl.trim()) {

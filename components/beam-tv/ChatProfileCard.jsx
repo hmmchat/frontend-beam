@@ -1,5 +1,7 @@
 'use client';
 
+import { displayUsername } from '@/lib/username';
+
 export default function ChatProfileCard({ user, isLoggedIn, friendRequestSent, onSendFriendRequest, onClose }) {
   if (!user) return null;
   return (
@@ -20,7 +22,7 @@ export default function ChatProfileCard({ user, isLoggedIn, friendRequestSent, o
             <img src={user.displayPictureUrl} alt={user.username || 'User'} className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
-            <div className="text-white text-xl font-black truncate">{user.username || 'User'}</div>
+            <div className="text-white text-xl font-black truncate">{displayUsername(user.username)}</div>
             {!!user.preferredCity && (
               <div className="text-white/55 text-xs font-bold truncate">{user.preferredCity}</div>
             )}

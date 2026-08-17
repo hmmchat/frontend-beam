@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { displayUsername } from '@/lib/username';
 import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
 import { forceLogoutBanned } from '@/lib/force-logout';
 import { recordSquadCallPeersAsync, recordSquadCallPeersKeepalive } from '@/lib/squad-quick-invite-backend';
@@ -582,7 +583,7 @@ export default function useVideoChat() {
             }
           }
           setRemoteStreams(prev => prev.map(s => String(s.userId) === uid
-            ? { ...s, name: profile.username || 'Guest', age, displayPictureUrl: profile.displayPictureUrl, city: profile.preferredCity || '', activeBadgeImageUrl: profile.activeBadgeImageUrl || null, activeBadge: profile.activeBadge || null, profileFetched: true }
+            ? { ...s, name: displayUsername(profile.username, 'Guest'), age, displayPictureUrl: profile.displayPictureUrl, city: profile.preferredCity || '', activeBadgeImageUrl: profile.activeBadgeImageUrl || null, activeBadge: profile.activeBadge || null, profileFetched: true }
             : s));
         } catch (err) { console.warn(`[VideoChat] Failed to fetch profile for ${uid}:`, err); }
       }
@@ -1413,12 +1414,12 @@ export default function useVideoChat() {
     const waitlisted = waitlistProfileCacheRef.current.get(sid);
     if (waitlisted) {
       return {
-        name: payloadName || waitlisted.username || 'Viewer',
+        name: displayUsername(payloadName || waitlisted.username, 'Viewer'),
         displayPictureUrl: payloadPhoto || realChatPhotoUrl(waitlisted.displayPictureUrl),
       };
     }
     return {
-      name: payloadName || 'Viewer',
+      name: displayUsername(payloadName, 'Viewer'),
       displayPictureUrl: payloadPhoto,
     };
   };
@@ -1450,7 +1451,7 @@ export default function useVideoChat() {
           name = u.username || name;
           displayPictureUrl = realChatPhotoUrl(u.displayPictureUrl);
         }
-        const resolved = { name: name || 'Viewer', displayPictureUrl };
+        const resolved = { name: displayUsername(name, 'Viewer'), displayPictureUrl };
         chatProfileCacheRef.current.set(sid, resolved);
         setChatMessages((prev) =>
           prev.map((m) => {
@@ -2035,14 +2036,14 @@ export default function useVideoChat() {
       if (stored) {
         info = JSON.parse(stored);
         if (info.partner) {
-          setPartnerInfo({ id: info.partner.id || '', name: info.partner.username || 'Matched!', age: info.partner.age || '', city: info.partner.city || '', displayPictureUrl: info.partner.displayPictureUrl || '' });
+          setPartnerInfo({ id: info.partner.id || '', name: displayUsername(info.partner.username, 'Matched!'), age: info.partner.age || '', city: info.partner.city || '', displayPictureUrl: info.partner.displayPictureUrl || '' });
           if (info.partner.id && (!info.partner.username || !info.partner.city)) {
             try {
               const profileResp = await apiRequest(API.USERS.GET_USER(info.partner.id));
               const profile = profileResp?.user || {};
               let age = '';
               if (profile.dateOfBirth) { const dob = new Date(profile.dateOfBirth); if (!Number.isNaN(dob.getTime())) { const now = new Date(); let years = now.getFullYear() - dob.getFullYear(); const monthDiff = now.getMonth() - dob.getMonth(); if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) years--; age = years >= 0 ? String(years) : ''; } }
-              setPartnerInfo({ id: profile.id || info.partner.id, name: profile.username || 'Matched!', age, city: profile.preferredCity || '', displayPictureUrl: profile.displayPictureUrl || '' });
+              setPartnerInfo({ id: profile.id || info.partner.id, name: displayUsername(profile.username, 'Matched!'), age, city: profile.preferredCity || '', displayPictureUrl: profile.displayPictureUrl || '' });
             } catch (err) { console.warn('[Init] Failed to fetch partner profile fallback:', err); }
           }
         }
@@ -2057,7 +2058,7 @@ export default function useVideoChat() {
           setLocalUserInfo(initialInfo); localUserInfoRef.current = initialInfo;
           apiRequest(API.USERS.GET_ME).then(meData => {
             const meUser = meData?.user || meData;
-            if (meUser) { const info2 = { name: meUser.username || payload.name || 'You', age: payload.age || '', displayPictureUrl: meUser.displayPictureUrl || '/assets/ico.png' }; localUserInfoRef.current = info2; setLocalUserInfo(info2); }
+            if (meUser) { const info2 = { name: displayUsername(meUser.username || payload.name, 'You'), age: payload.age || '', displayPictureUrl: meUser.displayPictureUrl || '/assets/ico.png' }; localUserInfoRef.current = info2; setLocalUserInfo(info2); }
           }).catch(err => { console.warn('[Init] Failed to fetch my profile info:', err); });
         } catch { }
       }
@@ -2131,7 +2132,7 @@ export default function useVideoChat() {
 
       if (info.partner) {
         const enrichedPartner = await enrichUserStickerFields(info.partner);
-        const pInfo = { id: enrichedPartner.id || '', name: enrichedPartner.username || 'Matched!', age: enrichedPartner.age || '', city: enrichedPartner.city || '', displayPictureUrl: enrichedPartner.displayPictureUrl || '', activeBadgeImageUrl: enrichedPartner.activeBadgeImageUrl || null, activeBadge: enrichedPartner.activeBadge || null };
+        const pInfo = { id: enrichedPartner.id || '', name: displayUsername(enrichedPartner.username, 'Matched!'), age: enrichedPartner.age || '', city: enrichedPartner.city || '', displayPictureUrl: enrichedPartner.displayPictureUrl || '', activeBadgeImageUrl: enrichedPartner.activeBadgeImageUrl || null, activeBadge: enrichedPartner.activeBadge || null };
         setPartnerInfo(pInfo); partnerInfoRef.current = pInfo;
       }
       startMediaAndSignaling(info, uid);
@@ -2660,8 +2661,8 @@ export default function useVideoChat() {
     const pid = partnerInfo.id != null && partnerInfo.id !== '' ? String(partnerInfo.id) : '';
     const isPartner = pid !== '' && sameParticipantId(s.userId, pid);
     const isVideoOn = s.videoEnabled !== false && s.videoOn !== false;
-    if (isPartner) return { name: s.name || partnerInfo.name || 'Matched!', age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn };
-    return { name: s.name || 'Guest', age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn };
+    if (isPartner) return { name: displayUsername(s.name || partnerInfo.name, 'Matched!'), age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn };
+    return { name: displayUsername(s.name, 'Guest'), age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn };
   };
 
   const localVideoProps = {

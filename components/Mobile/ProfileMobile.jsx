@@ -8,6 +8,7 @@ import html2canvas from "html2canvas";
 
 // Utils and API
 import { calculateProgress, calculateAge } from "@/lib/facecard-utils";
+import { displayUsername } from "@/lib/username";
 import { API, apiRequest } from "@/lib/api";
 import { enrichUserStickerFields } from "@/lib/stickers";
 
@@ -81,8 +82,8 @@ export default function ProfileMobile() {
 
   // Derived Data
   const progress = user ? calculateProgress(user) : 0;
-  const displayName = user?.username?.trim() || "Profile";
-  const firstName = user?.username?.split(" ")[0] || "User";
+  const displayName = displayUsername(user?.username, "Profile");
+  const firstName = displayUsername(user?.username?.split(" ")[0], "User");
   const age = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
 
   // Facecard Handlers

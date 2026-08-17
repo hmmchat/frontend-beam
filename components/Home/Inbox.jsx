@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { API, apiRequest, getAuthHeaders } from "@/lib/api";
+import { displayUsername } from "@/lib/username";
 import { getNotificationCountThrottled } from "@/lib/notification-count";
 import InboxHeader from "../inbox/InboxHeader";
 import ConversationSidebar from "../inbox/ConversationSidebar";
@@ -1957,7 +1958,7 @@ export default function Inbox() {
   const handleUnfriendPeer = async () => {
     if (isSystemNotificationThread(activeChat)) return;
     if (!peerId || !activeChat?.isFriend || threadActionBusy) return;
-    const label = otherProfile?.username || "this user";
+    const label = displayUsername(otherProfile?.username, "this user");
     if (
       !window.confirm(
         `Remove ${label} as a friend? You can send a new request later.`,
@@ -1987,7 +1988,7 @@ export default function Inbox() {
   const handleBlockPeer = async () => {
     if (isSystemNotificationThread(activeChat)) return;
     if (!peerId || threadActionBusy) return;
-    const label = otherProfile?.username || "this user";
+    const label = displayUsername(otherProfile?.username, "this user");
     if (
       !window.confirm(
         `Block ${label}? They won't be able to message you and pending requests with them will be closed.`,
@@ -2164,7 +2165,7 @@ export default function Inbox() {
                               Friend Request
                             </span>
                             <span className="text-xs md:text-sm text-white/70 font-outfit font-light">
-                              {otherProfile?.username || "Someone"} wants to be your friend
+                              {displayUsername(otherProfile?.username, "Someone")} wants to be your friend
                             </span>
                           </div>
                         </div>

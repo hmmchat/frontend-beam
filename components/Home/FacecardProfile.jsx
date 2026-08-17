@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { displayUsername } from "@/lib/username";
 import {
   IoEllipsisVerticalSharp,
   IoLocationOutline,
@@ -120,7 +121,7 @@ const FacecardProfile = ({
         <div className="absolute left-0 top-4 z-20 flex w-full items-center justify-between pl-5 px-3 md:hidden">
           <div>
             <h1 className="text-[22px]  leading-none font-sigmar text-xl font-extrabold text-[#F2AD00]">
-              {user.username || "User"}{" "}
+              {displayUsername(user.username)}{" "}
               <span className=" text-stroke-yellow ">
                 {age || "—"}
               </span>

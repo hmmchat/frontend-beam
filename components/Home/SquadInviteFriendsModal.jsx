@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { FaArrowLeftLong } from 'react-icons/fa6';
 import { API, apiRequest } from '@/lib/api';
 import { FaSearch } from 'react-icons/fa';
+import { displayUsername } from '@/lib/username';
 export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, squadMemberIds = [] }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -207,7 +208,7 @@ export default function SquadInviteFriendsModal({ open, onClose, onInviteSent, s
                         </div>
                       )}
                     </div>
-                    <span className="flex-1 text-sm font-medium truncate">{f.username}</span>
+                    <span className="flex-1 text-sm font-medium truncate">{displayUsername(f.username)}</span>
                     <button
                       type="button"
                       disabled={busy || alreadyInSquad}

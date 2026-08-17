@@ -4,6 +4,7 @@ import SignUpModal from '@/components/auth/SignUpModal';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
+import { displayUsername } from '@/lib/username';
 import { submitUserReport, resolveInCallReportType } from '@/lib/report-user';
 import { exitBeamTvViewer, exitBeamTvViewerKeepalive } from '@/lib/discovery-presence';
 import clsx from 'clsx';
@@ -804,7 +805,7 @@ function BeamTVInner() {
             ...(partner ? {
               partner: {
                 id: partner.userId || '',
-                username: partner.username || 'Host',
+                username: displayUsername(partner.username, 'Host'),
                 age: partner.age || '',
                 city: partner.city || '',
                 displayPictureUrl: partner.displayPictureUrl || '',
@@ -979,7 +980,7 @@ function BeamTVInner() {
       if (u) {
         const mapped = {
           id: String(u.id || id),
-          username: u.username || streamProfile?.username || 'User',
+          username: displayUsername(u.username || streamProfile?.username),
           displayPictureUrl: realChatPhotoUrl(u.displayPictureUrl),
           preferredCity: u.preferredCity || streamProfile?.preferredCity || ''
         };
@@ -1035,7 +1036,7 @@ function BeamTVInner() {
         if (chatProfileCacheRef.current.get(myId)?.displayPictureUrl) return;
         const mapped = {
           id: String(me.id || myId),
-          username: me.username || getMyDisplayName() || 'You',
+          username: displayUsername(me.username || getMyDisplayName(), 'You'),
           displayPictureUrl: me.displayPictureUrl,
           preferredCity: me.preferredCity || ''
         };
@@ -1731,7 +1732,7 @@ function BeamTVInner() {
           setRemoteStreams((prev) => prev.map(s =>
             s.userId === streamInfo.userId ? {
               ...s,
-              name: profile.username || 'Broadcaster',
+              name: displayUsername(profile.username, 'Broadcaster'),
               age,
               displayPictureUrl: profile.displayPictureUrl || '',
               city: profile.preferredCity || '',

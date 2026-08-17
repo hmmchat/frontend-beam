@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { subscribePresenceRealtime } from "@/lib/presence-realtime";
 import { API, apiRequest } from "@/lib/api";
+import { displayCardName } from "@/lib/username";
 import { submitUserReport } from "@/lib/report-user";
 import ReportUserModal from "@/components/modals/ReportUserModal";
 import BlockUserModal from "@/components/modals/BlockUserModal";
@@ -282,7 +283,7 @@ const FaceCard4 = ({
               {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
                 <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
               )}
-              {user.username || "User"}
+              {displayCardName(user)}
               <KycVerifiedBadge user={user} />
               {!hideFacecardAge && (
                 <>
@@ -389,7 +390,7 @@ const FaceCard4 = ({
                   {user?.kycStatus === "VERIFIED" && !isFacecardPage && (
                     <img src="/Verified.svg" alt="logo" className="absolute left-2 top-1" />
                   )}
-                  {user.username || "User"}
+                  {displayCardName(user)}
                   <KycVerifiedBadge user={user} />
                   {!hideFacecardAge && (
                     <>
@@ -616,7 +617,7 @@ const FaceCard4 = ({
               isOpen={showReportModal}
               onClose={() => setShowReportModal(false)}
               userId={user.userId || user.id || user._id}
-              name={user.username || 'User'}
+              name={displayCardName(user)}
               onReportUser={handleReportUser}
               isAbsolute={false}
             />
@@ -625,7 +626,7 @@ const FaceCard4 = ({
               isOpen={showBlockModal}
               onClose={() => setShowBlockModal(false)}
               userId={user.userId || user.id || user._id}
-              name={user.username || 'User'}
+              name={displayCardName(user)}
               onBlockUser={handleBlockUser}
               isAbsolute={false}
             />

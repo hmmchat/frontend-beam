@@ -6,6 +6,7 @@ import {
   isSystemNotificationThread,
   systemThreadDisplayName,
 } from "../../lib/system-notifications";
+import { displayUsername } from "../../lib/username";
 
 function lastMessagePreview(conv) {
   const lm = conv.lastMessage;
@@ -45,7 +46,7 @@ export default function ConversationItem({ conversation, selected, unreadCountDi
     );
   const displayName = isSystem
     ? systemThreadDisplayName(systemLine)
-    : conversation.otherUser?.username || "User";
+    : displayUsername(conversation.otherUser?.username);
 
   const openBroadcast = (e, url) => {
     e.preventDefault();

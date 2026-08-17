@@ -35,9 +35,17 @@ function normalizeDisplayNameWhitespace(s) {
   return s.replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, " ");
 }
 
-const DISPLAY_NAME_MAX_LEN = 50;
+const DISPLAY_NAME_MAX_LEN = 8;
 /** Matches @hmm/common PREFERRED_CITY_ANYWHERE_IN_INDIA / discovery city catalog value. */
 const ANYWHERE_IN_INDIA = "ANYWHERE_IN_INDIA";
+
+function getLiveNameError(raw) {
+  const username = normalizeDisplayNameWhitespace(raw).trim();
+  if (username.length > DISPLAY_NAME_MAX_LEN) {
+    return `Name must be at most ${DISPLAY_NAME_MAX_LEN} characters.`;
+  }
+  return "";
+}
 
 const PROFILE_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_ACCEPT_TYPES = [
@@ -56,14 +64,24 @@ export default function Onboarding() {
 
   const [city, setCity] = useState(ANYWHERE_IN_INDIA);
   const [name, setName] = useState("");
-  const handleNameChange = (val) => {
-    setName(val);
-    if (apiError) setApiError("");
-  };
+  const [nameError, setNameError] = useState("");
   const [dob, setDob] = useState({ day: "", month: "", year: "" });
   const [gender, setGender] = useState(null); // 'female' | 'male' | 'nonbinary'
   const [preferNotToSay, setPreferNotToSay] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const handleNameChange = (val) => {
+    setName(val);
+    if (apiError) setApiError("");
+    const liveError = getLiveNameError(val);
+    setNameError(liveError);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (liveError) next.name = liveError;
+      else delete next.name;
+      return next;
+    });
+  };
   const [photos, setPhotos] = useState([null, null, null]);
   const [photoFiles, setPhotoFiles] = useState([null, null, null]);
   const fileRefs = useRef([]);
@@ -172,7 +190,16 @@ export default function Onboarding() {
           const data = await response.json();
           const u = data.user;
           if (u) {
-            setName(u.username || "");
+            const loadedName = u.username || "";
+            setName(loadedName);
+            const loadedError = getLiveNameError(loadedName);
+            setNameError(loadedError);
+            if (loadedError) {
+              setErrors((prev) => ({
+                ...prev,
+                name: loadedError,
+              }));
+            }
             if (u.dateOfBirth) {
               const d = new Date(u.dateOfBirth);
               setDob({
@@ -401,6 +428,7 @@ export default function Onboarding() {
     if (!gender && !preferNotToSay) e.gender = "Select gender";
     if (!city) e.city = "Please select a city";
 
+    setNameError(getLiveNameError(name));
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -826,11 +854,20 @@ export default function Onboarding() {
                                 <input
                                   value={name}
                                   onChange={(e) => handleNameChange(e.target.value)}
-                                  maxLength={DISPLAY_NAME_MAX_LEN}
-                                  className="w-full bg-black/20 border-2 border-white/30 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                                  onInput={(e) => handleNameChange(e.target.value)}
+                                  aria-invalid={Boolean(nameError || errors.name)}
+                                  className={`w-full bg-black/20 border-2 rounded-2xl px-5 py-3 md:px-4 md:py-5 text-white placeholder-white/50 focus:outline-none ${
+                                    nameError || errors.name
+                                      ? "border-rose-400 focus:border-rose-400"
+                                      : "border-white/30 focus:border-white/60"
+                                  }`}
                                   placeholder="Your name"
                                 />
-                                {errors.name && <div className="text-xs text-rose-400 mt-1">{errors.name}</div>}
+                                {(nameError || errors.name) && (
+                                  <div className="text-sm text-rose-400 mt-1.5 font-medium">
+                                    {nameError || errors.name}
+                                  </div>
+                                )}
                               </div>
 
                               {/* 4️⃣ DOB inputs */}

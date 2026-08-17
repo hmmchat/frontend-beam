@@ -23,6 +23,7 @@ import { AppOverviewToggle, AppOverviewPanel } from '@/components/ui/AppOverview
 import Link from 'next/link';
 import SquadInviteFriendsModal from '@/components/Home/SquadInviteFriendsModal';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
+import { displayUsername } from '@/lib/username';
 import MeetLogo from '@/components/ui/MeetLogo';
 
 
@@ -754,7 +755,7 @@ export default function MeetSomeoneNew({
 
                     <span className="text-[10px] font-outfit text-white/90">
                       {guestId
-                        ? guestProfiles?.[guestId]?.username || 'Friend'
+                        ? displayUsername(guestProfiles?.[guestId]?.username, 'Friend')
                         : 'Who'}
                     </span>
 

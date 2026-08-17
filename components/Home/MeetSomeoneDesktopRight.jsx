@@ -9,6 +9,7 @@ import { AppOverviewToggle, AppOverviewPanel } from '@/components/ui/AppOverview
 import LocalVideo from './LocalVideo';
 import SquadQuickInviteStrip from '@/components/Home/SquadQuickInviteStrip';
 import MeetSomeoneMobileSearch from './MeetSomeoneMobileSearch';
+import { displayUsername } from '@/lib/username';
 
 export default function MeetSomeoneDesktopRight({
   // General
@@ -655,7 +656,7 @@ export default function MeetSomeoneDesktopRight({
                             ) : null}
                           </div>
                           <span className="text-sm md:text-16 ">
-                            {guestId ? guestProfiles[guestId]?.username || 'Friend' : 'Who'}
+                            {guestId ? displayUsername(guestProfiles[guestId]?.username, 'Friend') : 'Who'}
                           </span>
                         </div>
                       </div>

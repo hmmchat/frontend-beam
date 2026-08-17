@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import clsx from 'clsx';
+import { displayUsername } from '@/lib/username';
 
 /**
  * Figma-style row: "Invite" + up to 3 friend avatars (+ badge) + "See all".
@@ -82,7 +83,7 @@ export default function SquadQuickInviteStrip({
                 </button>
               </div>
               <span className="mt-0.5 w-full truncate text-center font-outfit text-[10px] text-white md:text-[14px]">
-                {f.username}
+                {displayUsername(f.username)}
               </span>
             </div>
           );

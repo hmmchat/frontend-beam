@@ -3,6 +3,7 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { IoCloseOutline, IoHeartOutline } from 'react-icons/io5';
+import { displayUsername } from '@/lib/username';
 
 /**
  * RequestSentPopup Component
@@ -52,7 +53,7 @@ const RequestSentPopup = ({
               Request Sent!
             </h1>
             <p className="text-white/80 text-sm font-medium leading-relaxed">
-              Waiting for <span className="text-white font-black">{user?.username || 'them'}</span> to accept your invitation...
+              Waiting for <span className="text-white font-black">{displayUsername(user?.username, 'them')}</span> to accept your invitation...
             </p>
           </div>
 

@@ -71,7 +71,7 @@ export default function FacecardEditor({
 
   return (
     <div
-      className={clsx('relative', 'flex', 'w-full', 'min-h-screen', 'flex-col', 'items-center', 'justify-start', 'md:justify-center', 'overflow-visible', 'md:overflow-x-auto', 'p-0', 'text-white', 'outfit-font', 'md:p-2')}
+      className={clsx('relative', 'flex', 'w-full', 'h-[100dvh]', 'max-h-[100dvh]', 'overflow-hidden', 'flex-col', 'items-center', 'justify-start', 'md:justify-center', 'lg:h-auto', 'lg:min-h-screen', 'lg:max-h-none', 'lg:overflow-visible', 'md:overflow-x-auto', 'p-0', 'text-white', 'outfit-font', 'md:p-2')}
       style={{
         backgroundImage: "url('/assets/mb.jpg')",
         backgroundSize: "cover",
@@ -91,10 +91,10 @@ export default function FacecardEditor({
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
       {/* Phone + tablet editor; desktop uses the lg:flex layout below */}
-      <div className={clsx('py-4', 'flex', 'items-stretch', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto', 'min-h-[100dvh]')}>
-        <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'min-h-[calc(100dvh-2rem)]', 'flex-col', 'gap-2', 'px-2', 'pt-4', 'pb-3', 'relative', 'z-10')}>
+      <div className={clsx('py-2', 'flex', 'flex-col', 'items-stretch', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto', 'h-full', 'min-h-0')}>
+        <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'flex-1', 'min-h-0', 'flex-col', 'gap-2', 'px-2', 'pt-3', 'pb-2', 'relative', 'z-10')}>
           {/* TOP: one grid so info, icons, and % sit together with no center gap */}
-          <div className="grid grid-cols-[2.25rem_minmax(0,13rem)_2.5rem_minmax(5.5rem,6.5rem)] gap-x-2 gap-y-2 items-center px-2 shrink-0">
+          <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_2.5rem_minmax(5.5rem,6.5rem)] gap-x-2 gap-y-2 items-center px-2 shrink-0">
             <button
               onClick={leaveEditor}
               className="col-start-1 row-start-1 w-9 h-9 shrink-0 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
@@ -366,7 +366,7 @@ export default function FacecardEditor({
               className="relative shrink-0 active:scale-95 transition"
             >
               <div
-                className={`w-24 h-24 sm:w-30 sm:h-30 rounded-full border border-white/60 border-[2px] flex items-center justify-center ${user?.musicPreference ? "" : "bg-white/5"}`}
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full border border-white/60 border-[2px] flex items-center justify-center ${user?.musicPreference ? "" : "bg-white/5"}`}
               >
                 <div
                   className={`w-[calc(100%-4px)] h-[calc(100%-4px)] rounded-full p-1 overflow-hidden flex items-center justify-center ${user?.musicPreference ? "animate-spin-slow" : ""}`}
@@ -409,10 +409,13 @@ export default function FacecardEditor({
           </div>
 
         </div>
+        <p className="shrink-0 font-outfit text-xs font-thin text-center pt-1.5 pb-0.5">
+          Facecard Creation tool V1
+        </p>
       </div>
 
       {/* --- DESKTOP VIEW (Original Scaled Design) --- */}
-      <section className={clsx('[@media(max-height:947px)]:scale-[0.99][@media(max-height:950px)]:scale-[1]', '[@media(max-height:850px)]:scale-[0.90]')}>
+      <section className={clsx('hidden', 'lg:block', '[@media(max-height:947px)]:scale-[0.99][@media(max-height:950px)]:scale-[1]', '[@media(max-height:850px)]:scale-[0.90]')}>
         <div className={clsx('transition-all', 'duration-300', 'max-w-[1200px]', 'w-full', 'px-6', 'mx-auto')}>
 
 

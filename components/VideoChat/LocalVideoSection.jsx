@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import clsx from "clsx";
 import { GiftAnimationGroup } from "./GiftAnimation";
 import BeamTransparentLogo from "@/components/ui/BeamTransparentLogo";
 import SyncedMarqueeText from "./SyncedMarqueeText";
 import PressableActionButton from "./PressableActionButton";
+import CallChatOverlay from "./CallChatOverlay";
 
 export default function LocalVideoSection({
   localVideoRef,
@@ -14,13 +15,15 @@ export default function LocalVideoSection({
   /** Screen share to call participants (getDisplayMedia — user picks window/screen). */
   isScreenSharing,
   onToggleScreenShare,
-  chatMessages,
+  chatMessages = [],
   chatInput,
   setChatInput,
   sendChatMessage,
   showChatInput,
   setShowChatInput,
   showChatMessages = false,
+  isBroadcasting = false,
+  chatParticipantUserIds = [],
   onChatButtonClick,
   toggleCam,
   isGiftModalOpen,
@@ -44,14 +47,6 @@ export default function LocalVideoSection({
   giftAnimationActive = false,
   roundedClass = "",
 }) {
-  const chatContainerRef = useRef(null);
-
-  useEffect(() => {
-    const el = chatContainerRef.current;
-    if (!el || !showChatMessages) return;
-    el.scrollTop = el.scrollHeight;
-  }, [chatMessages, showChatMessages]);
-
 
   const setLocalVideoEl = useCallback(
     (el) => {
@@ -158,61 +153,6 @@ export default function LocalVideoSection({
           </div>
         )}
 
-        {!hideAllControls && showChatMessages && chatMessages.length > 0 && (
-        <div
-          ref={chatContainerRef}
-          className={clsx(
-            "absolute",
-            "md:left-10",
-            "left-4",
-            "flex",
-            "flex-col",
-            "gap-2",
-            "max-w-[85%]",
-            "md:max-h-[40vh]",
-            "max-h-[20vh]",
-            "overflow-y-auto",
-            "overflow-x-hidden",
-            "overscroll-behavior-y-contain",
-            "scrollbar-hide",
-            "pr-2",
-            "z-10",
-            showChatInput
-              ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] md:bottom-44"
-              : "bottom-[calc(7rem+env(safe-area-inset-bottom))] md:bottom-28",
-            "pointer-events-auto"
-          )}
-        >
-          {chatMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={clsx('flex', 'items-start', 'gap-2', 'animate-in', 'fade-in', 'slide-in-from-bottom-2', 'duration-300')}
-            >
-              <img
-                src={msg.displayPictureUrl || ''}
-                alt=""
-                className={clsx('w-8', 'h-8', 'rounded-full', 'border', 'border-white/20', 'object-cover', 'flex-shrink-0', 'shadow-md')}
-              />
-              <div
-                className={clsx(
-                  "px-3 py-1.5",
-                  "rounded-md ",
-                  "bg-[#0A032D]/40 ",
-                  "border border-white/5",
-                  "text-white text-xs font-normal leading-relaxed",
-                  "break-words max-w-[calc(100%-2.5rem)]",
-                  "shadow-lg"
-                )}
-              >
-                {msg.message}
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-
-
-
         {/* Call Controls (only if gift or dare is not open) */}
         {!isGiftModalOpen && !isDareOpen && !hideAllControls && (
           <div
@@ -234,22 +174,34 @@ export default function LocalVideoSection({
                 "pointer-events-auto"
               )}
             >
-              {showChatInput && (
-                <form
-                  onSubmit={sendChatMessage}
+              {(showChatInput || (showChatMessages && chatMessages.length > 0)) && (
+                <div
                   className={clsx(
-                    "animate-in mb-[7%] ml-[2.5%] w-[min(280px,70vw)] max-w-[280px]",
-                    hideMobileControlsRow && "hidden md:block",
+                    "mb-[7%] ml-[2.5%] hidden w-[min(280px,70vw)] max-w-[280px] flex-col items-stretch gap-1.5 md:flex",
                   )}
                 >
-                  <input
-                    autoFocus
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type a message..."
-                    className={clsx('w-full', 'bg-white/5', 'backdrop-blur-[1px]', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'mb-2', 'outline-none')}
+                  <CallChatOverlay
+                    chatMessages={chatMessages}
+                    showChatMessages={showChatMessages}
+                    isBroadcasting={isBroadcasting}
+                    chatParticipantUserIds={chatParticipantUserIds}
+                    className="max-h-[min(70dvh,28rem)]"
                   />
-                </form>
+                  {showChatInput && (
+                    <form
+                      onSubmit={sendChatMessage}
+                      className="animate-in w-full"
+                    >
+                      <input
+                        autoFocus
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type a message..."
+                        className={clsx('w-full', 'bg-white/5', 'backdrop-blur-[1px]', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'mb-2', 'outline-none')}
+                      />
+                    </form>
+                  )}
+                </div>
               )}
 
 

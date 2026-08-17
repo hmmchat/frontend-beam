@@ -13,7 +13,7 @@ export default function BeamTVActions({
   isModerator = false
 }) {
   return (
-    <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-40 flex items-center justify-between md:justify-end gap-2 md:gap-3">
+    <div className="relative flex items-center justify-between md:justify-end gap-2 md:gap-3 w-full">
       {/* Comment Box */}
       <form 
         onSubmit={(e) => {
@@ -27,10 +27,10 @@ export default function BeamTVActions({
           onChange={(e) => setViewerChatInput(e.target.value)}
           placeholder={isModerator ? 'Moderator notice…' : 'Add comment'}
           className={clsx(
-            'w-full rounded-[16px] px-4 py-3 text-sm outline-none transition-all',
+            'w-full rounded-[16px] px-4 py-3 text-sm outline-none transition-all backdrop-blur-md',
             isModerator
               ? 'bg-[#F2AD00]/20 border border-[#F2AD00]/70 text-white placeholder:text-[#F2AD00]/70 focus:border-[#F2AD00]'
-              : 'bg-white/10 border border-white/60 text-white placeholder:text-white/50 focus:border-white/90'
+              : 'bg-[#0A032D]/20 border border-white/60 text-white placeholder:text-white/50 focus:border-white/90'
           )}
         />
       </form>
@@ -41,10 +41,10 @@ export default function BeamTVActions({
           onClick={handleJoinBroadcast}
           disabled={joinState.state === 'requesting' || joinState.state === 'requested'}
           className={clsx(
-            'px-6 md:px-8 py-2.5 rounded-full font-bold tracking-wide border shadow-2xl backdrop-blur-[2px] transition-all active:scale-95 text-xs md:text-sm',
+            'px-6 md:px-8 py-2.5 rounded-full font-bold tracking-wide border shadow-2xl backdrop-blur-md transition-all active:scale-95 text-xs md:text-sm',
             joinState.state === 'requested'
               ? 'bg-green-500/20 text-green-100 border-green-400/30'
-              : 'bg-white/5 text-white border-white/20 hover:bg-white/20',
+              : 'bg-[#0A032D]/20 text-white border-white/20 hover:bg-[#0A032D]/40',
             (joinState.state === 'requesting') && 'opacity-60 cursor-not-allowed'
           )}
         >

@@ -9,6 +9,7 @@ import CoinModal from '@/components/modals/CoinModal';
 // VideoChat sub-components
 import RemoteVideoTile from '@/components/VideoChat/RemoteVideoTile';
 import LocalVideoSection from '@/components/VideoChat/LocalVideoSection';
+import CallChatOverlay from '@/components/VideoChat/CallChatOverlay';
 import BroadcastHud from '@/components/VideoChat/BroadcastHud';
 import WaitlistModal from '@/components/VideoChat/WaitlistModal';
 import RandomnessModal from '@/components/VideoChat/RandomnessModal';
@@ -45,7 +46,7 @@ function VideoChatContent() {
     isEnablingPullStranger, pullStrangerCooldownSec,
     callRoles,
     icebreaker, showIcebreaker, chatMessages, chatInput, setChatInput,
-    showChatInput, setShowChatInput, coins, diamondToCoinRate,
+    showChatInput, setShowChatInput, showChatMessages, coins, diamondToCoinRate,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, isSendingDare,
@@ -166,7 +167,7 @@ function VideoChatContent() {
           /* ---- No remote: loading / broadcasting ---- */
           isBroadcasting ? (
             <div className={clsx('flex-1', 'min-h-0', 'min-w-0', 'relative', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950')}>
-              <LocalVideoSection {...localVideoProps} />
+              <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} />
             </div>
           ) : (
             <>
@@ -210,7 +211,7 @@ function VideoChatContent() {
               giftAnimationActive={hasActiveGift || hasActiveDare}
             />
             <div className={clsx('h-[42%] md:h-auto md:flex-1', 'min-h-0', 'min-w-0', 'relative', 'rounded-b-[1.5rem]', 'md:rounded-[60px]', 'overflow-hidden', 'bg-gray-950', 'isolate')} style={{ transform: 'translateZ(0)' }}>
-              <LocalVideoSection {...localVideoProps} roundedClass="rounded-b-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalDareMarqueeStartAt={activeLocalDareMarqueeStartAt} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
+              <LocalVideoSection {...localVideoProps} hideMobileControlsRow={true} roundedClass="rounded-b-[1.5rem]" activeLocalDareText={activeLocalDareText} activeLocalDareMarqueeStartAt={activeLocalDareMarqueeStartAt} activeLocalGiftLabel={activeLocalGiftLabel} giftAnimationActive={hasActiveGift || hasActiveDare} />
             </div>
           </>
 
@@ -413,28 +414,47 @@ function VideoChatContent() {
           </>
         )}
 
-        {/* ================================================================
-            OVERLAYS & MODALS
-        ================================================================ */}
-
-        {/* Mobile group chat input — sit above controls + home indicator; avoid fixed bottom under keyboard */}
-        {remoteStreams.length >= 2 && showChatInput && !isGiftModalOpen && !isDareOpen && (
-          <div className={clsx('md:hidden', 'absolute', 'inset-x-0', 'bottom-[max(5.5rem,env(safe-area-inset-bottom)+4.5rem)]', 'px-4', 'z-[60]', 'pointer-events-auto')}>
-            <form onSubmit={e => { e.preventDefault(); sendChatMessage(e); }} className={clsx('animate-in', 'fade-in', 'slide-in-from-bottom-2', 'duration-200')}>
-              <input
-                autoFocus
-                enterKeyHint="send"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                placeholder="Type a message..."
-                className={clsx('w-full', 'bg-black/40', 'backdrop-blur-md', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'outline-none')}
-              />
-            </form>
+        {/* Mobile comments sit behind call CTAs (HUD, cam/chat/dare). Input stays above. */}
+        {isInActiveCall && !activeDareProposal && showChatMessages && (
+          <div
+            className={clsx(
+              'md:hidden absolute z-20 left-4 right-4 pointer-events-none flex max-h-[70%] flex-col items-stretch justify-end',
+              showChatInput && !isGiftModalOpen && !isDareOpen
+                ? 'bottom-[calc(max(5.5rem,env(safe-area-inset-bottom)+4.5rem)+3.75rem)]'
+                : 'bottom-[max(5.5rem,env(safe-area-inset-bottom)+4.5rem)]',
+            )}
+          >
+            <CallChatOverlay
+              chatMessages={chatMessages}
+              showChatMessages={showChatMessages}
+              isBroadcasting={isBroadcasting}
+              chatParticipantUserIds={localVideoProps.chatParticipantUserIds}
+              className="max-h-full w-full pointer-events-auto"
+            />
           </div>
         )}
+        {isInActiveCall && !activeDareProposal && showChatInput && !isGiftModalOpen && !isDareOpen && (
+          <form
+            onSubmit={e => { e.preventDefault(); sendChatMessage(e); }}
+            className={clsx(
+              'md:hidden absolute z-[60] left-4 right-4 pointer-events-auto',
+              'bottom-[max(5.5rem,env(safe-area-inset-bottom)+4.5rem)]',
+              'animate-in fade-in slide-in-from-bottom-2 duration-200',
+            )}
+          >
+            <input
+              autoFocus
+              enterKeyHint="send"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              placeholder="Type a message..."
+              className={clsx('w-full', 'bg-black/40', 'backdrop-blur-md', 'border', 'border-white/20', 'rounded-2xl', 'px-4', 'py-3', 'text-white', 'text-sm', 'focus:border-white/40', 'outline-none')}
+            />
+          </form>
+        )}
 
-        {/* Mobile multi-user controls — hide under gift/dare so overlays aren't covered */}
-        {remoteStreams.length >= 2 &&
+        {/* Mobile call controls — above comments so CTAs stay tappable */}
+        {isInActiveCall &&
           !activeDareProposal &&
           !isGiftModalOpen &&
           !isDareOpen && (

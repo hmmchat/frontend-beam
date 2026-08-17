@@ -8,22 +8,27 @@ export default function BroadcastHud({
   setBroadcastHud,
   copyShareUrl,
   variant = 'normal',
-  className
+  className,
+  soundEnabled = true,
+  audioUnlocked = false,
+  onToggleSound
 }) {
   if (!isBroadcasting && variant !== 'beam-tv') return null;
 
+  const topClass = variant === 'beam-tv' ? 'top-20 md:top-32' : 'top-28 md:top-32';
+
   return (
-    <div className={`absolute left-8 md:left-12 top-28 md:top-32 z-40 flex flex-col gap-3 ${className || ''}`}>
-      {/* Eye (viewer count) + Waitlist + Share */}
-      <div className="md:w-10 w-8 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden md:py-5">
+    <div className={`absolute left-8 md:left-12 ${topClass} z-40 flex flex-col gap-3 ${className || ''}`}>
+      {/* Eye (viewer count) + Waitlist/Heart + Share + Sound */}
+      <div className="md:w-10 w-8 rounded-[1.4rem] bg-black/20 backdrop-blur-md border border-white/40 overflow-hidden py-1.5 md:py-5">
         <button
           type="button"
-          className="w-full h-14 flex items-center justify-center text-white/90"
+          className="w-full h-10 md:h-14 flex items-center justify-center text-white/90"
           title="Viewers"
         >
           <div className="flex flex-col items-center leading-none">
             <div className="text-[18px]"><img src="/eye-line.svg" className="md:w-5 md:h-5 w-4 h-4" alt="" /></div>
-            <div className="text-[11px] font-black mt-1">{broadcastHud.viewerCount}</div>
+            <div className="text-[11px] font-black mt-0.5 md:mt-1">{broadcastHud.viewerCount}</div>
           </div>
         </button>
 
@@ -31,30 +36,43 @@ export default function BroadcastHud({
         <button
           type="button"
           onClick={() => setShowWaitlist(true)}
-          className="w-full h-12 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
+          className="w-full h-8 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
           title={variant === 'beam-tv' ? 'Liked Broadcasters' : 'Waitlist'}
         >
           <div className="flex flex-col items-center leading-none">
             <div className="text-[18px]"><img src={variant === 'beam-tv' ? '/heart.svg' : '/3queue.svg'} className="md:w-5 md:h-5 w-4 h-4" alt="" /></div>
             {variant !== 'beam-tv' && (
-              <div className="text-[11px] font-black mt-1">{broadcastHud.waitlistCount}</div>
+              <div className="text-[11px] font-black mt-0.5 md:mt-1">{broadcastHud.waitlistCount}</div>
             )}
           </div>
         </button>
 
 
         <button
-
           type="button"
           onClick={handleShareBroadcastLink}
-          className="w-full h-10 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
+          className="w-full h-8 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
           title="Share"
         >
-          <div className="text-[18px]"><img src="/share.svg" className="w-5 h-5" alt="" /></div>
+          <div className="text-[18px]"><img src="/share.svg" className="w-4 h-4 md:w-5 md:h-5" alt="" /></div>
         </button>
 
-
-
+        {variant === 'beam-tv' && onToggleSound && (
+          <button
+            type="button"
+            onClick={onToggleSound}
+            className="w-full h-8 md:h-14 flex items-center justify-center border-white/10 text-white/90 hover:bg-white/5"
+            title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
+            aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+            aria-pressed={soundEnabled}
+          >
+            <img
+              src={soundEnabled ? '/sound-on.svg' : '/sound-off.svg'}
+              className="md:w-5 md:h-5 w-4 h-4"
+              alt=""
+            />
+          </button>
+        )}
       </div>
 
       {broadcastHud.lastShareMsg && (

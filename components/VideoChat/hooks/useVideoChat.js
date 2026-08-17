@@ -199,6 +199,8 @@ export default function useVideoChat() {
   const localUserInfoRef = useRef({ name: 'You', age: '', displayPictureUrl: '/assets/ico.png' });
   const remoteStreamsRef = useRef([]);
   const waitlistProfileCacheRef = useRef(new Map());
+  const chatProfileCacheRef = useRef(new Map());
+  const chatProfileInFlightRef = useRef(new Set());
   const allowUnmountCleanupRef = useRef(false);
   const cleanupArmTimerRef = useRef(null);
   const intentionalExitRef = useRef(false);
@@ -1365,6 +1367,110 @@ export default function useVideoChat() {
     send({ type: 'consume', data: { roomId: roomInfoRef.current.roomId, transportId: recvTransportRef.current.id, producerId: producerKey, rtpCapabilities: deviceRef.current.rtpCapabilities, ...(preferredLayers ? { preferredLayers } : {}) } });
   };
 
+  const isValidChatSenderId = (uid) => {
+    const id = String(uid || '');
+    return Boolean(id && id !== 'broadcaster' && !id.startsWith('producer:') && !id.startsWith('anonymous:'));
+  };
+
+  const realChatPhotoUrl = (url) => {
+    const u = String(url || '').trim();
+    if (!u) return '';
+    if (u === '/avatar-placeholder.png' || u === '/assets/ico.png') return '';
+    return u;
+  };
+
+  const resolveChatSender = (userId, payload = {}) => {
+    const sid = String(userId || '');
+    const payloadPhoto = realChatPhotoUrl(payload.displayPictureUrl);
+    const payloadName = typeof payload.username === 'string' ? payload.username.trim() : '';
+    if (sid && sameParticipantId(sid, userIdRef.current)) {
+      return {
+        name: 'You',
+        displayPictureUrl: payloadPhoto || realChatPhotoUrl(localUserInfoRef.current?.displayPictureUrl),
+      };
+    }
+    const pInfo = partnerInfoRef.current;
+    if (pInfo && sid && sameParticipantId(sid, pInfo.id)) {
+      return {
+        name: payloadName || pInfo.name || 'Matched!',
+        displayPictureUrl: payloadPhoto || realChatPhotoUrl(pInfo.displayPictureUrl),
+      };
+    }
+    const remote = (remoteStreamsRef.current || []).find((s) => sameParticipantId(s.userId, sid));
+    if (remote) {
+      return {
+        name: payloadName || remote.name || 'Guest',
+        displayPictureUrl: payloadPhoto || realChatPhotoUrl(remote.displayPictureUrl),
+      };
+    }
+    const cached = chatProfileCacheRef.current.get(sid);
+    if (cached) {
+      return {
+        name: payloadName || cached.name || 'Viewer',
+        displayPictureUrl: payloadPhoto || realChatPhotoUrl(cached.displayPictureUrl),
+      };
+    }
+    const waitlisted = waitlistProfileCacheRef.current.get(sid);
+    if (waitlisted) {
+      return {
+        name: payloadName || waitlisted.username || 'Viewer',
+        displayPictureUrl: payloadPhoto || realChatPhotoUrl(waitlisted.displayPictureUrl),
+      };
+    }
+    return {
+      name: payloadName || 'Viewer',
+      displayPictureUrl: payloadPhoto,
+    };
+  };
+
+  const isOnCallParticipant = (userId) => {
+    const sid = String(userId || '');
+    if (!sid) return false;
+    if (sameParticipantId(sid, userIdRef.current)) return true;
+    const pInfo = partnerInfoRef.current;
+    if (pInfo?.id && sameParticipantId(sid, pInfo.id)) return true;
+    return (remoteStreamsRef.current || []).some((s) => sameParticipantId(s.userId, sid));
+  };
+
+  const hydrateChatSenderProfile = (userId) => {
+    const sid = String(userId || '');
+    if (!isValidChatSenderId(sid)) return;
+    if (chatProfileInFlightRef.current.has(sid)) return;
+    const cached = chatProfileCacheRef.current.get(sid);
+    if (realChatPhotoUrl(cached?.displayPictureUrl)) return;
+    chatProfileInFlightRef.current.add(sid);
+    (async () => {
+      try {
+        const waitlisted = waitlistProfileCacheRef.current.get(sid);
+        let name = waitlisted?.username || '';
+        let displayPictureUrl = realChatPhotoUrl(waitlisted?.displayPictureUrl);
+        if (!displayPictureUrl) {
+          const profileResp = await apiRequest(API.USERS.GET_USER(sid));
+          const u = profileResp?.user || profileResp?.data?.user || {};
+          name = u.username || name;
+          displayPictureUrl = realChatPhotoUrl(u.displayPictureUrl);
+        }
+        const resolved = { name: name || 'Viewer', displayPictureUrl };
+        chatProfileCacheRef.current.set(sid, resolved);
+        setChatMessages((prev) =>
+          prev.map((m) => {
+            if (!sameParticipantId(m.userId, sid)) return m;
+            const genericName = !m.name || m.name === 'Unknown' || m.name === 'Viewer';
+            return {
+              ...m,
+              name: genericName ? resolved.name : m.name,
+              displayPictureUrl: realChatPhotoUrl(m.displayPictureUrl) || resolved.displayPictureUrl,
+            };
+          })
+        );
+      } catch {
+        // Ignore profile hydration failures; message text still shows.
+      } finally {
+        chatProfileInFlightRef.current.delete(sid);
+      }
+    })();
+  };
+
   // ---- Signal handler ------------------------------------------------------
   const handleSignal = async (msg, info, userId) => {
     const { type, data } = msg;
@@ -1664,7 +1770,6 @@ export default function useVideoChat() {
 
       case 'chat-message': {
         const myId = userIdRef.current;
-        const pInfo = partnerInfoRef.current;
         const remotes = remoteStreamsRef.current;
         let isControlMessage = false; let controlParsed = null;
         try {
@@ -1783,12 +1888,16 @@ export default function useVideoChat() {
         }
 
         if (data.message && data.message.startsWith('{')) { try { JSON.parse(data.message); break; } catch { } }
-        let name = 'Unknown'; let displayPictureUrl = '';
-        if (data.userId === myId) { name = 'You'; displayPictureUrl = localUserInfoRef.current?.displayPictureUrl || '/assets/ico.png'; }
-        else if (pInfo && data.userId === pInfo.id) { name = pInfo.name; displayPictureUrl = pInfo.displayPictureUrl || ''; }
-        else { const remote = remotes.find(s => s.userId === data.userId); if (remote) { name = remote.name; displayPictureUrl = remote.displayPictureUrl || ''; } else if (remotes.length > 0) { name = remotes[0].name; displayPictureUrl = remotes[0].displayPictureUrl || ''; } }
-        setChatMessages(prev => { if (data.id && prev.some(m => m.id === data.id)) return prev; return [...prev, { id: data.id || Date.now() + Math.random(), userId: data.userId, message: data.message, name, displayPictureUrl }]; });
+        const senderId = data.userId;
+        const { name, displayPictureUrl } = resolveChatSender(senderId, data);
+        if (isValidChatSenderId(senderId) && displayPictureUrl) {
+          chatProfileCacheRef.current.set(String(senderId), { name, displayPictureUrl });
+        }
+        setChatMessages(prev => { if (data.id && prev.some(m => m.id === data.id)) return prev; return [...prev, { id: data.id || Date.now() + Math.random(), userId: senderId, message: data.message, name, displayPictureUrl, isParticipant: isOnCallParticipant(senderId) }]; });
         setShowChatMessages(true);
+        if (isValidChatSenderId(senderId) && !displayPictureUrl) {
+          hydrateChatSenderProfile(senderId);
+        }
         break;
       }
 
@@ -2565,6 +2674,12 @@ export default function useVideoChat() {
     onGiftDismissStart: handleLocalGiftDismissStart,
     forceDismiss: activeLocalGifts[0]?.isDismissed, hideAllControls: !!activeDareProposal,
     isGroupCall: remoteStreams.length > 1,
+    isBroadcasting,
+    chatParticipantUserIds: [
+      userIdRef.current,
+      partnerInfo?.id,
+      ...remoteStreams.map((s) => s.userId),
+    ].filter(Boolean).map((id) => String(id)),
   };
 
   // ---- Return everything the render layer needs ----------------------------

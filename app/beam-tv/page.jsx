@@ -158,6 +158,7 @@ function BeamTVInner() {
   const lastSwipeAtRef = useRef(0);
   const touchStartYRef = useRef(null);
   const touchStartAtRef = useRef(0);
+  const touchFromChatScrollRef = useRef(false);
   const broadcastStartedAtRef = useRef(null);
   const loopingRef = useRef(false);
   const lastInitialFetchKeyRef = useRef('');
@@ -330,16 +331,53 @@ function BeamTVInner() {
     return list;
   }, [remoteStreams, currentBroadcast]);
 
-  // Sync HUD metrics with current broadcast
+  // Seed HUD from the feed snapshot when the room changes. Live viewer
+  // count is then kept in sync by refreshViewerCount (same source as the host HUD).
   useEffect(() => {
-    if (currentBroadcast) {
-      setBroadcastHud(prev => ({
-        ...prev,
-        viewerCount: currentBroadcast.viewerCount || 0,
-        waitlistCount: currentBroadcast.waitlistCount || 0
-      }));
-    }
-  }, [currentBroadcast]);
+    if (!currentBroadcast) return;
+    setBroadcastHud((prev) => ({
+      ...prev,
+      viewerCount: Number(currentBroadcast.viewerCount) || 0,
+      waitlistCount: currentBroadcast.waitlistCount || 0
+    }));
+  }, [currentBroadcast?.roomId]);
+
+  const refreshViewerCount = useCallback(async () => {
+    const rid = currentBroadcast?.roomId;
+    if (!rid) return;
+
+    const applyCount = (value) => {
+      const count = Number(value);
+      if (!Number.isFinite(count) || count < 0) return false;
+      setBroadcastHud((prev) => (
+        prev.viewerCount === count ? prev : { ...prev, viewerCount: count }
+      ));
+      return true;
+    };
+
+    try {
+      const room = await apiRequest(API.STREAMING.GET_ROOM(rid));
+      if (applyCount(room?.viewerCount)) return;
+    } catch (_) { }
+
+    try {
+      const res = await fetch(API.DISCOVERY.GET_BROADCAST(rid), {
+        headers: { 'Content-Type': 'application/json' }
+      }).then((r) => (r.ok ? r.json() : null));
+      const broadcast = res?.broadcast?.roomId ? res.broadcast : res;
+      applyCount(broadcast?.viewerCount);
+    } catch (_) { }
+  }, [currentBroadcast?.roomId]);
+
+  useEffect(() => {
+    if (status !== 'connected' || !currentBroadcast?.roomId) return;
+    refreshViewerCount();
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      refreshViewerCount();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [status, currentBroadcast?.roomId, refreshViewerCount]);
 
   const fetchLikedBroadcasters = useCallback(async () => {
     try {
@@ -792,6 +830,12 @@ function BeamTVInner() {
     return Boolean(id && id !== 'broadcaster' && !id.startsWith('producer:') && !id.startsWith('anonymous:'));
   };
 
+  const realChatPhotoUrl = (url) => {
+    const u = String(url || '').trim();
+    if (!u || u === '/avatar-placeholder.png' || u === '/assets/ico.png') return '';
+    return u;
+  };
+
   const getStreamProfileByUserId = (uid) => {
     const id = String(uid || '');
     const s = (remoteStreamsRef.current || []).find((x) => String(x?.userId || '') === id);
@@ -807,27 +851,47 @@ function BeamTVInner() {
   const ensureChatProfile = async (uid) => {
     const id = String(uid || '');
     if (!isValidChatUserId(id)) return null;
-    if (chatProfileCacheRef.current.has(id)) return chatProfileCacheRef.current.get(id);
+    const cached = chatProfileCacheRef.current.get(id);
+    if (realChatPhotoUrl(cached?.displayPictureUrl)) return cached;
     const streamProfile = getStreamProfileByUserId(id);
-    if (streamProfile) {
-      chatProfileCacheRef.current.set(id, streamProfile);
-      return streamProfile;
+    if (realChatPhotoUrl(streamProfile?.displayPictureUrl)) {
+      const mappedStream = { ...streamProfile, displayPictureUrl: realChatPhotoUrl(streamProfile.displayPictureUrl) };
+      chatProfileCacheRef.current.set(id, mappedStream);
+      setChatProfilesByUserId((prev) => ({ ...prev, [id]: mappedStream }));
+      return mappedStream;
     }
     try {
-      const resp = await apiRequest(API.USERS.GET_USER(id));
+      const resp = await apiRequest(`${API.USERS.GET_USER(id)}?fields=id,username,displayPictureUrl,preferredCity`);
       const u = resp?.user || resp?.data?.user || null;
       if (u) {
         const mapped = {
           id: String(u.id || id),
-          username: u.username || 'User',
-          displayPictureUrl: u.displayPictureUrl,
-          preferredCity: u.preferredCity || ''
+          username: u.username || streamProfile?.username || 'User',
+          displayPictureUrl: realChatPhotoUrl(u.displayPictureUrl),
+          preferredCity: u.preferredCity || streamProfile?.preferredCity || ''
         };
         chatProfileCacheRef.current.set(id, mapped);
         setChatProfilesByUserId((prev) => ({ ...prev, [id]: mapped }));
+        setChatMessages((prev) =>
+          prev.map((m) => {
+            if (String(m.userId || '') !== id) return m;
+            const genericName = !m.name || m.name === 'Viewer' || m.name === 'Host' || m.name === 'User';
+            return {
+              ...m,
+              name: genericName ? (mapped.username || m.name) : m.name,
+              avatarUrl: m.avatarUrl || mapped.displayPictureUrl || ''
+            };
+          })
+        );
         return mapped;
       }
     } catch (_) { }
+    if (cached) return cached;
+    if (streamProfile) {
+      chatProfileCacheRef.current.set(id, streamProfile);
+      setChatProfilesByUserId((prev) => ({ ...prev, [id]: streamProfile }));
+      return streamProfile;
+    }
     return null;
   };
 
@@ -855,7 +919,7 @@ function BeamTVInner() {
         const me = meResp?.user || meResp || null;
         if (!me) return;
         setIsModerator(Boolean(me.isModerator));
-        if (chatProfileCacheRef.current.has(myId)) return;
+        if (chatProfileCacheRef.current.get(myId)?.displayPictureUrl) return;
         const mapped = {
           id: String(me.id || myId),
           username: me.username || getMyDisplayName() || 'You',
@@ -1444,12 +1508,24 @@ function BeamTVInner() {
         }
 
         const isParticipant = Boolean(senderId && (broadcasterIds.has(senderId) || participantIds.has(senderId)));
-        const name = resolveChatName(senderId, isParticipant);
+        const payloadPhoto = realChatPhotoUrl(data?.displayPictureUrl);
+        const payloadName = typeof data?.username === 'string' ? data.username.trim() : '';
+        const name = payloadName || resolveChatName(senderId, isParticipant);
         const streamProfile = getStreamProfileByUserId(senderId);
         const cachedProfile = chatProfileCacheRef.current.get(senderId);
-        const avatarUrl = cachedProfile?.displayPictureUrl || streamProfile?.displayPictureUrl || '';
+        const avatarUrl = payloadPhoto || realChatPhotoUrl(cachedProfile?.displayPictureUrl) || realChatPhotoUrl(streamProfile?.displayPictureUrl);
+        if (isValidChatUserId(senderId) && avatarUrl) {
+          const mapped = {
+            id: senderId,
+            username: name,
+            displayPictureUrl: avatarUrl,
+            preferredCity: cachedProfile?.preferredCity || streamProfile?.preferredCity || ''
+          };
+          chatProfileCacheRef.current.set(senderId, { ...cachedProfile, ...mapped });
+          setChatProfilesByUserId((prev) => ({ ...prev, [senderId]: { ...prev[senderId], ...mapped } }));
+        }
         // Lazy-fetch sender profile so avatar and profile sheet are available for viewer chat senders too.
-        if (isValidChatUserId(senderId) && !chatProfileCacheRef.current.has(senderId)) {
+        if (isValidChatUserId(senderId) && !avatarUrl) {
           ensureChatProfile(senderId);
         }
         setChatMessages((prev) => {
@@ -1806,10 +1882,16 @@ function BeamTVInner() {
     handleNext();
   }, [handleNext]);
 
+  const isChatScrollTarget = (target) => {
+    if (!target || typeof target.closest !== 'function') return false;
+    return Boolean(target.closest('[data-beam-tv-chat-scroll]'));
+  };
+
   // TikTok-like navigation: wheel + touch swipe up to go next
   useEffect(() => {
     const onWheel = (e) => {
       if (status !== 'connected') return;
+      if (isChatScrollTarget(e.target)) return;
       // Only treat strong downward wheel as swipe-to-next
       if (e.deltaY > 40) {
         e.preventDefault();
@@ -1820,19 +1902,24 @@ function BeamTVInner() {
       if (status !== 'connected') return;
       const t = e.touches?.[0];
       if (!t) return;
+      touchFromChatScrollRef.current = isChatScrollTarget(e.target);
       touchStartYRef.current = t.clientY;
       touchStartAtRef.current = Date.now();
     };
     const onTouchMove = (e) => {
       if (status !== 'connected') return;
+      // Let the comment list scroll; don't steal the gesture for swipe-next.
+      if (touchFromChatScrollRef.current) return;
       // prevent rubber band scrolling on iOS while swiping
       if (touchStartYRef.current != null) e.preventDefault();
     };
     const onTouchEnd = (e) => {
       if (status !== 'connected') return;
+      const startedOnChat = touchFromChatScrollRef.current;
+      touchFromChatScrollRef.current = false;
       const startY = touchStartYRef.current;
       touchStartYRef.current = null;
-      if (startY == null) return;
+      if (startedOnChat || startY == null) return;
       const t = e.changedTouches?.[0];
       if (!t) return;
       const dy = t.clientY - startY; // swipe up => negative
@@ -1925,40 +2012,26 @@ function BeamTVInner() {
 
 
 
-                {/* Sound toggle */}
-                <div className="absolute bottom-4 md:bottom-12 left-4 md:left-12 z-40">
-                  <button
-                    type="button"
-                    onClick={toggleSound}
-                    className={clsx(
-                      'px-3 md:px-4 py-1.5 md:py-2 rounded-full font-black text-xs border backdrop-blur-2xl transition',
-                      soundEnabled ? 'bg-green-500/20 text-green-100 border-green-400/30' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-                    )}
-                    title={soundEnabled ? (audioUnlocked ? 'Sound on' : 'Tap to enable sound') : 'Sound off'}
-                  >
-                    {soundEnabled ? '🔊' : '🔇'}
-                    <span className="hidden md:inline ml-1">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
-                  </button>
-                </div>
-
-                {/* Realtime chat overlay */}
-                <ChatMessagesOverlay
-                  chatMessages={chatMessages}
-                  chatProfilesByUserId={chatProfilesByUserId}
-                  openChatProfileSheet={openChatProfileSheet}
-                />
-                {/* Bottom Right Actions: Chat Input, Join, Gift */}
-                {!isGiftModalOpen && (
-                  <BeamTVActions
-                    viewerChatInput={viewerChatInput}
-                    setViewerChatInput={setViewerChatInput}
-                    sendViewerChat={sendViewerChat}
-                    joinState={joinState}
-                    handleJoinBroadcast={handleJoinBroadcast}
-                    onGiftClick={handleGiftClick}
-                    isModerator={isModerator}
+                <div className="absolute left-4 right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-start gap-2 pointer-events-none md:left-auto md:right-6 md:bottom-6 md:w-auto">
+                  <ChatMessagesOverlay
+                    chatMessages={chatMessages}
+                    chatProfilesByUserId={chatProfilesByUserId}
+                    openChatProfileSheet={openChatProfileSheet}
                   />
-                )}
+                  {!isGiftModalOpen && (
+                    <div className="pointer-events-auto w-full md:w-auto">
+                      <BeamTVActions
+                        viewerChatInput={viewerChatInput}
+                        setViewerChatInput={setViewerChatInput}
+                        sendViewerChat={sendViewerChat}
+                        joinState={joinState}
+                        handleJoinBroadcast={handleJoinBroadcast}
+                        onGiftClick={handleGiftClick}
+                        isModerator={isModerator}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {moderationEndBanner && (
                   <div className="absolute inset-x-4 top-1/3 z-[60] mx-auto max-w-md rounded-[1.5rem] border border-white/40 bg-black/80 px-5 py-4 text-center text-sm font-bold text-white shadow-2xl backdrop-blur-md md:text-base">
@@ -2007,6 +2080,9 @@ function BeamTVInner() {
                   setShowWaitlist={openLikedModal}
                   handleShareBroadcastLink={handleShare}
                   copyShareUrl={copyShareUrl}
+                  soundEnabled={soundEnabled}
+                  audioUnlocked={audioUnlocked}
+                  onToggleSound={toggleSound}
                 />
 
                 {/* Liked Users Modal (Beamcasting rn) */}
@@ -2070,7 +2146,7 @@ function BeamTVInner() {
                   remoteStreams={remoteStreams}
                   getRemoteTileProfile={(s) => ({
                     name: s.name || 'Broadcaster',
-                    displayPictureUrl: s.displayPictureUrl || '/avatar-placeholder.png',
+                    displayPictureUrl: s.displayPictureUrl || '',
                     city: s.city || ''
                   })}
                   friendRequestSentTo={friendRequestSentTo}

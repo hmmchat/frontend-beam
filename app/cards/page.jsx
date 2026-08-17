@@ -58,26 +58,77 @@ function OfflineCardsContent() {
   const [isEntering, setIsEntering] = useState(false);
 
   const SWIPE_MS = 320;
+  const MAX_ALREADY_FRIEND_SKIPS = 20;
 
-  const hydrateFriendship = useCallback(async (next) => {
-    setIsAlreadyFriend(false);
-    setConnectSent(false);
-    if (!next?.userId) return;
+  /** Raincheck current card and return the next card (or null if exhausted). */
+  const fetchNextAfterRaincheck = useCallback(async (userId) => {
+    const token = localStorage.getItem('accessToken');
+    const data = await apiRequest(API.DISCOVERY.RAINCHECK_OFFLINE, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ sessionId, raincheckedUserId: userId }),
+    });
+    if (data.nextCard) return data.nextCard;
+    // Fallback GET in case raincheck response omitted the next card
+    const url = `${API.DISCOVERY.GET_OFFLINE_CARD}?sessionId=${encodeURIComponent(sessionId)}`;
+    const again = await apiRequest(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (again.exhausted || !again.card) return null;
+    return again.card;
+  }, [sessionId]);
+
+  const inspectFriendship = useCallback(async (userId) => {
     try {
-      const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(next.userId));
-      if (status?.areFriends) {
-        setIsAlreadyFriend(true);
-      } else if (status?.hasPendingRequest || status?.requestPending || status?.requestSent || status?.isPending) {
-        setConnectSent(true);
-      }
+      const status = await apiRequest(API.FRIENDS.CHECK_FRIENDSHIP(userId));
+      return {
+        areFriends: Boolean(status?.areFriends),
+        requestPending: Boolean(
+          status?.hasPendingRequest ||
+          status?.requestPending ||
+          status?.requestSent ||
+          status?.isPending
+        ),
+      };
     } catch {
-      // fail silently — don't block card display
+      return { areFriends: false, requestPending: false };
     }
   }, []);
 
+  const takeShowableCard = useCallback(async (next) => {
+    let current = next;
+    let skips = 0;
+    while (current?.userId && skips < MAX_ALREADY_FRIEND_SKIPS) {
+      const info = await inspectFriendship(current.userId);
+      if (!info.areFriends) {
+        return { card: current, requestPending: info.requestPending };
+      }
+      skips += 1;
+      try {
+        current = await fetchNextAfterRaincheck(current.userId);
+      } catch (err) {
+        console.error('[OfflineCards] skip already-friend error:', err);
+        return { card: null, requestPending: false };
+      }
+    }
+    return { card: null, requestPending: false };
+  }, [fetchNextAfterRaincheck, inspectFriendship]);
+
   const showCard = useCallback(async (next) => {
+    const { card: showable, requestPending } = await takeShowableCard(next);
+    if (!showable) {
+      setSwipeAnim(null);
+      setCard(null);
+      setExhausted(true);
+      setIsAlreadyFriend(false);
+      setConnectSent(false);
+      return;
+    }
+
     // Swap card + clear exit anim in one update so the outgoing card never snaps back
-    setCard(next);
+    setIsAlreadyFriend(false);
+    setConnectSent(requestPending);
+    setCard(showable);
     setExhausted(false);
     setCurrentImageIndex(0);
     setIsGiftButtonHidden(false);
@@ -88,8 +139,7 @@ function OfflineCardsContent() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setIsEntering(false));
     });
-    await hydrateFriendship(next);
-  }, [hydrateFriendship]);
+  }, [takeShowableCard]);
 
   // ── fetch next card ──────────────────────────────────────────────────────
   const fetchCard = useCallback(async ({ quiet = false } = {}) => {
@@ -167,24 +217,6 @@ function OfflineCardsContent() {
     } catch (err) {
       console.error('[OfflineCards] engage error:', err);
     }
-  };
-
-  /** Raincheck current card and return the next card (or null if exhausted). */
-  const fetchNextAfterRaincheck = async (userId) => {
-    const token = localStorage.getItem('accessToken');
-    const data = await apiRequest(API.DISCOVERY.RAINCHECK_OFFLINE, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ sessionId, raincheckedUserId: userId }),
-    });
-    if (data.nextCard) return data.nextCard;
-    // Fallback GET in case raincheck response omitted the next card
-    const url = `${API.DISCOVERY.GET_OFFLINE_CARD}?sessionId=${encodeURIComponent(sessionId)}`;
-    const again = await apiRequest(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (again.exhausted || !again.card) return null;
-    return again.card;
   };
 
   /**

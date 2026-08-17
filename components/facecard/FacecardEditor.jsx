@@ -6,6 +6,21 @@ import clsx from 'clsx';
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import CompletionMeter from "@/components/facecard/CompletionMeter";
 import OverflowMarquee from "@/components/ui/OverflowMarquee";
+
+function BracketFrame({ children, className }) {
+  return (
+    <div className={clsx("relative min-w-0 w-full px-3 py-2 min-h-[42px]", className)}>
+      <span className="pointer-events-none absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
+      <span className="pointer-events-none absolute top-0 right-5 w-3 h-3 border-t border-r border-white/50" />
+      <span className="pointer-events-none absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
+      <span className="pointer-events-none absolute bottom-0 right-5 w-3 h-3 border-b border-r border-white/50" />
+      <div className="flex min-w-0 flex-col justify-center leading-tight overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function FacecardEditor({
   className,
 
@@ -76,64 +91,47 @@ export default function FacecardEditor({
       {/* --- Mobile VIEW (Original Scaled Design) --- */}
 
       {/* Phone + tablet editor; desktop uses the lg:flex layout below */}
-      <div className={clsx('py-4', 'flex', 'items-center', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto')}>
-        <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'min-h-[90dvh]', 'flex-col', 'gap-5', 'px-2', 'relative', 'z-10')}>
-          {/* TOP: text boxes shrink; icon column stays fixed so brackets never overlap */}
-          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(5.5rem,32%)] gap-x-2 gap-y-2 items-center px-2 mt-4">
-            <div className="col-start-1 row-start-1 flex items-center gap-2 min-w-0">
-              <button
-                onClick={leaveEditor}
-                className="w-9 h-9 shrink-0 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
-              >
-                ✕
-              </button>
-              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
-                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
-                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
-                  <h2 className="text-[12px] text-white min-w-0">
-                    <OverflowMarquee text={firstName} />
-                  </h2>
-                  <p className="text-[10px] font-outfit text-white min-w-0">
-                    <OverflowMarquee text={`UserID:${user?.id?.slice(0, 8) || "4heu24sds"}`} />
-                  </p>
-                </div>
-              </div>
+      <div className={clsx('py-4', 'flex', 'items-stretch', 'justify-center', 'lg:hidden', 'px-2', 'w-full', 'max-w-xl', 'mx-auto', 'min-h-[100dvh]')}>
+        <div className={clsx('flex', 'border', 'border-white/30', 'rounded-[2.5rem]', 'w-full', 'min-h-[calc(100dvh-2rem)]', 'flex-col', 'gap-2', 'px-2', 'pt-4', 'pb-3', 'relative', 'z-10')}>
+          {/* TOP: one grid so info, icons, and % sit together with no center gap */}
+          <div className="grid grid-cols-[2.25rem_minmax(0,13rem)_2.5rem_minmax(5.5rem,6.5rem)] gap-x-2 gap-y-2 items-center px-2 shrink-0">
+            <button
+              onClick={leaveEditor}
+              className="col-start-1 row-start-1 w-9 h-9 shrink-0 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
+            >
+              ✕
+            </button>
+            <BracketFrame className="col-start-2 row-start-1">
+              <h2 className="text-[12px] text-white min-w-0">
+                <OverflowMarquee text={firstName} />
+              </h2>
+              <p className="text-[10px] font-outfit text-white min-w-0">
+                <OverflowMarquee text={`UserID:${user?.id?.slice(0, 8) || "4heu24sds"}`} />
+              </p>
+            </BracketFrame>
+
+            <div className="col-start-4 row-start-1 row-span-2 min-w-0 flex items-center justify-center">
+              <CompletionMeter percent={progress} size="mobile" className="w-full" />
             </div>
 
-            <div className="col-start-3 row-start-1 row-span-2 flex justify-center items-center min-w-0 overflow-visible">
-              <CompletionMeter percent={progress} size="mobile" />
-            </div>
-
-            <div className="col-start-1 row-start-2 min-w-0">
-              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
-                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
-                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
-                  <p className="text-[10px] uppercase font-outfit text-white min-w-0">
-                    <OverflowMarquee
-                      text={`DOB : ${
-                        user?.dateOfBirth
-                          ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-                          : "22/08/1998"
-                      }`}
-                    />
-                  </p>
-                  <p className="text-[10px] font-outfit font-thin text-white min-w-0">
-                    <OverflowMarquee text={`Zodiac : ${zodiac?.name || "Gemini"}`} />
-                  </p>
-                </div>
-              </div>
-            </div>
-
+            <BracketFrame className="col-start-1 col-span-2 row-start-2">
+              <p className="text-[10px] uppercase font-outfit text-white min-w-0">
+                <OverflowMarquee
+                  text={`DOB : ${
+                    user?.dateOfBirth
+                      ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+                      : "22/08/1998"
+                  }`}
+                />
+              </p>
+              <p className="text-[10px] font-outfit font-thin text-white min-w-0">
+                <OverflowMarquee text={`Zodiac : ${zodiac?.name || "Gemini"}`} />
+              </p>
+            </BracketFrame>
             <button
               type="button"
               onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
-              className="col-start-2 row-start-2 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-white hover:bg-white/5 transition"
+              className="col-start-3 row-start-2 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-white hover:bg-white/5 transition"
             >
               {zodiac?.imageUrl ? (
                 <img
@@ -146,26 +144,17 @@ export default function FacecardEditor({
               )}
             </button>
 
-            <div className="col-start-1 row-start-3 min-w-0">
-              <div className="relative w-full min-w-0 px-3 py-2 min-h-[42px] overflow-hidden">
-                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-white/50" />
-                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-white/50" />
-                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/50" />
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/50" />
-                <div className="flex flex-col justify-center h-full min-w-0 leading-tight">
-                  <p className="text-[10px] font-outfit text-white min-w-0">
-                    <OverflowMarquee text="Gender Identity" />
-                  </p>
-                  <p className="text-[10px] font-outfit text-white min-w-0">
-                    <OverflowMarquee text={user?.gender} />
-                  </p>
-                </div>
-              </div>
-            </div>
-
+            <BracketFrame className="col-start-1 col-span-2 row-start-3">
+              <p className="text-[10px] font-outfit text-white min-w-0">
+                <OverflowMarquee text="Gender Identity" />
+              </p>
+              <p className="text-[10px] font-outfit text-white min-w-0">
+                <OverflowMarquee text={user?.gender} />
+              </p>
+            </BracketFrame>
             <button
               type="button"
-              className="col-start-2 row-start-3 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white"
+              className="col-start-3 row-start-3 w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white"
             >
               {user?.gender === "MALE"
                 ? "♂"
@@ -174,28 +163,22 @@ export default function FacecardEditor({
                   : "⚧"}
             </button>
 
-            <div className="col-start-3 row-start-3 min-w-0 flex justify-center items-center">
-              <button
-                onClick={() => onOpenFacecardPreview?.()}
-                className="w-full min-w-0 py-2.5 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-white/10 active:scale-95 transition-all"
-              >
-                <img src="/eye.svg" alt="" className="w-4 h-4 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <OverflowMarquee
-                    text="Facecard"
-                    className="text-[10px] sm:text-xs font-bold tracking-widest text-white"
-                  />
-                </span>
-              </button>
-            </div>
+            <button
+              onClick={() => onOpenFacecardPreview?.()}
+              className="col-start-4 row-start-3 w-full min-w-0 py-2.5 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-white/10 active:scale-95 transition-all"
+            >
+              <img src="/eye.svg" alt="" className="w-4 h-4 shrink-0" />
+              <span className="min-w-0 flex-1">
+                <OverflowMarquee
+                  text="Facecard"
+                  className="text-[10px] sm:text-xs font-bold tracking-widest text-white"
+                />
+              </span>
+            </button>
           </div>
 
-          {/* MIDDLE SECTION: DOB/Zodiac Box + Zodiac Icon */}
-
-          {/* BOTTOM SECTION: Gender Box, Gender Icon, Facecard Button */}
-
           {/* Action Rows: shared columns so Select / + stay stacked on every width */}
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_2.75rem] gap-x-2 gap-y-3 items-center px-2">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_2.75rem] gap-x-2 gap-y-3 items-center px-2 shrink-0">
             <span className="text-[12px] font-black tracking-wide">
               Interests
             </span>
@@ -249,19 +232,19 @@ export default function FacecardEditor({
             <span className="text-[12px] font-black tracking-wide">
               Brands
             </span>
-            <div className="col-span-2 flex gap-2 overflow-x-auto scrollbar-hide py-1 min-w-0">
+            <div className="col-span-2 grid grid-cols-5 gap-2 min-w-0">
               {[0, 1, 2, 3, 4].map((i) => {
                 const selection = user?.brandPreferences?.[i];
                 return (
                   <div
                     key={i}
                     onClick={() => setShowSelector("brands")}
-                    className={`w-11 h-11 shrink-0 border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
+                    className={`w-full aspect-square border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
                   >
                     {selection ? (
                       <img
                         src={selection.brand?.logoUrl}
-                        className="w-10 h-10 rounded-full object-contain"
+                        className="w-[90%] h-[90%] rounded-full object-contain"
                       />
                     ) : (
                       <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
@@ -272,20 +255,20 @@ export default function FacecardEditor({
             </div>
           </div>
 
-          {/* Photo Slots Section */}
-          <div className={clsx('relative', 'group', 'px-2')}>
+          {/* Photo Slots Section — grows with leftover height so brands/music don't sit in empty gaps */}
+          <div className={clsx('relative', 'group', 'px-2', 'flex-1', 'min-h-0', 'flex', 'flex-col')}>
             {photoUploading && (
               <div className={clsx('absolute', 'inset-0', 'z-30', 'flex', 'items-center', 'justify-center', 'rounded-xl', 'bg-black/60', 'backdrop-blur-sm')}>
                 <div className={clsx('h-10', 'w-10', 'border-2', 'border-yellow-400', 'border-t-transparent', 'rounded-full', 'animate-spin')} />
               </div>
             )}
 
-            <div className={clsx('grid', 'grid-cols-3', 'gap-4')}>
+            <div className={clsx('grid', 'grid-cols-3', 'gap-3', 'flex-1', 'min-h-0')}>
               {/* Photo 1 (DP) */}
-              <div className="relative overflow-visible">
+              <div className="relative h-full min-h-0 overflow-visible">
                 <div
                   onClick={() => handleSlotClick(0)}
-                  className={clsx('w-full', 'aspect-[2/3]', 'border-2', 'border-white/50', 'rounded-[1rem]', 'overflow-hidden')}
+                  className={clsx('w-full', 'h-full', 'min-h-0', 'border-2', 'border-white/50', 'rounded-[1rem]', 'overflow-hidden')}
                 >
                   <img
                     src={user?.displayPictureUrl}
@@ -316,13 +299,14 @@ export default function FacecardEditor({
                 return (
                   <div
                     key={idx}
-                    className={clsx('relative', 'overflow-visible')}
+                    className={clsx('relative', 'h-full', 'min-h-0', 'overflow-visible')}
                   >
                     <div
                       onClick={() => handleSlotClick(idx + 1)}
                       className={clsx(
                         'w-full',
-                        'aspect-[2/3]',
+                        'h-full',
+                        'min-h-0',
                         'border-2',
                         'border-white/40',
                         'rounded-[1rem]',
@@ -376,7 +360,7 @@ export default function FacecardEditor({
             ) : null}
           </div>
 
-          <div className="w-full flex items-center gap-2 mb-4 px-3 min-w-0">
+          <div className="w-full flex items-center gap-2 px-3 min-w-0 shrink-0">
             <div
               onClick={() => setShowSelector("music")}
               className="relative shrink-0 active:scale-95 transition"

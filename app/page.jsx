@@ -10,6 +10,7 @@ import HomeSkeletonMobile from "@/components/skeletons/HomeSkeletonMobile";
 import HomeSkeletonDesktop from "@/components/skeletons/HomeSkeletonDesktop";
 
 import { clearPendingReferralCode } from "@/components/CaptureReferralFromUrl";
+import { isMatchmakingProfileComplete } from "@/lib/profile-ready";
 
 const MeetSomeoneDynamic = dynamic(
   () => import("@/components/Home/MeetSomeoneDynamic"),
@@ -78,7 +79,7 @@ const MyComponent = () => {
         const data = await apiRequest(API.USERS.GET_ME);
         const user = data?.user || data;
 
-        if (user && user.username) {
+        if (isMatchmakingProfileComplete(user)) {
           setProfileComplete(true);
         } else {
           console.warn("[Home] Incomplete profile:", user);

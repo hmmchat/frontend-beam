@@ -11,6 +11,10 @@ import PortraitImageCropModal from "@/components/ui/PortraitImageCropModal";
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import { CiCirclePlus } from "react-icons/ci";
 import BeamColourLogo from "@/components/ui/BeamColourLogo";
+import {
+  hasOnboardingPhotoSelected,
+  isPlaceholderDisplayPicture,
+} from "@/lib/profile-ready";
 
 async function readHttpErrorMessage(res) {
   try {
@@ -218,7 +222,7 @@ export default function Onboarding() {
               setGender(genderMap[u.gender] || null);
               if (u.gender === 'PREFER_NOT_TO_SAY') setPreferNotToSay(true);
             }
-            if (u.displayPictureUrl) {
+            if (u.displayPictureUrl && !isPlaceholderDisplayPicture(u.displayPictureUrl)) {
               setPhotos(prev => {
                 const next = [...prev];
                 next[0] = u.displayPictureUrl;
@@ -321,6 +325,14 @@ export default function Onboarding() {
       copy[index] = file;
       return copy;
     });
+    if (index === 0) {
+      setErrors((prev) => {
+        if (!prev.photos) return prev;
+        const next = { ...prev };
+        delete next.photos;
+        return next;
+      });
+    }
   };
 
   const openPhotoCrop = (file, index) => {
@@ -427,10 +439,27 @@ export default function Onboarding() {
 
     if (!gender && !preferNotToSay) e.gender = "Select gender";
     if (!city) e.city = "Please select a city";
+    if (!hasOnboardingPhotoSelected(photos[0], photoFiles[0])) {
+      e.photos = "Please upload a profile photo.";
+    }
 
     setNameError(getLiveNameError(name));
     setErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  const validateIntent = () => {
+    if (!prompt.trim()) {
+      setErrors((prev) => ({ ...prev, prompt: "Please add a prompt." }));
+      return false;
+    }
+    setErrors((prev) => {
+      if (!prev.prompt) return prev;
+      const next = { ...prev };
+      delete next.prompt;
+      return next;
+    });
+    return true;
   };
 
   const openSignIn = () => {
@@ -443,7 +472,12 @@ export default function Onboarding() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      setStep(1);
+      return;
+    }
+
+    if (!validateIntent()) return;
 
     if (!userId) {
       setApiError('User session not found. Please login again.');
@@ -454,17 +488,26 @@ export default function Onboarding() {
     setApiError('');
 
     try {
-      // 1. Upload photos first
-      const uploadedUrls = [];
+      const slotUrls = [null, null, null];
       for (let slotIndex = 0; slotIndex < photoFiles.length; slotIndex++) {
         const file = photoFiles[slotIndex];
         if (file) {
-          const url = await uploadToService(file, slotIndex);
-          uploadedUrls.push(url);
+          slotUrls[slotIndex] = await uploadToService(file, slotIndex);
         }
       }
 
-      const displayPictureUrl = uploadedUrls[0] || 'https://via.placeholder.com/150';
+      const existingPhoto =
+        photos[0] &&
+        !photos[0].startsWith?.("blob:") &&
+        !isPlaceholderDisplayPicture(photos[0])
+          ? photos[0]
+          : null;
+      const displayPictureUrl = slotUrls[0] || existingPhoto;
+      if (!displayPictureUrl) {
+        setStep(1);
+        setErrors((prev) => ({ ...prev, photos: "Please upload a profile photo." }));
+        throw new Error("Please upload a profile photo.");
+      }
 
       const dobDate = new Date(
         parseInt(dob.year),
@@ -489,23 +532,36 @@ export default function Onboarding() {
         dateOfBirth: dobDate.toISOString(),
         gender: backendGender,
         displayPictureUrl,
-        intent: prompt.trim() || undefined,
+        intent: prompt.trim(),
         preferredCity
       };
 
-      // If editing, skip the create profile step entirely and only update intent/photos
+      const accessToken =
+        typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
       if (isEditing) {
-        console.warn('Editing existing profile, skipping create call...');
+        if (slotUrls[0] && accessToken) {
+          const patchRes = await fetch(API.USERS.UPDATE_PROFILE, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ displayPictureUrl: slotUrls[0] }),
+          });
+          if (!patchRes.ok) {
+            const msg = await readHttpErrorMessage(patchRes);
+            throw new Error(msg || 'Failed to update profile photo.');
+          }
+        }
       } else {
         // 2. Create Profile (Bearer required — rejects leftover JWTs after hard-delete)
-        const accessTokenForCreate =
-          typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         const response = await fetch(API.USERS.CREATE_PROFILE(userId), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(accessTokenForCreate
-              ? { Authorization: `Bearer ${accessTokenForCreate}` }
+            ...(accessToken
+              ? { Authorization: `Bearer ${accessToken}` }
               : {}),
           },
           body: JSON.stringify(profileData)
@@ -530,7 +586,6 @@ export default function Onboarding() {
       }
 
       // 2.5 Save City Preference (including Anywhere in India)
-      const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (preferredCity && accessToken) {
         await apiRequest(API.USERS.UPDATE_PREFERRED_CITY, {
           method: 'PATCH',
@@ -544,21 +599,22 @@ export default function Onboarding() {
       }
 
       // 3. Add extra photos if any
-      if (uploadedUrls.length > 1 && accessToken) {
-        for (let i = 1; i < uploadedUrls.length; i++) {
+      if (accessToken) {
+        for (let i = 1; i < slotUrls.length; i++) {
+          if (!slotUrls[i]) continue;
           await fetch(API.USERS.ADD_PHOTO, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${accessToken}`
             },
-            body: JSON.stringify({ url: uploadedUrls[i], order: i - 1 })
+            body: JSON.stringify({ url: slotUrls[i], order: i - 1 })
           });
         }
       }
 
-      // 4. Update Intent/Prompt if present
-      if (prompt.trim() && accessToken) {
+      // 4. Update Intent/Prompt
+      if (accessToken) {
         const res = await fetch(API.USERS.UPDATE_INTENT, {
           method: 'PATCH',
           headers: {
@@ -790,16 +846,17 @@ export default function Onboarding() {
                                     return (
                                       <div
                                         key={i}
-                                        className="
+                                        className={`
   relative 
   w-[92px] sm:w-[110px] md:w-32 
   max-h-[140px] sm:max-h-[160px] md:max-h-full
   aspect-[4/6] md:aspect-[2/3] 
   rounded-[1rem] md:rounded-[1.5rem]
   border border-b-[3px] md:border-2 md:border-b-4 
-  border-white/40 overflow-hidden 
+  overflow-hidden 
   animate-in fade-in zoom-in duration-300
-"
+  ${i === 0 && errors.photos ? "border-rose-400" : "border-white/40"}
+`}
                                         onClick={() => fileRefs.current[i]?.click()}
                                       >
                                         {photos[i] ? (
@@ -837,6 +894,11 @@ export default function Onboarding() {
                                 <p className="text-white/50 text-sm text-center font-outfit mt-3">
                                   Upload your niceeee pictures
                                 </p>
+                                {errors.photos && (
+                                  <div className="text-sm text-rose-400 mt-1.5 font-medium text-center">
+                                    {errors.photos}
+                                  </div>
+                                )}
                                 {apiError && (
                                   <div className="px-2 sm:px-3 max-w-md mx-auto">
                                     <ErrorAlert message={apiError} className="mt-3" />
@@ -1199,13 +1261,22 @@ export default function Onboarding() {
                   <div className="md:border md:border-white/30 md:block md:rounded-[50px] py-4 md:p-4 flex flex-col flex-1 min-h-0 overflow-visible md:overflow-hidden  mt-6 sm:mt-0">
 
                     {/* Prompt box */}
-                    <div className="border border-white/30 md:rounded-[36px] rounded-[20px] p-10 text-white">
+                    <div className={`border md:rounded-[36px] rounded-[20px] p-10 text-white ${
+                      errors.prompt ? "border-rose-400" : "border-white/30"
+                    }`}>
                       <textarea
                         value={prompt}
                         onChange={(e) => {
                           setPrompt(e.target.value.slice(0, 255));
                           setSelectedPrompts([]);
                           if (apiError) setApiError("");
+                          if (errors.prompt) {
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next.prompt;
+                              return next;
+                            });
+                          }
                         }}
                         maxLength={255}
                         placeholder="Type your own"
@@ -1215,6 +1286,11 @@ export default function Onboarding() {
                         {prompt.length}/255
                       </div>
                     </div>
+                    {errors.prompt && (
+                      <div className="text-sm text-rose-400 mt-1.5 font-medium text-center">
+                        {errors.prompt}
+                      </div>
+                    )}
 
 
                     {/* Suggestions */}
@@ -1257,6 +1333,14 @@ export default function Onboarding() {
                                   const isSelected = prev.includes(text);
                                   const newSelection = isSelected ? [] : [text];
                                   setPrompt(newSelection[0] || "");
+                                  if (newSelection[0]) {
+                                    setErrors((e) => {
+                                      if (!e.prompt) return e;
+                                      const next = { ...e };
+                                      delete next.prompt;
+                                      return next;
+                                    });
+                                  }
                                   return newSelection;
                                 });
                               }}

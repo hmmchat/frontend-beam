@@ -36,14 +36,19 @@ export default function PromptsTab({ user, setUser }) {
   }, [user?.intent]);
 
   const handleUpdateIntent = async (newIntent) => {
-    if (newIntent === user?.intent) return;
+    const nextIntent = String(newIntent || "").trim();
+    if (!nextIntent) {
+      setLocalIntent(user?.intent || "");
+      return;
+    }
+    if (nextIntent === user?.intent) return;
     try {
       if (setUser) {
-        setUser((prev) => ({ ...prev, intent: newIntent }));
+        setUser((prev) => ({ ...prev, intent: nextIntent }));
       }
       await apiRequest(API.USERS.UPDATE_INTENT, {
         method: "PATCH",
-        body: JSON.stringify({ intent: newIntent }),
+        body: JSON.stringify({ intent: nextIntent }),
       });
     } catch (err) {
       console.error("Failed to update intent:", err);

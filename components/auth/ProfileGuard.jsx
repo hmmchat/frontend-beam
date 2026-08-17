@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, apiRequest } from '@/lib/api';
 import { clearPendingReferralCode } from '@/components/CaptureReferralFromUrl';
+import { isMatchmakingProfileComplete } from '@/lib/profile-ready';
 
 function clearSession() {
   localStorage.removeItem('accessToken');
@@ -44,7 +45,7 @@ export default function ProfileGuard({ children }) {
         const data = await apiRequest(API.USERS.GET_ME);
         const user = data?.user || data;
 
-        if (!user || !user.username) {
+        if (!isMatchmakingProfileComplete(user)) {
           router.replace('/onboarding');
           return;
         }

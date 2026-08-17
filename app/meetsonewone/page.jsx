@@ -1,3 +1,4 @@
+import ProfileGuard from '@/components/auth/ProfileGuard';
 import MeetSomeoneNew from '@/components/Home/MeetSomeoneNew';
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function MeetSomeoneNewPage() {
-  return <MeetSomeoneNew />;
+  return (
+    <ProfileGuard>
+      <MeetSomeoneNew />
+    </ProfileGuard>
+  );
 }

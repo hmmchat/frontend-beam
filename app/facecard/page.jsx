@@ -1164,7 +1164,8 @@ function FacecardContent() {
 
 
 
-            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'gap-4', 'max-h-dvh', 'w-full', 'max-w-[100vw]', 'px-3', 'border', 'border-white/40', 'rounded-[32px]', 'md:rounded-[60px]', 'md:w-[960px]', 'md:px-0', 'scale-[0.95]')}>
+            <div className={clsx('relative', 'z-10', 'flex', 'flex-col', 'items-center', 'max-h-dvh', 'overflow-y-auto', 'w-fit', 'max-w-[100vw]', 'px-3', 'scale-[0.95]')}>
+            <div className={clsx('relative', 'flex', 'flex-col', 'items-center', 'w-fit', 'max-w-full', 'px-3', 'pt-4', 'pb-4', 'border', 'border-white/40', 'rounded-[32px]', 'md:rounded-[60px]', 'md:px-6', 'md:pt-6', 'md:pb-6')}>
 
 
               {/* <div className={clsx('absolute', 'left-0', 'top-4', 'z-20', 'flex', 'w-full', 'items-center', 'justify-between', 'px-5', 'px-14')}>
@@ -1201,22 +1202,21 @@ function FacecardContent() {
 
               {/* facecard preview of facecard tool */}
               <div
-                className={clsx('flex', 'justify-center', 'items-start', 'md:items-center', 'w-full', 'md:max-h-[96vh] ')}
+                className={clsx('flex', 'justify-center', 'items-start', 'md:items-center', 'w-fit', 'max-w-full', 'md:overflow-visible', 'overflow-hidden', 'md:max-h-[96vh]')}
                 style={
                   typeof window !== "undefined" && window.innerWidth < 768
-                    ? { height: `${660 * scale + 30}px` }
+                    ? { height: `${660 * scale}px` }
                     : undefined
                 }
               >
                 <div
                   ref={facecardPreviewExportRef}
 
-                  className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-full', 'mx-auto', '      md:[@media(max-height:1000px)]:scale-[0.96]')}
-
+                  className={clsx('flex', 'flex-col', 'justify-center', 'items-center', 'w-fit', 'mx-auto')}
                   style={
                     typeof window !== "undefined" && window.innerWidth < 768
                       ? {
-                        transform: `translateY(15px)  scale(${scale})`,
+                        transform: `scale(${scale})`,
                         transformOrigin: "top center",
                       }
                       : undefined
@@ -1232,17 +1232,17 @@ function FacecardContent() {
                     onDownload={handleDownloadFacecard}
                     onShare={handleShareFacecard}
                     hideMenu
-                    className="md:mt-[8vh]"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Action Buttons: Close, Share, Download */}
+              {/* Action Buttons: Close, Share, Download — outside the card frame */}
               <div className={clsx(
-                'flex', 'items-center', 'justify-center', 'gap-6', 'z-30',
-                'absolute', 'bottom-4', 'left-0', 'right-0',
+                'relative', 'flex', 'items-center', 'justify-center', 'gap-6', 'z-30', 'shrink-0',
+                'mt-5',
                 'pb-[env(safe-area-inset-bottom)]',
-                'md:relative', 'md:bottom-auto', 'md:left-auto', 'md:right-auto', 'md:mt-2', 'md:mb-[5%]', 'md:pb-0'
+                'md:mt-6', 'md:mb-[2%]', 'md:pb-0'
               )}>
                 <button
                   onClick={() => setFacecardPreviewOpen(false)}

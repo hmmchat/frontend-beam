@@ -228,7 +228,11 @@ export default function ProfileMobile() {
   };
 
   return (
-    <div className="h-[100dvh] w-full text-white flex flex-col items-center pt-6 px-4 relative overflow-y-auto scrollbar-hide">
+    <div
+      className={`relative flex h-[100dvh] w-full flex-col items-center px-4 pt-6 text-white scrollbar-hide ${
+        activeTab === "rewards" ? "overflow-hidden" : "overflow-y-auto"
+      }`}
+    >
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-10">
         <Image
@@ -249,7 +253,10 @@ export default function ProfileMobile() {
       )}
 
       {activeTab === "rewards" && (
-        <ProfileMobileRewards onBack={() => setActiveTab("main")} />
+        <ProfileMobileRewards
+          className="min-h-0 w-full max-w-[370px] flex-1 self-center"
+          onBack={() => setActiveTab("main")}
+        />
       )}
 
       {activeTab === "mysterybox" && (

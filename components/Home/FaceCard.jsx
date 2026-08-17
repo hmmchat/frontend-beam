@@ -397,7 +397,7 @@ const FaceCard = ({
           {/* Inner chrome — clear header (+ location) on both mobile and desktop */}
           <div
             className={clsx(
-              'absolute bottom-2 left-2 right-2 md:bottom-12 md:left-[5px] md:right-1 rounded-[22px] md:rounded-[26px] border border-white/30 overflow-hidden',
+              'absolute bottom-2 left-2 right-2 md:bottom-12 md:left-[5px] md:right-[5px] rounded-[22px] md:rounded-[26px] border border-white/30 overflow-hidden',
               showLocationRow ? 'top-[4.75rem] md:top-[5.25rem]' : 'top-[3.5rem] md:top-[4rem]',
             )}
           >
@@ -411,7 +411,7 @@ const FaceCard = ({
             </div>
 
 
-            <div className="absolute bottom-5 md:bottom-2 right-2 left-1.5 top-[7.85rem] md:top-[7.22rem] flex md:gap-0 min-h-0 overflow-hidden">
+            <div className="absolute bottom-5 md:bottom-2 right-1.5 left-1.5 top-[7.85rem] md:top-[7.22rem] flex min-h-0 overflow-hidden">
               {/* LEFT SIDEBAR — sized to stay inside chrome on desktop */}
               <div className="w-[26%] h-full min-h-0 flex flex-col items-center justify-between gap-1 md:gap-1 z-20 overflow-hidden pb-0.5">
                 {/* Brands capsule */}
@@ -500,7 +500,7 @@ const FaceCard = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="relative flex flex-1 min-w-0 md:w-[268px] border border-white/30 h-[99.5%] md:h-[99.8%] rounded-[18px] flex-col items-center overflow-hidden">
+              <div className="relative flex flex-1 min-w-0 border border-white/30 h-[99.5%] md:h-[99.8%] rounded-[18px] flex-col items-center overflow-hidden">
                 <img
                   src={allPhotos[activeIndex] || ''}
                   className={`h-full w-full object-cover rounded-[18px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import QRCodeStyling from "qr-code-styling";
 import { API, apiRequest } from "@/lib/api";
-import BeamColourLogo from "@/components/ui/BeamColourLogo";
 
 /**
  * QR matrix density is driven by encoded byte length. Strip non-essential query
@@ -66,9 +65,22 @@ async function trackShareEvent(channel, opts = {}) {
   }
 }
 
+/** Transparent hole so modules are cleared behind the centered Beam wordmark. */
+const QR_CENTER_HOLE =
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="36"></svg>',
+  );
+
+function clearQrHost(el) {
+  if (!el) return;
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
 /**
- * Styled, scannable QR (qr-code-styling): white rounded modules over transparent
- * background, with a centered Beam mark. Parent surface provides the purple fill.
+ * Sparse rounded QR with the Beam wordmark locked to the same grid cell
+ * (Figma 9170:6569). Do not use BeamColourLogo here — its 794px stage
+ * overflows and sits beside the code on mobile.
  */
 function MinimalStyledReferralQr({ encodeData }) {
   const hostRef = useRef(null);
@@ -76,16 +88,22 @@ function MinimalStyledReferralQr({ encodeData }) {
   useEffect(() => {
     const el = hostRef.current;
     if (!el || !encodeData) {
-      if (el) QRCodeStyling._clearContainer(el);
+      clearQrHost(el);
       return;
     }
 
     const qr = new QRCodeStyling({
-      width: 220,
-      height: 220,
+      width: 186,
+      height: 186,
       type: "svg",
       data: encodeData,
-      margin: 2,
+      margin: 0,
+      image: QR_CENTER_HOLE,
+      imageOptions: {
+        hideBackgroundDots: true,
+        imageSize: 0.48,
+        margin: 2,
+      },
       qrOptions: { errorCorrectionLevel: "H" },
       dotsOptions: {
         type: "rounded",
@@ -105,11 +123,19 @@ function MinimalStyledReferralQr({ encodeData }) {
       },
     });
 
-    QRCodeStyling._clearContainer(el);
+    clearQrHost(el);
     qr.append(el);
+    const graphic = el.querySelector("svg, canvas");
+    if (graphic) {
+      graphic.setAttribute("width", "100%");
+      graphic.setAttribute("height", "100%");
+      graphic.style.display = "block";
+      graphic.style.width = "100%";
+      graphic.style.height = "100%";
+    }
 
     return () => {
-      QRCodeStyling._clearContainer(el);
+      clearQrHost(el);
     };
   }, [encodeData]);
 
@@ -122,17 +148,20 @@ function MinimalStyledReferralQr({ encodeData }) {
   }
 
   return (
-    <div
-      className="relative flex h-full w-full items-center justify-center"
-    >
+    <div className="grid h-full w-full overflow-hidden">
       <div
         ref={hostRef}
-        className="h-full w-full [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
+        className="col-start-1 row-start-1 h-full w-full overflow-hidden [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
       />
-      <BeamColourLogo
-        alt=""
-        className="pointer-events-none absolute left-1/2 top-1/2 w-[94px] -translate-x-1/2 -translate-y-1/2"
-      />
+      <div className="pointer-events-none col-start-1 row-start-1 z-[1] flex items-center justify-center">
+        <span className="flex h-[36px] w-[90px] items-center justify-center overflow-hidden bg-[#4e0093] md:h-[42px] md:w-[108px]">
+          <img
+            src="/beam-logo-center.png"
+            alt=""
+            className="h-[35px] w-[83px] max-w-none object-contain mix-blend-lighten md:h-[40px] md:w-[100px]"
+          />
+        </span>
+      </div>
     </div>
   );
 }
@@ -233,7 +262,7 @@ export default function RewardsReferralsPanel() {
   };
 
   const box =
-    "w-full  rounded-[2rem] border border-[rgba(200,180,255,0.4)]  text-center md:max-w-none md:rounded-[2.5rem]";
+    "w-full rounded-[2rem] border border-white/40 text-center md:rounded-[2.5rem]";
 
   if (loading) {
     return (
@@ -264,64 +293,59 @@ export default function RewardsReferralsPanel() {
       : 0;
 
   return (
-    <div className="flex w-full min-h-0 flex-col items-center gap-6 overflow-y-auto scrollbar-hide px-3 py-2 md:py-4">
+    <div className="flex h-full min-h-0 w-full flex-col items-stretch gap-2 overflow-hidden md:gap-5">
 
       {/* === INVITE BOX === */}
-      <div className="w-full mx-auto">
-        <div className={`${box} px-8 py-12 md:px-8 md:py-12`}>
-          <p className="mb-2 text-center font-[family-name:var(--font-outfit),sans-serif] text-[15px] font-semibold text-white md:text-[17px]">
+      <div className={`${box} flex min-h-0 flex-col items-center justify-center overflow-hidden px-6 py-5 md:flex-1 md:px-10 md:py-6`}>
+          <p className="mb-1 text-center font-outfit text-[12px] font-normal text-white md:text-[15px]">
             Invite your gang and win
           </p>
 
-          <p className="mb-4 flex items-center justify-center gap-1  font-semibold text-white text-xl md:text-2xl">
+          <p className="mb-3 flex items-center justify-center gap-1 font-[family-name:var(--font-otomanopee-one),sans-serif] text-[16px] text-white md:mb-4 md:text-[28px]">
             <img
               src="/Coins/coin1.png"
               alt=""
-              className="h-8 w-8 md:h-9 md:w-9"
+              className="h-[18px] w-[18px] md:h-8 md:w-8"
             />
             {referralRewardCoins}
           </p>
 
-          <div className="mx-auto mb-4 flex w-max justify-center">
-            <div
-              className="relative p-[6px] h-[150px] w-[150px] md:h-[118px] md:w-[118px]"
-              role="img"
-              aria-label="Scan QR code to open your referral link"
-            >
-              <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
-            </div>
+          <div
+            className="relative mx-auto size-[min(186px,52vw)] shrink-0 overflow-hidden md:size-[220px]"
+            role="img"
+            aria-label="Scan QR code to open your referral link"
+          >
+            <MinimalStyledReferralQr encodeData={qrEncodedUrl} />
           </div>
 
           <button
             type="button"
             onClick={copyInviteMessage}
-            className="mx-auto w-full max-w-[260px] rounded-full bg-[#2a1548]/40 py-3 text-white transition hover:bg-[#351a5a]"
+            className="mx-auto mt-4 w-full max-w-[268px] rounded-full bg-[rgba(8,0,44,0.2)] px-[30px] py-4 text-white transition hover:bg-[rgba(8,0,44,0.35)] md:mt-5 md:max-w-[320px]"
           >
             {referralCode ? (
-              <span className="font-[family-name:var(--font-outfit),sans-serif] text-[17px] font-semibold">
+              <span className="font-[family-name:var(--font-otomanopee-one),sans-serif] text-[16px] md:text-[18px]">
                 {referralCode}
               </span>
             ) : (
               <span className="text-sm text-white/80">Your referral code</span>
             )}
           </button>
-        </div>
       </div>
 
       {/* === SHARE BOX === */}
-      <div className="w-full mx-auto">
-        <div className={`${box} px-8 py-12 md:px-8 md:py-10`}>
-          <p className=" text-center font-[family-name:var(--font-outfit),sans-serif] text-[14px] font-semibold text-white md:text-[17px]">
+      <div className={`${box} shrink-0 px-6 py-5 md:px-10 md:py-6`}>
+          <p className="text-center font-outfit text-[12px] font-normal text-white md:text-[15px]">
             Share to
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 mt-6">
+          <div className="mt-4 flex items-center justify-center gap-[30px] md:mt-5 md:gap-10">
             <button
               type="button"
               onClick={shareSnapchat}
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on Snapchat"
             >
-              <Image src="/shareicon3.svg" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon3.svg" alt="" width={30} height={30} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -329,7 +353,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on Instagram"
             >
-              <Image src="/shareicon2.svg" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon2.svg" alt="" width={30} height={30} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -337,7 +361,7 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Share on WhatsApp"
             >
-              <Image src="/shareicon1.svg" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon1.svg" alt="" width={30} height={30} className="brightness-0 invert" />
             </button>
             <button
               type="button"
@@ -345,13 +369,12 @@ export default function RewardsReferralsPanel() {
               className="p-0.5 transition hover:scale-110"
               aria-label="Copy invite to clipboard"
             >
-              <Image src="/shareicon4.svg" alt="" width={40} height={40} className="brightness-0 invert" />
+              <Image src="/shareicon4.svg" alt="" width={30} height={30} className="brightness-0 invert" />
             </button>
           </div>
-        </div>
       </div>
 
-      {hint && <p className="text-center text-[10px] text-white/50">{hint}</p>}
+      {hint && <p className="shrink-0 text-center text-[10px] text-white/50">{hint}</p>}
     </div>
   );
 }

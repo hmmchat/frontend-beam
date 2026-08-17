@@ -42,7 +42,7 @@ export default function OverflowMarquee({
     <span
       ref={wrapRef}
       className={clsx(
-        "relative block min-w-0 w-max max-w-full overflow-hidden whitespace-nowrap",
+        "relative block min-w-0 w-full overflow-hidden whitespace-nowrap",
         className,
       )}
       title={content}
@@ -65,7 +65,7 @@ export default function OverflowMarquee({
           </span>
         </span>
       ) : (
-        <span className="inline-block max-w-full">{content}</span>
+        <span className="inline-block">{content}</span>
       )}
     </span>
   );

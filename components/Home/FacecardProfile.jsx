@@ -160,7 +160,7 @@ const FacecardProfile = ({
 
 
           {/* Inner chrome */}
-          <div className="absolute md:bottom-12  bottom-1 left-[5px] right-1 md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45">
+          <div className={`absolute left-[5px] right-1 bottom-1 ${hideArrows ? "md:bottom-2" : "md:bottom-12"} md:top-[1.75rem] top-[3.5rem] rounded-[26px] border border-white/45`}>
             {/* Intent */}
             <div className="absolute left-0 right-0 top-[8px] z-20 px-2 ">
               <div className="md:rounded-[22px] font-outfit rounded-[20px] border border-white/35 h-[100px] md:h-[100px] flex items-center justify-center px-3 text-center text-[12px] leading-snug text-white backdrop-blur-[2px]">

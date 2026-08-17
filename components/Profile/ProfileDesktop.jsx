@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import FacecardProfile from "../Home/FacecardProfile";
 import { calculateProgress } from "@/lib/facecard-utils";
 import { displayUsername } from "@/lib/username";
+import useFitScale from "@/lib/useFitScale";
 import { toJpeg } from "html-to-image";
 import html2canvas from "html2canvas";
 
@@ -44,6 +45,12 @@ export default function ProfileDesktop({
     badge: null,
   });
   const facecardExportRef = useRef(null);
+  const {
+    containerRef: facecardFitRef,
+    contentRef: facecardContentRef,
+    scale: facecardScale,
+    supportsZoom: facecardZoom,
+  } = useFitScale(activeTab === "account" || activeTab === "default");
 
   useEffect(() => {
     if (!initialUser) {
@@ -328,47 +335,39 @@ export default function ProfileDesktop({
           className={` flex flex-1 min-h-0 min-w-0 flex-col rounded-[3rem] border border-white/40 px-6 md:px-8 ${activeTab === "account" || activeTab === "default" ? "py-4" : "py-6 md:py-8"
             }`}>
           {activeTab === "account" || activeTab === "default" ? (
-            <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
-              <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
-                <div className="w-full max-w-[420px] transition-transform ">
-                  <div className="flex h-full w-full items-start justify-center overflow-hidden">
-                    <div
-                      className="
-      origin-top
-      [@media(max-height:2100px)]:scale-[0.95]
-      [@media(max-height:2000px)]:scale-[0.90]
-      [@media(max-height:1900px)]:scale-[0.87]
-      [@media(max-height:1800px)]:scale-[0.85]
-      [@media(max-height:1700px)]:scale-[0.88]
-      [@media(max-height:1500px)]:scale-[0.87]
-      [@media(max-height:1200px)]:scale-[0.87]
-      [@media(max-height:1000px)]:scale-[0.86]
-      [@media(max-height:800px)]:scale-[0.75]
-      md:[@media(max-height:700px)]:scale-[0.70]
-      [@media(max-height:600px)]:scale-[0.50]
-    "
-                    >
-                      <div
-                        ref={facecardExportRef}
-                        data-facecard-export-root="true"
-                      >
-                        <FacecardProfile
-                          user={{
-                            ...user,
-                            age,
-                            city: user?.preferredCity || user?.city,
-                          }}
-                          currentIndex={currentImageIndex}
-                          onIndexChange={setCurrentImageIndex}
-                          hideArrows={true}
-                          hideHeader={true}
-                        />
-                      </div>
-                    </div>
+            <div
+              ref={facecardFitRef}
+              className="flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden"
+            >
+              <div
+                style={
+                  facecardZoom
+                    ? { zoom: facecardScale }
+                    : {
+                        transform: `scale(${facecardScale})`,
+                        transformOrigin: "center center",
+                      }
+                }
+              >
+                <div ref={facecardContentRef}>
+                  <div
+                    ref={facecardExportRef}
+                    data-facecard-export-root="true"
+                  >
+                    <FacecardProfile
+                      user={{
+                        ...user,
+                        age,
+                        city: user?.preferredCity || user?.city,
+                      }}
+                      currentIndex={currentImageIndex}
+                      onIndexChange={setCurrentImageIndex}
+                      hideArrows={true}
+                      hideHeader={true}
+                    />
                   </div>
                 </div>
               </div>
-
             </div>
           ) : (
 
@@ -391,7 +390,9 @@ export default function ProfileDesktop({
                   </div>
                 </div>
               ) : activeTab === "rewards" ? (
-                <RewardsTab onBack={() => setActiveTab("default")} />
+                <div className="min-h-0 flex-1 h-full w-full overflow-hidden">
+                  <RewardsTab onBack={() => setActiveTab("default")} />
+                </div>
               ) : (
                 <StickersTab user={user} setUser={setUser} />
               )}

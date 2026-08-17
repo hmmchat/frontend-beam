@@ -19,6 +19,7 @@ import ShareSheet from '@/components/beam-tv/ShareSheet';
 import ChatProfileCard from '@/components/beam-tv/ChatProfileCard';
 import LikedBroadcastersModal from '@/components/beam-tv/LikedBroadcastersModal';
 import FavouritesPanel from '@/components/beam-tv/FavouritesPanel';
+import BeamTvIdleScreen from '@/components/beam-tv/BeamTvIdleScreen';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
 import GiftAnimation from '@/components/VideoChat/GiftAnimation';
 import CoinModal from '@/components/modals/CoinModal';
@@ -93,7 +94,7 @@ function BeamTVInner() {
   const searchParams = useSearchParams();
   const WS_URL = getWsUrl();
   const roomIdParam = searchParams?.get('roomId') || '';
-  const [status, setStatus] = useState('loading'); // loading | connected | empty | error
+  const [status, setStatus] = useState('loading'); // loading | connected | empty | error | ended
   const [remoteStreams, setRemoteStreams] = useState([]); // { userId, stream, name, age, etc. }
   const [error, setError] = useState('');
   const [joinState, setJoinState] = useState({ state: 'idle', message: '' }); // idle | requesting | requested | error
@@ -166,6 +167,8 @@ function BeamTVInner() {
   const transitionLockRef = useRef(false);
   const sfuRerouteAttemptRef = useRef(0);
   const waitlistPromotionRef = useRef(false);
+  const endedRoomIdRef = useRef('');
+  const currentBroadcastRef = useRef(null);
   const [feedTransitionPhase, setFeedTransitionPhase] = useState('idle'); // idle | out | pre-in | in
 
   const cleanup = useCallback((opts = {}) => {
@@ -448,10 +451,30 @@ function BeamTVInner() {
         return;
       }
 
-      // If backend returns the same broadcast room again (common when only 1 live stream),
-      // do NOT cleanup/reconnect. Just keep playing.
       const nextRoomId = String(res.broadcast.roomId || '');
       const currentRoomId = String(currentBroadcast?.roomId || '');
+      const broadcastIsDead =
+        res.broadcast.exists === false ||
+        res.broadcast.isActive === false ||
+        (endedRoomIdRef.current && nextRoomId === endedRoomIdRef.current);
+      if (broadcastIsDead) {
+        if (!loopingRef.current) {
+          loopingRef.current = true;
+          const newSid = rotateFeedSession();
+          await fetchNextBroadcast(newSid, { preserveUi: true });
+          loopingRef.current = false;
+          return;
+        }
+        cleanup({ preserveStreams: preserveUi });
+        broadcastStartedAtRef.current = null;
+        setCurrentBroadcast(null);
+        setStatus('empty');
+        loopingRef.current = false;
+        return;
+      }
+
+      // If backend returns the same broadcast room again (common when only 1 live stream),
+      // do NOT cleanup/reconnect. Just keep playing.
       if (nextRoomId && currentRoomId && nextRoomId === currentRoomId) {
         setCurrentBroadcast(res.broadcast);
         broadcastStartedAtRef.current = Date.now();
@@ -461,6 +484,7 @@ function BeamTVInner() {
       }
 
       // Switching to a new room: now cleanup + reconnect.
+      endedRoomIdRef.current = '';
       cleanup({ preserveStreams: preserveUi });
       broadcastStartedAtRef.current = Date.now();
       setCurrentBroadcast(res.broadcast);
@@ -485,7 +509,9 @@ function BeamTVInner() {
       // Backend returns the broadcast object directly (not wrapped).
       const broadcast = res?.broadcast?.roomId ? res.broadcast : res;
       if (!broadcast?.roomId) return false;
+      if (broadcast.exists === false || broadcast.isActive === false) return false;
       const nextRoomId = String(broadcast.roomId || '');
+      if (endedRoomIdRef.current && nextRoomId === endedRoomIdRef.current) return false;
       const currentRoomId = String(currentBroadcast?.roomId || '');
       if (nextRoomId && currentRoomId && nextRoomId === currentRoomId) {
         // Already playing this room; avoid reconnect.
@@ -496,6 +522,7 @@ function BeamTVInner() {
       }
 
       cleanup({ preserveStreams: preserveUi });
+      endedRoomIdRef.current = '';
       broadcastStartedAtRef.current = Date.now();
       setCurrentBroadcast(broadcast);
       let did = localStorage.getItem('deviceId');
@@ -596,9 +623,40 @@ function BeamTVInner() {
   }, [proceedToNextBroadcast]);
 
   const handleNext = useCallback(() => {
-    if (!currentBroadcast || !sessionId) return;
+    if (!sessionId) return;
+    if (!currentBroadcast) {
+      fetchNextBroadcast(sessionId);
+      return;
+    }
     runFeedScrollTransition();
-  }, [currentBroadcast, runFeedScrollTransition, sessionId]);
+  }, [currentBroadcast, fetchNextBroadcast, runFeedScrollTransition, sessionId]);
+
+  const markBroadcastEnded = useCallback((endedRoomId) => {
+    const roomId = String(endedRoomId || currentBroadcastRef.current?.roomId || '');
+    if (roomId) {
+      endedRoomIdRef.current = roomId;
+      const did = localStorage.getItem('deviceId');
+      const payload = JSON.stringify({
+        roomId,
+        sessionId,
+        deviceId: did,
+      });
+      apiRequest(API.DISCOVERY.MARK_BROADCAST_VIEWED, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      }).catch(() => { });
+    }
+    cleanup();
+    broadcastStartedAtRef.current = null;
+    setRemoteStreams([]);
+    remoteStreamsRef.current = [];
+    setCurrentBroadcast(null);
+    currentBroadcastRef.current = null;
+    setChatMessages([]);
+    setJoinState({ state: 'idle', message: '' });
+    setStatus('ended');
+  }, [cleanup, sessionId]);
 
   const connectToBroadcast = async (roomId, did) => {
     const accessToken = localStorage.getItem('accessToken') || '';
@@ -813,6 +871,61 @@ function BeamTVInner() {
       if (uid && uid !== 'broadcaster' && !uid.startsWith('producer:')) ids.add(uid);
     });
     return ids;
+  };
+
+  const sameBroadcastParticipantId = (a, b) => String(a ?? '') === String(b ?? '');
+
+  const liveMediaTrackCount = (entry) => {
+    const countLive = (stream) =>
+      (stream?.getTracks?.() || []).filter((t) => t.readyState !== 'ended').length;
+    return countLive(entry?.stream) + countLive(entry?.screenStream);
+  };
+
+  const removeRemoteParticipantFromUi = (leftIdRaw) => {
+    const leftId = String(leftIdRaw ?? '');
+    if (!leftId) return;
+    let remaining = 0;
+    Object.keys(consumersRef.current).forEach((cid) => {
+      const consumer = consumersRef.current[cid];
+      const producerId = String(consumer?.producerId || '');
+      const uid =
+        consumer?.appData?.remoteUserId ||
+        producerUserIdByProducerIdRef.current[producerId] ||
+        producerIdToMetaRef.current.get(producerId)?.userId;
+      if (!sameBroadcastParticipantId(uid, leftId)) return;
+      try {
+        consumer?.track?.stop?.();
+        consumer?.close?.();
+      } catch (_) { }
+      delete consumersRef.current[cid];
+    });
+    for (const [pid, meta] of [...producerIdToMetaRef.current.entries()]) {
+      if (sameBroadcastParticipantId(meta.userId, leftId)) producerIdToMetaRef.current.delete(pid);
+    }
+    Object.keys(producerUserIdByProducerIdRef.current).forEach((pid) => {
+      if (sameBroadcastParticipantId(producerUserIdByProducerIdRef.current[pid], leftId)) {
+        delete producerUserIdByProducerIdRef.current[pid];
+      }
+    });
+    setRemoteStreams((prev) => {
+      const removed = prev.find((s) => sameBroadcastParticipantId(s.userId, leftId));
+      removed?.stream?.getTracks?.().forEach((t) => {
+        try { t.stop(); } catch (_) { }
+      });
+      removed?.screenStream?.getTracks?.().forEach((t) => {
+        try { t.stop(); } catch (_) { }
+      });
+      const next = prev.filter((s) => !sameBroadcastParticipantId(s.userId, leftId));
+      remaining = next.length;
+      remoteStreamsRef.current = next;
+      return next;
+    });
+    if (remaining === 0) {
+      setTimeout(() => {
+        if ((remoteStreamsRef.current?.length || 0) > 0) return;
+        markBroadcastEnded();
+      }, 1500);
+    }
   };
 
   const resolveChatName = (senderId, isParticipant) => {
@@ -1464,22 +1577,37 @@ function BeamTVInner() {
         if (meta) {
           producerIdToMetaRef.current.delete(closedPid);
           const tr = foundConsumer?.track;
-          setRemoteStreams((prev) =>
-            prev.map((s) => {
-              if (s.userId !== meta.userId) return s;
+          setRemoteStreams((prev) => {
+            const next = prev.map((s) => {
+              if (!sameBroadcastParticipantId(s.userId, meta.userId)) return s;
               if (meta.source === 'screen') {
                 const ss = s.screenStream;
                 ss?.getTracks().forEach((t) => t.stop());
                 return { ...s, screenStream: null };
               }
               if (tr) {
-                const kept = s.stream.getTracks().filter((t) => t.id !== tr.id);
+                const kept = s.stream.getTracks().filter((t) => t.id !== tr.id && t.readyState !== 'ended');
                 return { ...s, stream: new MediaStream(kept) };
               }
               return s;
-            })
-          );
+            });
+            remoteStreamsRef.current = next;
+            return next;
+          });
+          setTimeout(() => {
+            const entry = remoteStreamsRef.current.find((s) =>
+              sameBroadcastParticipantId(s.userId, meta.userId)
+            );
+            if (!entry) return;
+            if (liveMediaTrackCount(entry) === 0) {
+              removeRemoteParticipantFromUi(entry.userId);
+            }
+          }, 2000);
         }
+        break;
+      }
+      case 'participant-left': {
+        removeRemoteParticipantFromUi(data?.userId);
         break;
       }
       case 'chat-message': {
@@ -1564,20 +1692,13 @@ function BeamTVInner() {
         });
         break;
       }
-      case 'broadcast-stopped':
-      case 'room-ended':
       case 'participant-kicked': {
-        const endMsg = String(data?.message || '').trim();
-        if (endMsg) {
-          setModerationEndBanner(endMsg);
-          setTimeout(() => {
-            setModerationEndBanner('');
-            handleNext();
-          }, 3200);
-        } else {
-          // Handle stream death or user kick nicely => move to next broadcast
-          handleNext();
-        }
+        removeRemoteParticipantFromUi(data?.kickedUserId);
+        break;
+      }
+      case 'broadcast-stopped':
+      case 'room-ended': {
+        markBroadcastEnded(data?.roomId);
         break;
       }
       default:
@@ -1631,6 +1752,10 @@ function BeamTVInner() {
   useEffect(() => {
     remoteStreamsRef.current = remoteStreams;
   }, [remoteStreams]);
+
+  useEffect(() => {
+    currentBroadcastRef.current = currentBroadcast;
+  }, [currentBroadcast]);
 
   // Standby mode: when empty, quietly poll for a new live broadcast (no UI flicker).
   useEffect(() => {
@@ -1705,8 +1830,8 @@ function BeamTVInner() {
         }
         // Other statuses (5xx, 429): inconclusive, don't count against the broadcast.
         if (deadChecks >= 2) {
-          realtimeDebug('[BeamTV] Broadcast no longer live (poll), advancing');
-          handleNext();
+          realtimeDebug('[BeamTV] Broadcast no longer live (poll), showing ended');
+          markBroadcastEnded(roomId);
         }
       } catch (_) {
         // Network error on our side — inconclusive.
@@ -1715,7 +1840,7 @@ function BeamTVInner() {
       }
     }, 12000);
     return () => clearInterval(id);
-  }, [status, currentBroadcast?.roomId, handleNext]);
+  }, [status, currentBroadcast?.roomId, markBroadcastEnded]);
 
   // Seed favourite state from backend favourite-broadcasters list.
   useEffect(() => {
@@ -1976,18 +2101,22 @@ function BeamTVInner() {
             <BroadcastSkeleton />
           )}
 
+          {status === 'ended' && (
+            <BeamTvIdleScreen
+              title="Beamcast is over"
+              subtitle="Refresh to watch the next live broadcast."
+              actionLabel="Refresh"
+              onAction={() => fetchNextBroadcast(sessionId)}
+            />
+          )}
+
           {status === 'empty' && (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
-              <div className="text-6xl mb-6 opacity-30">📺</div>
-              <p className="text-white/60 font-bold tracking-widest uppercase text-xl mb-2">No Active Broadcasts</p>
-              <p className="text-white/30 text-sm mb-8">Come back later or start your own Beamcast in the chat.</p>
-              <button
-                onClick={() => fetchNextBroadcast(sessionId)}
-                className="px-8 py-3 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition border border-white/20"
-              >
-                Refresh Channel
-              </button>
-            </div>
+            <BeamTvIdleScreen
+              title="No Active Broadcasts"
+              subtitle="Come back later or start your own Beamcast in the chat."
+              actionLabel="Refresh Channel"
+              onAction={() => fetchNextBroadcast(sessionId)}
+            />
           )}
 
           {status === 'error' && (

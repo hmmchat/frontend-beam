@@ -32,6 +32,8 @@ import {
   buildCameraVideoProduceOptions,
   getScreenShareConstraints,
   getScreenShareEncodings,
+  isScreenShareSupported,
+  getBrowserDisplayName,
   replaceKindTrackInStream,
   replaceScreenTrackInStream,
   removeTrackFromStream,
@@ -1201,8 +1203,9 @@ export default function useVideoChat() {
 
   const startScreenShare = useCallback(async () => {
     if (localScreenMsProducerRef.current || screenShareInFlightRef.current) return;
-    if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') {
-      window.alert('Screen sharing is not supported in this browser. Try Chrome on desktop, or Safari 17+ on iPhone.');
+    if (!isScreenShareSupported()) {
+      setReportNotification(`${getBrowserDisplayName()} doesn't support screen sharing.`);
+      setTimeout(() => setReportNotification(null), 3500);
       return;
     }
 
@@ -1248,7 +1251,8 @@ export default function useVideoChat() {
       const cancelled = e?.name === 'NotAllowedError' || e?.name === 'AbortError';
       if (!cancelled) {
         console.warn('[WebRTC] Screen share failed', e);
-        window.alert(e?.message || 'Could not share screen. Please try again.');
+        setReportNotification(e?.message || 'Could not share screen. Please try again.');
+        setTimeout(() => setReportNotification(null), 3500);
       }
       localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
       localScreenStreamRef.current = null;

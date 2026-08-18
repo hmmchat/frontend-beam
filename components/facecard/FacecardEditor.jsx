@@ -312,7 +312,7 @@ export default function FacecardEditor({
                           <img
                             src={selection.brand?.logoUrl}
                             alt=""
-                            className="w-[53%] h-[53%] object-contain"
+                            className="w-full h-full rounded-full object-contain"
                           />
                         ) : (
                           <img src="/assets/facecard/plus-sm.svg" alt="" className="w-[53%] h-[53%] opacity-60" />

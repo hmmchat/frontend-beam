@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 import { FaArrowLeft } from "react-icons/fa";
 import clsx from 'clsx';
@@ -8,6 +8,11 @@ import CompletionMeter from "@/components/facecard/CompletionMeter";
 import OverflowMarquee from "@/components/ui/OverflowMarquee";
 import FlipCycle from "@/components/ui/FlipCycle";
 import useFitScale from "@/lib/useFitScale";
+import {
+  getLiveNameError,
+  getNameValidationError,
+  normalizeDisplayNameWhitespace,
+} from "@/lib/username";
 
 /** Figma iPhone editor card width (node 9074:5711). */
 const FIGMA_EDITOR_WIDTH = 383;
@@ -28,12 +33,160 @@ function BracketFrame({ children, className, align = "start" }) {
       <span className="pointer-events-none absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/50" />
       <div
         className={clsx(
-          "flex min-w-0 w-full flex-col justify-center leading-tight overflow-hidden",
+          "flex min-w-0 w-full flex-col justify-center leading-tight overflow-x-hidden",
           centered && "items-center text-center",
         )}
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+function EditableUsername({
+  displayName,
+  username,
+  onSave,
+  className,
+  errorClassName,
+  align = "center",
+  marquee = false,
+  fitContent = false,
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(username || "");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef(null);
+  const skipBlurCommit = useRef(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(username || "");
+  }, [username, editing]);
+
+  useEffect(() => {
+    if (!editing || !inputRef.current) return;
+    inputRef.current.focus();
+    inputRef.current.select();
+  }, [editing]);
+
+  const startEdit = () => {
+    setDraft(username || displayName || "");
+    setError(getLiveNameError(username || displayName || ""));
+    setEditing(true);
+  };
+
+  const cancel = () => {
+    skipBlurCommit.current = true;
+    setDraft(username || "");
+    setError("");
+    setEditing(false);
+  };
+
+  const commit = async () => {
+    if (skipBlurCommit.current) {
+      skipBlurCommit.current = false;
+      return;
+    }
+    const next = normalizeDisplayNameWhitespace(draft).trim();
+    const validationError = getNameValidationError(draft);
+    if (validationError) {
+      setError(validationError);
+      inputRef.current?.focus();
+      return;
+    }
+    if (next === String(username || "").trim()) {
+      setError("");
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave?.(next);
+      setError("");
+      setEditing(false);
+    } catch (e) {
+      setError(e?.message || "Could not update name.");
+      inputRef.current?.focus();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={clsx("relative min-w-0", fitContent ? "w-auto" : "w-full")}>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={draft}
+          disabled={saving}
+          spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          aria-label="Username"
+          aria-invalid={Boolean(error)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setDraft(val);
+            setError(getLiveNameError(val));
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          style={
+            fitContent
+              ? { width: `${Math.max((draft || "User").length, 4) + 1}ch` }
+              : undefined
+          }
+          className={clsx(
+            "min-w-0 appearance-none bg-transparent p-0 m-0 text-white caret-white placeholder:text-white/40",
+            "border-0 border-b border-white/50 rounded-none outline-none shadow-none",
+            "focus:outline-none focus:border-white",
+            !fitContent && "w-full",
+            align === "center" && "text-center",
+            error && "border-rose-400 text-rose-200",
+            className,
+          )}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={startEdit}
+          aria-label="Edit username"
+          className={clsx(
+            "min-w-0 appearance-none bg-transparent border-0 p-0 m-0 cursor-text hover:opacity-80 transition-opacity",
+            fitContent ? "w-auto" : "w-full",
+            align === "center" && "text-center",
+            className,
+          )}
+        >
+          {marquee ? (
+            <OverflowMarquee text={displayName} className={align === "center" ? "text-center" : undefined} />
+          ) : (
+            displayName
+          )}
+        </button>
+      )}
+      {error ? (
+        <p
+          role="alert"
+          className={clsx(
+            "font-outfit font-medium text-rose-400 leading-tight mt-0.5",
+            errorClassName,
+          )}
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -57,6 +210,7 @@ export default function FacecardEditor({
   photoUploading = false,
   photoError = "",
   onDeletePhoto,
+  onUpdateUsername,
 }) {
   const leaveEditor = () => {
     if (onExitEditor) onExitEditor();
@@ -136,8 +290,15 @@ export default function FacecardEditor({
                   <img src="/assets/facecard/close.svg" alt="" className="size-3" />
                 </button>
                 <BracketFrame className="flex-1" align="center">
-                  <h2 className="font-otomanopee text-[12px] text-white min-w-0 w-full overflow-hidden text-center">
-                    <OverflowMarquee text={firstName} className="text-center" />
+                  <h2 className="font-otomanopee text-[12px] text-white min-w-0 w-full text-center">
+                    <EditableUsername
+                      displayName={firstName}
+                      username={user?.username}
+                      onSave={onUpdateUsername}
+                      marquee
+                      className="font-otomanopee text-[12px] text-white"
+                      errorClassName="text-[8px]"
+                    />
                   </h2>
                   <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden text-center">
                     <OverflowMarquee text={`UserId: ${user?.id?.slice(0, 8) || "4heu24sds"}`} className="text-center" />
@@ -552,7 +713,15 @@ export default function FacecardEditor({
                       <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-4', 'h-4', 'border-b-2', 'border-r-2', 'border-white/50')}></span>
 
                       <h2 className={clsx('font-otomanopee', 'text-[20px]', 'leading-none', 'text-start')}>
-                        {firstName}
+                        <EditableUsername
+                          displayName={firstName}
+                          username={user?.username}
+                          onSave={onUpdateUsername}
+                          align="start"
+                          fitContent
+                          className="font-otomanopee text-[20px] leading-none text-white"
+                          errorClassName="text-[11px] whitespace-nowrap"
+                        />
                       </h2>
 
                       <p className={clsx('text-[16px]', 'font-outfit', 'font-light', 'mt-1', 'text-center')}>

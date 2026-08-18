@@ -535,6 +535,32 @@ function FacecardContent() {
     }
   };
 
+  const updateUsername = async (username) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) throw new Error("You need to be signed in to update your name.");
+    const previous = user?.username;
+    setUser((prev) => (prev ? { ...prev, username } : prev));
+    try {
+      const res = await fetch(API.USERS.UPDATE_PROFILE, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ username }),
+      });
+      if (!res.ok) {
+        const msg = await readHttpErrorMessage(res);
+        throw new Error(msg || "Could not update name.");
+      }
+      const data = await res.json().catch(() => null);
+      if (data?.user) setUser(data.user);
+    } catch (e) {
+      setUser((prev) => (prev ? { ...prev, username: previous } : prev));
+      throw e;
+    }
+  };
+
   const selectMusic = async (song) => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -1110,6 +1136,7 @@ function FacecardContent() {
             photoUploading={photoUploading}
             photoError={photoError}
             onDeletePhoto={handleDeletePhoto}
+            onUpdateUsername={updateUsername}
           />
         )}
       </div>

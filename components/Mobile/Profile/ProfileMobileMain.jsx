@@ -108,22 +108,24 @@ export default function ProfileMobileMain({
             className="flex cursor-pointer items-center justify-between gap-2 border-b border-white/20 pb-5"
           >
             <div>
-              <p className="text-sm">My account</p>
-              <p className="text-[10px] text-white/60 font-outfit">Fill account details</p>
+              <p className="text-sm">My facecard</p>
+              <p className="text-[10px] text-white/60 font-outfit">Fill facecard details</p>
             </div>
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push("/facecard?view=editor&from=profile");
-                }}
-                className="shrink-0 rounded-full border border-white/90 px-2 py-1 text-[9px] transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
-                aria-label="Open profile completion"
-              >
-                {progress}% complete
-              </button>
+              {Number(progress) < 100 ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/facecard?view=editor&from=profile");
+                  }}
+                  className="shrink-0 rounded-full border border-white/90 px-2 py-1 text-[9px] transition-all hover:bg-white/10 hover:scale-[1.03] active:scale-95"
+                  aria-label="Open profile completion"
+                >
+                  {progress}% complete
+                </button>
+              ) : null}
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/60">
                 <FaAngleRight />
               </span>

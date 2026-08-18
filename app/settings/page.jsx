@@ -248,7 +248,7 @@ function SettingsContent() {
           </span>
           <span className="text-base font-medium">Settings</span>
         </button>
-        <BeamColourLogo alt="logo" className="w-[187px]" />
+        <BeamColourLogo alt="logo" className="w-24 md:w-[187px] shrink-0" />
       </header>
 
       <main className="mx-auto w-full max-w-5xl rounded-[32px] md:rounded-[60px] border md:border-white/70 border-white/40 px-5 pt-8 pb-10 md:px-20 md:pt-16 overflow-y-auto scrollbar-hide min-h-0 flex-1">

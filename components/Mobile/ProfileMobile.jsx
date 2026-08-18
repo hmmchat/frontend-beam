@@ -230,7 +230,9 @@ export default function ProfileMobile() {
   return (
     <div
       className={`relative flex h-[100dvh] w-full flex-col items-center px-4 pt-6 text-white scrollbar-hide ${
-        activeTab === "rewards" ? "overflow-hidden" : "overflow-y-auto"
+        activeTab === "rewards" || activeTab === "mysterybox"
+          ? "overflow-hidden"
+          : "overflow-y-auto"
       }`}
     >
       {/* BACKGROUND */}
@@ -260,7 +262,10 @@ export default function ProfileMobile() {
       )}
 
       {activeTab === "mysterybox" && (
-        <ProfileMobileGetMoney onBack={() => setActiveTab("main")} />
+        <ProfileMobileGetMoney
+          className="min-h-0 w-full max-w-[370px] flex-1 self-center"
+          onBack={() => setActiveTab("main")}
+        />
       )}
 
       {activeTab === "facePreview" && (

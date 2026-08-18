@@ -63,7 +63,7 @@ function FacecardLockedGate({ progress, onBack }) {
       {onBack}
 
       <div className="flex w-full max-w-md flex-1 flex-col items-center justify-center gap-5 pb-8">
-        <p className="font-sigmar text-xl font-extrabold text-[#F2AD00] md:text-2xl">
+        <p className="hidden font-sigmar text-xl font-extrabold text-[#F2AD00] md:block md:text-2xl">
           Mystery Beam Box
         </p>
 

@@ -24,7 +24,7 @@ export default function ProfileMobileAccount({
         >
           <ArrowLeft size={18} />
         </button>
-        <p className="text-base">My account</p>
+        <p className="text-base">My facecard</p>
       </div>
       {user ? (
         <div className="flex justify-center w-full min-h-0 flex-1 pb-8">

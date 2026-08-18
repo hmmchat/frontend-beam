@@ -141,18 +141,18 @@ export default function FacecardEditor({
                   ✕
                 </button>
                 <BracketFrame className="flex-1">
-                  <h2 className="text-[12px] text-white min-w-0 w-full overflow-hidden">
+                  <h2 className="font-otomanopee text-[12px] text-white min-w-0 w-full overflow-hidden">
                     <OverflowMarquee text={firstName} />
                   </h2>
-                  <p className="text-[10px] font-outfit text-white min-w-0 w-full overflow-hidden">
-                    <OverflowMarquee text={`UserID:${user?.id?.slice(0, 8) || "4heu24sds"}`} />
+                  <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden">
+                    <OverflowMarquee text={`UserId: ${user?.id?.slice(0, 8) || "4heu24sds"}`} />
                   </p>
                 </BracketFrame>
               </div>
 
               <div className="flex items-center gap-2 min-w-0">
                 <BracketFrame className="flex-1">
-                  <p className="text-[10px] uppercase font-outfit text-white min-w-0 w-full overflow-hidden">
+                  <p className="text-[10px] font-outfit font-normal text-white min-w-0 w-full overflow-hidden">
                     <OverflowMarquee
                       text={`DOB : ${
                         user?.dateOfBirth
@@ -161,7 +161,7 @@ export default function FacecardEditor({
                       }`}
                     />
                   </p>
-                  <p className="text-[10px] font-outfit font-thin text-white min-w-0 w-full overflow-hidden">
+                  <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden">
                     <OverflowMarquee text={`Zodiac : ${zodiac?.name || "Gemini"}`} />
                   </p>
                 </BracketFrame>
@@ -184,11 +184,16 @@ export default function FacecardEditor({
 
               <div className="flex items-center gap-2 min-w-0">
                 <BracketFrame className="flex-1">
-                  <p className="text-[10px] font-outfit text-white min-w-0 w-full overflow-hidden">
+                  <p className="text-[10px] font-outfit font-normal text-white min-w-0 w-full overflow-hidden">
                     <OverflowMarquee text="Gender Identity" />
                   </p>
-                  <p className="text-[10px] font-outfit text-white min-w-0 w-full overflow-hidden">
-                    <OverflowMarquee text={user?.gender} />
+                  <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden">
+                    <OverflowMarquee
+                      text={(user?.gender || "Female")
+                        .toLowerCase()
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    />
                   </p>
                 </BracketFrame>
                 <button
@@ -214,7 +219,7 @@ export default function FacecardEditor({
                 <span className="min-w-0 flex-1">
                   <OverflowMarquee
                     text="Facecard"
-                    className="text-[10px] sm:text-xs font-bold tracking-widest text-white"
+                    className="font-otomanopee text-[12px] text-white"
                   />
                 </span>
               </button>
@@ -223,18 +228,18 @@ export default function FacecardEditor({
             <div className="relative z-10 col-span-2 flex min-h-0 flex-col px-2 pt-2 pb-2">
 
               <div className="grid grid-cols-[auto_minmax(0,1fr)_2.5rem] gap-x-2 gap-y-2 items-center px-1 shrink-0">
-                <span className="text-[12px] font-black tracking-wide">
+                <span className="font-otomanopee text-[12px] text-white">
                   Interests
                 </span>
                 <div
                   onClick={() => setShowSelector("interests")}
-                  className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[11px] overflow-hidden"
+                  className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[10px] font-outfit font-normal overflow-hidden"
                 >
                   {interests.length > 0 ? (
                     <OverflowMarquee
                       key={interestIndex}
                       text={interests[interestIndex]}
-                      className="animate-slide-down font-outfit text-center"
+                      className="animate-slide-down font-outfit font-normal text-center"
                     />
                   ) : (
                     "Select"
@@ -248,18 +253,18 @@ export default function FacecardEditor({
                   <img src="/assets/plus.png" alt="" className="w-4 h-4" />
                 </button>
 
-                <span className="text-[12px] font-black tracking-wide">
+                <span className="font-otomanopee text-[12px] text-white">
                   Causes
                 </span>
                 <div
                   onClick={() => setShowSelector("values")}
-                  className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[11px] overflow-hidden"
+                  className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[10px] font-outfit font-normal overflow-hidden"
                 >
                   {causes.length > 0 ? (
                     <OverflowMarquee
                       key={causeIndex}
                       text={causes[causeIndex]}
-                      className="animate-slide-down font-outfit text-center"
+                      className="animate-slide-down font-outfit font-normal text-center"
                     />
                   ) : (
                     "Select"
@@ -273,7 +278,7 @@ export default function FacecardEditor({
                   <img src="/assets/plus.png" alt="" className="w-4 h-4" />
                 </button>
 
-                <span className="text-[12px] font-black tracking-wide">
+                <span className="font-otomanopee text-[12px] text-white">
                   Brands
                 </span>
                 <div className="col-span-2 grid grid-cols-5 gap-2 min-w-0">
@@ -415,31 +420,55 @@ export default function FacecardEditor({
             </div>
           </div>
 
-          <div className="w-full flex items-center gap-2 px-3 pt-1 pb-1 min-w-0 shrink-0">
+          <div className="w-full flex items-center gap-2 px-3 pt-1 pb-1 min-w-0 shrink-0 overflow-visible">
             <div
               onClick={() => setShowSelector("music")}
-              className="relative shrink-0 active:scale-95 transition"
+              className="relative w-24 h-24 shrink-0 overflow-visible active:scale-95 transition"
             >
+              <div className="absolute inset-0 rounded-full border-2 border-white/60" />
               <div
-                className={`w-24 h-24 rounded-full border border-white/60 border-[2px] flex items-center justify-center ${user?.musicPreference ? "" : "bg-white/5"}`}
+                className={`absolute inset-[2px] rounded-full overflow-hidden flex items-center justify-center ${user?.musicPreference ? "animate-spin-slow" : "bg-white/5"}`}
               >
-                <div
-                  className={`w-[calc(100%-4px)] h-[calc(100%-4px)] rounded-full p-1 overflow-hidden flex items-center justify-center ${user?.musicPreference ? "animate-spin-slow" : ""}`}
-                >
-                  {user?.musicPreference?.albumArtUrl ? (
-                    <img
-                      src={user.musicPreference.albumArtUrl}
-                      className="w-full h-full rounded-full object-cover border-[2px] border-white/40"
-                      alt="Album Art"
-                    />
-                  ) : (
-                    <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
-                  )}
-                </div>
+                {user?.musicPreference?.albumArtUrl ? (
+                  <img
+                    src={user.musicPreference.albumArtUrl}
+                    className="w-full h-full rounded-full object-cover border-[2px] border-white/40"
+                    alt="Album Art"
+                  />
+                ) : (
+                  <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
+                )}
               </div>
+
+              {user?.musicPreference ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 130 88"
+                  fill="none"
+                  className="pointer-events-none absolute z-20 h-auto w-[70%] -scale-x-100 overflow-visible"
+                  style={{ left: "-28%", top: "14%" }}
+                >
+                  <path d="M127.589 1.93553L52.3248 1.93551L11.4682 73.876" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                  <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(-1.03187e-07 1 1 1.03187e-07 3.74761e-06 71.542)" fill="white" fillOpacity="0.85" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 154 140"
+                  fill="none"
+                  className="pointer-events-none absolute z-20 h-auto w-[52%] -scale-x-100 overflow-visible"
+                  style={{ left: "-48%", top: "8%" }}
+                >
+                  <path d="M111.059 1.93613L45.5457 38.9875L45.3976 121.72" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                  <circle cx="8.06439" cy="8.06439" r="8.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 34.2666 125.335)" fill="white" fillOpacity="0.5" />
+                </svg>
+              )}
             </div>
 
-            <div className="relative flex-1 min-w-0 px-4 py-2 flex items-center">
+            <div
+              onClick={() => setShowSelector("music")}
+              className="relative flex-1 min-w-0 px-4 py-2 flex items-center"
+            >
               <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/50" />
               <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/50" />
               <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/50" />
@@ -447,24 +476,38 @@ export default function FacecardEditor({
               <div className="flex flex-col justify-center items-stretch w-full min-w-0 overflow-hidden">
                 <OverflowMarquee
                   text={user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
-                  className="text-white text-[10px] font-outfit leading-tight"
+                  className="text-white text-[10px] font-outfit font-normal leading-tight"
                 />
                 <OverflowMarquee
-                  text={user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
-                  className="text-white/60 font-outfit text-[10px]"
+                  text={user?.musicPreference?.artist || user?.musicPreference?.artistName || "Artist name"}
+                  className="text-white font-outfit font-light text-[10px]"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-6 gap-1 opacity-50 shrink-0 max-[340px]:hidden">
-              {[...Array(48)].map((_, i) => (
-                <div key={i} className="w-1 h-1 bg-white rounded-full" />
-              ))}
+            <div className="flex flex-col items-center gap-1 shrink-0 pt-4">
+              <div className="flex w-[44px] flex-col gap-1">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((row) => (
+                  <div key={row} className="flex items-center gap-1">
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <span
+                        key={i}
+                        className="size-1 shrink-0 rounded-full bg-white/50"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <img
+                src={user?.musicPreference ? "/assets/facecard/toggle-on.svg" : "/assets/facecard/toggle-off.svg"}
+                alt=""
+                className="h-6 w-6"
+              />
             </div>
           </div>
         </div>
-        <p className="shrink-0 font-outfit text-xs font-thin text-center pt-1 pb-0.5">
-          Facecard Creation tool V1
+        <p className="shrink-0 font-outfit font-light text-[10px] text-center pt-1 pb-0.5">
+          Facecard creation tool V1
         </p>
         </div>
         </div>
@@ -502,12 +545,12 @@ export default function FacecardEditor({
                       <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-4', 'h-4', 'border-b-2', 'border-l-2', 'border-white/50')}></span>
                       <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-4', 'h-4', 'border-b-2', 'border-r-2', 'border-white/50')}></span>
 
-                      <h2 className={clsx('text-2xl', 'tracking-wide', 'leading-none', 'text-start')}>
+                      <h2 className={clsx('font-otomanopee', 'text-[20px]', 'leading-none', 'text-start')}>
                         {firstName}
                       </h2>
 
-                      <p className={clsx('text-[11px]', 'opacity-90', 'font-outfit', 'tracking-widest', 'uppercase', 'mt-1', 'text-center')}>
-                        USERID: {user?.id?.slice(0, 8)}
+                      <p className={clsx('text-[16px]', 'font-outfit', 'font-light', 'mt-1', 'text-center')}>
+                        UserId: {user?.id?.slice(0, 8)}
                       </p>
                     </div>
                   </div>
@@ -646,14 +689,14 @@ export default function FacecardEditor({
                       <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-4', 'h-4', 'border-b-[2px]', 'border-l-[2px]', 'border-white/40')}></span>
                       <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-4', 'h-4', 'border-b-[2px]', 'border-r-[2px]', 'border-white/40')}></span>
 
-                      <p className={clsx('text-[12px]', 'uppercase', 'opacity-80', 'font-outfit')}>
+                      <p className={clsx('text-[16px]', 'font-outfit', 'font-normal')}>
                         DOB :{" "}
                         {user?.dateOfBirth
                           ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
                           : ""}
                       </p>
 
-                      <p className={clsx('text-[12px]', 'mt-1', 'font-outfit')}>
+                      <p className={clsx('text-[16px]', 'mt-1', 'font-outfit', 'font-light')}>
                         Zodiac : {zodiac?.name || "Vacant"}
                       </p>
                     </div>
@@ -667,9 +710,12 @@ export default function FacecardEditor({
                       <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-4', 'h-4', 'border-b-2', 'border-l-2', 'border-white/40')}></span>
                       <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-4', 'h-4', 'border-b-2', 'border-r-2', 'border-white/40')}></span>
 
-                      <p className={clsx('text-[12px]', 'font-outfit')}>Gender Identity</p>
-                      <p className={clsx('text-[12px]', 'font-outfit', 'mt-1')}>
-                        {user?.gender || "Female"}
+                      <p className={clsx('text-[16px]', 'font-outfit', 'font-normal')}>Gender Identity</p>
+                      <p className={clsx('text-[16px]', 'font-outfit', 'font-light', 'mt-1')}>
+                        {(user?.gender || "Female")
+                          .toLowerCase()
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())}
                       </p>
                     </div>
                   </div>
@@ -682,8 +728,8 @@ export default function FacecardEditor({
                       <span className={clsx('absolute', 'bottom-0', 'left-0', 'w-4', 'h-4', 'border-b-2', 'border-l-2', 'border-white/40')}></span>
                       <span className={clsx('absolute', 'bottom-0', 'right-0', 'w-4', 'h-4', 'border-b-2', 'border-r-2', 'border-white/40')}></span>
 
-                      <p className="text-[12px]   ">Brands</p>
-                      <p className={clsx('text-[12px]', 'font-outfit')}>
+                      <p className={clsx('text-[16px]', 'font-otomanopee')}>Brands</p>
+                      <p className={clsx('text-[16px]', 'font-outfit', 'font-light')}>
                         Can&apos;t live w/o &#39;em
                       </p>
                     </div>
@@ -722,12 +768,12 @@ export default function FacecardEditor({
                       onClick={() => setShowSelector("interests")}
                       className={clsx('ml-4', 'flex-1', 'min-w-0', 'h-18', 'rounded-full', 'border', 'border-white/60', 'px-5', 'flex', 'items-center', 'justify-between', 'hover:bg-white/5', 'transition', 'overflow-hidden')}
                     >
-                      <span className={clsx('text-sm', 'font-thin', 'tracking-wide', 'font-outfit')}>Interests:</span>
+                      <span className={clsx('text-[16px]', 'font-otomanopee')}>Interests:</span>
                       <div className={clsx('flex-1', 'flex', 'justify-end', 'overflow-hidden')}>
                         {interests.length > 0 ? (
                           <span
                             key={interestIndex}
-                            className={clsx('text-sm', 'font-outfit', 'opacity-90', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
+                            className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
                           >
                             {interests[interestIndex]}
                           </span>
@@ -756,7 +802,7 @@ export default function FacecardEditor({
 
 
 
-                  <div className={clsx('flex', 'items-center', 'font-outfit', 'gap-4')}>
+                  <div className={clsx('flex', 'items-center', 'gap-4')}>
                     <div className={clsx('w-[84px]', 'h-[84px]', 'rounded-[20px]', 'border-2', 'border-white/60', 'flex', 'items-center', 'justify-center', 'text-3xl', 'shadow-inner')}>
                       {user?.gender === "MALE"
                         ? "♂"
@@ -769,12 +815,12 @@ export default function FacecardEditor({
                       onClick={() => setShowSelector("values")}
                       className={clsx('ml-4', 'flex-1', 'min-w-0', 'h-18', 'rounded-full', 'border', 'border-white/60', 'px-5', 'flex', 'items-center', 'justify-between', 'hover:bg-white/5', 'transition', 'overflow-hidden')}
                     >
-                      <span className={clsx('text-sm', 'tracking-wide')}>Causes:</span>
+                      <span className={clsx('text-[16px]', 'font-otomanopee')}>Causes:</span>
                       <div className={clsx('flex-1', 'flex', 'justify-end', 'overflow-hidden')}>
                         {causes.length > 0 ? (
                           <span
                             key={causeIndex}
-                            className={clsx('text-sm', 'opacity-90', 'font-outfit', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
+                            className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
                           >
                             {causes[causeIndex]}
                           </span>
@@ -829,7 +875,7 @@ export default function FacecardEditor({
             </div>
 
             {/* Right Side Info Col */}
-            <div className={clsx('w-full', 'lg:w-[260px]', 'xl:w-[300px]', 'flex', 'flex-col', 'gap-10', 'py-6', 'pr-4')}>
+            <div className={clsx('w-full', 'lg:w-[260px]', 'xl:w-[300px]', 'flex', 'flex-col', 'gap-10', 'py-6', 'pr-4', 'overflow-visible')}>
               {/* Progress Area */}
               <div className={clsx('flex', 'flex-col', 'items-center', 'gap-6', 'overflow-visible')}>
                 <CompletionMeter percent={progress} size="desktop" />
@@ -837,13 +883,13 @@ export default function FacecardEditor({
                 <button
                   type="button"
                   onClick={() => onOpenFacecardPreview?.()}
-                  className={clsx('w-[80%]', 'py-6', 'border-2', 'border-b-4', 'border-white/40', 'rounded-[18px]', 'flex', 'items-center', 'justify-center', 'gap-3', 'hover:bg-white/5', 'transition', 'font-bold', 'tracking-widest', 'uppercase', 'text-xs')}
+                  className={clsx('w-[80%]', 'py-6', 'border-2', 'border-b-4', 'border-white/40', 'rounded-[18px]', 'flex', 'items-center', 'justify-center', 'gap-3', 'hover:bg-white/5', 'transition')}
                 >
                   <span className="text-xl">
                     <img src="/eye.svg" alt="" />
                   </span>
 
-                  <span className={clsx('text-xs', 'font-bold', 'tracking-widest', 'text-white')}>
+                  <span className={clsx('font-otomanopee', 'text-[20px]', 'text-white')}>
                     Facecard
                   </span>
                 </button>
@@ -852,33 +898,26 @@ export default function FacecardEditor({
               {/* Music Section */}
               <div
                 onClick={() => setShowSelector("music")}
-                className={clsx('flex-1', 'flex', 'flex-col', 'items-center', 'gap-6', 'relative', '0', 'meeting', 'now', 'group')}
+                className={clsx('flex-1', 'flex', 'flex-col', 'items-center', 'gap-6', 'relative', 'overflow-visible', 'group')}
               >
-                {user?.musicPreference ? (
-                  /* when music is selected */
-                  <div className={clsx('absolute', '-right-8', 'z-10')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="90" viewBox="0 0 130 88" fill="none">
-                      <path d="M127.589 1.93553L52.3248 1.93551L11.4682 73.876" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
-                      <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(-1.03187e-07 1 1 1.03187e-07 3.74761e-06 71.542)" fill="white" fillOpacity="0.5" />
-                    </svg>
-                  </div>
-                ) : (
-                  /* when music is not selected */
-                  <div className={clsx('absolute', '-right-16', 'z-10')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="124" height="130" viewBox="0 0 154 140" fill="none">
-                      <path d="M111.059 1.93613L45.5457 38.9875L45.3976 121.72" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
-                      <circle cx="8.06439" cy="8.06439" r="8.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 34.2666 125.335)" fill="white" fillOpacity="0.5" />
-                    </svg>
-                  </div>
-                )}
-
-
-
-                <div className={clsx('relative', 'w-32', 'sm:w-36', 'md:w-44', 'aspect-square', 'flex', 'items-center', 'justify-center')}>
+                <div className={clsx('relative', 'w-32', 'sm:w-36', 'md:w-44', 'aspect-square', 'flex', 'items-center', 'justify-center', 'overflow-visible')}>
                   <div className={clsx('absolute', 'inset-0', 'rounded-full', 'border-[2px]', 'border-white/80')} />
                   <div className={clsx('absolute', 'inset-[2.2px]', 'rounded-full', 'border-[2px]', 'border-white/50')} />
 
-                  <div className={clsx('absolute', 'inset-3', 'rounded-full', 'overflow-hidden', 'border-2', 'border-white/30', 'animate-spin-slow', 'flex', 'items-center', 'justify-center')}>
+                  <div
+                    className={clsx(
+                      'absolute',
+                      'inset-3',
+                      'rounded-full',
+                      'overflow-hidden',
+                      'border-2',
+                      'border-white/30',
+                      'flex',
+                      'items-center',
+                      'justify-center',
+                      user?.musicPreference && 'animate-spin-slow',
+                    )}
+                  >
                     {user?.musicPreference?.albumArtUrl ? (
                       <img
                         src={user.musicPreference.albumArtUrl}
@@ -890,7 +929,29 @@ export default function FacecardEditor({
                     )}
                   </div>
 
-
+                  {user?.musicPreference ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 130 88"
+                      fill="none"
+                      className="pointer-events-none absolute z-20 h-auto w-[72%] overflow-visible"
+                      style={{ left: "58%", top: "-8%" }}
+                    >
+                      <path d="M127.589 1.93553L52.3248 1.93551L11.4682 73.876" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                      <circle cx="7.06439" cy="7.06439" r="7.06439" transform="matrix(-1.03187e-07 1 1 1.03187e-07 3.74761e-06 71.542)" fill="white" fillOpacity="0.85" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 154 140"
+                      fill="none"
+                      className="pointer-events-none absolute z-20 h-auto w-[58%] overflow-visible"
+                      style={{ left: "82%", top: "10%" }}
+                    >
+                      <path d="M111.059 1.93613L45.5457 38.9875L45.3976 121.72" stroke="white" strokeOpacity="0.5" strokeWidth="3.87091" strokeLinecap="round" />
+                      <circle cx="8.06439" cy="8.06439" r="8.06439" transform="matrix(0.492282 0.870436 0.870436 -0.492282 34.2666 125.335)" fill="white" fillOpacity="0.5" />
+                    </svg>
+                  )}
                 </div>
 
 
@@ -905,26 +966,26 @@ export default function FacecardEditor({
                     {/* Song */}
                     {/* Song */}
                     <div className={clsx('w-[60%]', 'mx-auto', 'overflow-hidden', 'whitespace-nowrap', 'mask-grad')}>
-                      <div className={clsx('animate-marquee-reverse', 'whitespace-nowrap', 'text-[12px]', 'font-outfit', 'text-white')}>
+                      <div className={clsx('animate-marquee-reverse', 'whitespace-nowrap', 'text-[16px]', 'font-outfit', 'font-normal', 'text-white')}>
                         <span className="px-4">
-                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Tap to add music"}
                         </span>
 
                         <span className="px-4">
-                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Select Song"}
+                          {user?.musicPreference?.name || user?.musicPreference?.songName || "Tap to add music"}
                         </span>
                       </div>
                     </div>
 
                     {/* Artist */}
                     <div className={clsx('w-[60%]', 'mx-auto', 'overflow-hidden', 'whitespace-nowrap', '-mt-1', 'mask-grad')}>
-                      <div className={clsx('animate-marquee-reverse', 'whitespace-nowrap', 'text-[12px]', 'font-outfit', 'text-white/60')}>
+                      <div className={clsx('animate-marquee-reverse', 'whitespace-nowrap', 'text-[16px]', 'font-outfit', 'font-light', 'text-white')}>
                         <span className="px-4">
-                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Artist name"}
                         </span>
 
                         <span className="px-4">
-                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Spotify"}
+                          {user?.musicPreference?.artist || user?.musicPreference?.artistName || "Artist name"}
                         </span>
                       </div>
                     </div>
@@ -932,10 +993,24 @@ export default function FacecardEditor({
                   </div>
                 </div>
 
-                <div className={clsx('grid', 'grid-cols-12', 'gap-1', 'opacity-70')}>
-                  {[...Array(36)].map((_, i) => (
-                    <div key={i} className={clsx('w-1', 'h-1', 'bg-white', 'rounded-full')}></div>
-                  ))}
+                <div className={clsx('mt-auto', 'flex', 'w-full', 'items-center', 'justify-between', 'gap-3')}>
+                  <div className={clsx('flex', 'w-[181px]', 'shrink-0', 'flex-col', 'gap-1')}>
+                    {[0, 1, 2].map((row) => (
+                      <div key={row} className={clsx('flex', 'items-center', 'gap-[5.18px]')}>
+                        {Array.from({ length: 18 }, (_, i) => (
+                          <span
+                            key={i}
+                            className={clsx('size-[5.18px]', 'shrink-0', 'rounded-full', 'bg-white/50')}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <img
+                    src={user?.musicPreference ? "/assets/facecard/toggle-on.svg" : "/assets/facecard/toggle-off.svg"}
+                    alt=""
+                    className="h-10 w-10 shrink-0"
+                  />
                 </div>
               </div>
             </div>
@@ -944,7 +1019,7 @@ export default function FacecardEditor({
           </div>
         </div>
 
-        <p className={clsx('font-outfit', 'md:w-[90%]', 'mt-3', 'text-xs', 'font-thin', 'text-right')}>Facecard Creation tool V1</p>
+        <p className={clsx('font-outfit', 'font-light', 'md:w-[90%]', 'mt-3', 'text-[14px]', 'text-right')}>Facecard creation tool V1</p>
       </section >
 
 

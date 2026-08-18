@@ -11,14 +11,26 @@ import useFitScale from "@/lib/useFitScale";
 /** Figma iPhone editor card width (node 9074:5711). */
 const FIGMA_EDITOR_WIDTH = 383;
 
-function BracketFrame({ children, className }) {
+function BracketFrame({ children, className, align = "start" }) {
+  const centered = align === "center";
   return (
-    <div className={clsx("relative min-w-0 w-full pl-3.5 pr-5 py-2.5 min-h-[42px]", className)}>
+    <div
+      className={clsx(
+        "relative min-w-0 w-full py-2.5 min-h-[42px]",
+        centered ? "px-3.5" : "pl-3.5 pr-5",
+        className,
+      )}
+    >
       <span className="pointer-events-none absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/50" />
       <span className="pointer-events-none absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/50" />
       <span className="pointer-events-none absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/50" />
       <span className="pointer-events-none absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/50" />
-      <div className="flex min-w-0 w-full flex-col justify-center leading-tight overflow-hidden">
+      <div
+        className={clsx(
+          "flex min-w-0 w-full flex-col justify-center leading-tight overflow-hidden",
+          centered && "items-center text-center",
+        )}
+      >
         {children}
       </div>
     </div>
@@ -136,16 +148,16 @@ export default function FacecardEditor({
               <div className="flex items-center gap-2 min-w-0">
                 <button
                   onClick={leaveEditor}
-                  className="w-9 h-9 shrink-0 rounded-full border border-white/50 flex items-center justify-center text-md hover:bg-white/10 transition-all active:scale-95"
+                  className="size-[36.111px] shrink-0 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
                 >
-                  ✕
+                  <img src="/assets/facecard/close.svg" alt="" className="size-3" />
                 </button>
-                <BracketFrame className="flex-1">
-                  <h2 className="font-otomanopee text-[12px] text-white min-w-0 w-full overflow-hidden">
-                    <OverflowMarquee text={firstName} />
+                <BracketFrame className="flex-1" align="center">
+                  <h2 className="font-otomanopee text-[12px] text-white min-w-0 w-full overflow-hidden text-center">
+                    <OverflowMarquee text={firstName} className="text-center" />
                   </h2>
-                  <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden">
-                    <OverflowMarquee text={`UserId: ${user?.id?.slice(0, 8) || "4heu24sds"}`} />
+                  <p className="text-[10px] font-outfit font-light text-white min-w-0 w-full overflow-hidden text-center">
+                    <OverflowMarquee text={`UserId: ${user?.id?.slice(0, 8) || "4heu24sds"}`} className="text-center" />
                   </p>
                 </BracketFrame>
               </div>
@@ -168,16 +180,16 @@ export default function FacecardEditor({
                 <button
                   type="button"
                   onClick={onPickZodiac || (() => setShowSelector("zodiacs"))}
-                  className="w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-white hover:bg-white/5 transition"
+                  className="size-[58.276px] shrink-0 border border-white/50 border-b-[3px] rounded-[13.986px] flex items-center justify-center overflow-hidden text-white hover:bg-white/5 transition"
                 >
                   {zodiac?.imageUrl ? (
                     <img
                       src={zodiac.imageUrl}
-                      className="h-5 w-5 object-contain brightness-0 invert"
+                      className="size-6 object-contain brightness-0 invert"
                       alt=""
                     />
                   ) : (
-                    <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-40" />
+                    <img src="/assets/facecard/plus-sm.svg" alt="" className="size-6 opacity-40" />
                   )}
                 </button>
               </div>
@@ -198,25 +210,31 @@ export default function FacecardEditor({
                 </BracketFrame>
                 <button
                   type="button"
-                  className="w-10 h-10 shrink-0 border border-white/40 border-b-[3px] rounded-[10.986px] flex items-center justify-center text-xl text-white"
+                  className="size-[58.276px] shrink-0 border border-white/50 rounded-[13.986px] flex items-center justify-center overflow-hidden"
                 >
-                  {user?.gender === "MALE"
-                    ? "♂"
-                    : user?.gender === "FEMALE"
-                      ? "♀"
-                      : "⚧"}
+                  <img
+                    src={
+                      user?.gender === "MALE"
+                        ? "/assets/gender-male.svg"
+                        : user?.gender === "FEMALE" || !user?.gender
+                          ? "/assets/facecard/gender-female.svg"
+                          : "/assets/gender-intersex.svg"
+                    }
+                    alt=""
+                    className="size-6 object-contain"
+                  />
                 </button>
               </div>
             </div>
 
-            <div className="relative z-10 flex flex-col items-center justify-start gap-2 px-1 pt-1 min-h-0">
+            <div className="relative z-10 flex flex-col items-center justify-start gap-4 px-1 pt-1 min-h-0">
               <CompletionMeter percent={progress} size="mobile" className="w-full max-w-[104px]" />
               <button
                 onClick={() => onOpenFacecardPreview?.()}
-                className="w-full min-w-0 py-2.5 px-2 border border-white/40 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-white/10 active:scale-95 transition-all"
+                className="w-full max-w-[128px] h-[58px] min-w-0 p-3 border border-white/50 rounded-[18px] flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all"
               >
-                <img src="/eye.svg" alt="" className="w-4 h-4 shrink-0" />
-                <span className="min-w-0 flex-1">
+                <img src="/assets/facecard/eye.svg" alt="" className="size-5 shrink-0 object-contain" />
+                <span className="min-w-0">
                   <OverflowMarquee
                     text="Facecard"
                     className="font-otomanopee text-[12px] text-white"
@@ -248,9 +266,9 @@ export default function FacecardEditor({
                 <button
                   type="button"
                   onClick={() => setShowSelector("interests")}
-                  className="w-10 h-10 shrink-0 flex items-center justify-center border border-white/60 border-b-2 rounded-lg bg-white/5 hover:bg-white/10 active:scale-90 transition"
+                  className="size-10 shrink-0 flex items-center justify-center border border-white/50 border-b-[3px] rounded-[8px] hover:bg-white/10 active:scale-90 transition"
                 >
-                  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+                  <img src="/assets/facecard/plus-sm.svg" alt="" className="size-[11.655px] opacity-60" />
                 </button>
 
                 <span className="font-otomanopee text-[12px] text-white">
@@ -273,30 +291,31 @@ export default function FacecardEditor({
                 <button
                   type="button"
                   onClick={() => setShowSelector("values")}
-                  className="w-10 h-10 shrink-0 flex items-center justify-center border border-white/60 rounded-lg border-b-2 bg-white/5 hover:bg-white/10 active:scale-90 transition"
+                  className="size-10 shrink-0 flex items-center justify-center border border-white/50 border-b-[3px] rounded-[8px] hover:bg-white/10 active:scale-90 transition"
                 >
-                  <img src="/assets/plus.png" alt="" className="w-4 h-4" />
+                  <img src="/assets/facecard/plus-sm.svg" alt="" className="size-[11.655px] opacity-60" />
                 </button>
 
                 <span className="font-otomanopee text-[12px] text-white">
                   Brands
                 </span>
-                <div className="col-span-2 grid grid-cols-5 gap-2 min-w-0">
+                <div className="col-span-2 grid grid-cols-5 gap-[6px] min-w-0 w-full">
                   {[0, 1, 2, 3, 4].map((i) => {
                     const selection = user?.brandPreferences?.[i];
                     return (
                       <div
                         key={i}
                         onClick={() => setShowSelector("brands")}
-                        className={`w-full aspect-square border-2 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all ${selection ? "border-black" : "border-white/40"}`}
+                        className={`w-full aspect-square border border-white/50 border-b-2 rounded-full flex items-center justify-center overflow-hidden hover:bg-white/10 transition-all ${selection ? "border-white/80" : ""}`}
                       >
                         {selection ? (
                           <img
                             src={selection.brand?.logoUrl}
-                            className="w-[90%] h-[90%] rounded-full object-contain"
+                            alt=""
+                            className="w-[53%] h-[53%] object-contain"
                           />
                         ) : (
-                          <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
+                          <img src="/assets/facecard/plus-sm.svg" alt="" className="w-[53%] h-[53%] opacity-60" />
                         )}
                       </div>
                     );
@@ -324,13 +343,11 @@ export default function FacecardEditor({
                           alt="Photo 1"
                         />
                       ) : (
-                        <div className={clsx('w-10', 'h-10', 'border', 'border-white/60', 'rounded-full', 'flex', 'items-center', 'justify-center', 'opacity-80')}>
-                          <img
-                            src="/assets/plus.png"
-                            alt=""
-                            className={clsx('w-5', 'h-5', 'opacity-80')}
-                          />
-                        </div>
+                        <img
+                          src="/assets/facecard/plus-circle.svg"
+                          alt=""
+                          className="size-[39px]"
+                        />
                       )}
                     </div>
 
@@ -341,11 +358,9 @@ export default function FacecardEditor({
                         e.stopPropagation();
                         handleSlotClick(0);
                       }}
-                      className={clsx('absolute', '-top-2.5', '-right-1', 'z-20', 'flex', 'h-8', 'w-8', 'items-center', 'justify-center')}
+                      className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5')}
                     >
-                      <span className={clsx('flex', 'h-5', 'w-5', 'items-center', 'justify-center', 'rounded-full', 'bg-white', 'text-black', 'text-[10px]', 'shadow-lg')}>
-                        ✎
-                      </span>
+                      <img src="/assets/facecard/edit-circle.svg" alt="" className="size-5" />
                     </button>
                   </div>
 
@@ -379,13 +394,11 @@ export default function FacecardEditor({
                               alt={`Photo ${idx + 2}`}
                             />
                           ) : (
-                            <div className={clsx('w-10', 'h-10', 'border', 'border-white/60', 'rounded-full', 'flex', 'items-center', 'justify-center', 'opacity-80')}>
-                              <img
-                                src="/assets/plus.png"
-                                alt=""
-                                className={clsx('w-5', 'h-5', 'opacity-80')}
-                              />
-                            </div>
+                            <img
+                              src="/assets/facecard/plus-circle.svg"
+                              alt=""
+                              className="size-[39px]"
+                            />
                           )}
                         </div>
 
@@ -402,9 +415,9 @@ export default function FacecardEditor({
                                 onDeletePhoto(selectedPhoto.id);
                               }
                             }}
-                            className={clsx('absolute', '-top-2.5', '-right-1', 'z-20', 'text-[10px]', 'w-5', 'h-5', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center')}
+                            className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5')}
                           >
-                            ✕
+                            <img src="/assets/facecard/close-solid.svg" alt="" className="size-5" />
                           </button>
                         )}
                       </div>
@@ -423,7 +436,7 @@ export default function FacecardEditor({
           <div className="w-full flex items-center gap-2 px-3 pt-1 pb-1 min-w-0 shrink-0 overflow-visible">
             <div
               onClick={() => setShowSelector("music")}
-              className="relative w-24 h-24 shrink-0 overflow-visible active:scale-95 transition"
+              className="relative size-[120px] shrink-0 overflow-visible active:scale-95 transition"
             >
               <div className="absolute inset-0 rounded-full border-2 border-white/60" />
               <div
@@ -436,7 +449,7 @@ export default function FacecardEditor({
                     alt="Album Art"
                   />
                 ) : (
-                  <img src="/assets/plus.png" alt="" className="w-4 h-4 opacity-60" />
+                  <img src="/assets/facecard/plus-circle.svg" alt="" className="size-[39px]" />
                 )}
               </div>
 

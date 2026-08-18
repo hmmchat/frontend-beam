@@ -13,6 +13,10 @@ import {
   getNameValidationError,
   normalizeDisplayNameWhitespace,
 } from "@/lib/username";
+import {
+  facecardSlotHasPhoto,
+  getFacecardSlotUrl,
+} from "@/lib/facecard-utils";
 
 /** Figma iPhone editor card width (node 9074:5711). */
 const FIGMA_EDITOR_WIDTH = 383;
@@ -191,6 +195,243 @@ function EditableUsername({
   );
 }
 
+const DRAG_THRESHOLD_PX = 8;
+const EMPTY_SLOT_SWAP_ERROR =
+  "Photos can only be swapped with another photo.";
+
+function slotFromPoint(clientX, clientY) {
+  const nodes = document.querySelectorAll("[data-photo-slot]");
+  let best = null;
+  let bestArea = Infinity;
+  for (const el of nodes) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 8 || rect.height < 8) continue;
+    if (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    ) {
+      const area = rect.width * rect.height;
+      if (area < bestArea) {
+        bestArea = area;
+        best = Number(el.dataset.photoSlot);
+      }
+    }
+  }
+  return best;
+}
+
+function useFacecardPhotoDrag({ user, disabled, onSwap, onSlotClick }) {
+  const [dragSlot, setDragSlot] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [swapError, setSwapError] = useState("");
+  const ghostRef = useRef(null);
+  const lastPointRef = useRef(null);
+  const lastOverRef = useRef(null);
+  const userRef = useRef(user);
+  const onSwapRef = useRef(onSwap);
+  const listenersRef = useRef({ move: null, up: null, cancel: null });
+  const sessionRef = useRef({
+    origin: null,
+    didDrag: false,
+    suppressClick: false,
+    fromSlot: null,
+    pointerId: null,
+  });
+
+  userRef.current = user;
+  onSwapRef.current = onSwap;
+
+  const clearWindowListeners = () => {
+    const { move, up, cancel } = listenersRef.current;
+    if (move) window.removeEventListener("pointermove", move);
+    if (up) window.removeEventListener("pointerup", up);
+    if (cancel) {
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", cancel);
+    }
+    listenersRef.current = { move: null, up: null, cancel: null };
+  };
+
+  const placeGhost = (x, y) => {
+    lastPointRef.current = { x, y };
+    const el = ghostRef.current;
+    if (!el) return;
+    el.style.display = "block";
+    el.style.left = `${x - 40}px`;
+    el.style.top = `${y - 60}px`;
+  };
+
+  const hideGhost = () => {
+    const el = ghostRef.current;
+    if (el) el.style.display = "none";
+  };
+
+  const finishDrag = async (clientX, clientY) => {
+    const s = sessionRef.current;
+    const from = s.fromSlot;
+    const didDrag = s.didDrag;
+    sessionRef.current = {
+      origin: null,
+      didDrag: false,
+      suppressClick: didDrag,
+      fromSlot: null,
+      pointerId: null,
+    };
+    lastOverRef.current = null;
+    clearWindowListeners();
+    setDragSlot(null);
+    setDragOverSlot(null);
+    hideGhost();
+    if (didDrag) {
+      window.setTimeout(() => {
+        sessionRef.current.suppressClick = false;
+      }, 400);
+    }
+    if (!didDrag || from == null) return;
+    const over = slotFromPoint(clientX, clientY);
+    if (over == null || over === from) return;
+    if (!facecardSlotHasPhoto(userRef.current, over)) {
+      setSwapError(EMPTY_SLOT_SWAP_ERROR);
+      return;
+    }
+    try {
+      await onSwapRef.current?.(from, over);
+    } catch (err) {
+      setSwapError(err?.message || "Could not swap photos.");
+    }
+  };
+
+  useEffect(() => {
+    if (!swapError) return undefined;
+    const t = window.setTimeout(() => setSwapError(""), 5000);
+    return () => window.clearTimeout(t);
+  }, [swapError]);
+
+  useEffect(() => {
+    if (dragSlot == null) return;
+    const p = lastPointRef.current;
+    if (p) placeGhost(p.x, p.y);
+  }, [dragSlot]);
+
+  useEffect(() => () => clearWindowListeners(), []);
+
+  const bindSlot = (slotIndex) => {
+    const filled = facecardSlotHasPhoto(user, slotIndex);
+    const isSource = dragSlot === slotIndex;
+    const isOver =
+      dragOverSlot === slotIndex && dragSlot != null && dragSlot !== slotIndex;
+
+    return {
+      "data-photo-slot": String(slotIndex),
+      onPointerDown: (e) => {
+        if (disabled || !filled || e.button !== 0) return;
+        if (e.target.closest("button")) return;
+        sessionRef.current = {
+          origin: { x: e.clientX, y: e.clientY },
+          didDrag: false,
+          suppressClick: false,
+          fromSlot: slotIndex,
+          pointerId: e.pointerId,
+        };
+
+        const onMove = (ev) => {
+          const session = sessionRef.current;
+          if (session.fromSlot == null || !session.origin) return;
+          if (session.pointerId != null && ev.pointerId !== session.pointerId) return;
+          const dist = Math.hypot(
+            ev.clientX - session.origin.x,
+            ev.clientY - session.origin.y,
+          );
+          if (!session.didDrag && dist < DRAG_THRESHOLD_PX) return;
+          if (!session.didDrag) {
+            session.didDrag = true;
+            session.suppressClick = true;
+            setSwapError("");
+            setDragSlot(session.fromSlot);
+          }
+          placeGhost(ev.clientX, ev.clientY);
+          const over = slotFromPoint(ev.clientX, ev.clientY);
+          if (over !== lastOverRef.current) {
+            lastOverRef.current = over;
+            setDragOverSlot(over);
+          }
+        };
+
+        const onUp = (ev) => {
+          const session = sessionRef.current;
+          if (session.pointerId != null && ev.pointerId !== session.pointerId) return;
+          finishDrag(ev.clientX, ev.clientY);
+        };
+
+        const onCancel = () => finishDrag(-1, -1);
+
+        clearWindowListeners();
+        listenersRef.current = { move: onMove, up: onUp, cancel: onCancel };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onCancel);
+        window.addEventListener("blur", onCancel);
+      },
+      onDragStart: (e) => e.preventDefault(),
+      onClick: (e) => {
+        if (sessionRef.current.suppressClick) {
+          e.preventDefault();
+          e.stopPropagation();
+          sessionRef.current.suppressClick = false;
+          return;
+        }
+        if (e.target.closest("button")) return;
+        onSlotClick?.(slotIndex);
+      },
+      className: clsx(
+        filled && !disabled && "cursor-grab touch-none select-none",
+        isSource && "cursor-grabbing opacity-50",
+        isOver && filled && "ring-2 ring-white/80",
+        isOver && !filled && "ring-2 ring-rose-400",
+      ),
+    };
+  };
+
+  return {
+    bindSlot,
+    dragSlot,
+    swapError,
+    dismissSwapError: () => setSwapError(""),
+    ghostRef,
+    previewUrl: dragSlot != null ? getFacecardSlotUrl(user, dragSlot) : "",
+  };
+}
+
+function FacecardWarningOverlay({ message, onDismiss }) {
+  if (!message) return null;
+  return (
+    <div
+      className="absolute inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]"
+      onClick={onDismiss}
+    >
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="relative w-full max-w-[260px] px-5 py-4 bg-black/80 border border-white/50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="pointer-events-none absolute top-0 left-0 w-3 h-3 border-t border-l border-white/80" />
+        <span className="pointer-events-none absolute top-0 right-0 w-3 h-3 border-t border-r border-white/80" />
+        <span className="pointer-events-none absolute bottom-0 left-0 w-3 h-3 border-b border-l border-white/80" />
+        <span className="pointer-events-none absolute bottom-0 right-0 w-3 h-3 border-b border-r border-white/80" />
+        <p className="font-otomanopee text-[12px] text-white text-center tracking-wide">
+          Warning
+        </p>
+        <p className="font-outfit font-light text-[12px] text-white/85 text-center mt-1.5 leading-snug">
+          {message}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function FacecardEditor({
   className,
 
@@ -211,6 +452,7 @@ export default function FacecardEditor({
   photoError = "",
   onDeletePhoto,
   onUpdateUsername,
+  onSwapPhotos,
 }) {
   const leaveEditor = () => {
     if (onExitEditor) onExitEditor();
@@ -222,6 +464,17 @@ export default function FacecardEditor({
     [];
   const causes =
     user?.values?.map((v) => v.value?.name || v.name).filter(Boolean) || [];
+  const photoDrag = useFacecardPhotoDrag({
+    user,
+    disabled: photoUploading,
+    onSwap: onSwapPhotos,
+    onSlotClick: handleSlotClick,
+  });
+  const slot0 = photoDrag.bindSlot(0);
+  const slot1 = photoDrag.bindSlot(1);
+  const slot2 = photoDrag.bindSlot(2);
+  const photoAlert = photoError;
+  const draggingPhoto = photoDrag.dragSlot != null;
 
   return (
     <div
@@ -485,22 +738,26 @@ export default function FacecardEditor({
                 )}
 
                 <div className={clsx('grid', 'grid-cols-3', 'gap-2.5')}>
-                  <div className="relative overflow-visible">
+                  <div
+                    {...slot0}
+                    className={clsx("relative overflow-visible", slot0.className)}
+                  >
                     <div
-                      onClick={() => handleSlotClick(0)}
                       className={clsx('w-full', 'aspect-[2/3]', 'border', 'border-white/50', 'border-b-[3px]', 'rounded-2xl', 'overflow-hidden', 'flex', 'items-center', 'justify-center')}
                     >
                       {user?.displayPictureUrl ? (
                         <img
                           src={user.displayPictureUrl}
-                          className={clsx('w-full', 'h-full', 'object-cover')}
+                          draggable={false}
+                          className={clsx('w-full', 'h-full', 'object-cover', 'pointer-events-none')}
                           alt="Photo 1"
                         />
                       ) : (
                         <img
                           src="/assets/facecard/plus-circle.svg"
                           alt=""
-                          className="size-[39px]"
+                          draggable={false}
+                          className="size-[39px] pointer-events-none"
                         />
                       )}
                     </div>
@@ -512,7 +769,7 @@ export default function FacecardEditor({
                         e.stopPropagation();
                         handleSlotClick(0);
                       }}
-                      className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5')}
+                      className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5', draggingPhoto && 'pointer-events-none')}
                     >
                       <img src="/assets/facecard/edit-circle.svg" alt="" className="size-5" />
                     </button>
@@ -520,14 +777,15 @@ export default function FacecardEditor({
 
                   {[0, 1].map((idx) => {
                     const photo = user?.photos?.find((p) => p.order === idx);
+                    const slotBind = idx === 0 ? slot1 : slot2;
 
                     return (
                       <div
                         key={idx}
-                        className={clsx('relative', 'overflow-visible')}
+                        {...slotBind}
+                        className={clsx('relative', 'overflow-visible', slotBind.className)}
                       >
                         <div
-                          onClick={() => handleSlotClick(idx + 1)}
                           className={clsx(
                             'w-full',
                             'aspect-[2/3]',
@@ -544,14 +802,16 @@ export default function FacecardEditor({
                           {photo ? (
                             <img
                               src={photo.url}
-                              className={clsx('w-full', 'h-full', 'object-cover')}
+                              draggable={false}
+                              className={clsx('w-full', 'h-full', 'object-cover', 'pointer-events-none')}
                               alt={`Photo ${idx + 2}`}
                             />
                           ) : (
                             <img
                               src="/assets/facecard/plus-circle.svg"
                               alt=""
-                              className="size-[39px]"
+                              draggable={false}
+                              className="size-[39px] pointer-events-none"
                             />
                           )}
                         </div>
@@ -569,7 +829,7 @@ export default function FacecardEditor({
                                 onDeletePhoto(selectedPhoto.id);
                               }
                             }}
-                            className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5')}
+                            className={clsx('absolute', '-top-2.5', 'right-0', 'z-20', 'size-5', draggingPhoto && 'pointer-events-none')}
                           >
                             <img src="/assets/facecard/close-solid.svg" alt="" className="size-5" />
                           </button>
@@ -578,9 +838,9 @@ export default function FacecardEditor({
                     );
                   })}
                 </div>
-                {photoError ? (
+                {photoAlert ? (
                   <div className="px-1 sm:px-2 w-full max-w-md mx-auto">
-                    <ErrorAlert message={photoError} className="mt-3 mb-1" />
+                    <ErrorAlert message={photoAlert} className="mt-3 mb-1" />
                   </div>
                 ) : null}
               </div>
@@ -746,20 +1006,24 @@ export default function FacecardEditor({
 
                   {/* Slot 1 */}
                   <div
-                    onClick={() => handleSlotClick(0)}
-                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px] ${photoUploading ? "pointer-events-none opacity-60" : ""
-                      }`}
+                    {...slot0}
+                    className={clsx(
+                      'w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] overflow-visible relative border-b-[6px]',
+                      slot0.className,
+                      photoUploading && "pointer-events-none opacity-60",
+                    )}
                   >
                     {user?.displayPictureUrl ? (
                       <img
                         src={user.displayPictureUrl}
                         alt="Photo 1"
-                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]')}
+                        draggable={false}
+                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]', 'pointer-events-none')}
                       />
                     ) : (
                       <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'bg-white/5', 'rounded-[30px]')}>
                         <span className={clsx('text-5xl', 'opacity-40', 'border-4', 'border-white/80', 'rounded-full', 'px-3')}>
-                          <img src="/assets/plus.png" alt="" />
+                          <img src="/assets/plus.png" alt="" draggable={false} className="pointer-events-none" />
                         </span>
                       </div>
                     )}
@@ -771,7 +1035,7 @@ export default function FacecardEditor({
                         e.stopPropagation();
                         handleSlotClick(0);
                       }}
-                      className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg')}
+                      className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg', draggingPhoto && 'pointer-events-none')}
                     >
                       ✎
                     </button>
@@ -779,11 +1043,12 @@ export default function FacecardEditor({
 
                   {/* Slot 2 (Photo Order 0) */}
                   <div
-                    onClick={() => handleSlotClick(1)}
-                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${photoUploading
-                      ? "pointer-events-none opacity-60"
-                      : "hover:bg-white/10"
-                      }`}
+                    {...slot1}
+                    className={clsx(
+                      'w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors',
+                      slot1.className,
+                      photoUploading ? "pointer-events-none opacity-60" : "hover:bg-white/10",
+                    )}
                   >
                     {user?.photos?.find((p) => p.order === 0)?.url && (
                       <button
@@ -792,7 +1057,7 @@ export default function FacecardEditor({
                           const photo = user.photos.find((p) => p.order === 0);
                           if (onDeletePhoto && photo) onDeletePhoto(photo.id);
                         }}
-                        className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg', 'hover:bg-gray-50', 'active:scale-90', 'transition-all')}
+                        className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg', 'hover:bg-gray-50', 'active:scale-90', 'transition-all', draggingPhoto && 'pointer-events-none')}
                       >
                         ✕
                       </button>
@@ -802,22 +1067,24 @@ export default function FacecardEditor({
                       <img
                         src={user.photos.find((p) => p.order === 0).url}
                         alt="Photo 2"
-                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]')}
+                        draggable={false}
+                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]', 'pointer-events-none')}
                       />
                     ) : (
 
-                      <CiCirclePlus className={clsx('text-[60px]', 'opacity-60', 'rounded-full')} />
+                      <CiCirclePlus className={clsx('text-[60px]', 'opacity-60', 'rounded-full', 'pointer-events-none')} />
 
                     )}
                   </div>
 
                   {/* Slot 3 (Photo Order 1) */}
                   <div
-                    onClick={() => handleSlotClick(2)}
-                    className={`w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors ${photoUploading
-                      ? "pointer-events-none opacity-60"
-                      : "0  meeting now hover:bg-white/10"
-                      }`}
+                    {...slot2}
+                    className={clsx(
+                      'w-[160px] sm:w-[180px] md:w-[198px] aspect-[2/3] border-2 border-white/80 rounded-[32px] border-b-[6px] flex items-center justify-center relative overflow-visible bg-white/5 transition-colors',
+                      slot2.className,
+                      photoUploading ? "pointer-events-none opacity-60" : "hover:bg-white/10",
+                    )}
                   >
                     {user?.photos?.find((p) => p.order === 1)?.url && (
                       <button
@@ -826,7 +1093,7 @@ export default function FacecardEditor({
                           const photo = user.photos.find((p) => p.order === 1);
                           if (onDeletePhoto && photo) onDeletePhoto(photo.id);
                         }}
-                        className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg', 'hover:bg-gray-50', 'active:scale-90', 'transition-all')}
+                        className={clsx('absolute', '-top-1', '-right-3', 'z-20', 'w-8', 'h-8', 'rounded-full', 'bg-white', 'text-black', 'flex', 'items-center', 'justify-center', 'text-sm', 'shadow-lg', 'hover:bg-gray-50', 'active:scale-90', 'transition-all', draggingPhoto && 'pointer-events-none')}
                       >
                         ✕
                       </button>
@@ -834,11 +1101,12 @@ export default function FacecardEditor({
                     {user?.photos?.find((p) => p.order === 1)?.url ? (
                       <img
                         src={user.photos.find((p) => p.order === 1).url}
-                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]')}
+                        draggable={false}
+                        className={clsx('w-full', 'h-full', 'object-cover', 'rounded-[30px]', 'rounded-b-[26px]', 'pointer-events-none')}
                         alt="Photo 3"
                       />
                     ) : (
-                      <CiCirclePlus className={clsx('text-[60px]', 'opacity-60', 'rounded-full')} />
+                      <CiCirclePlus className={clsx('text-[60px]', 'opacity-60', 'rounded-full', 'pointer-events-none')} />
                     )}
                   </div>
 
@@ -846,9 +1114,9 @@ export default function FacecardEditor({
 
               </div>
 
-              {photoError ? (
+              {photoAlert ? (
                 <div className="w-full max-w-lg mx-auto px-2 -mt-4">
-                  <ErrorAlert message={photoError} className="mt-0 mb-1" />
+                  <ErrorAlert message={photoAlert} className="mt-0 mb-1" />
                 </div>
               ) : null}
 
@@ -1256,6 +1524,23 @@ export default function FacecardEditor({
           -webkit-mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
         }
       `}</style>
+      <FacecardWarningOverlay
+        message={photoDrag.swapError}
+        onDismiss={photoDrag.dismissSwapError}
+      />
+      <div
+        ref={photoDrag.ghostRef}
+        className="pointer-events-none fixed z-[100] w-20 aspect-[2/3] overflow-hidden rounded-xl border border-white/50 opacity-80 shadow-2xl"
+        style={{ display: "none", left: 0, top: 0 }}
+      >
+        {photoDrag.previewUrl ? (
+          <img
+            src={photoDrag.previewUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : null}
+      </div>
     </div >
   );
 }

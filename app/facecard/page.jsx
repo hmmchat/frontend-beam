@@ -8,6 +8,8 @@ import {
   calculateProgress,
   getZodiac,
   calculateAge,
+  getFacecardSlotUrl,
+  swapFacecardPhotoSlots,
 } from "@/lib/facecard-utils";
 import { displayUsername } from "@/lib/username";
 import clsx from 'clsx';
@@ -680,6 +682,72 @@ function FacecardContent() {
     }
   };
 
+  const writeFacecardSlotUrl = async (token, slot, url) => {
+    if (slot === 0) {
+      const res = await fetch(API.USERS.UPDATE_PROFILE, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ displayPictureUrl: url }),
+      });
+      if (!res.ok) {
+        const msg = await readHttpErrorMessage(res);
+        throw new Error(msg || "Could not update photo.");
+      }
+      return;
+    }
+    const res = await fetch(API.USERS.ADD_PHOTO, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ url, order: slot - 1 }),
+    });
+    if (!res.ok) {
+      const msg = await readHttpErrorMessage(res);
+      throw new Error(msg || "Could not update photo.");
+    }
+  };
+
+  const swapPhotos = async (fromSlot, toSlot) => {
+    if (fromSlot === toSlot || !user) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) throw new Error("You need to be signed in to rearrange photos.");
+    const fromUrl = getFacecardSlotUrl(user, fromSlot);
+    const toUrl = getFacecardSlotUrl(user, toSlot);
+    if (!fromUrl || !toUrl) {
+      throw new Error("Photos can only be swapped with another photo.");
+    }
+
+    const previous = {
+      displayPictureUrl: user.displayPictureUrl,
+      photos: user.photos,
+    };
+    setPhotoError("");
+    setUser((prev) => swapFacecardPhotoSlots(prev, fromSlot, toSlot));
+
+    try {
+      await Promise.all([
+        writeFacecardSlotUrl(token, fromSlot, toUrl),
+        writeFacecardSlotUrl(token, toSlot, fromUrl),
+      ]);
+    } catch (err) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              displayPictureUrl: previous.displayPictureUrl,
+              photos: previous.photos,
+            }
+          : prev,
+      );
+      throw err;
+    }
+  };
+
   const closeCropModal = () => {
     setCropModalOpen(false);
     setCropTargetSlot(null);
@@ -1137,6 +1205,7 @@ function FacecardContent() {
             photoError={photoError}
             onDeletePhoto={handleDeletePhoto}
             onUpdateUsername={updateUsername}
+            onSwapPhotos={swapPhotos}
           />
         )}
       </div>

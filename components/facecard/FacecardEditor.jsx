@@ -1,11 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { CiCirclePlus } from "react-icons/ci";
 import { FaArrowLeft } from "react-icons/fa";
 import clsx from 'clsx';
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import CompletionMeter from "@/components/facecard/CompletionMeter";
 import OverflowMarquee from "@/components/ui/OverflowMarquee";
+import FlipCycle from "@/components/ui/FlipCycle";
 import useFitScale from "@/lib/useFitScale";
 
 /** Figma iPhone editor card width (node 9074:5711). */
@@ -62,29 +63,11 @@ export default function FacecardEditor({
     else setView?.("success");
   };
   const { containerRef, contentRef, scale, supportsZoom } = useFitScale();
-  const [interestIndex, setInterestIndex] = useState(0);
-  const [causeIndex, setCauseIndex] = useState(0);
   const interests =
     user?.interests?.map((i) => i.interest?.name || i.name).filter(Boolean) ||
     [];
   const causes =
     user?.values?.map((v) => v.value?.name || v.name).filter(Boolean) || [];
-
-  useEffect(() => {
-    if (interests.length <= 1) return;
-    const interval = setInterval(() => {
-      setInterestIndex((prev) => (prev + 1) % interests.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [interests.length]);
-
-  useEffect(() => {
-    if (causes.length <= 1) return;
-    const interval = setInterval(() => {
-      setCauseIndex((prev) => (prev + 1) % causes.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [causes.length]);
 
   return (
     <div
@@ -254,10 +237,15 @@ export default function FacecardEditor({
                   className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[10px] font-outfit font-normal overflow-hidden"
                 >
                   {interests.length > 0 ? (
-                    <OverflowMarquee
-                      key={interestIndex}
-                      text={interests[interestIndex]}
-                      className="animate-slide-down font-outfit font-normal text-center"
+                    <FlipCycle
+                      items={interests}
+                      className="self-stretch"
+                      renderItem={(text) => (
+                        <OverflowMarquee
+                          text={text}
+                          className="min-w-0 w-full font-outfit font-normal text-center"
+                        />
+                      )}
                     />
                   ) : (
                     "Select"
@@ -279,10 +267,15 @@ export default function FacecardEditor({
                   className="min-w-0 w-full h-10 border border-white/40 rounded-full px-3 flex items-center justify-center text-[10px] font-outfit font-normal overflow-hidden"
                 >
                   {causes.length > 0 ? (
-                    <OverflowMarquee
-                      key={causeIndex}
-                      text={causes[causeIndex]}
-                      className="animate-slide-down font-outfit font-normal text-center"
+                    <FlipCycle
+                      items={causes}
+                      className="self-stretch"
+                      renderItem={(text) => (
+                        <OverflowMarquee
+                          text={text}
+                          className="min-w-0 w-full font-outfit font-normal text-center"
+                        />
+                      )}
                     />
                   ) : (
                     "Select"
@@ -782,14 +775,18 @@ export default function FacecardEditor({
                       className={clsx('ml-4', 'flex-1', 'min-w-0', 'h-18', 'rounded-full', 'border', 'border-white/60', 'px-5', 'flex', 'items-center', 'justify-between', 'hover:bg-white/5', 'transition', 'overflow-hidden')}
                     >
                       <span className={clsx('text-[16px]', 'font-otomanopee')}>Interests:</span>
-                      <div className={clsx('flex-1', 'flex', 'justify-end', 'overflow-hidden')}>
+                      <div className={clsx('flex-1', 'self-stretch', 'flex', 'justify-end', 'overflow-hidden')}>
                         {interests.length > 0 ? (
-                          <span
-                            key={interestIndex}
-                            className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
-                          >
-                            {interests[interestIndex]}
-                          </span>
+                          <FlipCycle
+                            items={interests}
+                            align="end"
+                            className="self-stretch"
+                            renderItem={(text) => (
+                              <span className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]')}>
+                                {text}
+                              </span>
+                            )}
+                          />
                         ) : (
                           <span className={clsx('text-sm', 'opacity-90')}></span>
                         )}
@@ -829,14 +826,18 @@ export default function FacecardEditor({
                       className={clsx('ml-4', 'flex-1', 'min-w-0', 'h-18', 'rounded-full', 'border', 'border-white/60', 'px-5', 'flex', 'items-center', 'justify-between', 'hover:bg-white/5', 'transition', 'overflow-hidden')}
                     >
                       <span className={clsx('text-[16px]', 'font-otomanopee')}>Causes:</span>
-                      <div className={clsx('flex-1', 'flex', 'justify-end', 'overflow-hidden')}>
+                      <div className={clsx('flex-1', 'self-stretch', 'flex', 'justify-end', 'overflow-hidden')}>
                         {causes.length > 0 ? (
-                          <span
-                            key={causeIndex}
-                            className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]', 'animate-slide-down')}
-                          >
-                            {causes[causeIndex]}
-                          </span>
+                          <FlipCycle
+                            items={causes}
+                            align="end"
+                            className="self-stretch"
+                            renderItem={(text) => (
+                              <span className={clsx('text-[16px]', 'font-otomanopee', 'opacity-90', 'truncate', 'max-w-[150px]')}>
+                                {text}
+                              </span>
+                            )}
+                          />
                         ) : (
                           <span className={clsx('text-sm', 'opacity-90', 'italic')}></span>
                         )}
@@ -1037,34 +1038,6 @@ export default function FacecardEditor({
 
 
       <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes slide-down {
-          0% {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          20% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          80% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-        }
         @keyframes spin-slow {
           from {
             transform: rotate(0deg);
@@ -1072,12 +1045,6 @@ export default function FacecardEditor({
           to {
             transform: rotate(360deg);
           }
-        }
-        .animate-fade-in {
-          animation: fade-in 1s ease-out forwards;
-        }
-        .animate-slide-down {
-          animation: slide-down 2.5s ease-in-out infinite;
         }
         .animate-spin-slow {
           animation: spin-slow 15s linear infinite;

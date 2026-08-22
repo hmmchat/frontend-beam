@@ -116,6 +116,7 @@ export default function RemoteVideoTile({
   giftAnimationActive = false,
   isVideoOn = true,
   isUnavailable = false,
+  isPageHidden = false,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -221,7 +222,7 @@ export default function RemoteVideoTile({
   }, [stream, screenShareStream, isVideoOn]);
 
   useEffect(() => {
-    if (isUnavailable || !stream || !isVideoOn) {
+    if (isUnavailable || isPageHidden || !stream || !isVideoOn) {
       setStalled(false);
       return undefined;
     }
@@ -246,7 +247,7 @@ export default function RemoteVideoTile({
       track.removeEventListener?.('mute', markMuted);
       track.removeEventListener?.('unmute', markLive);
     };
-  }, [stream, isVideoOn, isUnavailable]);
+  }, [stream, isVideoOn, isUnavailable, isPageHidden]);
 
   useEffect(() => {
     if (!screenShareStream) return;
@@ -259,7 +260,7 @@ export default function RemoteVideoTile({
   }, [stream, screenShareStream]);
 
   const roundedClasses = className ? className.split(' ').filter(c => c.includes('rounded') && !c.startsWith('md:')) : [];
-  const showAway = isUnavailable || stalled;
+  const showAway = isVideoOn && (isUnavailable || (stalled && !isPageHidden));
 
   return (
     <div

@@ -244,8 +244,9 @@ export default function useVideoChat() {
   const callJoinConfirmedRef = useRef(false);
   const exitBecauseDroppedFromCallRef = useRef(null);
   const recoverLocalMediaRef = useRef(null);
-  const availabilityHideTimerRef = useRef(null);
   const unavailablePeerIdsRef = useRef(new Set());
+  const hiddenPeerIdsRef = useRef(new Set());
+  const localIntrusionTimerRef = useRef(null);
   const sfuRerouteAttemptRef = useRef(0);
   const wsReconnectAttemptRef = useRef(0);
   const wsReconnectTimerRef = useRef(null);
@@ -321,7 +322,7 @@ export default function useVideoChat() {
     }));
   }
 
-  function broadcastUserAvailability(unavailable) {
+  function sendCallControl(payload) {
     const roomId = roomInfoRef.current?.roomId;
     if (!roomId || !userIdRef.current) return;
     if (wsRef.current?.readyState !== WebSocket.OPEN) return;
@@ -330,11 +331,38 @@ export default function useVideoChat() {
       data: {
         roomId,
         message: JSON.stringify({
-          isUserUnavailable: Boolean(unavailable),
+          ...payload,
           senderId: userIdRef.current,
         }),
       },
     }));
+  }
+
+  function broadcastPageHidden(hidden) {
+    sendCallControl({ isPageHidden: Boolean(hidden) });
+  }
+
+  function broadcastMediaIntrusion(intruded) {
+    sendCallControl({ isUserUnavailable: Boolean(intruded) });
+  }
+
+  function noteLocalMediaIntrusion(intruded, kind) {
+    if (intruded && kind === 'video' && isCamOffRef.current) return;
+    if (localIntrusionTimerRef.current) {
+      clearTimeout(localIntrusionTimerRef.current);
+      localIntrusionTimerRef.current = null;
+    }
+    if (!intruded) {
+      broadcastMediaIntrusion(false);
+      return;
+    }
+    localIntrusionTimerRef.current = setTimeout(() => {
+      localIntrusionTimerRef.current = null;
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (intentionalExitRef.current || autoTransitioningRef.current) return;
+      if (kind === 'video' && isCamOffRef.current) return;
+      broadcastMediaIntrusion(true);
+    }, 1500);
   }
 
   function hasInterruptedLocalMedia() {
@@ -361,7 +389,19 @@ export default function useVideoChat() {
         // do not churn producers mid-share (that races produce and can abort the call).
         if (screenShareInFlightRef.current || localScreenMsProducerRef.current) return;
         if (track.kind === 'video' && isCamOffRef.current) return;
+        noteLocalMediaIntrusion(true, track.kind);
         void recoverLocalMedia('local-track-ended');
+      };
+      track.onmute = () => {
+        if (intentionalExitRef.current || autoTransitioningRef.current) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        if (screenShareInFlightRef.current || localScreenMsProducerRef.current) return;
+        if (track.kind === 'video' && isCamOffRef.current) return;
+        noteLocalMediaIntrusion(true, track.kind);
+      };
+      track.onunmute = () => {
+        if (track.kind === 'video' && isCamOffRef.current) return;
+        noteLocalMediaIntrusion(false, track.kind);
       };
     });
   }
@@ -459,6 +499,7 @@ export default function useVideoChat() {
         }
       });
       flowLog('local_media_recover_done', { reason });
+      noteLocalMediaIntrusion(false);
     } catch (error) {
       console.warn('[WebRTC] Local media recovery failed:', error);
     } finally {
@@ -519,32 +560,25 @@ export default function useVideoChat() {
     const applyVisibilityPolicy = () => {
       if (document.hidden) {
         mediaPausedForBackgroundRef.current = true;
-        if (availabilityHideTimerRef.current) clearTimeout(availabilityHideTimerRef.current);
-        availabilityHideTimerRef.current = setTimeout(() => {
-          availabilityHideTimerRef.current = null;
-          if (typeof document !== 'undefined' && document.hidden) {
-            broadcastUserAvailability(true);
-          }
-        }, 400);
+        broadcastPageHidden(true);
         return;
       }
-      if (availabilityHideTimerRef.current) {
-        clearTimeout(availabilityHideTimerRef.current);
-        availabilityHideTimerRef.current = null;
-      }
       mediaPausedForBackgroundRef.current = false;
-      broadcastUserAvailability(false);
+      broadcastPageHidden(false);
       nudgeVideoElements();
       reconnectSignalingIfNeeded();
       setTimeout(() => {
-        if (hasInterruptedLocalMedia()) void recoverLocalMediaRef.current?.('tab-visible');
+        if (hasInterruptedLocalMedia()) {
+          noteLocalMediaIntrusion(true);
+          void recoverLocalMediaRef.current?.('tab-visible');
+        }
       }, 500);
     };
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
     return () => {
-      if (availabilityHideTimerRef.current) {
-        clearTimeout(availabilityHideTimerRef.current);
-        availabilityHideTimerRef.current = null;
+      if (localIntrusionTimerRef.current) {
+        clearTimeout(localIntrusionTimerRef.current);
+        localIntrusionTimerRef.current = null;
       }
       document.removeEventListener('visibilitychange', applyVisibilityPolicy);
     };
@@ -1433,6 +1467,7 @@ export default function useVideoChat() {
     const { skipPeerLeftAutoResume = false } = opts;
     const leftId = String(leftIdRaw);
     unavailablePeerIdsRef.current.delete(leftId);
+    hiddenPeerIdsRef.current.delete(leftId);
     let remainingAfter = 0;
     setRemoteStreams(prev => {
       const next = prev.filter(s => String(s.userId) !== leftId);
@@ -1618,7 +1653,7 @@ export default function useVideoChat() {
             data.producers.forEach(p => { const isSameUser = sameParticipantId(p.userId, userIdRef.current); const isMyProducer = myProducerIdsRef.current.has(String(p.producerId)); if (!isSameUser || !isMyProducer) consume(p.producerId, p.userId, { kind: p.kind, source: p.source }); });
           }
           send({ type: 'get-producers', data: { roomId: info.roomId } });
-          if (typeof document !== 'undefined' && document.hidden) broadcastUserAvailability(true);
+          if (typeof document !== 'undefined' && document.hidden) broadcastPageHidden(true);
           break;
         }
         if (deviceRef.current || sendTransportRef.current || recvTransportRef.current) teardownMediasoupState({ clearRemoteStreams: false });
@@ -1637,7 +1672,7 @@ export default function useVideoChat() {
         }
         setStatus('connected');
         send({ type: 'create-transport', data: { roomId: info.roomId, producing: true, consuming: false } });
-        if (typeof document !== 'undefined' && document.hidden) broadcastUserAvailability(true);
+        if (typeof document !== 'undefined' && document.hidden) broadcastPageHidden(true);
         break;
       }
 
@@ -1773,11 +1808,11 @@ export default function useVideoChat() {
           let next;
           if (kind === 'video' && vSource === 'screen') {
             if (existing) next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, screenStream: replaceScreenTrackInStream(s.screenStream, consumer.track) } : s);
-            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey) }];
+            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey) }];
           } else if (existing) {
             next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: replaceKindTrackInStream(s.stream, consumer.track) } : s);
           } else {
-            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey) }];
+            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey) }];
           }
           remoteStreamsRef.current = next;
           if (next.length > 0) hadRemotePeerInSessionRef.current = true;
@@ -1914,13 +1949,28 @@ export default function useVideoChat() {
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
-            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined || parsed.isUserUnavailable !== undefined)) {
+            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined || parsed.isUserUnavailable !== undefined || parsed.isPageHidden !== undefined)) {
               isControlMessage = true; controlParsed = parsed;
             }
           }
         } catch { }
 
         if (isControlMessage && controlParsed) {
+          if (controlParsed.isPageHidden !== undefined) {
+            const remoteUserId = controlParsed.senderId;
+            const hidden = Boolean(controlParsed.isPageHidden);
+            const peerKey = String(remoteUserId);
+            if (hidden) hiddenPeerIdsRef.current.add(peerKey);
+            else hiddenPeerIdsRef.current.delete(peerKey);
+            setRemoteStreams(prev => {
+              const next = prev.map(s => (
+                String(s.userId) === String(remoteUserId) ? { ...s, isPageHidden: hidden } : s
+              ));
+              remoteStreamsRef.current = next;
+              return next;
+            });
+            return;
+          }
           if (controlParsed.isUserUnavailable !== undefined) {
             const remoteUserId = controlParsed.senderId;
             const unavailable = Boolean(controlParsed.isUserUnavailable);
@@ -2411,6 +2461,8 @@ export default function useVideoChat() {
           await recoverLocalMedia('toggle-cam-on');
           await applyLocalCameraEnabled(true);
         }
+      } else {
+        noteLocalMediaIntrusion(false, 'video');
       }
 
       broadcastCamOffState(nextCamOff);
@@ -2848,8 +2900,9 @@ export default function useVideoChat() {
     const isPartner = pid !== '' && sameParticipantId(s.userId, pid);
     const isVideoOn = s.videoEnabled !== false && s.videoOn !== false;
     const isUnavailable = Boolean(s.isUnavailable);
-    if (isPartner) return { name: displayUsername(s.name || partnerInfo.name, 'Matched!'), age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn, isUnavailable };
-    return { name: displayUsername(s.name, 'Guest'), age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn, isUnavailable };
+    const isPageHidden = Boolean(s.isPageHidden);
+    if (isPartner) return { name: displayUsername(s.name || partnerInfo.name, 'Matched!'), age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn, isUnavailable, isPageHidden };
+    return { name: displayUsername(s.name, 'Guest'), age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn, isUnavailable, isPageHidden };
   };
 
   const localVideoProps = {

@@ -2337,20 +2337,16 @@ export default function useVideoChat() {
       startMediaAndSignaling(info, uid);
     };
 
+    // Close tab / close browser / refresh. Do not use pagehide — iOS incoming
+    // calls fire it and would evict a still-alive caller.
     const handleBeforeUnload = () => leaveRoomAndSetOnline();
-    const handlePageHide = (event) => {
-      if (event?.persisted) return;
-      leaveRoomAndSetOnline();
-    };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('pagehide', handlePageHide);
     allowUnmountCleanupRef.current = false;
     cleanupArmTimerRef.current = setTimeout(() => { allowUnmountCleanupRef.current = true; }, 300);
     init();
     return () => {
       aborted = true;
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handlePageHide);
       if (cleanupArmTimerRef.current) { clearTimeout(cleanupArmTimerRef.current); cleanupArmTimerRef.current = null; }
       const inEnterCallGrace = Date.now() < suppressUnmountLeaveUntilRef.current;
       const shouldLeaveCall = allowUnmountCleanupRef.current && !intentionalExitRef.current && !inEnterCallGrace;

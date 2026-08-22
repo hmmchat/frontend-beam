@@ -19,7 +19,13 @@ export default function ProfileMobileMain({
       <div className="w-full flex justify-between mb-4">
         <button
           type="button"
-          onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push("/"); } }}
+          onClick={() => {
+            if (typeof window !== "undefined" && window.parent !== window) {
+              window.parent.postMessage("overlay:close", window.location.origin);
+              return;
+            }
+            router.push("/");
+          }}
           className="flex gap-3 items-center rounded-xl py-1 pr-2 text-left text-white hover:bg-white/10 transition-colors"
           aria-label="Go back"
         >

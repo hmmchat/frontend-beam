@@ -205,6 +205,7 @@ function HistoryContent() {
                   (p) => String(p.userId) !== String(viewerId)
                 );
                 const hasMultiple = otherParticipants.length > 1;
+                const showSquadLabel = (call.participants || []).length > 2;
 
                 return (
                   <div
@@ -283,16 +284,18 @@ function HistoryContent() {
                         >
                           {/* Top row */}
                           <div className="flex items-center gap-3">
-                            {call.callType === "Squad" && (
+                            {showSquadLabel && call.callType === "Squad" && (
                               <p className="text-xs text-white px-3 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full">
                                 Squad
                               </p>
                             )}
                             {call.callType === "Broadcast" && (
                               <div className="flex items-center gap-2">
-                                <p className="text-xs text-white px-5 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full flex ">
-                                  Squad
-                                </p>
+                                {showSquadLabel ? (
+                                  <p className="text-xs text-white px-5 py-1 border-2 border-[#FFBC2B] font-semibold rounded-full flex ">
+                                    Squad
+                                  </p>
+                                ) : null}
                                 <img src="/history/broadcast.svg" alt="broadcast" className="w-5 h-5" />
                               </div>
 

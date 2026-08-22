@@ -18,7 +18,13 @@ export default function ProfileHeader({
     <div className="z-10 mb-8 flex w-full max-w-5xl items-center justify-between px-4">
       <button
         type="button"
-        onClick={() => { if (window.history.length > 1) { router.back(); } else { router.push("/"); } }}
+        onClick={() => {
+          if (typeof window !== "undefined" && window.parent !== window) {
+            window.parent.postMessage("overlay:close", window.location.origin);
+            return;
+          }
+          router.push("/");
+        }}
         className="flex items-center gap-3 rounded-xl py-1 pr-2 text-left text-white "
         aria-label="Go back"
       >

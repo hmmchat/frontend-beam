@@ -60,12 +60,15 @@ const FaceCard = ({
   hideMenu = false,
   className,
   onBlockOrReportSuccess,
+  menuVariant = "default",
+  onUnblockSuccess,
 }) => {
   const [internalIndex, setInternalIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const isUnblockMenu = menuVariant === "unblock";
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -100,7 +103,7 @@ const FaceCard = ({
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (res.success || res.message) {
+      if (res.ok || res.success || res.message) {
         triggerToast('User blocked successfully.');
         if (onBlockOrReportSuccess) {
           setTimeout(() => onBlockOrReportSuccess(), 1000);
@@ -111,6 +114,27 @@ const FaceCard = ({
     } catch (err) {
       console.error(err);
       triggerToast(err.message || 'Failed to block user.');
+    }
+  };
+
+  const handleUnblockUser = async (unblockedUserId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await apiRequest(API.FRIENDS.UNBLOCK_USER(unblockedUserId), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok || res.success || res.message) {
+        triggerToast('User unblocked.');
+        if (onUnblockSuccess) {
+          setTimeout(() => onUnblockSuccess(), 800);
+        }
+      } else {
+        triggerToast('Failed to unblock user.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast(err.message || 'Failed to unblock user.');
     }
   };
   const pathname = usePathname();
@@ -372,7 +396,7 @@ const FaceCard = ({
                             setShowBlockModal(true);
                           }}
                         >
-                          Block User
+                          {isUnblockMenu ? "Unblock" : "Block User"}
                         </button>
                         <button
                           type="button"
@@ -532,7 +556,8 @@ const FaceCard = ({
             onClose={() => setShowBlockModal(false)}
             userId={user.userId || user.id || user._id}
             name={displayCardName(user)}
-            onBlockUser={handleBlockUser}
+            onBlockUser={isUnblockMenu ? handleUnblockUser : handleBlockUser}
+            mode={isUnblockMenu ? "unblock" : "block"}
             isAbsolute={false}
           />
 

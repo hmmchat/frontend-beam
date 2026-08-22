@@ -306,6 +306,11 @@ function SettingsContent() {
 
           <div className="w-[95%] ml-auto divide-y divide-white/15">
             <ActionRow
+              label="Blocked users"
+              onClick={() => router.push("/settings/blocked")}
+              disabled={busy === "delete"}
+            />
+            <ActionRow
               label="Sign out"
               onClick={signOut}
               disabled={busy === "delete"}

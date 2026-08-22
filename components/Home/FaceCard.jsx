@@ -16,6 +16,7 @@ import {
 } from "react-icons/io5";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 import { useFacecardPhotoPager } from "@/lib/use-facecard-photo-pager";
+import FacecardPhotoDots from "@/components/facecard/FacecardPhotoDots";
 
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
@@ -254,7 +255,6 @@ const FaceCard = ({
   const allPhotos = getFacecardPhotos(user);
   const {
     activeIndex,
-    showDots,
     onTouchStart,
     onTouchEnd,
     onPhotoClick,
@@ -513,27 +513,10 @@ const FaceCard = ({
                     e.currentTarget.style.opacity = '0';
                   }}
                 />
+                <FacecardPhotoDots count={allPhotos.length} activeIndex={activeIndex} />
               </div>
             </div>
           </div>
-
-          {/* Pagination — Figma: below inner frame, above Raincheck/Meet (pill + dots) */}
-          {showDots && (
-            <div
-              data-facecard-pagination="true"
-              className="absolute bottom-2.5 md:bottom-14 left-0 right-0 z-30 flex items-center justify-center gap-1 pointer-events-none"
-            >
-              {allPhotos.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={clsx(
-                    'rounded-[9px] bg-white transition-all duration-300',
-                    idx === activeIndex ? 'h-[3px] w-[10px]' : 'h-[3px] w-[3px] opacity-90',
-                  )}
-                />
-              ))}
-            </div>
-          )}
 
           <ReportUserModal
             isOpen={showReportModal}

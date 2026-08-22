@@ -17,6 +17,7 @@ import {
 import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
 import { useFacecardPhotoPager } from "@/lib/use-facecard-photo-pager";
+import FacecardPhotoDots from "@/components/facecard/FacecardPhotoDots";
 import clsx from 'clsx';
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
@@ -243,7 +244,6 @@ const FaceCard4 = ({
   const allPhotos = getFacecardPhotos(user);
   const {
     activeIndex,
-    showDots,
     handlePrev,
     handleNext,
     onTouchStart,
@@ -578,7 +578,7 @@ const FaceCard4 = ({
 
               {/* RIGHT IMAGE */}
               <div
-                className={clsx('flex-1', 'h-full', 'overflow-hidden', 'touch-pan-y', allPhotos.length > 1 && 'cursor-pointer')}
+                className={clsx('relative', 'flex-1', 'h-full', 'overflow-hidden', 'touch-pan-y', allPhotos.length > 1 && 'cursor-pointer')}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
                 onClick={allPhotos.length > 1 ? onPhotoClick : undefined}
@@ -589,22 +589,11 @@ const FaceCard4 = ({
                   alt=""
                   draggable={false}
                 />
+                <FacecardPhotoDots count={allPhotos.length} activeIndex={activeIndex} />
               </div>
 
 
             </div>
-
-            {/* Pagination */}
-            {showDots && (
-              <div className={clsx('absolute', '-bottom-2', 'left-0', 'right-0', 'z-20', 'flex', 'justify-center', 'gap-2')}>
-                {allPhotos.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-1 rounded-full transition-all duration-300 ${idx === activeIndex ? "w-6 bg-white" : "w-2 bg-white/35"}`}
-                  />
-                ))}
-              </div>
-            )}
 
 
 

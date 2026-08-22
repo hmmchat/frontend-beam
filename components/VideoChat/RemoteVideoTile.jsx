@@ -6,10 +6,8 @@ import clsx from 'clsx';
 import { GiftAnimationGroup } from './GiftAnimation';
 import ReportUserModal from '@/components/modals/ReportUserModal';
 import SyncedMarqueeText from './SyncedMarqueeText';
-import BeamColourLogo from '@/components/ui/BeamColourLogo';
 
-function UnavailableWaitingOverlay({ name, displayPictureUrl, roundedClasses }) {
-  const awayName = name && name !== 'Matched!' && name !== 'Guest' ? name : 'They';
+function UnavailableWaitingOverlay({ roundedClasses }) {
   return (
     <div
       className={clsx(
@@ -17,7 +15,6 @@ function UnavailableWaitingOverlay({ name, displayPictureUrl, roundedClasses }) 
         'inset-0',
         'z-[2]',
         'flex',
-        'flex-col',
         'items-center',
         'justify-center',
         'overflow-hidden',
@@ -25,39 +22,16 @@ function UnavailableWaitingOverlay({ name, displayPictureUrl, roundedClasses }) 
         roundedClasses
       )}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: 'url(/assets/mb.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0A032D]/80 via-[#4E0093]/45 to-[#0A032D]/90" />
-      <div className="relative z-10 flex flex-col items-center px-6 text-center">
-        <BeamColourLogo alt="" className="w-20 md:w-28 mb-4 opacity-90" />
-        <div className="relative mb-5">
-          <div className="absolute -inset-3 rounded-full border border-[#B388FF]/40 animate-ping" />
-          <div className="absolute -inset-1.5 rounded-full border border-white/25 animate-pulse" />
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-[3px] border-white/40 shadow-2xl bg-[#0d0726]">
-            <img
-              src={displayPictureUrl || '/assets/ico.png'}
-              className="w-full h-full object-cover"
-              alt=""
-            />
-          </div>
-        </div>
-        <p className="font-outfit text-white text-sm md:text-base font-semibold tracking-wide">
+      <div className="absolute inset-0 bg-black/15" />
+      <div className="relative z-10 flex items-center gap-2 rounded-full bg-[#0A032D]/40 px-4 py-1.5 md:px-5 md:py-2 outline outline-[1.5px] outline-white/40 backdrop-blur-md">
+        <span className="font-otomanopee text-white text-xs md:text-sm tracking-wide whitespace-nowrap">
           Holding their Beam
-        </p>
-        <p className="font-outfit text-white/70 text-xs md:text-sm mt-2 max-w-[240px] leading-relaxed">
-          {awayName} stepped away. We&apos;ll wait for them to hop back in.
-        </p>
-        <div className="mt-4 flex items-center gap-1.5" aria-hidden>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.3s]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.15s]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce" />
-        </div>
+        </span>
+        <span className="flex items-center gap-[3px] pt-0.5" aria-hidden>
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce" />
+        </span>
       </div>
     </div>
   );
@@ -299,7 +273,7 @@ export default function RemoteVideoTile({
             ref={screenRef}
             autoPlay
             playsInline
-            className={clsx('absolute', 'inset-0', 'z-0', 'h-full', 'w-full', 'bg-black', 'object-contain', roundedClasses)}
+            className={clsx('absolute', 'inset-0', 'z-0', 'h-full', 'w-full', 'bg-black', 'object-contain', showAway && 'blur-[12px] scale-110', roundedClasses)}
           />
           <video
             ref={pipRef}
@@ -314,7 +288,7 @@ export default function RemoteVideoTile({
             ref={videoRef}
             autoPlay
             playsInline
-            className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]', roundedClasses)}
+            className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]', showAway && 'blur-[12px] scale-110', roundedClasses)}
             style={{ transform: 'translateZ(0)' }}
           />
           {!isVideoOn && !showAway && (
@@ -335,11 +309,7 @@ export default function RemoteVideoTile({
       )}
 
       {showAway && (
-        <UnavailableWaitingOverlay
-          name={name}
-          displayPictureUrl={displayPictureUrl}
-          roundedClasses={roundedClasses}
-        />
+        <UnavailableWaitingOverlay roundedClasses={roundedClasses} />
       )}
 
       {/* Top icons wrapper — hidden on mobile during gift animation */}

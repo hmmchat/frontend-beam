@@ -55,7 +55,45 @@ function musicTrackKey(song) {
   );
 }
 
-const SUGGESTION_BATCH_SIZE = 8;
+const CATALOG_RECOMMENDATION_COUNT = 14;
+
+function uniqueById(items, limit) {
+  const seen = new Set();
+  const out = [];
+  for (const item of items || []) {
+    if (!item?.id || seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+    if (limit && out.length >= limit) break;
+  }
+  return out;
+}
+
+function shuffleItems(items) {
+  const copy = [...(items || [])];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+async function fetchCatalogItems(category, { limit, exclude = [] } = {}) {
+  const endpoint =
+    category === "interests"
+      ? API.DISCOVERY.GET_INTERESTS
+      : category === "brands"
+        ? API.DISCOVERY.GET_BRANDS
+        : API.DISCOVERY.GET_VALUES;
+  const listKey =
+    category === "interests" ? "interests" : category === "brands" ? "brands" : "values";
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (exclude.length) params.set("exclude", exclude.join(","));
+  const response = await fetch(`${endpoint}?${params.toString()}`);
+  if (!response.ok) return [];
+  const data = await response.json();
+  return uniqueById(data[listKey] || []);
+}
 
 import ProfileGuard from "@/components/auth/ProfileGuard";
 import { IoEllipsisVerticalSharp, IoLocationOutline, IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
@@ -164,13 +202,11 @@ function FacecardContent() {
 
     const fetchChoices = async () => {
       try {
-        const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-        const brandLimitParam = isMobile ? "?limit=10" : "";
-        const suggestionLimitParam = `?limit=${SUGGESTION_BATCH_SIZE}`;
+        const catalogLimitParam = `?limit=${CATALOG_RECOMMENDATION_COUNT}`;
         const [intRes, valRes, brRes, zodiacRes] = await Promise.all([
-          fetch(`${API.DISCOVERY.GET_INTERESTS}${suggestionLimitParam}`),
-          fetch(`${API.DISCOVERY.GET_VALUES}${suggestionLimitParam}`),
-          fetch(`${API.DISCOVERY.GET_BRANDS}${brandLimitParam}`),
+          fetch(`${API.DISCOVERY.GET_INTERESTS}${catalogLimitParam}`),
+          fetch(`${API.DISCOVERY.GET_VALUES}${catalogLimitParam}`),
+          fetch(`${API.DISCOVERY.GET_BRANDS}${catalogLimitParam}`),
           fetch(API.USERS.GET_ZODIACS),
         ]);
         if (intRes.ok) {
@@ -186,7 +222,7 @@ function FacecardContent() {
         if (brRes.ok) {
           const data = (await brRes.json()).brands;
           setMasterBrands(data);
-          setAllBrands(isMobile ? data.slice(0, 10) : data);
+          setAllBrands(data);
         }
         if (zodiacRes.ok) {
           const data = await zodiacRes.json();
@@ -285,10 +321,9 @@ function FacecardContent() {
 
   useEffect(() => {
     if (!showSelector) {
-      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
       if (masterInterests.length > 0) setAllInterests(masterInterests);
       if (masterValues.length > 0) setAllValues(masterValues);
-      if (masterBrands.length > 0) setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
+      if (masterBrands.length > 0) setAllBrands(masterBrands);
     }
   }, [showSelector, masterInterests, masterValues, masterBrands]);
 
@@ -402,9 +437,8 @@ function FacecardContent() {
   };
 
   const searchItems = async (category, query) => {
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     if (!query) {
-      if (category === "brands") setAllBrands(isMobile ? masterBrands.slice(0, 10) : masterBrands);
+      if (category === "brands") setAllBrands(masterBrands);
       else if (category === "interests") setAllInterests(masterInterests);
       else if (category === "values") setAllValues(masterValues);
       return;
@@ -446,45 +480,61 @@ function FacecardContent() {
     }
   };
 
-  const loadMoreSuggestions = async (category) => {
-    if (category !== "interests" && category !== "values") return;
-    if (isLoadingMoreSuggestions) return;
-
-    const current = category === "interests" ? masterInterests : masterValues;
-    const selectedIds =
+  const loadMoreCatalogRecommendations = async (category) => {
+    const current =
       category === "interests"
-        ? (user?.interests || []).map((item) => item.interestId)
-        : (user?.values || []).map((item) => item.valueId);
-    const exclude = [...new Set([...current.map((item) => item.id), ...selectedIds])].filter(Boolean);
+        ? masterInterests
+        : category === "brands"
+          ? masterBrands
+          : masterValues;
+    const currentIds = current.map((item) => item.id).filter(Boolean);
 
     setIsLoadingMoreSuggestions(true);
     try {
-      const params = new URLSearchParams({ limit: String(SUGGESTION_BATCH_SIZE) });
-      if (exclude.length) params.set("exclude", exclude.join(","));
-      const endpoint =
-        category === "interests" ? API.DISCOVERY.GET_INTERESTS : API.DISCOVERY.GET_VALUES;
-      const response = await fetch(`${endpoint}?${params.toString()}`);
-      if (!response.ok) return;
+      const uniqueNext = await fetchCatalogItems(category, {
+        limit: CATALOG_RECOMMENDATION_COUNT,
+        exclude: currentIds,
+      });
+      let nextBatch = uniqueById(uniqueNext, CATALOG_RECOMMENDATION_COUNT);
 
-      const data = await response.json();
-      const next = (category === "interests" ? data.interests : data.values) || [];
-      const existingIds = new Set(current.map((item) => item.id));
-      const unique = next.filter((item) => item?.id && !existingIds.has(item.id));
-      if (unique.length === 0) return;
+      if (nextBatch.length < CATALOG_RECOMMENDATION_COUNT) {
+        const fill = await fetchCatalogItems(category, { limit: CATALOG_RECOMMENDATION_COUNT });
+        const nextIds = new Set(nextBatch.map((item) => item.id));
+        for (const item of uniqueById(shuffleItems(fill))) {
+          if (nextIds.has(item.id)) continue;
+          nextBatch.push(item);
+          nextIds.add(item.id);
+          if (nextBatch.length >= CATALOG_RECOMMENDATION_COUNT) break;
+        }
+      }
 
-      const merged = [...current, ...unique];
+      if (nextBatch.length === 0) {
+        nextBatch = uniqueById(shuffleItems(current), CATALOG_RECOMMENDATION_COUNT);
+      }
+
+      if (nextBatch.length === 0) return;
+
       if (category === "interests") {
-        setMasterInterests(merged);
-        setAllInterests(merged);
+        setMasterInterests(nextBatch);
+        setAllInterests(nextBatch);
+      } else if (category === "brands") {
+        setMasterBrands(nextBatch);
+        setAllBrands(nextBatch);
       } else {
-        setMasterValues(merged);
-        setAllValues(merged);
+        setMasterValues(nextBatch);
+        setAllValues(nextBatch);
       }
     } catch (err) {
       console.error(`Error loading more ${category}:`, err);
     } finally {
       setIsLoadingMoreSuggestions(false);
     }
+  };
+
+  const loadMoreSuggestions = async (category) => {
+    if (category !== "interests" && category !== "values" && category !== "brands") return;
+    if (isLoadingMoreSuggestions) return;
+    await loadMoreCatalogRecommendations(category);
   };
 
   const searchMusic = async (query) => {

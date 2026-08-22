@@ -53,12 +53,27 @@ export default function SelectorOverlay({
           <div className='flex items-center gap-4'>
             <button
               onClick={() => setShowSelector(null)}
-              className="md:w-14 md:h-14 w-10 h-10 rounded-full border border-white/40 flex items-center justify-center  backdrop-blur-md  transition shadow-xl"
+              className="md:w-14 md:h-14 w-10 h-10 shrink-0 rounded-full border border-white/40 flex items-center justify-center  backdrop-blur-md  transition shadow-xl"
             >
               <span className="md:text-2xl text-sm text-white">  <ArrowLeft size={24} /> </span>
             </button>
 
-            <h1 className=" text-xl md:font-extrabold tracking-tight capitalize  md:hidden">{selectorTitle}</h1>
+            {showSelector === 'values' || showSelector === 'interests' || showSelector === 'brands' ? (
+              <div className="min-w-0 flex flex-col gap-0.5 md:gap-1">
+                <h1 className="font-otomanopee text-xl md:text-3xl text-yellow-400 leading-tight tracking-tight">
+                  {showSelector === 'interests' ? 'Interests' : showSelector === 'brands' ? 'Brands' : 'Causes'}
+                </h1>
+                <p className="font-outfit text-xs md:text-base font-light text-white/70 leading-snug">
+                  {showSelector === 'interests'
+                    ? 'Pick in interests, select upto 5'
+                    : showSelector === 'brands'
+                      ? 'Pick in brands, select upto 5'
+                      : 'Pick in causes, select upto 5'}
+                </p>
+              </div>
+            ) : (
+              <h1 className=" text-xl md:font-extrabold tracking-tight capitalize  md:hidden">{selectorTitle}</h1>
+            )}
           </div>
 
 
@@ -205,24 +220,27 @@ export default function SelectorOverlay({
                     : user?.brandPreferences?.map(b => ({ id: b.brandId, name: b.brand?.name, logoUrl: b.brand?.logoUrl }))
                 ) || [];
 
-                // 2. Idle: selected items first, then a short suggestion list.
-                //    Search: show API matches from the full catalog (do not cap to the idle 8/10).
-                const selectedIds = new Set(selectedOnes.map(s => s.id));
+                // Selected choices stay first so they can always be deselected.
+                // Idle: fill remaining slots up to 14. Search: selected first, then API matches.
+                const selectedIds = new Set(selectedOnes.map(s => s.id).filter(Boolean));
+                const pinnedSelected = selectedOnes.filter((item) => item && item.id);
+                const otherResults = (results || []).filter(
+                  (item) => item && item.id && !selectedIds.has(item.id)
+                );
                 const isSearching = Boolean(searchQuery?.trim());
-                let unifiedList = isSearching
-                  ? results.filter((item) => item && item.id)
-                  : [
-                      ...selectedOnes,
-                      ...results.filter(item => !selectedIds.has(item.id))
-                    ];
 
-                const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-                if (isMobile && !isSearching && showSelector === 'brands') {
-                  unifiedList = unifiedList.slice(0, 10);
+                let recs = otherResults;
+                if (
+                  !isSearching &&
+                  (showSelector === 'values' || showSelector === 'interests' || showSelector === 'brands')
+                ) {
+                  recs = otherResults.slice(0, Math.max(0, 14 - pinnedSelected.length));
                 }
 
+                const unifiedList = [...pinnedSelected, ...recs];
+
                 const showSearchForMore =
-                  !isSearching && (showSelector === 'interests' || showSelector === 'values');
+                  !isSearching && (showSelector === 'interests' || showSelector === 'values' || showSelector === 'brands');
 
                 if (unifiedList.length === 0 && !isSearchingItems && !showSearchForMore) {
                   return <p className="text-white/30 text-xs italic py-4">No results found...</p>;

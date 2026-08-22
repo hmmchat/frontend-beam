@@ -104,7 +104,7 @@ export default function ProfileMobileMain({
         {/* MENU */}
         <div className="w-full mt-8 space-y-6">
           <div
-            onClick={() => setActiveTab("facePreview")}
+            onClick={() => router.push("/facecard?view=editor&from=profile")}
             className="flex cursor-pointer items-center justify-between gap-2 border-b border-white/20 pb-5"
           >
             <div>

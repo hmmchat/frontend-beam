@@ -11,6 +11,7 @@ import {
 } from "react-icons/io5";
 import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
+import { useFacecardPhotoPager } from "@/lib/use-facecard-photo-pager";
 
 import { IoIosArrowForward } from "react-icons/io";
 function brandLogoUrl(entry) {
@@ -76,10 +77,23 @@ const FacecardProfile = ({
   // Default to ON unless explicitly false.
   const isVideoOn = user.videoEnabled !== false && user.videoOn !== false;
 
-  // Combine all photos
+  // Combine all photos (max 3: display picture + up to 2 extras)
   const allPhotos = getFacecardPhotos(user);
-
-  const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
+  const {
+    activeIndex,
+    showDots,
+    handlePrev,
+    handleNext,
+    onTouchStart,
+    onTouchEnd,
+    onPhotoClick,
+  } = useFacecardPhotoPager({
+    photoCount: allPhotos.length,
+    currentIndex,
+    onIndexChange,
+    internalIndex,
+    setInternalIndex,
+  });
 
   console.log("FaceCard Debug:", {
     username: user.username,
@@ -87,30 +101,6 @@ const FacecardProfile = ({
     activeIndex,
     allPhotos,
   });
-
-  const handlePrev = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
-    console.log("FaceCard handlePrev:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
-
-  const handleNext = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
-    console.log("FaceCard handleNext:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
 
   return (
     <>
@@ -256,16 +246,21 @@ const FacecardProfile = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex flex-col items-center overflow-hidden">
+              <div
+                className={`relative flex w-[260px] md:w-[268px] border border-white/40 h-[99.5%] md:h-[99.8%] rounded-[20px] flex-col items-center overflow-hidden touch-pan-y ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                onClick={allPhotos.length > 1 ? onPhotoClick : undefined}
+              >
                 <img
                   src={allPhotos[activeIndex]}
-                  className={`h-full w-full object-cover rounded-[20px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
+                  className="h-full w-full object-cover rounded-[20px] pointer-events-none select-none"
                   alt=""
-                  onClick={allPhotos.length > 1 ? handleNext : undefined}
+                  draggable={false}
                 />
 
                 {/* Pagination */}
-                {allPhotos.length > 1 && (
+                {showDots && (
                   <div
                     data-facecard-pagination="true"
                     className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2"

@@ -119,7 +119,7 @@ export default function ProfileMobileMain({
             </div>
 
             <div className="flex gap-2">
-              {Number(progress) < 100 ? (
+              {progress != null && Number(progress) < 100 ? (
                 <button
                   type="button"
                   onClick={(e) => {

@@ -81,7 +81,7 @@ export default function ProfileMobile() {
   }, []);
 
   // Derived Data
-  const progress = user ? calculateProgress(user) : 0;
+  const progress = user ? calculateProgress(user) : null;
   const displayName = displayUsername(user?.username, "Profile");
   const firstName = displayUsername(user?.username?.split(" ")[0], "User");
   const age = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;

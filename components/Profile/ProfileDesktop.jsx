@@ -83,7 +83,7 @@ export default function ProfileDesktop({
       ? calculateProgress(user)
       : initialProgress != null
         ? initialProgress
-        : 0;
+        : null;
 
   function calculateAge(birthday) {
     const ageDifMs = Date.now() - new Date(birthday).getTime();

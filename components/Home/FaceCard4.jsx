@@ -16,6 +16,7 @@ import {
 } from "react-icons/io5";
 import { IoIosArrowBack } from "react-icons/io";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
+import { useFacecardPhotoPager } from "@/lib/use-facecard-photo-pager";
 import clsx from 'clsx';
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
@@ -238,10 +239,23 @@ const FaceCard4 = ({
   // Show camera ON only when explicitly true. If undefined/unknown, show OFF.
   const isVideoOn = videoEnabledToUse === true && videoOnToUse !== false;
 
-  // Combine all photos
+  // Combine all photos (max 3: display picture + up to 2 extras)
   const allPhotos = getFacecardPhotos(user);
-
-  const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
+  const {
+    activeIndex,
+    showDots,
+    handlePrev,
+    handleNext,
+    onTouchStart,
+    onTouchEnd,
+    onPhotoClick,
+  } = useFacecardPhotoPager({
+    photoCount: allPhotos.length,
+    currentIndex,
+    onIndexChange,
+    internalIndex,
+    setInternalIndex,
+  });
 
   console.log("FaceCard Debug:", {
     username: user.username,
@@ -249,30 +263,6 @@ const FaceCard4 = ({
     activeIndex,
     allPhotos,
   });
-
-  const handlePrev = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
-    console.log("FaceCard handlePrev:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
-
-  const handleNext = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
-    console.log("FaceCard handleNext:", {
-      activeIndex,
-      newIdx,
-      allPhotosCount: allPhotos.length,
-    });
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
 
   return (
     <>
@@ -587,12 +577,17 @@ const FaceCard4 = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className={clsx('flex-1', 'h-full', 'overflow-hidden')}>
+              <div
+                className={clsx('flex-1', 'h-full', 'overflow-hidden', 'touch-pan-y', allPhotos.length > 1 && 'cursor-pointer')}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                onClick={allPhotos.length > 1 ? onPhotoClick : undefined}
+              >
                 <img
                   src={allPhotos[activeIndex]}
-                  className={`h-full w-full object-cover rounded-[20px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
+                  className="h-full w-full object-cover rounded-[20px] pointer-events-none select-none"
                   alt=""
-                  onClick={allPhotos.length > 1 ? handleNext : undefined}
+                  draggable={false}
                 />
               </div>
 
@@ -600,7 +595,7 @@ const FaceCard4 = ({
             </div>
 
             {/* Pagination */}
-            {allPhotos.length > 1 && (
+            {showDots && (
               <div className={clsx('absolute', '-bottom-2', 'left-0', 'right-0', 'z-20', 'flex', 'justify-center', 'gap-2')}>
                 {allPhotos.map((_, idx) => (
                   <div

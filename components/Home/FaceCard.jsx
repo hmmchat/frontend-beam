@@ -15,6 +15,7 @@ import {
   IoVideocamOff,
 } from "react-icons/io5";
 import { calculateAge, getFacecardPhotos } from "@/lib/facecard-utils";
+import { useFacecardPhotoPager } from "@/lib/use-facecard-photo-pager";
 
 import { IoIosArrowForward } from "react-icons/io";
 import Report from "../facecard/Report";
@@ -249,24 +250,21 @@ const FaceCard = ({
   // Show camera ON only when explicitly true. If undefined/unknown, show OFF.
   const isVideoOn = videoEnabledToUse === true && videoOnToUse !== false;
 
-  // Combine all photos
+  // Combine all photos (max 3: display picture + up to 2 extras)
   const allPhotos = getFacecardPhotos(user);
-
-  const activeIndex = currentIndex !== undefined ? currentIndex : internalIndex;
-
-  const handlePrev = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex > 0 ? activeIndex - 1 : allPhotos.length - 1;
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
-
-  const handleNext = (e) => {
-    e?.stopPropagation();
-    const newIdx = activeIndex < allPhotos.length - 1 ? activeIndex + 1 : 0;
-    if (onIndexChange) onIndexChange(newIdx);
-    else setInternalIndex(newIdx);
-  };
+  const {
+    activeIndex,
+    showDots,
+    onTouchStart,
+    onTouchEnd,
+    onPhotoClick,
+  } = useFacecardPhotoPager({
+    photoCount: allPhotos.length,
+    currentIndex,
+    onIndexChange,
+    internalIndex,
+    setInternalIndex,
+  });
 
   return (
     <>
@@ -500,12 +498,17 @@ const FaceCard = ({
               </div>
 
               {/* RIGHT IMAGE */}
-              <div className="relative flex flex-1 min-w-0 border border-white/30 h-[99.5%] md:h-[99.8%] rounded-[18px] flex-col items-center overflow-hidden">
+              <div
+                className={`relative flex flex-1 min-w-0 border border-white/30 h-[99.5%] md:h-[99.8%] rounded-[18px] flex-col items-center overflow-hidden touch-pan-y ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                onClick={allPhotos.length > 1 ? onPhotoClick : undefined}
+              >
                 <img
                   src={allPhotos[activeIndex] || ''}
-                  className={`h-full w-full object-cover rounded-[18px] ${allPhotos.length > 1 ? "cursor-pointer" : ""}`}
+                  className="h-full w-full object-cover rounded-[18px] pointer-events-none select-none"
                   alt=""
-                  onClick={allPhotos.length > 1 ? handleNext : undefined}
+                  draggable={false}
                   onError={(e) => {
                     e.currentTarget.style.opacity = '0';
                   }}
@@ -515,7 +518,7 @@ const FaceCard = ({
           </div>
 
           {/* Pagination — Figma: below inner frame, above Raincheck/Meet (pill + dots) */}
-          {allPhotos.length > 1 && (
+          {showDots && (
             <div
               data-facecard-pagination="true"
               className="absolute bottom-2.5 md:bottom-14 left-0 right-0 z-30 flex items-center justify-center gap-1 pointer-events-none"

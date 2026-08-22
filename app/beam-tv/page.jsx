@@ -282,6 +282,22 @@ function BeamTVInner() {
 
     return () => {
       cleanup();
+      if (waitlistPromotionRef.current) return;
+      const rId = requestedJoinRef.current?.roomId;
+      const uId = requestedJoinRef.current?.userId;
+      if (rId && uId) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          fetch(API.STREAMING.CANCEL_JOIN_REQUEST(rId), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ userId: uId })
+          }).catch(() => {});
+        } catch (_) {}
+      }
       void exitBeamTvViewer();
     };
   }, [cleanup]);
@@ -750,8 +766,58 @@ function BeamTVInner() {
     openBroadcastSocket();
   };
 
+  const promoteWaitlistToCall = useCallback(async (room, uid) => {
+    if (!room?.exists || !room?.roomId || room?.role !== 'participant') return false;
+    if (waitlistPromotionRef.current) return true;
+    waitlistPromotionRef.current = true;
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      try {
+        send({
+          type: 'preserve-participant-on-close',
+          data: { roomId: room.roomId }
+        });
+      } catch (_) {}
+    }
+
+    const targetStatus = room.isBroadcasting ? 'IN_BROADCAST' : 'IN_SQUAD';
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/me/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status: targetStatus })
+        });
+      }
+    } catch (_) {}
+
+    const participants = currentBroadcastRef.current?.participants || room.participants || [];
+    const partner = participants.find((p) => String(p?.userId || '') !== String(uid));
+
+    localStorage.setItem('currentRoom', JSON.stringify({
+      roomId: room.roomId,
+      sessionId: room.id || room.roomId,
+      callType: room.isBroadcasting ? 'broadcast' : 'squad',
+      ...(partner ? {
+        partner: {
+          id: partner.userId || '',
+          username: displayUsername(partner.username, 'Host'),
+          age: partner.age || '',
+          city: partner.city || '',
+          displayPictureUrl: partner.displayPictureUrl || '',
+        }
+      } : {})
+    }));
+    try {
+      sessionStorage.setItem('waitlistJoinRedirect', '1');
+    } catch (_) {}
+    router.push('/video-chat');
+    return true;
+  }, [router, send]);
+
   // If host accepts this user from waitlist, backend moves them into the call.
-  // We can detect that by polling "am I in a room?" and redirect to call screen.
+  // Poll as backup; waitlist-accepted on the viewer socket is the fast path.
   useEffect(() => {
     if (joinState.state !== 'requested') return;
     const uid = requestedJoin.userId || getAuthedUserId();
@@ -759,65 +825,15 @@ function BeamTVInner() {
     let cancelled = false;
     let intervalId = null;
     const tick = async () => {
-      if (cancelled) return;
+      if (cancelled || waitlistPromotionRef.current) return;
       try {
         const room = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
-        // IMPORTANT: GET_USER_ROOM returns exists=true for both viewers and participants.
-        // Only redirect when the backend marks the user as a *participant* (host accepted from waitlist).
         if (room?.exists && room?.roomId && room?.role === 'participant') {
-          // Stop polling immediately — prevent double-redirect
           cancelled = true;
           if (intervalId) clearInterval(intervalId);
-          waitlistPromotionRef.current = true;
-
-          // Tell streaming WS not to remove our new participant row when this Beam TV tab closes.
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            try {
-              send({
-                type: 'preserve-participant-on-close',
-                data: { roomId: room.roomId }
-              });
-            } catch (_) { }
-          }
-
-          // Align user-service status with broadcast vs squad (backend sets IN_BROADCAST on accept).
-          const targetStatus = room.isBroadcasting ? 'IN_BROADCAST' : 'IN_SQUAD';
-          try {
-            const token = localStorage.getItem('accessToken');
-            if (token) {
-              await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/me/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ status: targetStatus })
-              });
-            }
-          } catch (_) { }
-
-          // Build partner info from current broadcast participants (best effort)
-          const participants = currentBroadcast?.participants || room.participants || [];
-          const partner = participants.find(p => String(p?.userId || '') !== String(uid));
-
-          // room.id is the session DB id (roomDetails spreads `id`, not `sessionId`)
-          localStorage.setItem('currentRoom', JSON.stringify({
-            roomId: room.roomId,
-            sessionId: room.id || room.roomId,
-            callType: room.isBroadcasting ? 'broadcast' : 'squad',
-            ...(partner ? {
-              partner: {
-                id: partner.userId || '',
-                username: displayUsername(partner.username, 'Host'),
-                age: partner.age || '',
-                city: partner.city || '',
-                displayPictureUrl: partner.displayPictureUrl || '',
-              }
-            } : {})
-          }));
-          try {
-            sessionStorage.setItem('waitlistJoinRedirect', '1');
-          } catch (_) { }
-          router.push('/video-chat');
+          await promoteWaitlistToCall(room, uid);
         }
-      } catch (_) { }
+      } catch (_) {}
     };
     intervalId = setInterval(tick, 2000);
     tick();
@@ -825,7 +841,7 @@ function BeamTVInner() {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [joinState.state, requestedJoin.userId, currentBroadcast]);
+  }, [joinState.state, requestedJoin.userId, promoteWaitlistToCall]);
 
   const getAuthedUserId = () => {
     if (typeof window === 'undefined') return null;
@@ -1324,50 +1340,18 @@ function BeamTVInner() {
     }
   }, [coins, giftParticipants, currentBroadcast, refreshWallet, send]);
 
-  // If user closes tab / navigates away while waitlisted, cancel request so waitlist count stays accurate.
+  // Tab close / background must not drop a waitlist seat. Cancel only on real leave
+  // (stream switch or unmounting Beam TV). Never set ONLINE while promoting into the call.
   useEffect(() => {
-    const onBeforeUnload = () => {
+    const onPageHide = () => {
+      if (waitlistPromotionRef.current) return;
       exitBeamTvViewerKeepalive();
-      const rId = requestedJoinRef.current?.roomId;
-      const uId = requestedJoinRef.current?.userId;
-      if (!rId || !uId) return;
-      try {
-        const token = localStorage.getItem('accessToken');
-        fetch(API.STREAMING.CANCEL_JOIN_REQUEST(rId), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({ userId: uId }),
-          keepalive: true
-        }).catch(() => { });
-      } catch (_) { }
     };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    window.addEventListener('pagehide', onBeforeUnload);
+    window.addEventListener('beforeunload', onPageHide);
+    window.addEventListener('pagehide', onPageHide);
     return () => {
-      window.removeEventListener('beforeunload', onBeforeUnload);
-      window.removeEventListener('pagehide', onBeforeUnload);
-    };
-  }, []);
-
-  // Cancel waitlist join request on component unmount (client-side routing transitions)
-  useEffect(() => {
-    return () => {
-      const rId = requestedJoinRef.current?.roomId;
-      const uId = requestedJoinRef.current?.userId;
-      if (rId && uId) {
-        const token = localStorage.getItem('accessToken');
-        fetch(API.STREAMING.CANCEL_JOIN_REQUEST(rId), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({ userId: uId })
-        }).catch(() => { });
-      }
+      window.removeEventListener('beforeunload', onPageHide);
+      window.removeEventListener('pagehide', onPageHide);
     };
   }, []);
 
@@ -1702,6 +1686,29 @@ function BeamTVInner() {
         markBroadcastEnded(data?.roomId);
         break;
       }
+      case 'waitlist-accepted': {
+        const uid = requestedJoinRef.current?.userId || getAuthedUserId();
+        const acceptedRoomId = data?.roomId;
+        if (!uid || !acceptedRoomId) break;
+        void (async () => {
+          try {
+            const room = await apiRequest(API.STREAMING.GET_USER_ROOM(uid));
+            if (room?.exists && String(room.roomId) === String(acceptedRoomId)) {
+              await promoteWaitlistToCall(room, uid);
+              return;
+            }
+          } catch (_) {}
+          await promoteWaitlistToCall({
+            exists: true,
+            roomId: acceptedRoomId,
+            role: 'participant',
+            isBroadcasting: true,
+            id: acceptedRoomId,
+            participants: currentBroadcastRef.current?.participants || []
+          }, uid);
+        })();
+        break;
+      }
       default:
         break;
     }
@@ -1786,8 +1793,15 @@ function BeamTVInner() {
         if (isWaitlisted) {
           setJoinState({ state: 'requested', message: 'Requested to join. Waiting for host…' });
           setRequestedJoin({ roomId, userId: String(userId) });
-        } else {
-          setJoinState(prev => prev.state === 'requested' ? { state: 'idle', message: '' } : prev);
+        } else if (joinState.state === 'requested' && !waitlistPromotionRef.current) {
+          try {
+            const room = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+            if (room?.exists && room?.role === 'participant') {
+              await promoteWaitlistToCall(room, userId);
+              return;
+            }
+          } catch (_) {}
+          setJoinState({ state: 'idle', message: '' });
         }
       } catch (_) { }
     };
@@ -1799,7 +1813,7 @@ function BeamTVInner() {
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [currentBroadcast?.roomId, status, isLoggedIn, remoteStreams.length]);
+  }, [currentBroadcast?.roomId, status, isLoggedIn, remoteStreams.length, joinState.state, promoteWaitlistToCall]);
 
   // Liveness watcher: while watching, verify the broadcast still exists server-side.
   // Covers silent broadcaster death (phone off / browser killed) where no

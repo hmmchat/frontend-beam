@@ -2107,6 +2107,36 @@ export default function useVideoChat() {
 
       case 'broadcast-started': { setIsBroadcasting(true); break; }
       case 'broadcast-stopped': { setIsBroadcasting(false); break; }
+      case 'waitlist-updated': {
+        const list = Array.isArray(data?.waitlist) ? data.waitlist : [];
+        const mapped = list.map((entry) => {
+          const userId = String(entry?.userId || '');
+          const cached = userId ? waitlistProfileCacheRef.current.get(userId) : null;
+          const profile = cached || {
+            id: userId,
+            username: entry?.username || userId,
+            displayPictureUrl: entry?.displayPictureUrl,
+            preferredCity: '',
+            city: ''
+          };
+          if (userId && (entry?.username || entry?.displayPictureUrl)) {
+            waitlistProfileCacheRef.current.set(userId, {
+              ...profile,
+              username: entry?.username || profile.username,
+              displayPictureUrl: entry?.displayPictureUrl || profile.displayPictureUrl
+            });
+          }
+          return { ...entry, profile };
+        });
+        setWaitlist(mapped);
+        setBroadcastHud((prev) => ({
+          ...prev,
+          waitlistCount: Number.isFinite(Number(data?.waitlistCount))
+            ? Number(data.waitlistCount)
+            : mapped.length
+        }));
+        break;
+      }
 
       // Server ended the room (e.g. the other side's phone died and cleanup ran).
       // Verify with the room API before tearing down — transient WS/cache glitches

@@ -6,6 +6,62 @@ import clsx from 'clsx';
 import { GiftAnimationGroup } from './GiftAnimation';
 import ReportUserModal from '@/components/modals/ReportUserModal';
 import SyncedMarqueeText from './SyncedMarqueeText';
+import BeamColourLogo from '@/components/ui/BeamColourLogo';
+
+function UnavailableWaitingOverlay({ name, displayPictureUrl, roundedClasses }) {
+  const awayName = name && name !== 'Matched!' && name !== 'Guest' ? name : 'They';
+  return (
+    <div
+      className={clsx(
+        'absolute',
+        'inset-0',
+        'z-[2]',
+        'flex',
+        'flex-col',
+        'items-center',
+        'justify-center',
+        'overflow-hidden',
+        'pointer-events-none',
+        roundedClasses
+      )}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'url(/assets/mb.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0A032D]/80 via-[#4E0093]/45 to-[#0A032D]/90" />
+      <div className="relative z-10 flex flex-col items-center px-6 text-center">
+        <BeamColourLogo alt="" className="w-20 md:w-28 mb-4 opacity-90" />
+        <div className="relative mb-5">
+          <div className="absolute -inset-3 rounded-full border border-[#B388FF]/40 animate-ping" />
+          <div className="absolute -inset-1.5 rounded-full border border-white/25 animate-pulse" />
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-[3px] border-white/40 shadow-2xl bg-[#0d0726]">
+            <img
+              src={displayPictureUrl || '/assets/ico.png'}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+          </div>
+        </div>
+        <p className="font-outfit text-white text-sm md:text-base font-semibold tracking-wide">
+          Holding their Beam
+        </p>
+        <p className="font-outfit text-white/70 text-xs md:text-sm mt-2 max-w-[240px] leading-relaxed">
+          {awayName} stepped away. We&apos;ll wait for them to hop back in.
+        </p>
+        <div className="mt-4 flex items-center gap-1.5" aria-hidden>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#B388FF] animate-bounce" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function RemoteVideoTile({
   userId,
@@ -59,6 +115,7 @@ export default function RemoteVideoTile({
   activeLocalGiftLabel,
   giftAnimationActive = false,
   isVideoOn = true,
+  isUnavailable = false,
 }) {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -78,6 +135,7 @@ export default function RemoteVideoTile({
     return true;
   });
   const timeoutRef = useRef(null);
+  const [stalled, setStalled] = useState(false);
 
   const handleTouch = () => {
     if (typeof window === 'undefined' || window.innerWidth >= 768) return;
@@ -160,7 +218,35 @@ export default function RemoteVideoTile({
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', onVisible);
     };
-  }, [stream, screenShareStream]);
+  }, [stream, screenShareStream, isVideoOn]);
+
+  useEffect(() => {
+    if (isUnavailable || !stream || !isVideoOn) {
+      setStalled(false);
+      return undefined;
+    }
+    const track = stream.getVideoTracks?.()[0];
+    if (!track) {
+      setStalled(false);
+      return undefined;
+    }
+    let timer;
+    const markMuted = () => {
+      timer = setTimeout(() => setStalled(true), 2500);
+    };
+    const markLive = () => {
+      clearTimeout(timer);
+      setStalled(false);
+    };
+    if (track.muted) markMuted();
+    track.addEventListener?.('mute', markMuted);
+    track.addEventListener?.('unmute', markLive);
+    return () => {
+      clearTimeout(timer);
+      track.removeEventListener?.('mute', markMuted);
+      track.removeEventListener?.('unmute', markLive);
+    };
+  }, [stream, isVideoOn, isUnavailable]);
 
   useEffect(() => {
     if (!screenShareStream) return;
@@ -173,6 +259,7 @@ export default function RemoteVideoTile({
   }, [stream, screenShareStream]);
 
   const roundedClasses = className ? className.split(' ').filter(c => c.includes('rounded') && !c.startsWith('md:')) : [];
+  const showAway = isUnavailable || stalled;
 
   return (
     <div
@@ -220,26 +307,37 @@ export default function RemoteVideoTile({
             className={clsx('absolute', 'bottom-4', 'right-4', 'z-[5]', 'aspect-video', 'max-h-[32%]', 'w-[32%]', 'max-w-[220px]', 'rounded-xl', 'border-2', 'border-white/50', 'object-cover', 'shadow-2xl')}
           />
         </>
-      ) : !isVideoOn ? (
-        <div className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'bg-gray-950', 'flex', 'flex-col', 'items-center', 'justify-center', roundedClasses)}>
-          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/30 shadow-2xl bg-[#0d0726]">
-            <img
-              src={displayPictureUrl || "/assets/ico.png"}
-              className="w-full h-full object-cover"
-              alt=""
-            />
-          </div>
-          <span className="text-white/70 text-xs md:text-sm mt-4 tracking-wider font-semibold font-outfit bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10">
-            Camera is off
-          </span>
-        </div>
       ) : (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]', roundedClasses)}
-          style={{ transform: 'translateZ(0)' }}
+        <>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className={clsx('h-full', 'w-full', 'min-h-0', 'object-cover', 'md:rounded-[60px]', roundedClasses)}
+            style={{ transform: 'translateZ(0)' }}
+          />
+          {!isVideoOn && !showAway && (
+            <div className={clsx('absolute', 'inset-0', 'z-[1]', 'w-full', 'h-full', 'bg-gray-950', 'flex', 'flex-col', 'items-center', 'justify-center', roundedClasses)}>
+              <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/30 shadow-2xl bg-[#0d0726]">
+                <img
+                  src={displayPictureUrl || "/assets/ico.png"}
+                  className="w-full h-full object-cover"
+                  alt=""
+                />
+              </div>
+              <span className="text-white/70 text-xs md:text-sm mt-4 tracking-wider font-semibold font-outfit bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10">
+                Camera is off
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
+      {showAway && (
+        <UnavailableWaitingOverlay
+          name={name}
+          displayPictureUrl={displayPictureUrl}
+          roundedClasses={roundedClasses}
         />
       )}
 

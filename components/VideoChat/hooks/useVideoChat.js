@@ -27,6 +27,10 @@ import {
 } from '@/lib/diamondRate';
 import { isInsufficientBalanceError } from '@/lib/walletErrors';
 import {
+  acquireUserMedia,
+  isDeniedMediaError,
+} from '@/lib/media-permissions';
+import {
   isMobileRuntime,
   getCameraConstraints,
   getPreferredConsumerLayers,
@@ -236,7 +240,12 @@ export default function useVideoChat() {
   const isMutedRef = useRef(false);
   const mediaPausedForBackgroundRef = useRef(false);
   const localMediaRecoveryInFlightRef = useRef(false);
+  const camToggleInFlightRef = useRef(false);
+  const callJoinConfirmedRef = useRef(false);
+  const exitBecauseDroppedFromCallRef = useRef(null);
   const recoverLocalMediaRef = useRef(null);
+  const availabilityHideTimerRef = useRef(null);
+  const unavailablePeerIdsRef = useRef(new Set());
   const sfuRerouteAttemptRef = useRef(0);
   const wsReconnectAttemptRef = useRef(0);
   const wsReconnectTimerRef = useRef(null);
@@ -261,17 +270,22 @@ export default function useVideoChat() {
   useEffect(() => { isCamOffRef.current = isCamOff; }, [isCamOff]);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  async function acquireLocalMediaStream() {
+  async function acquireLocalMediaStream({ video = true, audio = true } = {}) {
     const audioConstraints = { echoCancellation: true, noiseSuppression: true, channelCount: 1 };
+    const constraints = {
+      video: video ? getCameraConstraints({ exactFrontCamera: isMobileRuntime() }) : false,
+      audio: audio ? audioConstraints : false,
+    };
+    if (!constraints.video && !constraints.audio) {
+      throw new Error('acquireLocalMediaStream requires video or audio');
+    }
     try {
-      return await navigator.mediaDevices.getUserMedia({
-        video: getCameraConstraints({ exactFrontCamera: isMobileRuntime() }),
-        audio: audioConstraints
-      });
-    } catch {
-      return navigator.mediaDevices.getUserMedia({
-        video: getCameraConstraints({ exactFrontCamera: false }),
-        audio: audioConstraints
+      return await acquireUserMedia(constraints);
+    } catch (err) {
+      if (isDeniedMediaError(err)) throw err;
+      return acquireUserMedia({
+        video: video ? getCameraConstraints({ exactFrontCamera: false }) : false,
+        audio: audio ? audioConstraints : false,
       });
     }
   }
@@ -288,12 +302,6 @@ export default function useVideoChat() {
     tracks.forEach((track) => {
       if (track.readyState === 'live') track.enabled = enabled;
     });
-    const producer = producersRef.current.video;
-    if (!producer || producer.closed) return;
-    try {
-      if (enabled) producer.resume();
-      else producer.pause();
-    } catch { /* ignore */ }
   }
 
   function broadcastCamOffState(camOff = isCamOffRef.current) {
@@ -313,6 +321,22 @@ export default function useVideoChat() {
     }));
   }
 
+  function broadcastUserAvailability(unavailable) {
+    const roomId = roomInfoRef.current?.roomId;
+    if (!roomId || !userIdRef.current) return;
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+    wsRef.current.send(JSON.stringify({
+      type: 'chat-message',
+      data: {
+        roomId,
+        message: JSON.stringify({
+          isUserUnavailable: Boolean(unavailable),
+          senderId: userIdRef.current,
+        }),
+      },
+    }));
+  }
+
   function hasInterruptedLocalMedia() {
     const stream = localStreamRef.current;
     if (!stream) return false;
@@ -320,7 +344,12 @@ export default function useVideoChat() {
     if (typeof document !== 'undefined' && document.hidden) return false;
     // Only recover when tracks are actually ended. Temporary mute is normal in WebRTC
     // (simulcast switches, brief stalls) and re-acquiring media causes producer churn.
-    return tracks.some(track => track.readyState === 'ended');
+    // Cam-off can end the video track on iOS/WebView — that is intentional, not a fault.
+    return tracks.some((track) => {
+      if (track.readyState !== 'ended') return false;
+      if (track.kind === 'video' && isCamOffRef.current) return false;
+      return true;
+    });
   }
 
   function monitorLocalMediaTracks(stream) {
@@ -331,6 +360,7 @@ export default function useVideoChat() {
         // Screen-share picker / active share often ends or interrupts camera tracks;
         // do not churn producers mid-share (that races produce and can abort the call).
         if (screenShareInFlightRef.current || localScreenMsProducerRef.current) return;
+        if (track.kind === 'video' && isCamOffRef.current) return;
         void recoverLocalMedia('local-track-ended');
       };
     });
@@ -355,6 +385,7 @@ export default function useVideoChat() {
           track,
           encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }],
           appData: { source: 'camera' },
+          stopTracks: false,
         });
       }
       applyLocalCameraEnabled(!isCamOffRef.current);
@@ -373,28 +404,57 @@ export default function useVideoChat() {
 
     localMediaRecoveryInFlightRef.current = true;
     try {
-      flowLog('local_media_recover_start', { reason });
       const previousStream = localStreamRef.current;
-      const nextStream = await acquireLocalMediaStream();
-      applyLocalMediaPreferences(nextStream);
-      monitorLocalMediaTracks(nextStream);
+      const prevVideoLive = previousStream?.getVideoTracks?.().some((t) => t.readyState === 'live');
+      const prevAudioLive = previousStream?.getAudioTracks?.().some((t) => t.readyState === 'live');
+      const audioNeedsReplace = !prevAudioLive;
+      const videoNeedsReplace = reason === 'toggle-cam-on' || (!prevVideoLive && !isCamOffRef.current);
+      if (!audioNeedsReplace && !videoNeedsReplace) return;
 
-      await Promise.allSettled([
-        replacePublishedLocalTrack('video', nextStream.getVideoTracks()[0]),
-        replacePublishedLocalTrack('audio', nextStream.getAudioTracks()[0])
-      ]);
+      flowLog('local_media_recover_start', { reason, audioNeedsReplace, videoNeedsReplace });
+      const acquired = await acquireLocalMediaStream({
+        video: videoNeedsReplace,
+        audio: audioNeedsReplace,
+      });
+      applyLocalMediaPreferences(acquired);
 
-      localStreamRef.current = nextStream;
-      applyLocalCameraEnabled(!isCamOffRef.current);
+      const nextVideo = acquired.getVideoTracks()[0];
+      const nextAudio = acquired.getAudioTracks()[0];
+      const jobs = [];
+      if (videoNeedsReplace && nextVideo) jobs.push(replacePublishedLocalTrack('video', nextVideo));
+      if (audioNeedsReplace && nextAudio) jobs.push(replacePublishedLocalTrack('audio', nextAudio));
+      await Promise.allSettled(jobs);
+
+      const merged = previousStream || new MediaStream();
+      const replaced = [];
+      if (videoNeedsReplace && nextVideo) {
+        merged.getVideoTracks().forEach((t) => {
+          if (t.id !== nextVideo.id) replaced.push(t);
+        });
+        replaceKindTrackInStream(merged, nextVideo);
+      }
+      if (audioNeedsReplace && nextAudio) {
+        merged.getAudioTracks().forEach((t) => {
+          if (t.id !== nextAudio.id) replaced.push(t);
+        });
+        replaceKindTrackInStream(merged, nextAudio);
+      }
+      monitorLocalMediaTracks(merged);
+
+      localStreamRef.current = merged;
+      await applyLocalCameraEnabled(!isCamOffRef.current);
       if (localVideoRef.current) {
-        localVideoRef.current.srcObject = nextStream;
+        localVideoRef.current.srcObject = merged;
         const playPromise = localVideoRef.current.play?.();
         if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => { });
       }
       setLocalMediaGeneration(n => n + 1);
 
-      previousStream?.getTracks?.().forEach((track) => {
-        if (!nextStream.getTracks().includes(track)) {
+      replaced.forEach((track) => {
+        try { track.stop(); } catch { }
+      });
+      acquired.getTracks().forEach((track) => {
+        if (!merged.getTracks().includes(track)) {
           try { track.stop(); } catch { }
         }
       });
@@ -457,8 +517,23 @@ export default function useVideoChat() {
       openSignalingSocketRef.current?.(getWsUrl(), { isReconnect: true });
     };
     const applyVisibilityPolicy = () => {
-      if (document.hidden) { mediaPausedForBackgroundRef.current = true; return; }
+      if (document.hidden) {
+        mediaPausedForBackgroundRef.current = true;
+        if (availabilityHideTimerRef.current) clearTimeout(availabilityHideTimerRef.current);
+        availabilityHideTimerRef.current = setTimeout(() => {
+          availabilityHideTimerRef.current = null;
+          if (typeof document !== 'undefined' && document.hidden) {
+            broadcastUserAvailability(true);
+          }
+        }, 400);
+        return;
+      }
+      if (availabilityHideTimerRef.current) {
+        clearTimeout(availabilityHideTimerRef.current);
+        availabilityHideTimerRef.current = null;
+      }
       mediaPausedForBackgroundRef.current = false;
+      broadcastUserAvailability(false);
       nudgeVideoElements();
       reconnectSignalingIfNeeded();
       setTimeout(() => {
@@ -466,7 +541,13 @@ export default function useVideoChat() {
       }, 500);
     };
     document.addEventListener('visibilitychange', applyVisibilityPolicy);
-    return () => document.removeEventListener('visibilitychange', applyVisibilityPolicy);
+    return () => {
+      if (availabilityHideTimerRef.current) {
+        clearTimeout(availabilityHideTimerRef.current);
+        availabilityHideTimerRef.current = null;
+      }
+      document.removeEventListener('visibilitychange', applyVisibilityPolicy);
+    };
   }, []);
 
   // Re-bind local video preview when camera stream changes
@@ -673,6 +754,7 @@ export default function useVideoChat() {
   function cleanup({ stopLocalMedia = true } = {}) {
     mediaPausedForBackgroundRef.current = false;
     wsReconnectAttemptRef.current = 0;
+    callJoinConfirmedRef.current = false;
     if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); wsRef.current = null; }
     if (stopLocalMedia) { localStreamRef.current?.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
     teardownMediasoupState({ clearRemoteStreams: true });
@@ -719,6 +801,28 @@ export default function useVideoChat() {
         const others = participants.filter((p) => String(p.userId) !== String(userId));
         const roomIsBroadcasting = roomState?.isBroadcasting === true || roomState?.callType === 'broadcast';
         const inWaitlistJoinGrace = Date.now() < (mediaEstablishGraceUntilRef.current || 0);
+        const listedInRoom = participants.some((p) => String(p.userId) === String(userId));
+        const inThisRoom =
+          Boolean(roomState?.exists) &&
+          String(roomState.roomId || '') === String(roomId) &&
+          (listedInRoom || roomState.role === 'participant' || roomState.role === 'viewer');
+        // Dropped/rejected user: remaining peers already updated, but this client
+        // is still on a frozen grid with chat. Leave immediately — do not wait
+        // for the "alone" timer (that path is for people still in the room).
+        if (
+          callJoinConfirmedRef.current &&
+          !roomIsBroadcasting &&
+          !isBroadcastingRef.current &&
+          !inThisRoom
+        ) {
+          flowLog('room_health_self_not_in_room', {
+            exists: Boolean(roomState?.exists),
+            roomId: roomState?.roomId,
+            role: roomState?.role,
+          });
+          exitBecauseDroppedFromCallRef.current?.('self-not-in-room');
+          return;
+        }
 
         // Reconcile stale remote tiles against server participant list (frozen tiles after silent peer death)
         if ((remoteStreamsRef.current?.length || 0) > 0 && roomState?.exists && participants.length) {
@@ -964,10 +1068,12 @@ export default function useVideoChat() {
       let userId = userIdRef.current;
       if (!userId) { try { const payload = JSON.parse(atob(token.split('.')[1])); userId = payload.sub || payload.uid || payload.id; userIdRef.current = userId; } catch { } }
       tryRecordSquadQuickInvitePeersOnLeaveKeepalive();
+      signalLeaveRoomWs();
       const roomId = roomInfoRef.current?.roomId;
       if (roomId && userId) {
         fetch(API.STREAMING.LEAVE_ROOM(roomId), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ userId }), keepalive: true }).catch(() => { });
       }
+      try { localStorage.removeItem('currentRoom'); } catch { }
       markReturningToHomeIdle();
       exitCallToHomeKeepalive();
     } catch { }
@@ -1002,6 +1108,21 @@ export default function useVideoChat() {
     localStorage.setItem('pendingRaincheckResume', JSON.stringify({ sessionId: sid, nextCard: null }));
     router.replace(`/?resumeDiscovery=1&sessionId=${encodeURIComponent(sid)}`);
   };
+
+  const exitBecauseDroppedFromCall = (reason = 'dropped') => {
+    if (intentionalExitRef.current || autoTransitioningRef.current) return;
+    flowLog('dropped_from_call_exit', { reason });
+    intentionalExitRef.current = true;
+    autoTransitioningRef.current = true;
+    if (wsReconnectTimerRef.current) {
+      clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = null;
+    }
+    cleanup();
+    localStorage.removeItem('currentRoom');
+    resumeDiscoveryFromCall();
+  };
+  exitBecauseDroppedFromCallRef.current = exitBecauseDroppedFromCall;
 
   const goHomeIdleFromCall = useCallback(async () => {
     await beginLeaveCallToHomeReliable();
@@ -1311,6 +1432,7 @@ export default function useVideoChat() {
   const removeRemoteParticipantFromUi = (leftIdRaw, opts = {}) => {
     const { skipPeerLeftAutoResume = false } = opts;
     const leftId = String(leftIdRaw);
+    unavailablePeerIdsRef.current.delete(leftId);
     let remainingAfter = 0;
     setRemoteStreams(prev => {
       const next = prev.filter(s => String(s.userId) !== leftId);
@@ -1479,6 +1601,7 @@ export default function useVideoChat() {
 
     switch (type) {
       case 'room-joined': {
+        callJoinConfirmedRef.current = true;
         console.log('[WebRTC] Room joined, loading device...');
         const recvTransport = recvTransportRef.current;
         const sendTransport = sendTransportRef.current;
@@ -1495,6 +1618,7 @@ export default function useVideoChat() {
             data.producers.forEach(p => { const isSameUser = sameParticipantId(p.userId, userIdRef.current); const isMyProducer = myProducerIdsRef.current.has(String(p.producerId)); if (!isSameUser || !isMyProducer) consume(p.producerId, p.userId, { kind: p.kind, source: p.source }); });
           }
           send({ type: 'get-producers', data: { roomId: info.roomId } });
+          if (typeof document !== 'undefined' && document.hidden) broadcastUserAvailability(true);
           break;
         }
         if (deviceRef.current || sendTransportRef.current || recvTransportRef.current) teardownMediasoupState({ clearRemoteStreams: false });
@@ -1513,6 +1637,7 @@ export default function useVideoChat() {
         }
         setStatus('connected');
         send({ type: 'create-transport', data: { roomId: info.roomId, producing: true, consuming: false } });
+        if (typeof document !== 'undefined' && document.hidden) broadcastUserAvailability(true);
         break;
       }
 
@@ -1569,6 +1694,7 @@ export default function useVideoChat() {
                     track: vTrack,
                     encodings: [{ maxBitrate: isMobileRuntime() ? 900_000 : 2_500_000 }],
                     appData: { source: 'camera' },
+                    stopTracks: false,
                   }).catch(console.error);
                   if (fallback) producersRef.current.video = fallback;
                 }
@@ -1647,11 +1773,11 @@ export default function useVideoChat() {
           let next;
           if (kind === 'video' && vSource === 'screen') {
             if (existing) next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, screenStream: replaceScreenTrackInStream(s.screenStream, consumer.track) } : s);
-            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false }];
+            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey) }];
           } else if (existing) {
             next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: replaceKindTrackInStream(s.stream, consumer.track) } : s);
           } else {
-            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false }];
+            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey) }];
           }
           remoteStreamsRef.current = next;
           if (next.length > 0) hadRemotePeerInSessionRef.current = true;
@@ -1711,7 +1837,19 @@ export default function useVideoChat() {
         break;
       }
 
+      case 'removed-from-room':
+      case 'left-room': {
+        const leftRoomId = data?.roomId;
+        if (leftRoomId && roomInfoRef.current?.roomId && String(leftRoomId) !== String(roomInfoRef.current.roomId)) break;
+        exitBecauseDroppedFromCall(type);
+        break;
+      }
+
       case 'participant-left': {
+        if (sameParticipantId(data.userId, userIdRef.current)) {
+          exitBecauseDroppedFromCall('self-participant-left');
+          break;
+        }
         removeRemoteParticipantFromUi(data.userId);
         if (roomSummoningUserIdRef.current && String(data.userId) === String(roomSummoningUserIdRef.current)) setRoomSummoningUserId(null);
         break;
@@ -1729,7 +1867,7 @@ export default function useVideoChat() {
       }
 
       case 'user-kicked': {
-        intentionalExitRef.current = true; cleanup(); localStorage.removeItem('currentRoom'); resumeDiscoveryFromCall();
+        exitBecauseDroppedFromCall('user-kicked');
         break;
       }
 
@@ -1776,13 +1914,28 @@ export default function useVideoChat() {
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
-            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined)) {
+            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined || parsed.isUserUnavailable !== undefined)) {
               isControlMessage = true; controlParsed = parsed;
             }
           }
         } catch { }
 
         if (isControlMessage && controlParsed) {
+          if (controlParsed.isUserUnavailable !== undefined) {
+            const remoteUserId = controlParsed.senderId;
+            const unavailable = Boolean(controlParsed.isUserUnavailable);
+            const peerKey = String(remoteUserId);
+            if (unavailable) unavailablePeerIdsRef.current.add(peerKey);
+            else unavailablePeerIdsRef.current.delete(peerKey);
+            setRemoteStreams(prev => {
+              const next = prev.map(s => (
+                String(s.userId) === String(remoteUserId) ? { ...s, isUnavailable: unavailable } : s
+              ));
+              remoteStreamsRef.current = next;
+              return next;
+            });
+            return;
+          }
           if (controlParsed.isCamOffChanged !== undefined) {
             const remoteUserId = controlParsed.senderId;
             const camOff = Boolean(controlParsed.isCamOff);
@@ -1935,9 +2088,7 @@ export default function useVideoChat() {
 
   // ---- Stale room handler --------------------------------------------------
   const handleStaleRoom = () => {
-    if (intentionalExitRef.current) return;
-    localStorage.removeItem('currentRoom');
-    resumeDiscoveryFromCall();
+    exitBecauseDroppedFromCall('stale-room');
   };
 
   // ---- Media + signaling startup ------------------------------------------
@@ -1966,6 +2117,24 @@ export default function useVideoChat() {
     };
 
     const openSignalingSocket = (baseUrl = WS_URL, { isReconnect = false } = {}) => {
+      if (isReconnect && callJoinConfirmedRef.current && !intentionalExitRef.current) {
+        void (async () => {
+          try {
+            const roomState = await apiRequest(API.STREAMING.GET_USER_ROOM(userId));
+            const stillIn =
+              Boolean(roomState?.exists) &&
+              String(roomState.roomId || '') === String(info.roomId) &&
+              (roomState.role === 'participant' || roomState.role === 'viewer');
+            if (!stillIn) {
+              exitBecauseDroppedFromCall('reconnect-not-in-room');
+              return;
+            }
+          } catch { /* reconnect anyway if membership check fails */ }
+          if (intentionalExitRef.current || autoTransitioningRef.current) return;
+          openSignalingSocket(baseUrl, { isReconnect: false });
+        })();
+        return;
+      }
       const wsUrlWithAuth = buildWsUrl(baseUrl, { userId, roomId: info.roomId, ...(accessToken ? { token: accessToken } : {}) });
       const ws = new WebSocket(wsUrlWithAuth);
       wsRef.current = ws;
@@ -1998,8 +2167,11 @@ export default function useVideoChat() {
           // Only abort when the *room* is gone. Transport/producer/participant
           // "not found" is common during screen-share / reconnect and must not
           // tear down an active call (was calling handleStaleRoom → home).
+          // Gift/dare/cam-off control events no longer persist as chat, so they
+          // cannot emit this string. If we already joined and the room is gone,
+          // leave even if stale tiles are still on screen.
           const isRoomGone = /^Room\s+.+\s+not found/i.test(errText);
-          if (isRoomGone) handleStaleRoom();
+          if (isRoomGone && callJoinConfirmedRef.current) handleStaleRoom();
           return;
         }
         await handleSignal(msg, info, userId);
@@ -2024,6 +2196,20 @@ export default function useVideoChat() {
     let aborted = false;
     const init = async () => {
       hadRemotePeerInSessionRef.current = false;
+      try {
+        if (sessionStorage.getItem('hmm:leftCallToHome') === '1') {
+          sessionStorage.removeItem('hmm:leftCallToHome');
+          try {
+            const storedRoom = localStorage.getItem('currentRoom');
+            if (storedRoom) roomInfoRef.current = JSON.parse(storedRoom);
+          } catch { }
+          await beginLeaveCallToHomeReliable();
+          cleanup();
+          clearDiscoveryResumeIntent();
+          router.replace('/', { scroll: false });
+          return;
+        }
+      } catch { }
       // Ensure discovery session is cleared even if navigation beat enterCall() from home.
       try { await enterCall(); } catch { }
       try {
@@ -2068,7 +2254,20 @@ export default function useVideoChat() {
           const token2 = localStorage.getItem('accessToken');
           if (token2 && uid) { const serverRoom = await apiRequest(API.STREAMING.GET_USER_ROOM(uid)); if (serverRoom?.exists && serverRoom?.roomId && serverRoom?.role === 'participant') { info = { roomId: serverRoom.roomId, sessionId: serverRoom.id || serverRoom.roomId }; localStorage.setItem('currentRoom', JSON.stringify(info)); } }
         } catch { }
-        if (!info?.roomId) { setStatus('error'); setError('No active match found.'); setTimeout(() => resumeDiscoveryFromCall(), 200); return; }
+        if (!info?.roomId) {
+          try {
+            if (sessionStorage.getItem('hmm:leftCallToHome') === '1') {
+              sessionStorage.removeItem('hmm:leftCallToHome');
+              clearDiscoveryResumeIntent();
+              router.replace('/', { scroll: false });
+              return;
+            }
+          } catch { }
+          setStatus('error');
+          setError('No active match found.');
+          setTimeout(() => resumeDiscoveryFromCall(), 200);
+          return;
+        }
       }
 
       try {
@@ -2139,13 +2338,19 @@ export default function useVideoChat() {
     };
 
     const handleBeforeUnload = () => leaveRoomAndSetOnline();
+    const handlePageHide = (event) => {
+      if (event?.persisted) return;
+      leaveRoomAndSetOnline();
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
     allowUnmountCleanupRef.current = false;
     cleanupArmTimerRef.current = setTimeout(() => { allowUnmountCleanupRef.current = true; }, 300);
     init();
     return () => {
       aborted = true;
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
       if (cleanupArmTimerRef.current) { clearTimeout(cleanupArmTimerRef.current); cleanupArmTimerRef.current = null; }
       const inEnterCallGrace = Date.now() < suppressUnmountLeaveUntilRef.current;
       const shouldLeaveCall = allowUnmountCleanupRef.current && !intentionalExitRef.current && !inEnterCallGrace;
@@ -2191,6 +2396,8 @@ export default function useVideoChat() {
   };
 
   const toggleCam = async () => {
+    if (camToggleInFlightRef.current) return;
+    camToggleInFlightRef.current = true;
     const nextCamOff = !isCamOffRef.current;
     isCamOffRef.current = nextCamOff;
     setIsCamOff(nextCamOff);
@@ -2199,37 +2406,20 @@ export default function useVideoChat() {
       localStorage.setItem('isVideoOn', String(!nextCamOff));
     } catch { /* ignore */ }
 
-    applyLocalCameraEnabled(!nextCamOff);
-
-    if (!nextCamOff) {
-      const live = localStreamRef.current?.getVideoTracks?.().some((t) => t.readyState === 'live');
-      if (!live) {
-        await recoverLocalMedia('toggle-cam-on');
-        applyLocalCameraEnabled(true);
-      }
-    }
-
-    // Tell peers immediately — do not wait on the profile PATCH.
-    broadcastCamOffState(nextCamOff);
-
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      if (token) {
-        fetch(API.USERS.UPDATE_PROFILE, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            videoEnabled: !nextCamOff
-          })
-        }).catch((err) => {
-          console.error('Failed to notify backend about cam toggle:', err);
-        });
+      await applyLocalCameraEnabled(!nextCamOff);
+
+      if (!nextCamOff) {
+        const live = localStreamRef.current?.getVideoTracks?.().some((t) => t.readyState === 'live');
+        if (!live) {
+          await recoverLocalMedia('toggle-cam-on');
+          await applyLocalCameraEnabled(true);
+        }
       }
-    } catch (err) {
-      console.error('Failed to notify backend about cam toggle:', err);
+
+      broadcastCamOffState(nextCamOff);
+    } finally {
+      camToggleInFlightRef.current = false;
     }
   };
 
@@ -2661,8 +2851,9 @@ export default function useVideoChat() {
     const pid = partnerInfo.id != null && partnerInfo.id !== '' ? String(partnerInfo.id) : '';
     const isPartner = pid !== '' && sameParticipantId(s.userId, pid);
     const isVideoOn = s.videoEnabled !== false && s.videoOn !== false;
-    if (isPartner) return { name: displayUsername(s.name || partnerInfo.name, 'Matched!'), age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn };
-    return { name: displayUsername(s.name, 'Guest'), age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn };
+    const isUnavailable = Boolean(s.isUnavailable);
+    if (isPartner) return { name: displayUsername(s.name || partnerInfo.name, 'Matched!'), age: s.age || partnerInfo.age || '', city: s.city || partnerInfo.city || '', displayPictureUrl: s.displayPictureUrl || partnerInfo.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || partnerInfo.activeBadgeImageUrl || null, activeBadge: s.activeBadge || partnerInfo.activeBadge || null, isVideoOn, isUnavailable };
+    return { name: displayUsername(s.name, 'Guest'), age: s.age || '', city: s.city || '', displayPictureUrl: s.displayPictureUrl || '', activeBadgeImageUrl: s.activeBadgeImageUrl || null, activeBadge: s.activeBadge || null, isVideoOn, isUnavailable };
   };
 
   const localVideoProps = {

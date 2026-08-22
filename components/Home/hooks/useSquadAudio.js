@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useEffect, useCallback } from 'react';
+import { acquireUserMedia } from '@/lib/media-permissions';
 
 export const buildWsUrl = (baseUrl, params = {}) => {
   const [base, query = ''] = String(baseUrl || '').split('?');
@@ -174,7 +175,7 @@ export function useSquadAudio({
         }
         if (!userId || !roomId) return;
 
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await acquireUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
           video: false,
         });

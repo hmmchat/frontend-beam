@@ -470,6 +470,7 @@ export default function MeetSomeoneDesktopRight({
                 <LocalVideo
                   showSoloCheckbox={false}
                   isVideoOn={isVideoOn}
+                  captureMedia="(min-width: 1024px)"
                   onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
                 />
               </div>

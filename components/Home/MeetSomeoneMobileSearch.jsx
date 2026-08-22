@@ -195,6 +195,7 @@ export default function MeetSomeoneMobileSearch({
         <LocalVideo
           showSoloCheckbox={false}
           isVideoOn={isVideoOn}
+          captureMedia="(max-width: 1023px)"
           onSoloChange={(checked) => setMode(checked ? 'solo' : 'squad')}
         />
         <PocketFrame className="inset-x-3 top-1.5 bottom-3" />

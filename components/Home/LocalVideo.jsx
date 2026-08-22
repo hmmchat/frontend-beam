@@ -2,40 +2,88 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { getPreviewVideoConstraints } from '@/lib/webrtc-media-utils';
+import {
+  acquireUserMedia,
+  isDeniedMediaError,
+  isMediaDeniedThisSession,
+  queryMediaPermission,
+  shouldDeferOptionalCameraPrompt,
+} from '@/lib/media-permissions';
 
-const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
+const LocalVideo = ({
+  showSoloCheckbox,
+  onSoloChange,
+  isVideoOn = true,
+  /** Only start the camera when this media query matches (avoids a hidden second prompt). */
+  captureMedia = '(min-width: 0px)',
+}) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [error, setError] = useState(null);
+  const [needsGesture, setNeedsGesture] = useState(false);
+  const [inViewport, setInViewport] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      setInViewport(true);
+      return undefined;
+    }
+    const mq = window.matchMedia(captureMedia);
+    const sync = () => setInViewport(Boolean(mq.matches));
+    sync();
+    mq.addEventListener?.('change', sync);
+    return () => mq.removeEventListener?.('change', sync);
+  }, [captureMedia]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
     let cancelled = false;
 
-    async function startCamera() {
-      if (!isVideoOn) {
-        if (videoEl) videoEl.srcObject = null;
-        streamRef.current?.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
+    const stopStream = () => {
+      if (videoEl) videoEl.srcObject = null;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    };
+
+    async function startCamera({ fromGesture = false } = {}) {
+      if (!isVideoOn || !inViewport) {
+        stopStream();
+        setNeedsGesture(false);
         return;
       }
 
+      if (!fromGesture) {
+        if (isMediaDeniedThisSession('camera') || (await queryMediaPermission('camera')) === 'denied') {
+          if (cancelled) return;
+          setNeedsGesture(false);
+          setError('Camera access denied. Please enable camera permissions.');
+          return;
+        }
+        if (await shouldDeferOptionalCameraPrompt()) {
+          if (cancelled) return;
+          setNeedsGesture(true);
+          setError(null);
+          return;
+        }
+      }
+
       try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
+        const mediaStream = await acquireUserMedia({
           video: getPreviewVideoConstraints(),
-          audio: false
+          audio: false,
         });
         if (cancelled) {
           mediaStream.getTracks().forEach((track) => track.stop());
           return;
         }
         streamRef.current = mediaStream;
-        if (videoEl) {
-          videoEl.srcObject = mediaStream;
-        }
+        if (videoEl) videoEl.srcObject = mediaStream;
+        setNeedsGesture(false);
         setError(null);
       } catch (err) {
         console.error('Error accessing camera:', err);
+        if (cancelled) return;
+        setNeedsGesture(!isDeniedMediaError(err));
         setError('Camera access denied. Please enable camera permissions.');
       }
     }
@@ -44,17 +92,32 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
 
     return () => {
       cancelled = true;
-      if (videoEl) {
-        videoEl.srcObject = null;
-      }
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+      stopStream();
     };
-  }, [isVideoOn]);
+  }, [isVideoOn, inViewport]);
+
+  const enableFromTap = async () => {
+    setNeedsGesture(false);
+    setError(null);
+    const videoEl = videoRef.current;
+    try {
+      const mediaStream = await acquireUserMedia({
+        video: getPreviewVideoConstraints(),
+        audio: false,
+      });
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = mediaStream;
+      if (videoEl) videoEl.srcObject = mediaStream;
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      setNeedsGesture(!isDeniedMediaError(err));
+      setError('Camera access denied. Please enable camera permissions.');
+    }
+  };
 
   return (
     <div className="absolute inset-0 w-full h-full bg-gray-900 overflow-hidden">
-      {error ? (
+      {error && !needsGesture ? (
         <div className="text-white text-center p-4">
           <p className="text-4xl mb-4">📷🚫</p>
           <p className="text-sm opacity-70">{error}</p>
@@ -68,6 +131,18 @@ const LocalVideo = ({ showSoloCheckbox, onSoloChange, isVideoOn = true }) => {
             muted
             className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
           />
+          {needsGesture && (
+            <button
+              type="button"
+              onClick={enableFromTap}
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0A032D]/70 backdrop-blur-sm text-white"
+            >
+              <span className="font-outfit text-sm md:text-base font-semibold">Tap to turn on camera</span>
+              <span className="font-outfit text-white/70 text-xs mt-2 px-6 text-center">
+                We only ask once, when you need it here.
+              </span>
+            </button>
+          )}
         </div>
       )}
 

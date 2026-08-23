@@ -6,6 +6,7 @@ import { GiftAnimationGroup } from "./GiftAnimation";
 import BeamTransparentLogo from "@/components/ui/BeamTransparentLogo";
 import SyncedMarqueeText from "./SyncedMarqueeText";
 import PressableActionButton from "./PressableActionButton";
+import ScreenShareButton from "./ScreenShareButton";
 import CallChatOverlay from "./CallChatOverlay";
 
 export default function LocalVideoSection({
@@ -226,30 +227,12 @@ export default function LocalVideoSection({
                   />
                 </button>
                 {typeof onToggleScreenShare === "function" && (
-                  <button
-                    type="button"
-                    onClick={onToggleScreenShare}
-                    title={
-                      isScreenSharing
-                        ? "Stop sharing screen"
-                        : "Share screen or window"
-                    }
-                    className={clsx(
-                      "w-11 h-11 md:h-12 md:w-12 rounded-full border-b-[3px] border flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 backdrop-blur-md",
-                      isScreenSharing
-                        ? "border-emerald-400/80 bg-emerald-500/20"
-                        : "border-white/40 bg-[#0A032D]/20",
-                    )}
-                  >
-                    <svg
-                      className={clsx('h-[18px]', 'w-[18px]', 'md:h-5', 'md:w-5', 'text-white')}
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden
-                    >
-                      <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
-                    </svg>
-                  </button>
+                  <ScreenShareButton
+                    isScreenSharing={isScreenSharing}
+                    onToggle={onToggleScreenShare}
+                    className="w-11 h-11 md:h-12 md:w-12"
+                    iconClassName="h-[18px] w-[18px] md:h-5 md:w-5"
+                  />
                 )}
 
                 <button

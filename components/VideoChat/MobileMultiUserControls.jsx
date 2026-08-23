@@ -4,6 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 import BeamTransparentLogo from '@/components/ui/BeamTransparentLogo';
 import PressableActionButton from './PressableActionButton';
+import ScreenShareButton from './ScreenShareButton';
 
 export default function MobileMultiUserControls({
   toggleCam,
@@ -32,30 +33,12 @@ export default function MobileMultiUserControls({
           />
         </button>
         {typeof onToggleScreenShare === "function" && (
-          <button
-            type="button"
-            onClick={onToggleScreenShare}
-            title={
-              isScreenSharing
-                ? "Stop sharing screen"
-                : "Share screen or window"
-            }
-            className={clsx(
-              "min-w-11 min-h-11 w-11 h-11 rounded-full border border-b-[3px] flex items-center justify-center transition-all hover:bg-[#0A032D]/40 active:scale-95 backdrop-blur-md",
-              isScreenSharing
-                ? "border-emerald-400/80 bg-emerald-500/20"
-                : "border-white/40 bg-[#0A032D]/20"
-            )}
-          >
-            <svg
-              className="h-4 w-4 text-white"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden
-            >
-              <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
-            </svg>
-          </button>
+          <ScreenShareButton
+            isScreenSharing={isScreenSharing}
+            onToggle={onToggleScreenShare}
+            className="min-w-11 min-h-11 w-11 h-11"
+            iconClassName="h-4 w-4"
+          />
         )}
         <button
           type="button"

@@ -232,6 +232,9 @@ export default function useVideoChat() {
   const localScreenMsProducerRef = useRef(null);
   /** True while getDisplayMedia picker is open / screen produce is in flight. */
   const screenShareInFlightRef = useRef(false);
+  /** Bumped on stop so an in-flight start cannot revive the sharing UI. */
+  const screenShareEpochRef = useRef(0);
+  const isScreenSharingRef = useRef(false);
   const producerIdToMetaRef = useRef(new Map());
   const isBroadcastingRef = useRef(false);
   const isCamOffRef = useRef(
@@ -270,6 +273,7 @@ export default function useVideoChat() {
   useEffect(() => { isBroadcastingRef.current = isBroadcasting; }, [isBroadcasting]);
   useEffect(() => { isCamOffRef.current = isCamOff; }, [isCamOff]);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { isScreenSharingRef.current = isScreenSharing; }, [isScreenSharing]);
 
   async function acquireLocalMediaStream({ video = true, audio = true } = {}) {
     const audioConstraints = { echoCancellation: true, noiseSuppression: true, channelCount: 1 };
@@ -1347,6 +1351,7 @@ export default function useVideoChat() {
   };
 
   const stopScreenShare = useCallback(() => {
+    screenShareEpochRef.current += 1;
     screenShareInFlightRef.current = false;
     const producer = localScreenMsProducerRef.current;
     const rid = roomInfoRef.current?.roomId;
@@ -1356,6 +1361,7 @@ export default function useVideoChat() {
     localScreenStreamRef.current?.getTracks().forEach(t => t.stop());
     localScreenStreamRef.current = null;
     pendingVideoProduceSourceRef.current = 'camera';
+    isScreenSharingRef.current = false;
     setIsScreenSharing(false);
   }, []);
 
@@ -1367,14 +1373,23 @@ export default function useVideoChat() {
       return;
     }
 
+    const epoch = ++screenShareEpochRef.current;
+    const isStale = () => epoch !== screenShareEpochRef.current;
     screenShareInFlightRef.current = true;
     try {
       let screenStream;
       try {
+        // Must run in the same user-gesture turn as the tap — do not await
+        // anything before this or the picker often never opens on first touch.
         screenStream = await navigator.mediaDevices.getDisplayMedia(getScreenShareConstraints());
       } catch (firstErr) {
         if (firstErr?.name === 'NotAllowedError' || firstErr?.name === 'AbortError') throw firstErr;
         screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      }
+
+      if (isStale()) {
+        screenStream.getTracks().forEach((t) => t.stop());
+        return;
       }
 
       const track = screenStream.getVideoTracks()[0];
@@ -1389,10 +1404,15 @@ export default function useVideoChat() {
       // The picker backgrounds the tab (especially on mobile) and often drops
       // the signaling socket. Wait for it to come back before producing.
       const transport = await waitForSendTransport();
+      if (isStale()) {
+        screenStream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       if (!transport) {
         throw new Error('Call connection dropped while picking a screen. Please try again.');
       }
       if (localScreenMsProducerRef.current && !localScreenMsProducerRef.current.closed) {
+        isScreenSharingRef.current = true;
         setIsScreenSharing(true);
         return;
       }
@@ -1403,7 +1423,13 @@ export default function useVideoChat() {
           setTimeout(() => reject(new Error('Screen share timed out. Please try again.')), 15000);
         }),
       ]);
+      if (isStale()) {
+        try { producer?.close?.(); } catch { }
+        screenStream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       localScreenMsProducerRef.current = producer;
+      isScreenSharingRef.current = true;
       setIsScreenSharing(true);
     } catch (e) {
       const cancelled = e?.name === 'NotAllowedError' || e?.name === 'AbortError';
@@ -1412,20 +1438,27 @@ export default function useVideoChat() {
         setReportNotification(e?.message || 'Could not share screen. Please try again.');
         setTimeout(() => setReportNotification(null), 3500);
       }
-      localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
-      localScreenStreamRef.current = null;
-      try { localScreenMsProducerRef.current?.close?.(); } catch { }
-      localScreenMsProducerRef.current = null;
-      pendingVideoProduceSourceRef.current = 'camera';
-      setIsScreenSharing(false);
+      if (!isStale()) {
+        localScreenStreamRef.current?.getTracks().forEach((t) => t.stop());
+        localScreenStreamRef.current = null;
+        try { localScreenMsProducerRef.current?.close?.(); } catch { }
+        localScreenMsProducerRef.current = null;
+        pendingVideoProduceSourceRef.current = 'camera';
+        isScreenSharingRef.current = false;
+        setIsScreenSharing(false);
+      }
     } finally {
-      screenShareInFlightRef.current = false;
+      if (!isStale()) screenShareInFlightRef.current = false;
     }
   }, [stopScreenShare]);
 
   const toggleScreenShare = useCallback(() => {
-    if (localScreenMsProducerRef.current) stopScreenShare();
-    else void startScreenShare();
+    const liveTrack = localScreenStreamRef.current?.getVideoTracks?.().some((t) => t.readyState === 'live');
+    if (localScreenMsProducerRef.current || liveTrack || isScreenSharingRef.current) {
+      stopScreenShare();
+      return;
+    }
+    void startScreenShare();
   }, [stopScreenShare, startScreenShare]);
 
   // ---- Mediasoup helpers ---------------------------------------------------

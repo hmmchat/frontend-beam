@@ -3,6 +3,31 @@
 import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import ParticipantCluster from './ParticipantCluster';
+import { GiftAnimationGroup } from '@/components/VideoChat/GiftAnimation';
+import SyncedMarqueeText from '@/components/VideoChat/SyncedMarqueeText';
+import SummoningOverlay from '@/components/VideoChat/SummoningOverlay';
+
+function UnavailableWaitingOverlay({ roundedClasses }) {
+  return (
+    <div
+      className={clsx(
+        'absolute inset-0 z-20 flex items-center justify-center overflow-hidden pointer-events-none',
+        roundedClasses
+      )}
+    >
+      <div className="relative z-10 flex items-center gap-2 rounded-full bg-[#0A032D]/80 px-4 py-1.5 md:px-5 md:py-2 outline outline-[1.5px] outline-white/40">
+        <span className="font-otomanopee text-white text-xs md:text-sm tracking-wide whitespace-nowrap">
+          Holding their Beam
+        </span>
+        <span className="flex items-center gap-[3px] pt-0.5" aria-hidden>
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-1 h-1 rounded-full bg-[#B388FF] animate-bounce" />
+        </span>
+      </div>
+    </div>
+  );
+}
 
 /** Shared RemoteVideoTile for rendering each broadcast participant */
 export default function RemoteVideoTile({
@@ -21,20 +46,32 @@ export default function RemoteVideoTile({
   isRightTile = false,
   userId,
   borderBottomClass,
-  onAvatarClick
+  onAvatarClick,
+  gifts = [],
+  onGiftAnimationComplete,
+  activeGiftLabel,
+  activeDareLabel,
+  activeRemoteDareText,
+  activeRemoteDareMarqueeStartAt,
+  isVideoOn = true,
+  isUnavailable = false,
+  isSummoning = false,
 }) {
   const videoRef = useRef(null);
   const screenRef = useRef(null);
   const pipRef = useRef(null);
 
+  const hasDare = Boolean(activeRemoteDareText || activeDareLabel);
+  const showAway = isVideoOn && !isSummoning && isUnavailable;
+
   useEffect(() => {
-    if (screenShareStream) return;
+    if (isSummoning || screenShareStream) return;
     const v = videoRef.current;
     if (!v) return;
     if (v.srcObject !== stream) v.srcObject = stream;
     const p = v.play?.();
     if (p && typeof p.catch === 'function') p.catch(() => { });
-  }, [stream, screenShareStream]);
+  }, [stream, screenShareStream, isSummoning]);
 
   useEffect(() => {
     if (!screenShareStream) return;
@@ -127,7 +164,11 @@ export default function RemoteVideoTile({
         }}
       />
 
-      {screenShareStream ? (
+      {isSummoning ? (
+        <div className={clsx('absolute inset-0 z-10 bg-[#0A032D]', roundedClasses)}>
+          <SummoningOverlay cooldownActive={false} variant={totalTiles >= 4 ? 'layout4' : 'layout3'} />
+        </div>
+      ) : screenShareStream ? (
         <>
           <video
             ref={screenRef}
@@ -155,13 +196,55 @@ export default function RemoteVideoTile({
           playsInline
           muted={forceMuted}
           className={clsx(
-            "h-full w-full min-h-0 object-cover relative z-10 transition-all duration-500",
+            "h-full w-full min-h-0 object-cover relative z-0 transition-all duration-500",
             (isGiftModalOpen && isRightTile)
               ? "md:h-[85vh] rounded-b-[1.5rem] md:rounded-b-[4rem]"
               : "h-full",
             roundedClasses
           )}
         />
+      )}
+
+      {!isSummoning && !isVideoOn && !showAway && (
+        <div className={clsx('absolute inset-0 z-[12] w-full h-full bg-gray-950 flex flex-col items-center justify-center', roundedClasses)}>
+          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/30 shadow-2xl bg-[#0d0726]">
+            <img
+              src={displayPictureUrl || "/assets/ico.png"}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+          </div>
+          <span className="text-white/70 text-xs md:text-sm mt-4 tracking-wider font-semibold font-outfit bg-black/70 px-4 py-1.5 rounded-full border border-white/10">
+            Camera is off
+          </span>
+        </div>
+      )}
+
+      {showAway && <UnavailableWaitingOverlay roundedClasses={roundedClasses} />}
+
+      {hasDare && (
+        <div
+          className="absolute top-0 left-1/2 z-[60] w-[80%] max-w-[80%] px-4 md:px-6 py-1.5 md:py-2.5 bg-[#8A1515] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md flex items-center gap-1 overflow-hidden box-border"
+          style={{ transform: 'translate3d(-50%, 0, 2px)' }}
+        >
+          <span className="opacity-90 shrink-0">{name || 'Someone'}&apos;s Dare: </span>
+          {activeRemoteDareText && (
+            <SyncedMarqueeText
+              text={activeRemoteDareText}
+              marqueeStartAt={activeRemoteDareMarqueeStartAt}
+              className="flex-1 min-w-0"
+              textClassName="font-bold"
+            />
+          )}
+        </div>
+      )}
+      {!hasDare && activeGiftLabel && (
+        <div
+          className="absolute top-0 left-1/2 z-[60] px-5 py-1.5 md:py-2.5 bg-[#4E0093] rounded-b-[16px] md:rounded-b-[20px] text-white text-[10px] md:text-xs font-medium shadow-md whitespace-nowrap font-outfit"
+          style={{ transform: 'translate3d(-50%, 0, 2px)' }}
+        >
+          <span>{activeGiftLabel}</span>
+        </div>
       )}
 
       {isFirst && (
@@ -198,15 +281,33 @@ export default function RemoteVideoTile({
       <div
         className={clsx(
           "absolute md:top-4 top-2 md:left-4 left-2 md:right-4 right-2 border rounded-3xl md:rounded-[60px] pointer-events-none z-20 transition-colors",
+          "border-white/50 md:border-white/30",
           borderBottomClass
-            ? ["border-white/30", borderBottomClass]
+            ? borderBottomClass
             : (isRightTile
               ? (isGiftModalOpen
-                ? "border-white/50 md:bottom-28 bottom-18"
-                : "border-white/30 md:bottom-24 bottom-18")
-              : "border-white/30 md:bottom-4 bottom-2")
+                ? "md:bottom-28 bottom-18"
+                : "md:bottom-24 bottom-18")
+              : "md:bottom-4 bottom-2")
         )}
       />
+
+      {!isSummoning && (
+        <div
+          className="absolute top-2 left-2 right-2 bottom-2 md:top-4 md:left-4 md:right-4 md:bottom-8 overflow-hidden rounded-3xl md:rounded-[60px] pointer-events-none z-[998]"
+          style={{ transform: 'translateZ(3px)' }}
+        >
+          <GiftAnimationGroup
+            gifts={(Array.isArray(gifts) ? gifts : []).map((giftItem) => {
+              const inner = giftItem.gift || giftItem;
+              return giftItem.gift ? { ...inner, isDismissed: giftItem.isDismissed ?? inner.isDismissed } : inner;
+            })}
+            onComplete={onGiftAnimationComplete}
+            persistUntilDismissed={true}
+            interactive={false}
+          />
+        </div>
+      )}
 
       {name && (
         <span

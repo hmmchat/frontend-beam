@@ -61,6 +61,8 @@ module.exports = {
                 'grid-drift': 'gridDrift 20s linear infinite',
                 'spin-slow': 'spin 6s linear infinite',
                 'bounce-slow': 'bounceSlow 3s ease-in-out infinite',
+                'mining-toast-in': 'miningToastIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
+                'mining-toast-out': 'miningToastOut 0.4s cubic-bezier(0.4, 0, 1, 1) both',
             },
 
             keyframes: {
@@ -106,6 +108,15 @@ module.exports = {
                 zoomSlow: {
                     '0%, 100%': { transform: 'scale(1)' },
                     '50%': { transform: 'scale(1.1)' },
+                },
+                miningToastIn: {
+                    '0%': { opacity: '0', transform: 'translateY(-16px) scale(0.94)' },
+                    '72%': { opacity: '1', transform: 'translateY(2px) scale(1.02)' },
+                    '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                },
+                miningToastOut: {
+                    '0%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                    '100%': { opacity: '0', transform: 'translateY(-14px) scale(0.96)' },
                 },
             },
         },

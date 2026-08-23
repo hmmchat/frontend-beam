@@ -4,6 +4,44 @@
 @theme {
   --font-outfit: var(--font-outfit);
   --font-otomanopee: var(--font-otomanopee);
+  --animate-mining-toast-in: mining-toast-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-mining-toast-out: mining-toast-out 0.4s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes mining-toast-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -16px, 0) scale(0.94);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0, 2px, 0) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes mining-toast-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -14px, 0) scale(0.96);
+  }
+}
+
+.animate-mining-toast-in {
+  -webkit-animation: mining-toast-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: mining-toast-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-mining-toast-out {
+  -webkit-animation: mining-toast-out 0.4s cubic-bezier(0.4, 0, 1, 1) both;
+  animation: mining-toast-out 0.4s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 

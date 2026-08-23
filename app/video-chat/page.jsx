@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import ProfileGuard from '@/components/auth/ProfileGuard';
 import OverlayLayer from '@/components/ui/OverlayLayer';
@@ -14,6 +14,7 @@ import BroadcastHud from '@/components/VideoChat/BroadcastHud';
 import WaitlistModal from '@/components/VideoChat/WaitlistModal';
 import RandomnessModal from '@/components/VideoChat/RandomnessModal';
 import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
+import MiningToast from '@/components/VideoChat/MiningToast';
 import QuickActions from '@/components/video-chat/QuickActions';
 import MobileMultiUserControls from '@/components/VideoChat/MobileMultiUserControls';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
@@ -75,6 +76,7 @@ function VideoChatContent() {
     openDareOverlay,
     handleSaveCustomDare, handleDeleteCustomDare,
     refreshWallet,
+    minedCoinsNotice, setMinedCoinsNotice, minedNoticeId,
     // Render helpers
     localVideoProps, getRemoteFriendTileProps, getRemoteTileProfile,
     canKickRemoteUser, shouldShowReportEmojiOnRemoteTile,
@@ -84,6 +86,10 @@ function VideoChatContent() {
 
   // ---- Derived values ------------------------------------------------------
   const isInActiveCall = remoteStreams.length > 0 || isBroadcasting;
+
+  useEffect(() => {
+    if (!isInActiveCall && minedCoinsNotice) setMinedCoinsNotice(0);
+  }, [isInActiveCall, minedCoinsNotice, setMinedCoinsNotice]);
   const isPullStrangerDisabled = (remoteStreams.length + 1) >= 4 || isEnablingPullStranger || (pullStrangerCooldownSec > 0);
   const isRoomFull = (remoteStreams.length + 1) >= 4;
   const getRemoteGifts = (userId) =>
@@ -550,6 +556,13 @@ function VideoChatContent() {
 
         {/* Icebreaker toast */}
         <IcebreakerToast isOpen={showIcebreaker && isInActiveCall} icebreaker={icebreaker} />
+
+        <MiningToast
+          isOpen={isInActiveCall && minedCoinsNotice > 0}
+          coins={minedCoinsNotice}
+          noticeId={minedNoticeId}
+          onDismissed={() => setMinedCoinsNotice(0)}
+        />
 
         {/* Broadcast chat warning */}
         {broadcastChatWarning && isInActiveCall && (

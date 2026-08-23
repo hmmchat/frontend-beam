@@ -136,6 +136,8 @@ export default function useVideoChat() {
   const [showChatMessages, setShowChatMessages] = useState(false);
   const [coins, setCoins] = useState(0);
   const [diamonds, setDiamonds] = useState(0);
+  const [minedCoinsNotice, setMinedCoinsNotice] = useState(0);
+  const [minedNoticeId, setMinedNoticeId] = useState(0);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastHud, setBroadcastHud] = useState({ viewerCount: 0, waitlistCount: 0, lastShareMsg: '', shareOpen: false, shareUrl: '' });
@@ -248,6 +250,7 @@ export default function useVideoChat() {
   const exitBecauseDroppedFromCallRef = useRef(null);
   const recoverLocalMediaRef = useRef(null);
   const unavailablePeerIdsRef = useRef(new Set());
+  const camOffPeerIdsRef = useRef(new Set());
   const hiddenPeerIdsRef = useRef(new Set());
   const localIntrusionTimerRef = useRef(null);
   const sfuRerouteAttemptRef = useRef(0);
@@ -324,6 +327,73 @@ export default function useVideoChat() {
         }),
       },
     }));
+  }
+
+  function applyRoomOverlays(overlays) {
+    if (!Array.isArray(overlays) || overlays.length === 0) return;
+    const myId = String(userIdRef.current || '');
+    overlays.forEach((item) => {
+      if (!item) return;
+      const messageId = item.messageId || `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
+      if (processedGiftIdsRef.current.has(messageId)) return;
+      processedGiftIdsRef.current.add(messageId);
+      const giftObj = {
+        ...(item.gift || {}),
+        messageId,
+        targetUserId: item.targetUserId,
+        senderId: item.senderId,
+        isDare: item.isDare,
+        dareText: item.dareText,
+        marqueeStartAt: typeof item.marqueeStartAt === 'number' ? item.marqueeStartAt : undefined,
+      };
+      const tid = String(item.targetUserId || '');
+      if (tid === myId) {
+        setActiveLocalGifts((prev) => {
+          if (!giftObj.isDare) return [...prev, { ...giftObj, isDismissed: false }];
+          return [
+            ...prev.filter((gift) => !(gift.isDare && String(gift.targetUserId) === tid)),
+            { ...giftObj, isDismissed: false },
+          ];
+        });
+      } else {
+        setActiveRemoteGifts((prev) => {
+          const nextItem = { gift: giftObj, targetUserId: tid, isDismissed: false, isDare: Boolean(giftObj.isDare) };
+          if (!giftObj.isDare) return [...prev, nextItem];
+          return [
+            ...prev.filter((entry) => !((entry.isDare || entry.gift?.isDare) && String(entry.targetUserId) === tid)),
+            nextItem,
+          ];
+        });
+      }
+    });
+  }
+
+  function applyViewerScene(scene, overlaysFallback) {
+    applyRoomOverlays(scene?.overlays || overlaysFallback);
+    const camOff = new Set((scene?.camOffUserIds || []).map(String));
+    const unavailable = new Set((scene?.unavailableUserIds || []).map(String));
+    camOffPeerIdsRef.current = camOff;
+    unavailablePeerIdsRef.current = unavailable;
+    if (scene?.summoningUserId) setRoomSummoningUserId(String(scene.summoningUserId));
+    const question = typeof scene?.icebreaker === 'string' ? scene.icebreaker.trim() : '';
+    if (question) {
+      setIcebreaker(question);
+      setShowIcebreaker(true);
+      setIsBroken(true);
+    }
+    setRemoteStreams((prev) => {
+      const next = prev.map((s) => {
+        const uid = String(s.userId);
+        return {
+          ...s,
+          videoEnabled: !camOff.has(uid),
+          videoOn: !camOff.has(uid),
+          isUnavailable: unavailable.has(uid),
+        };
+      });
+      remoteStreamsRef.current = next;
+      return next;
+    });
   }
 
   function sendCallControl(payload) {
@@ -604,16 +674,59 @@ export default function useVideoChat() {
     try {
       const res = await apiRequest(API.WALLET.GET_BALANCE).catch(() => null);
       if (res) {
-        setCoins(typeof res.balance === 'number' ? res.balance : 0);
+        const nextCoins = typeof res.balance === 'number' ? res.balance : 0;
+        const minedCoins = Number(res.minedCoins) || 0;
+        setCoins(nextCoins);
         setDiamonds(Number(res.diamonds) || 0);
         if (res.diamondToCoinRate != null) {
           applyDiamondToCoinRate(res.diamondToCoinRate);
         }
+        return {
+          coins: nextCoins,
+          diamonds: Number(res.diamonds) || 0,
+          minedCoins,
+        };
       }
     } catch { }
+    return null;
   }, [applyDiamondToCoinRate]);
 
+  const lastMineToastRef = useRef({ coins: 0, at: 0 });
+  const showMinedCoinsNotice = useCallback((coinsCredited) => {
+    const n = Number(coinsCredited) || 0;
+    if (n <= 0) return;
+    const now = Date.now();
+    if (n === lastMineToastRef.current.coins && now - lastMineToastRef.current.at < 20000) return;
+    lastMineToastRef.current = { coins: n, at: now };
+    setMinedCoinsNotice(n);
+    setMinedNoticeId(now);
+  }, []);
+
+  const refreshLiveWallet = useCallback(async ({ announce = true } = {}) => {
+    const result = await refreshWallet();
+    if (result?.minedCoins > 0) {
+      showMinedCoinsNotice(result.minedCoins);
+      if (announce) sendCallControl({ isMiningCredit: true });
+    }
+    return result;
+  }, [refreshWallet, showMinedCoinsNotice]);
+
   useEffect(() => { refreshWallet(); }, [refreshWallet]);
+
+  // Keep the in-call balance current so mined coins can be spent without hanging up.
+  useEffect(() => {
+    const roomId = roomInfo?.roomId;
+    if (!roomId) return undefined;
+    const intervalMs = (isGiftModalOpen || isDareOpen) ? 8000 : 15000;
+    const id = setInterval(() => { refreshLiveWallet(); }, intervalMs);
+    return () => clearInterval(id);
+  }, [roomInfo?.roomId, isGiftModalOpen, isDareOpen, refreshLiveWallet]);
+
+  useEffect(() => {
+    if (isGiftModalOpen || isDareOpen) {
+      refreshLiveWallet();
+    }
+  }, [isGiftModalOpen, isDareOpen, refreshLiveWallet]);
 
   // ---- Dares ---------------------------------------------------------------
   const fetchRandomDares = useCallback(async () => {
@@ -759,6 +872,8 @@ export default function useVideoChat() {
       remoteStreamsRef.current?.forEach(s => { s?.stream?.getTracks?.().forEach(t => t.stop()); s?.screenStream?.getTracks?.().forEach(t => t.stop()); });
       remoteStreamsRef.current = [];
       setRemoteStreams([]);
+      camOffPeerIdsRef.current = new Set();
+      unavailablePeerIdsRef.current = new Set();
     }
     producersRef.current = {};
     consumersRef.current = {};
@@ -1500,6 +1615,7 @@ export default function useVideoChat() {
     const { skipPeerLeftAutoResume = false } = opts;
     const leftId = String(leftIdRaw);
     unavailablePeerIdsRef.current.delete(leftId);
+    camOffPeerIdsRef.current.delete(leftId);
     hiddenPeerIdsRef.current.delete(leftId);
     let remainingAfter = 0;
     setRemoteStreams(prev => {
@@ -1668,6 +1784,12 @@ export default function useVideoChat() {
     realtimeDebug('[WebRTC] Handling signal:', type, data);
 
     switch (type) {
+      case 'mining-credited': {
+        const credited = Number(data?.coins) || 0;
+        if (credited > 0) showMinedCoinsNotice(credited);
+        refreshWallet();
+        break;
+      }
       case 'room-joined': {
         callJoinConfirmedRef.current = true;
         console.log('[WebRTC] Room joined, loading device...');
@@ -1686,6 +1808,7 @@ export default function useVideoChat() {
             data.producers.forEach(p => { const isSameUser = sameParticipantId(p.userId, userIdRef.current); const isMyProducer = myProducerIdsRef.current.has(String(p.producerId)); if (!isSameUser || !isMyProducer) consume(p.producerId, p.userId, { kind: p.kind, source: p.source }); });
           }
           send({ type: 'get-producers', data: { roomId: info.roomId } });
+          applyViewerScene(data?.viewerScene, data?.activeOverlays);
           if (typeof document !== 'undefined' && document.hidden) broadcastPageHidden(true);
           break;
         }
@@ -1705,6 +1828,7 @@ export default function useVideoChat() {
         }
         setStatus('connected');
         send({ type: 'create-transport', data: { roomId: info.roomId, producing: true, consuming: false } });
+        applyViewerScene(data?.viewerScene, data?.activeOverlays);
         if (typeof document !== 'undefined' && document.hidden) broadcastPageHidden(true);
         break;
       }
@@ -1841,11 +1965,11 @@ export default function useVideoChat() {
           let next;
           if (kind === 'video' && vSource === 'screen') {
             if (existing) next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, screenStream: replaceScreenTrackInStream(s.screenStream, consumer.track) } : s);
-            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey) }];
+            else next = [...prev, { userId: uiRemoteId, stream: new MediaStream(), screenStream: replaceScreenTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey), videoEnabled: !camOffPeerIdsRef.current.has(uidKey), videoOn: !camOffPeerIdsRef.current.has(uidKey) }];
           } else if (existing) {
             next = prev.map(s => sameParticipantId(s.userId, uiRemoteId) ? { ...s, stream: replaceKindTrackInStream(s.stream, consumer.track) } : s);
           } else {
-            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey) }];
+            next = [...prev, { userId: uiRemoteId, stream: replaceKindTrackInStream(null, consumer.track), name: '', age: '', displayPictureUrl: '', city: '', profileFetched: false, isUnavailable: unavailablePeerIdsRef.current.has(uidKey), isPageHidden: hiddenPeerIdsRef.current.has(uidKey), videoEnabled: !camOffPeerIdsRef.current.has(uidKey), videoOn: !camOffPeerIdsRef.current.has(uidKey) }];
           }
           remoteStreamsRef.current = next;
           if (next.length > 0) hadRemotePeerInSessionRef.current = true;
@@ -1982,7 +2106,7 @@ export default function useVideoChat() {
         try {
           if (data.message && data.message.startsWith('{')) {
             const parsed = JSON.parse(data.message);
-            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined || parsed.isUserUnavailable !== undefined || parsed.isPageHidden !== undefined)) {
+            if (parsed && (parsed.isGift || parsed.isGiftDismissed || parsed.isDareSync || parsed.isDareResponse || parsed.isDareClose || parsed.isDareInitiated || parsed.isDiceRoll || parsed.isIcebreakerTrigger !== undefined || parsed.isSummoningActive !== undefined || parsed.isPeerNextClicked !== undefined || parsed.isCamOffChanged !== undefined || parsed.isUserUnavailable !== undefined || parsed.isPageHidden !== undefined || parsed.isMiningCredit)) {
               isControlMessage = true; controlParsed = parsed;
             }
           }
@@ -2022,6 +2146,9 @@ export default function useVideoChat() {
           if (controlParsed.isCamOffChanged !== undefined) {
             const remoteUserId = controlParsed.senderId;
             const camOff = Boolean(controlParsed.isCamOff);
+            const peerKey = String(remoteUserId);
+            if (camOff) camOffPeerIdsRef.current.add(peerKey);
+            else camOffPeerIdsRef.current.delete(peerKey);
             setRemoteStreams(prev => {
               const next = prev.map(s => {
                 if (String(s.userId) === String(remoteUserId)) {
@@ -2036,6 +2163,12 @@ export default function useVideoChat() {
               remoteStreamsRef.current = next;
               return next;
             });
+            return;
+          }
+          if (controlParsed.isMiningCredit) {
+            if (String(controlParsed.senderId) !== String(myId)) {
+              refreshLiveWallet({ announce: false });
+            }
             return;
           }
           if (controlParsed.isPeerNextClicked) { handlePeerLeftAutoResume(); return; }
@@ -2720,17 +2853,20 @@ export default function useVideoChat() {
     const roomId = roomInfoRef.current?.roomId;
     if (!gift || !senderId || !targetId || !roomId) return;
     if (isSendingGiftRef.current) return;
+    isSendingGiftRef.current = true;
 
     const coinCost = Number(gift.price) || 0;
     const diamondAmount = Number(gift.diamonds) || 0;
+    // Settle + refetch so coins mined during this call are spendable immediately.
+    const latest = await refreshLiveWallet();
+    const available = latest?.coins ?? coins;
     // Client pre-check — GiftOverlay already shows insufficient UI; keep picker open.
-    if (coins < coinCost) {
+    if (available < coinCost) {
+      isSendingGiftRef.current = false;
       setSelectedGiftId(gift.id);
       setIsGiftModalOpen(true);
       return;
     }
-
-    isSendingGiftRef.current = true;
     // Close immediately so the flying sticker isn't covered and double-sends aren't possible.
     setIsGiftModalOpen(false);
     setSelectedGiftId(null);
@@ -2782,7 +2918,7 @@ export default function useVideoChat() {
     } finally {
       isSendingGiftRef.current = false;
     }
-  }, [coins, refreshWallet]);
+  }, [coins, refreshWallet, refreshLiveWallet]);
 
   // ---- Dare callbacks ------------------------------------------------------
   const handleDareSync = useCallback((syncData) => {
@@ -2840,17 +2976,20 @@ export default function useVideoChat() {
     if (!giftObj) return;
 
     if (isSendingDareRef.current) return;
+    isSendingDareRef.current = true;
+    setIsSendingDare(true);
 
     const giftAmount = Number(giftObj.diamonds) || 0;
     const neededCoins = diamondsToCoinPrice(giftAmount, diamondToCoinRate);
+    const latest = await refreshLiveWallet();
+    const available = latest?.coins ?? coins;
     // Client pre-check — DareOverlay already shows insufficient UI; keep picker open.
-    if (coins < neededCoins) {
+    if (available < neededCoins) {
+      isSendingDareRef.current = false;
+      setIsSendingDare(false);
       setIsDareOpen(true);
       return;
     }
-
-    isSendingDareRef.current = true;
-    setIsSendingDare(true);
     // Close immediately so the flying sticker isn't covered and double-sends aren't possible.
     setIsDareOpen(false);
     setSelectedGiftId(null);
@@ -2921,7 +3060,7 @@ export default function useVideoChat() {
       isSendingDareRef.current = false;
       setIsSendingDare(false);
     }
-  }, [coins, selectedGiftId, refreshWallet, giftItems, diamondToCoinRate]);
+  }, [coins, selectedGiftId, refreshWallet, refreshLiveWallet, giftItems, diamondToCoinRate]);
 
   const openDareOverlay = () => {
     const roomId = roomInfoRef.current?.roomId || roomInfo?.roomId;
@@ -2998,6 +3137,7 @@ export default function useVideoChat() {
     roomSummoningUserId, callRoles, roomHealthDebug,
     icebreaker, showIcebreaker, chatMessages, chatInput, setChatInput,
     showChatInput, setShowChatInput, showChatMessages, coins, diamonds, diamondToCoinRate,
+    minedCoinsNotice, setMinedCoinsNotice, minedNoticeId,
     isCoinModalOpen, setIsCoinModalOpen, isBroadcasting,
     broadcastHud, setBroadcastHud, showWaitlist, setShowWaitlist,
     isGiftModalOpen, setIsGiftModalOpen, isDareOpen, setIsDareOpen,

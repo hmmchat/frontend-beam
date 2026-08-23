@@ -22,7 +22,9 @@ import LikedBroadcastersModal from '@/components/beam-tv/LikedBroadcastersModal'
 import FavouritesPanel from '@/components/beam-tv/FavouritesPanel';
 import BeamTvIdleScreen from '@/components/beam-tv/BeamTvIdleScreen';
 import GiftOverlay from '@/components/VideoChat/GiftOverlay';
-import GiftAnimation from '@/components/VideoChat/GiftAnimation';
+import MiningToast from '@/components/VideoChat/MiningToast';
+import ParticipantMiningToasts from '@/components/VideoChat/ParticipantMiningToasts';
+import IcebreakerToast from '@/components/VideoChat/IcebreakerToast';
 import CoinModal from '@/components/modals/CoinModal';
 import { isInsufficientBalanceError } from '@/lib/walletErrors';
 
@@ -141,10 +143,19 @@ function BeamTVInner() {
   const [coins, setCoins] = useState(0);
   const [isCoinModalOpen, setIsCoinModalOpen] = useState(false);
   const [purchaseToast, setPurchaseToast] = useState(null);
+  const [minedCoinsNotice, setMinedCoinsNotice] = useState(0);
+  const [minedNoticeId, setMinedNoticeId] = useState(0);
+  const [participantMineToasts, setParticipantMineToasts] = useState([]);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState(null);
-  const [animGift, setAnimGift] = useState(null);
   const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
+  const [activeRemoteGifts, setActiveRemoteGifts] = useState([]);
+  const [roomSummoningUserId, setRoomSummoningUserId] = useState(null);
+  const [icebreaker, setIcebreaker] = useState('');
+  const [showIcebreaker, setShowIcebreaker] = useState(false);
+  const processedGiftIdsRef = useRef(new Set());
+  const viewerSceneFlagsRef = useRef({ camOff: new Set(), unavailable: new Set() });
+  const handleSignalRef = useRef(null);
 
   const wsRef = useRef(null);
   const deviceRef = useRef(null);
@@ -303,20 +314,81 @@ function BeamTVInner() {
   }, [cleanup]);
 
   const refreshWallet = useCallback(async () => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn) return null;
     try {
       const b = await apiRequest(API.WALLET.GET_BALANCE);
-      setCoins(typeof b?.balance === 'number' ? b.balance : 0);
+      const nextCoins = typeof b?.balance === 'number' ? b.balance : 0;
+      setCoins(nextCoins);
+      return {
+        coins: nextCoins,
+        minedCoins: Number(b?.minedCoins) || 0,
+      };
     } catch {
       setCoins(0);
+      return null;
     }
   }, [isLoggedIn]);
+
+  const lastMineToastRef = useRef({ coins: 0, at: 0 });
+  const showOwnMinedCoins = useCallback((minedCoins) => {
+    const n = Number(minedCoins) || 0;
+    if (n <= 0) return;
+    const now = Date.now();
+    if (n === lastMineToastRef.current.coins && now - lastMineToastRef.current.at < 20000) return;
+    lastMineToastRef.current = { coins: n, at: now };
+    setMinedCoinsNotice(n);
+    setMinedNoticeId(now);
+  }, []);
+
+  const announceMinedCoins = useCallback((minedCoins) => {
+    const n = Number(minedCoins) || 0;
+    if (n <= 0) return;
+    showOwnMinedCoins(n);
+    const roomId = currentBroadcastRef.current?.roomId;
+    const uid = typeof window !== 'undefined' ? localStorage.getItem('userId') : '';
+    if (!roomId || !uid) return;
+    send({
+      type: 'chat-message',
+      data: {
+        roomId,
+        message: JSON.stringify({ isMiningCredit: true, senderId: uid }),
+      },
+    });
+  }, [send, showOwnMinedCoins]);
 
   useEffect(() => {
     if (isLoggedIn) {
       refreshWallet();
     }
   }, [isLoggedIn, refreshWallet]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !currentBroadcast?.roomId) return undefined;
+    const intervalMs = isGiftModalOpen ? 8000 : 15000;
+    const id = setInterval(() => {
+      refreshWallet().then((result) => {
+        if (result?.minedCoins > 0) announceMinedCoins(result.minedCoins);
+      });
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [isLoggedIn, currentBroadcast?.roomId, isGiftModalOpen, refreshWallet, announceMinedCoins]);
+
+  useEffect(() => {
+    setActiveRemoteGifts([]);
+    setRoomSummoningUserId(null);
+    setShowIcebreaker(false);
+    setIcebreaker('');
+    processedGiftIdsRef.current = new Set();
+    viewerSceneFlagsRef.current = { camOff: new Set(), unavailable: new Set() };
+    setParticipantMineToasts([]);
+  }, [currentBroadcast?.roomId]);
+
+  useEffect(() => {
+    if (!isGiftModalOpen) return;
+    refreshWallet().then((result) => {
+      if (result?.minedCoins > 0) announceMinedCoins(result.minedCoins);
+    });
+  }, [isGiftModalOpen, refreshWallet, announceMinedCoins]);
 
   const giftParticipants = useMemo(() => {
     const list = [];
@@ -350,6 +422,114 @@ function BeamTVInner() {
     }
     return list;
   }, [remoteStreams, currentBroadcast]);
+
+  const resolveParticipantName = useCallback((userId, fallback = 'Someone') => {
+    const uid = String(userId || '');
+    if (!uid) return fallback;
+    const stream = remoteStreams.find((s) => String(s.userId) === uid);
+    if (stream?.name && stream.name !== 'Broadcaster' && !stream.userId?.startsWith('summoning:')) {
+      return displayUsername(stream.name, fallback);
+    }
+    const listed = (currentBroadcast?.participants || []).find((p) => String(p?.userId) === uid);
+    if (listed?.username || listed?.name) {
+      return displayUsername(listed.username || listed.name, fallback);
+    }
+    const cached = chatProfileCacheRef.current.get(uid);
+    if (cached?.username) return displayUsername(cached.username, fallback);
+    return fallback;
+  }, [remoteStreams, currentBroadcast]);
+
+  const looksLikeUserId = useCallback((value) => {
+    const v = String(value || '').trim();
+    if (!v) return true;
+    if (v === 'Someone' || v === 'Broadcaster' || v === 'Host') return false;
+    if (v.startsWith('anonymous:') || v.startsWith('producer:') || v.startsWith('summoning:')) return true;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)) return true;
+    return false;
+  }, []);
+
+  const pushParticipantMineToast = useCallback((userId) => {
+    const uid = String(userId || '');
+    if (!uid) return;
+    const resolved = resolveParticipantName(uid, 'Someone');
+    const name = looksLikeUserId(resolved) || resolved === uid ? 'Someone' : resolved;
+    setParticipantMineToasts((prev) => {
+      const next = [
+        ...prev.filter((item) => item.userId !== uid),
+        { id: `${uid}-${Date.now()}`, userId: uid, name },
+      ];
+      return next.slice(-3);
+    });
+  }, [looksLikeUserId, resolveParticipantName]);
+
+  const formatGiftTransferLine = useCallback((verb, senderId, targetId, gift) => {
+    const from = resolveParticipantName(senderId);
+    const to = resolveParticipantName(targetId);
+    const giftName = gift?.name || '';
+    return `${from} ${verb} ${to}${giftName ? `: ${giftName}` : ''}`;
+  }, [resolveParticipantName]);
+
+  const upsertRoomGift = useCallback((payload) => {
+    const messageId = payload.messageId || `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
+    if (processedGiftIdsRef.current.has(messageId)) return;
+    processedGiftIdsRef.current.add(messageId);
+    const nextItem = {
+      gift: { ...payload.gift, messageId, isDare: payload.isDare, dareText: payload.dareText, marqueeStartAt: payload.marqueeStartAt, senderId: payload.senderId },
+      targetUserId: String(payload.targetUserId || ''),
+      senderId: String(payload.senderId || ''),
+      isDare: Boolean(payload.isDare),
+      dareText: payload.dareText,
+      marqueeStartAt: payload.marqueeStartAt,
+      isDismissed: false,
+    };
+    setActiveRemoteGifts((prev) => {
+      if (!nextItem.isDare) return [...prev, nextItem];
+      const tid = nextItem.targetUserId;
+      return [
+        ...prev.filter((item) => !((item.isDare || item.gift?.isDare) && String(item.targetUserId) === tid)),
+        nextItem,
+      ];
+    });
+  }, []);
+
+  const applyViewerScene = useCallback((scene, overlaysFallback) => {
+    const overlays = Array.isArray(scene?.overlays)
+      ? scene.overlays
+      : Array.isArray(overlaysFallback) ? overlaysFallback : [];
+    overlays.forEach((item) => {
+      if (!item) return;
+      upsertRoomGift({
+        messageId: item.messageId,
+        gift: item.gift,
+        targetUserId: item.targetUserId,
+        senderId: item.senderId,
+        isDare: item.isDare,
+        dareText: item.dareText,
+        marqueeStartAt: item.marqueeStartAt,
+      });
+    });
+    const camOff = new Set((scene?.camOffUserIds || []).map(String));
+    const unavailable = new Set((scene?.unavailableUserIds || []).map(String));
+    viewerSceneFlagsRef.current = { camOff, unavailable };
+    setRoomSummoningUserId(scene?.summoningUserId ? String(scene.summoningUserId) : null);
+    const question = typeof scene?.icebreaker === 'string' ? scene.icebreaker.trim() : '';
+    if (question) {
+      setIcebreaker(question);
+      setShowIcebreaker(true);
+    }
+    setRemoteStreams((prev) => {
+      const next = prev.map((s) => {
+        const uid = String(s.userId);
+        return {
+          ...s,
+          isVideoOn: !camOff.has(uid),
+          isUnavailable: unavailable.has(uid),
+        };
+      });
+      remoteStreamsRef.current = next;
+      return next;
+    });
+  }, [upsertRoomGift]);
 
   // Seed HUD from the feed snapshot when the room changes. Live viewer
   // count is then kept in sync by refreshViewerCount (same source as the host HUD).
@@ -672,6 +852,13 @@ function BeamTVInner() {
     currentBroadcastRef.current = null;
     setChatMessages([]);
     setJoinState({ state: 'idle', message: '' });
+    setActiveRemoteGifts([]);
+    setRoomSummoningUserId(null);
+    setShowIcebreaker(false);
+    setIcebreaker('');
+    processedGiftIdsRef.current = new Set();
+    viewerSceneFlagsRef.current = { camOff: new Set(), unavailable: new Set() };
+    setParticipantMineToasts([]);
     setStatus('ended');
   }, [cleanup, sessionId]);
 
@@ -746,7 +933,7 @@ function BeamTVInner() {
         }
 
         try {
-          await handleSignal(msg, roomId, userId);
+          await handleSignalRef.current?.(msg, roomId, userId);
         } catch (err) {
           console.error('[BeamTV] Signal handling error:', err);
         }
@@ -901,6 +1088,8 @@ function BeamTVInner() {
   const removeRemoteParticipantFromUi = (leftIdRaw) => {
     const leftId = String(leftIdRaw ?? '');
     if (!leftId) return;
+    viewerSceneFlagsRef.current.camOff.delete(leftId);
+    viewerSceneFlagsRef.current.unavailable.delete(leftId);
     let remaining = 0;
     Object.keys(consumersRef.current).forEach((cid) => {
       const consumer = consumersRef.current[cid];
@@ -1276,7 +1465,9 @@ function BeamTVInner() {
 
     const coinCost = Number(gift.price) || 0;
     const diamondAmount = Number(gift.diamonds) || 0;
-    if (coins < coinCost) {
+    const latest = await refreshWallet();
+    const available = latest?.coins ?? coins;
+    if (available < coinCost) {
       setSelectedGiftId(gift.id);
       setIsGiftModalOpen(true);
       return;
@@ -1321,12 +1512,17 @@ function BeamTVInner() {
           }),
         },
       });
-      setAnimGift({
-        name: gift.name,
-        img: gift.img,
-        imageUrl: gift.imageUrl,
-        price: gift.price,
-        diamonds: gift.diamonds,
+      upsertRoomGift({
+        messageId: msgId,
+        gift: {
+          name: gift.name,
+          img: gift.img,
+          imageUrl: gift.imageUrl,
+          price: gift.price,
+          diamonds: gift.diamonds,
+        },
+        targetUserId: targetId,
+        senderId,
       });
     } catch (err) {
       console.error('Failed to send gift:', err);
@@ -1338,7 +1534,7 @@ function BeamTVInner() {
         setEngagementMsg(err.message || 'Failed to send gift');
       }
     }
-  }, [coins, giftParticipants, currentBroadcast, refreshWallet, send]);
+  }, [coins, giftParticipants, currentBroadcast, refreshWallet, send, upsertRoomGift]);
 
   // Tab close / background must not drop a waitlist seat. Cancel only on real leave
   // (stream switch or unmounting Beam TV). Never set ONLINE while promoting into the call.
@@ -1366,6 +1562,7 @@ function BeamTVInner() {
         deviceRef.current = device;
 
         setStatus('connected');
+        applyViewerScene(data?.viewerScene, data?.activeOverlays);
         realtimeDebug('[BeamTV] Device loaded. Creating viewer transport...');
         send({ type: 'create-viewer-transport', data: { roomId } });
         break;
@@ -1501,7 +1698,9 @@ function BeamTVInner() {
               age: '?',
               displayPictureUrl: '',
               city: '',
-              forceMuted: !(soundEnabled && audioUnlocked)
+              forceMuted: !(soundEnabled && audioUnlocked),
+              isVideoOn: !viewerSceneFlagsRef.current.camOff.has(String(remoteUserId)),
+              isUnavailable: viewerSceneFlagsRef.current.unavailable.has(String(remoteUserId)),
             };
             return [...prev, newEntry];
           }
@@ -1525,7 +1724,9 @@ function BeamTVInner() {
             age: '?',
             displayPictureUrl: '',
             city: '',
-            forceMuted: !(soundEnabled && audioUnlocked)
+            forceMuted: !(soundEnabled && audioUnlocked),
+            isVideoOn: !viewerSceneFlagsRef.current.camOff.has(String(remoteUserId)),
+            isUnavailable: viewerSceneFlagsRef.current.unavailable.has(String(remoteUserId)),
           };
           return [...prev, newEntry];
         });
@@ -1607,8 +1808,84 @@ function BeamTVInner() {
         try {
           if (message.startsWith('{')) {
             const parsed = JSON.parse(message);
-            if (parsed && parsed.isGift) {
-              setAnimGift(parsed.gift);
+            if (parsed?.isMiningCredit) {
+              const fromId = String(parsed.senderId || data?.userId || '');
+              const me = String((typeof window !== 'undefined' && localStorage.getItem('userId')) || '');
+              if (fromId && fromId !== me) {
+                if (participantIds.has(fromId) || broadcasterIds.has(fromId)) {
+                  pushParticipantMineToast(fromId);
+                }
+                if (isLoggedIn) {
+                  refreshWallet().then((result) => {
+                    if (result?.minedCoins > 0) showOwnMinedCoins(result.minedCoins);
+                  });
+                }
+              }
+              isControlMessage = true;
+            } else if (parsed?.isGiftDismissed) {
+              const mid = String(parsed.messageId || '');
+              if (mid) {
+                setActiveRemoteGifts((prev) => prev.map((item) =>
+                  String(item.gift?.messageId) === mid ? { ...item, isDismissed: true } : item
+                ));
+              }
+              isControlMessage = true;
+            } else if (parsed?.isGift) {
+              upsertRoomGift({
+                messageId: parsed.messageId || data?.id,
+                gift: parsed.gift,
+                targetUserId: parsed.targetUserId,
+                senderId: parsed.senderId || data?.userId,
+                isDare: parsed.isDare,
+                dareText: parsed.dareText,
+                marqueeStartAt: parsed.marqueeStartAt,
+              });
+              isControlMessage = true;
+            } else if (parsed?.isDareSync) {
+              isControlMessage = true;
+            } else if (parsed?.isDareClose) {
+              const tid = String(parsed.targetUserId || '');
+              if (tid) {
+                setActiveRemoteGifts((prev) => prev.map((item) =>
+                  String(item.targetUserId) === tid && (item.isDare || item.gift?.isDare)
+                    ? { ...item, isDismissed: true }
+                    : item
+                ));
+              }
+              isControlMessage = true;
+            } else if (parsed?.isSummoningActive !== undefined) {
+              if (parsed.isSummoningActive) {
+                setRoomSummoningUserId(String(parsed.senderId || data?.userId || ''));
+              } else {
+                setRoomSummoningUserId(null);
+              }
+              isControlMessage = true;
+            } else if (parsed?.isCamOffChanged !== undefined) {
+              const uid = String(parsed.senderId || data?.userId || '');
+              const camOff = Boolean(parsed.isCamOff);
+              if (camOff) viewerSceneFlagsRef.current.camOff.add(uid);
+              else viewerSceneFlagsRef.current.camOff.delete(uid);
+              setRemoteStreams((prev) => prev.map((s) =>
+                sameBroadcastParticipantId(s.userId, uid) ? { ...s, isVideoOn: !camOff } : s
+              ));
+              isControlMessage = true;
+            } else if (parsed?.isUserUnavailable !== undefined) {
+              const uid = String(parsed.senderId || data?.userId || '');
+              const unavailable = Boolean(parsed.isUserUnavailable);
+              if (unavailable) viewerSceneFlagsRef.current.unavailable.add(uid);
+              else viewerSceneFlagsRef.current.unavailable.delete(uid);
+              setRemoteStreams((prev) => prev.map((s) =>
+                sameBroadcastParticipantId(s.userId, uid) ? { ...s, isUnavailable: unavailable } : s
+              ));
+              isControlMessage = true;
+            } else if (parsed?.isPageHidden !== undefined) {
+              isControlMessage = true;
+            } else if (parsed?.isIcebreakerTrigger !== undefined) {
+              if (parsed.isIcebreakerTrigger) setShowIcebreaker(true);
+              else {
+                setShowIcebreaker(false);
+                setIcebreaker('');
+              }
               isControlMessage = true;
             } else if (parsed) {
               isControlMessage = true;
@@ -1655,6 +1932,25 @@ function BeamTVInner() {
           ];
           return next.slice(-8);
         });
+        break;
+      }
+      case 'mining-credited': {
+        const credited = Number(data?.coins) || 0;
+        if (credited > 0) showOwnMinedCoins(credited);
+        refreshWallet();
+        break;
+      }
+      case 'participant-mining-credited': {
+        pushParticipantMineToast(data?.userId);
+        break;
+      }
+      case 'icebreaker': {
+        setIcebreaker(String(data?.question || '').trim());
+        setShowIcebreaker(true);
+        break;
+      }
+      case 'pull-stranger-cancelled': {
+        setRoomSummoningUserId(null);
         break;
       }
       case 'moderator-overlay': {
@@ -1713,6 +2009,7 @@ function BeamTVInner() {
         break;
     }
   };
+  handleSignalRef.current = handleSignal;
 
   // Profile hydration for the newly added remoteStreams
   const remoteUserIdsKey = useMemo(
@@ -1963,12 +2260,87 @@ function BeamTVInner() {
     }
   };
 
+  useEffect(() => {
+    if (!roomSummoningUserId) return;
+    const liveCount = remoteStreams.filter((s) => !String(s.userId || '').startsWith('summoning:')).length;
+    if (liveCount >= 4) setRoomSummoningUserId(null);
+  }, [remoteStreams, roomSummoningUserId]);
+
+  const layoutStreams = useMemo(() => {
+    const list = remoteStreams.filter((s) => !String(s.userId || '').startsWith('summoning:'));
+    if (roomSummoningUserId && list.length < 4) {
+      list.push({
+        userId: `summoning:${roomSummoningUserId}`,
+        isSummoning: true,
+        name: '',
+        stream: null,
+        displayPictureUrl: '',
+      });
+    }
+    return list;
+  }, [remoteStreams, roomSummoningUserId]);
+
+  const liveTileIds = useMemo(
+    () => new Set(layoutStreams.map((s) => String(s?.userId || '')).filter(Boolean)),
+    [layoutStreams]
+  );
+
+  const giftTargetsTile = (item, userId) => {
+    const target = String(item?.targetUserId || '');
+    const uid = String(userId || '');
+    if (!target || !uid || uid.startsWith('summoning:')) return false;
+    if (target === uid) return true;
+    return !liveTileIds.has(target);
+  };
+
+  const getTileGifts = (userId) =>
+    (activeRemoteGifts || []).filter((item) => !item.isDismissed && giftTargetsTile(item, userId));
+
+  const getTileGiftLabel = (userId) => {
+    const g = (activeRemoteGifts || []).find(
+      (item) => giftTargetsTile(item, userId) && !item.isDare && !item.gift?.isDare && !item.isDismissed
+    );
+    if (!g) return undefined;
+    return formatGiftTransferLine('gifted', g.senderId || g.gift?.senderId, g.targetUserId, g.gift || g);
+  };
+
+  const getTileDare = (userId) => {
+    const g = (activeRemoteGifts || []).find(
+      (item) => giftTargetsTile(item, userId) && (item.isDare || item.gift?.isDare) && !item.isDismissed
+    );
+    if (!g) return { label: undefined, text: undefined, startAt: undefined };
+    const gift = g.gift || g;
+    return {
+      label: formatGiftTransferLine('dared', g.senderId || gift.senderId, g.targetUserId, gift),
+      text: gift.dareText || g.dareText,
+      startAt: gift.marqueeStartAt ?? g.marqueeStartAt,
+    };
+  };
+
+  const hasActiveDare = (activeRemoteGifts || []).some(
+    (item) => !item.isDismissed && (item.isDare || item.gift?.isDare)
+  );
+  const hasActiveGift = (activeRemoteGifts || []).some(
+    (item) => !item.isDismissed && !item.isDare && !item.gift?.isDare
+  );
+  const roomFxBg = hasActiveDare ? 'bg-[#8A1515]' : hasActiveGift ? 'bg-[#4E0093]' : '';
+
+  const handleViewerGiftComplete = useCallback((gift) => {
+    const messageId = typeof gift === 'string' ? gift : gift?.messageId;
+    if (!messageId) return;
+    setActiveRemoteGifts((prev) => prev.filter((item) => {
+      if (String(item.gift?.messageId) !== String(messageId)) return true;
+      return Boolean(item.isDare || item.gift?.isDare);
+    }));
+  }, []);
+
   const renderTile = (tile, idx) => {
     const uid = String(tile?.userId || '');
-    const showAddFriend = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
-    const showFollow = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:');
+    const showAddFriend = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:') && !uid.startsWith('summoning:');
+    const showFollow = isLoggedIn && uid && uid !== 'broadcaster' && !uid.startsWith('producer:') && !uid.startsWith('summoning:');
     const { screenStream: tileScreen, ...tileRest } = tile || {};
-    const totalTiles = remoteStreams.length;
+    const totalTiles = layoutStreams.length;
+    const dare = getTileDare(uid);
     const isRightTile = totalTiles === 1 ||
       (totalTiles === 2 && idx === 1) ||
       (totalTiles === 3 && (idx === 1 || idx === 2)) ||
@@ -2010,6 +2382,15 @@ function BeamTVInner() {
         isRightTile={isRightTile}
         borderBottomClass={borderBottomClass}
         onAvatarClick={() => setShowGroupMembersModal(true)}
+        gifts={getTileGifts(uid)}
+        onGiftAnimationComplete={handleViewerGiftComplete}
+        activeGiftLabel={getTileGiftLabel(uid)}
+        activeDareLabel={dare.label}
+        activeRemoteDareText={dare.text}
+        activeRemoteDareMarqueeStartAt={dare.startAt}
+        isVideoOn={tile.isVideoOn !== false}
+        isUnavailable={Boolean(tile.isUnavailable)}
+        isSummoning={Boolean(tile.isSummoning)}
       />
     );
   };
@@ -2084,9 +2465,12 @@ function BeamTVInner() {
   }, [status, trySwipeNext]);
 
   return (
-    <div className="relative h-dvh w-screen flex flex-col font-sans overflow-hidden">
+    <div className={clsx('relative h-dvh w-screen flex flex-col font-sans overflow-hidden transition-colors duration-500', roomFxBg)}>
       <div
-        className="fixed inset-0 -z-10"
+        className={clsx(
+          'fixed inset-0 -z-10 transition-opacity duration-500',
+          (hasActiveDare || hasActiveGift) ? 'opacity-0' : 'opacity-100',
+        )}
         style={{
           backgroundImage: "url(/assets/mb.jpg)",
           backgroundSize: "cover",
@@ -2101,6 +2485,18 @@ function BeamTVInner() {
           onAvatarClick={handleFavouriteAvatarClick}
         />
       )}
+
+      <MiningToast
+        isOpen={status === 'connected' && minedCoinsNotice > 0}
+        coins={minedCoinsNotice}
+        noticeId={minedNoticeId}
+        onDismissed={() => setMinedCoinsNotice(0)}
+      />
+      <ParticipantMiningToasts
+        items={status === 'connected' ? participantMineToasts : []}
+        onDismiss={(id) => setParticipantMineToasts((prev) => prev.filter((item) => item.id !== id))}
+        onDismissAll={() => setParticipantMineToasts([])}
+      />
 
       {/* p-2 on mobile, p-4 on desktop — matches video-chat spacing */}
       <div className="flex-1 flex p-2 md:p-4 gap-2 md:gap-4 min-h-0 min-w-0">
@@ -2152,7 +2548,12 @@ function BeamTVInner() {
               <div className="w-full h-full relative">
 
 
-                <BeamTvLayout remoteStreams={remoteStreams} renderTile={renderTile} />
+                <BeamTvLayout remoteStreams={layoutStreams} renderTile={renderTile} />
+                <IcebreakerToast
+                  isOpen={showIcebreaker && Boolean(icebreaker)}
+                  icebreaker={icebreaker}
+                  className="!top-24 !right-1/2 !translate-x-1/2 !justify-center md:!top-28"
+                />
 
 
 
@@ -2257,8 +2658,6 @@ function BeamTVInner() {
                   onSendGift={handleSendGift}
 
                 />
-
-                <GiftAnimation gift={animGift} onComplete={() => setAnimGift(null)} />
 
                 <CoinModal
                   isOpen={isCoinModalOpen}
